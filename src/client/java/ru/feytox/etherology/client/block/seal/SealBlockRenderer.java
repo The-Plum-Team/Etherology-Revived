@@ -27,13 +27,18 @@ import java.util.Map;
 public class SealBlockRenderer {
 
     private static final Map<BlockPos, Data> sealsData = new Object2ObjectOpenHashMap<>();
-    private static final int VISIBLE_COOLDOWN = 4;
+    private static final int VISIBLE_COOLDOWN = 1;
     public static final int LIFETIME = 100;
     private static long revelationLastTick = -VISIBLE_COOLDOWN;
+    private static long ocularLastTick = -VISIBLE_COOLDOWN;
     private static World lastWorld;
 
     public static void refreshRevelation(long time) {
         revelationLastTick = time;
+    }
+
+    public static void refreshOcular(long time) {
+        ocularLastTick = time;
     }
 
     public static void refreshSeal(SealBlockEntity blockEntity, BlockPos pos, SealType sealType, long time) {
@@ -54,6 +59,7 @@ public class SealBlockRenderer {
         lastWorld = client.world;
         sealsData.clear();
         revelationLastTick = -VISIBLE_COOLDOWN;
+        ocularLastTick = -VISIBLE_COOLDOWN;
     }
 
     private static void render(WorldRenderContext context) {
@@ -69,12 +75,11 @@ public class SealBlockRenderer {
     }
 
     private static boolean canSeeSeal(long time) {
-        return time - revelationLastTick <= VISIBLE_COOLDOWN;
+        return canSeeThrough(time) || time - revelationLastTick <= VISIBLE_COOLDOWN;
     }
 
     private static boolean canSeeThrough(long time) {
-        // TODO: 16.02.2025 return as ocular feature
-        return false;
+        return time - ocularLastTick <= VISIBLE_COOLDOWN;
     }
 
     @RequiredArgsConstructor

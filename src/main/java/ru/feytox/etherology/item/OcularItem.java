@@ -13,6 +13,7 @@ import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
 import ru.feytox.etherology.enums.EUseAction;
 import ru.feytox.etherology.util.misc.DoubleModel;
+import ru.feytox.etherology.util.misc.EtherProxy;
 
 public class OcularItem extends Item implements DoubleModel {
 
@@ -29,6 +30,11 @@ public class OcularItem extends Item implements DoubleModel {
         user.playSound(SoundEvents.ITEM_SPYGLASS_USE, 1.0F, 1.0F);
         user.incrementStat(Stats.USED.getOrCreateStat(this));
         return ItemUsage.consumeHeldItem(world, user, hand);
+    }
+
+    @Override
+    public void usageTick(World world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
+        EtherProxy.getInstance().tickOcular(world);
     }
 
     public int getMaxUseTime(ItemStack stack, LivingEntity user) {

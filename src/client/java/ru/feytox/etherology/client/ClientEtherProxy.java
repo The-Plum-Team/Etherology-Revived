@@ -13,6 +13,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import ru.feytox.etherology.client.block.ClientBlockTickers;
 import ru.feytox.etherology.client.gui.teldecore.TeldecoreScreen;
+import ru.feytox.etherology.client.item.OcularItemClient;
 import ru.feytox.etherology.client.item.OculusItemClient;
 import ru.feytox.etherology.client.item.StaffItemClient;
 import ru.feytox.etherology.client.item.revelationView.RevelationViewItemClient;
@@ -31,6 +32,11 @@ public class ClientEtherProxy extends EtherProxy {
     @Override
     public void tickRevelationView(World world, PlayerEntity player){
         RevelationViewItemClient.tickRevelationView(world, player);
+    }
+
+    @Override
+    public void tickOcular(World world) {
+        OcularItemClient.tickOcular(world);
     }
 
     @Override

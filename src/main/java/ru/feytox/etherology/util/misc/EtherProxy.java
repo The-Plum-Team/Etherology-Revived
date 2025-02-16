@@ -33,6 +33,8 @@ public abstract class EtherProxy {
 
     public abstract void tickRevelationView(World world, PlayerEntity player);
 
+    public abstract void tickOcular(World world);
+
     public abstract void tickOculus(World world, boolean selected);
 
     public abstract <T extends TickableBlockEntity> boolean tryTickBlockEntity(T blockEntity, World world, BlockPos blockPos, BlockState state);

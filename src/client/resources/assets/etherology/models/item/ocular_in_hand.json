@@ -1,0 +1,62 @@
+{
+	"credit": "Made with Blockbench",
+	"textures": {
+		"ocular": "etherology:item/ocular_model"
+	},
+	"elements": [
+		{
+			"from": [7, 4.5, 7],
+			"to": [9, 13.5, 9],
+			"faces": {
+				"north": {"uv": [0, 2, 2, 11], "texture": "#ocular"},
+				"east": {"uv": [0, 2, 2, 11], "texture": "#ocular"},
+				"south": {"uv": [0, 2, 2, 11], "texture": "#ocular"},
+				"west": {"uv": [0, 2, 2, 11], "texture": "#ocular"},
+				"up": {"uv": [0, 0, 2, 2], "texture": "#ocular"},
+				"down": {"uv": [0, 11, 2, 13], "texture": "#ocular"}
+			}
+		},
+		{
+			"from": [8, 2.5, 9],
+			"to": [8, 5.5, 13],
+			"faces": {
+				"east": {"uv": [6, 0, 2, 3], "texture": "#ocular"},
+				"west": {"uv": [2, 0, 6, 3], "texture": "#ocular"}
+			}
+		},
+		{
+			"from": [6.9, 5.4, 6.9],
+			"to": [9.1, 11.6, 10.1],
+			"faces": {
+				"north": {"uv": [0, 4, 2, 10], "texture": "#ocular"},
+				"east": {"uv": [3, 4, 0, 10], "texture": "#ocular"},
+				"south": {"uv": [0, 4, 2, 10], "texture": "#ocular"},
+				"west": {"uv": [0, 4, 3, 10], "texture": "#ocular"},
+				"up": {"uv": [0, 4, 2, 7], "texture": "#ocular"},
+				"down": {"uv": [0, 7, 2, 10], "texture": "#ocular"}
+			}
+		}
+	],
+	"gui_light": "front",
+	"display": {
+		"thirdperson_righthand": {
+			"translation": [0, -2, 0]
+		},
+		"ground": {
+			"rotation": [90, 0, 0]
+		},
+		"gui": {
+			"rotation": [-67.5, 180, -45],
+			"scale": [1.5, 1.5, 1.5]
+		},
+		"head": {
+			"rotation": [90, 0, 0],
+			"translation": [0, 0, -16],
+			"scale": [1.6, 1.6, 1.6]
+		},
+		"fixed": {
+			"translation": [0, 0, -1.5],
+			"scale": [1.5, 1.5, 1.5]
+		}
+	}
+}

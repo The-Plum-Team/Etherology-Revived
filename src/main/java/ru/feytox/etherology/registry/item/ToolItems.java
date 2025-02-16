@@ -36,6 +36,7 @@ public class ToolItems {
 
     // single tools
     public static final Item OCULUS = register("oculus", new OculusItem());
+    public static final Item OCULAR = register("ocular", new OcularItem());
     public static final Item STAFF = register("staff", new StaffItem());
     public static final Item STREAM_KEY = register("stream_key", new StreamKeyItem());
     public static final Item WARP_COUNTER = register("warp_counter", new Item(new Item.Settings().maxCount(1)));

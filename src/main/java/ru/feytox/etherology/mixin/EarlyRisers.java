@@ -19,6 +19,7 @@ public class EarlyRisers implements Runnable {
         addArmPose(remapper, envType, useAction, "OCULUS_ETHEROLOGY", true);
         addArmPose(remapper, envType, useAction, "STAFF_ETHEROLOGY", false);
         addArmPose(remapper, envType, useAction, "TWOHANDHELD_ETHEROLOGY", true);
+        addArmPose(remapper, envType, useAction, "OCULAR_ETHEROLOGY", false);
     }
 
     private void addArmPose(MappingResolver remapper, EnvType envType, String actionPath, String name, boolean twohanded) {

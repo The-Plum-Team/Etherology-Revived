@@ -29,6 +29,7 @@ public abstract class ModelLoaderMixin {
         // TODO: 02.01.2024 simplify
         loadItemModel(EtherologyModels.getReplacedModel(ToolItems.BROADSWORD, true));
         loadItemModel(EtherologyModels.getReplacedModel(ToolItems.OCULUS, true));
+        loadItemModel(EtherologyModels.getReplacedModel(ToolItems.OCULAR, true));
         loadItemModel(EtherologyModelProvider.STAFF);
         loadItemModel(EtherologyModelProvider.STAFF_STREAM);
         loadItemModel(EtherologyModelProvider.STAFF_CHARGE);

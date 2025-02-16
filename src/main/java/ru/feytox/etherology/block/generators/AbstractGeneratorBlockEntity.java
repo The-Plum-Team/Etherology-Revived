@@ -125,7 +125,11 @@ public abstract class AbstractGeneratorBlockEntity extends TickableBlockEntity i
     public void generateTick(ServerWorld world, BlockState state) {
         if (state.get(STALLED) || isMess) return;
 
-        boolean isInSeal = isInSeal(world);
+        boolean isInSeal = getCachedSeal().isPresent();
+        if (world.getTime() % 20 == 0) {
+            isInSeal = isInSeal(world);
+        }
+
         Random random = world.getRandom();
         if (nextGenTime-- > 0) {
             if (isInSeal && random.nextDouble() <= 0.5) nextGenTime -= random.nextBetween(0, 1);

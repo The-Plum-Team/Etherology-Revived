@@ -29,13 +29,8 @@ public class SealBlockRenderer {
     private static final Map<BlockPos, Data> sealsData = new Object2ObjectOpenHashMap<>();
     private static final int VISIBLE_COOLDOWN = 4;
     public static final int LIFETIME = 100;
-    private static long oculusLastTick = -VISIBLE_COOLDOWN;
     private static long revelationLastTick = -VISIBLE_COOLDOWN;
     private static World lastWorld;
-
-    public static void refreshOculus(long time) {
-        oculusLastTick = time;
-    }
 
     public static void refreshRevelation(long time) {
         revelationLastTick = time;
@@ -58,7 +53,6 @@ public class SealBlockRenderer {
 
         lastWorld = client.world;
         sealsData.clear();
-        oculusLastTick = -VISIBLE_COOLDOWN;
         revelationLastTick = -VISIBLE_COOLDOWN;
     }
 
@@ -75,11 +69,12 @@ public class SealBlockRenderer {
     }
 
     private static boolean canSeeSeal(long time) {
-        return time - oculusLastTick <= VISIBLE_COOLDOWN || time - revelationLastTick <= VISIBLE_COOLDOWN;
+        return time - revelationLastTick <= VISIBLE_COOLDOWN;
     }
 
     private static boolean canSeeThrough(long time) {
-        return time - oculusLastTick <= VISIBLE_COOLDOWN;
+        // TODO: 16.02.2025 return as ocular feature
+        return false;
     }
 
     @RequiredArgsConstructor

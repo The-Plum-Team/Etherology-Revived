@@ -16,7 +16,6 @@ import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import ru.feytox.etherology.client.block.seal.SealBlockRenderer;
 import ru.feytox.etherology.client.gui.oculus.AspectComponent;
 import ru.feytox.etherology.client.util.ScaledLabelComponent;
 import ru.feytox.etherology.magic.aspects.OculusAspectProvider;
@@ -38,7 +37,6 @@ public class OculusItemClient {
             return;
         }
 
-        SealBlockRenderer.refreshOculus(world.getTime());
         tickHud((ClientWorld) world);
     }
 

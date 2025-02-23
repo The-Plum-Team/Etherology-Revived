@@ -29,16 +29,15 @@ public class SealBlockRenderer {
     private static final Map<BlockPos, Data> sealsData = new Object2ObjectOpenHashMap<>();
     private static final int VISIBLE_COOLDOWN = 1;
     public static final int LIFETIME = 100;
-    private static long revelationLastTick = -VISIBLE_COOLDOWN;
-    private static long ocularLastTick = -VISIBLE_COOLDOWN;
+    private static long seeSealsLastTick = -VISIBLE_COOLDOWN;
+    private static long seeThroughLastTick = -VISIBLE_COOLDOWN;
     private static World lastWorld;
 
-    public static void refreshRevelation(long time) {
-        revelationLastTick = time;
-    }
-
-    public static void refreshOcular(long time) {
-        ocularLastTick = time;
+    public static void refreshSeeSealsAbility(long time, boolean seeThrough) {
+        if (seeThrough)
+            seeSealsLastTick = time;
+        else
+            seeThroughLastTick = time;
     }
 
     public static void refreshSeal(SealBlockEntity blockEntity, BlockPos pos, SealType sealType, long time) {
@@ -58,8 +57,8 @@ public class SealBlockRenderer {
 
         lastWorld = client.world;
         sealsData.clear();
-        revelationLastTick = -VISIBLE_COOLDOWN;
-        ocularLastTick = -VISIBLE_COOLDOWN;
+        seeSealsLastTick = -VISIBLE_COOLDOWN;
+        seeThroughLastTick = -VISIBLE_COOLDOWN;
     }
 
     private static void render(WorldRenderContext context) {
@@ -75,11 +74,11 @@ public class SealBlockRenderer {
     }
 
     private static boolean canSeeSeal(long time) {
-        return canSeeThrough(time) || time - revelationLastTick <= VISIBLE_COOLDOWN;
+        return canSeeThrough(time) || time - seeSealsLastTick <= VISIBLE_COOLDOWN;
     }
 
     private static boolean canSeeThrough(long time) {
-        return time - ocularLastTick <= VISIBLE_COOLDOWN;
+        return time - seeThroughLastTick <= VISIBLE_COOLDOWN;
     }
 
     @RequiredArgsConstructor

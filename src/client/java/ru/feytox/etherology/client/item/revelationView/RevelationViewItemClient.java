@@ -9,7 +9,7 @@ import ru.feytox.etherology.client.block.seal.SealBlockRenderer;
 public class RevelationViewItemClient {
 
     public static void tickRevelationView(World world, PlayerEntity player) {
-        SealBlockRenderer.refreshRevelation(world.getTime());
+        SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), false);
         RevelationViewRenderer.tickData(world, player);
     }
 }

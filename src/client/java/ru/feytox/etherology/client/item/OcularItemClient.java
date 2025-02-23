@@ -8,6 +8,6 @@ import ru.feytox.etherology.client.block.seal.SealBlockRenderer;
 public class OcularItemClient {
 
     public static void tickOcular(World world) {
-        SealBlockRenderer.refreshOcular(world.getTime());
+        SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), true);
     }
 }

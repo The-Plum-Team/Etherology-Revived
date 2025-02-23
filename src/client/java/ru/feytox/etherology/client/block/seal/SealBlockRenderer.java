@@ -35,9 +35,9 @@ public class SealBlockRenderer {
 
     public static void refreshSeeSealsAbility(long time, boolean seeThrough) {
         if (seeThrough)
-            seeSealsLastTick = time;
-        else
             seeThroughLastTick = time;
+        else
+            seeSealsLastTick = time;
     }
 
     public static void refreshSeal(SealBlockEntity blockEntity, BlockPos pos, SealType sealType, long time) {

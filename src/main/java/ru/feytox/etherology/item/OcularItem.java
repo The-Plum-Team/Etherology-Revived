@@ -11,7 +11,6 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
-import ru.feytox.etherology.enums.EUseAction;
 import ru.feytox.etherology.util.misc.DoubleModel;
 import ru.feytox.etherology.util.misc.EtherProxy;
 
@@ -23,7 +22,9 @@ public class OcularItem extends Item implements DoubleModel {
 
     @Override
     public UseAction getUseAction(ItemStack stack) {
-        return EUseAction.OCULAR_ETHEROLOGY.getUseAction();
+//        return EUseAction.OCULAR_ETHEROLOGY.getUseAction();
+//        return UseAction.NONE;
+        return UseAction.SPYGLASS;
     }
 
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {

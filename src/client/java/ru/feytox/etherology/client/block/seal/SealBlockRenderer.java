@@ -7,22 +7,22 @@ import lombok.RequiredArgsConstructor;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.render.Camera;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import org.joml.Quaternionf;
 import ru.feytox.etherology.block.seal.SealBlockEntity;
 import ru.feytox.etherology.client.util.RenderUtils;
 import ru.feytox.etherology.magic.seal.SealType;
+import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 public class SealBlockRenderer {
 
@@ -31,13 +31,15 @@ public class SealBlockRenderer {
     public static final int LIFETIME = 100;
     private static long seeSealsLastTick = -VISIBLE_COOLDOWN;
     private static long seeThroughLastTick = -VISIBLE_COOLDOWN;
+    private static long simplifiedLastTick = -VISIBLE_COOLDOWN;
     private static World lastWorld;
 
-    public static void refreshSeeSealsAbility(long time, boolean seeThrough) {
+    public static void refreshSeeSealsAbility(long time, boolean seeThrough, boolean simplified) {
+        seeSealsLastTick = time;
         if (seeThrough)
             seeThroughLastTick = time;
-        else
-            seeSealsLastTick = time;
+        if (simplified)
+            simplifiedLastTick = time;
     }
 
     public static void refreshSeal(SealBlockEntity blockEntity, BlockPos pos, SealType sealType, long time) {
@@ -62,23 +64,32 @@ public class SealBlockRenderer {
     }
 
     private static void render(WorldRenderContext context) {
-        long time = context.world().getTime();
+        var time = context.world().getTime();
         if (!canSeeSeal(time)) return;
 
         // force disable depth test to prevent bugs
         RenderSystem.enableDepthTest();
-        boolean seeThrough = canSeeThrough(time);
+        var seeThrough = canSeeThrough(time);
+        var isSimplified = isSimplified(time);
 
         sealsData.entrySet().removeIf(entry -> entry.getValue().seal.isRemoved() || time - entry.getValue().lastTime > LIFETIME);
-        sealsData.forEach((pos, data) -> data.render(context, pos, time, seeThrough));
+        sealsData.forEach((pos, data) -> data.render(context, pos, time, seeThrough, isSimplified));
     }
 
     private static boolean canSeeSeal(long time) {
-        return canSeeThrough(time) || time - seeSealsLastTick <= VISIBLE_COOLDOWN;
+        return checkCooldown(seeSealsLastTick, time);
     }
 
     private static boolean canSeeThrough(long time) {
-        return time - seeThroughLastTick <= VISIBLE_COOLDOWN;
+        return checkCooldown(seeThroughLastTick, time);
+    }
+
+    private static boolean isSimplified(long time) {
+        return checkCooldown(simplifiedLastTick, time);
+    }
+
+    private static boolean checkCooldown(long lastTick, long time) {
+        return time - lastTick <= VISIBLE_COOLDOWN;
     }
 
     @RequiredArgsConstructor
@@ -86,6 +97,9 @@ public class SealBlockRenderer {
 
         private static final float LIGHT_CHANCE = 0.05f;
         private static final int SEAL_TIMING = 10;
+        private static final int AURA_ANIMATION_TIME = 40;
+
+        private static final Identifier[] AURA_TEXTURES;
 
         private final SealBlockEntity seal;
         private final SealType sealType;
@@ -98,34 +112,79 @@ public class SealBlockRenderer {
             return this;
         }
 
-        private void render(WorldRenderContext context, BlockPos pos, long time, boolean seeThrough) {
-            MatrixStack matrices = context.matrixStack();
-            if (matrices == null) return;
+        private void render(WorldRenderContext context, BlockPos pos, long time, boolean seeThrough, boolean simplified) {
+            var matrices = context.matrixStack();
+            if (matrices == null)
+                return;
 
-            float scale = 1/100f * MathHelper.lerp(seal.getScale(), 1.0f, 2.0f);
-            float tickDelta = context.tickCounter().getTickDelta(false);
-            Camera camera = context.camera();
-            Vec3d coreVec = pos.toCenterPos().subtract(camera.getPos());
-            Random random = context.world().getRandom();
+            var random = context.world().getRandom();
+            var tickDelta = context.tickCounter().getTickDelta(false);
 
             matrices.push();
-            matrices.translate(coreVec.x, coreVec.y, coreVec.z);
-            matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(seal.getYaw()));
-            matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(seal.getPitch()));
-            matrices.scale(scale, scale, scale);
+            applyTransform(context, pos, simplified, matrices);
+
             RenderSystem.enableBlend();
             RenderSystem.depthMask(false);
 
-            renderSeal(matrices, random, time, tickDelta, seeThrough);
+            if (simplified)
+                renderSimplifiedSeal(matrices, time, tickDelta, seeThrough);
+            else
+                renderSeal(matrices, random, time, tickDelta, seeThrough);
 
             RenderSystem.disableBlend();
             matrices.pop();
         }
 
+        private void applyTransform(WorldRenderContext context, BlockPos pos, boolean simplified, MatrixStack matrices) {
+            var scale = 1 / 100f * MathHelper.lerp(seal.getScale(), 1.0f, 2.0f);
+            var camera = context.camera();
+            var coreVec = pos.toCenterPos().subtract(camera.getPos());
+
+            matrices.translate(coreVec.x, coreVec.y, coreVec.z);
+            if (simplified)
+                matrices.multiply(camera.getRotation());
+            else {
+                matrices.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(seal.getYaw()));
+                matrices.multiply(RotationAxis.POSITIVE_X.rotationDegrees(seal.getPitch()));
+            }
+            matrices.scale(scale, scale, scale);
+        }
+
+        private void renderSimplifiedSeal(MatrixStack matrices, long time, float tickDelta, boolean seeThrough) {
+            matrices.push();
+            matrices.multiply(RotationAxis.POSITIVE_Y.rotation(MathHelper.PI));
+            matrices.translate(64, 64, 0);
+            matrices.scale(2, 2, 2);
+
+            if (seeThrough) RenderSystem.disableDepthTest();
+
+            RenderSystem.setShaderTexture(0, getAuraTexture(time, tickDelta));
+            setSimpleSealColor();
+            RenderUtils.renderTexture(matrices, 0, 0, 0, 0, 0, 64, 64, 64, 64);
+
+            if (seeThrough) RenderSystem.enableDepthTest();
+            matrices.pop();
+        }
+
+        private Identifier getAuraTexture(long time, float tickDelta) {
+            var percent = ((time + tickDelta) % AURA_ANIMATION_TIME) / AURA_ANIMATION_TIME;
+            var index = Math.round(percent * (AURA_TEXTURES.length - 1));
+            return AURA_TEXTURES[index];
+        }
+
+        private void setSimpleSealColor() {
+            switch (sealType) {
+                case RELLA -> RenderUtils.applyColor(0x00FF00);
+                case CLOS -> RenderUtils.applyColor(0xFFCC00);
+                case VIA -> RenderUtils.applyColor(0xFF0033);
+                case KETA -> RenderUtils.applyColor(0x0099FF);
+            }
+        }
+
         private void renderSeal(MatrixStack matrices, Random random, long time, float tickDelta, boolean seeThrough) {
-            float percent = MathHelper.TAU * ((time+tickDelta) % SEAL_TIMING) / SEAL_TIMING;
-            double dx = 0.25d * Math.sin(100 * percent) + 0.3d * Math.cos(percent);
-            double dy = 0.25d * Math.cos(100 * percent) + 0.3d * Math.sin(percent);
+            var percent = MathHelper.TAU * ((time + tickDelta) % SEAL_TIMING) / SEAL_TIMING;
+            var dx = 0.25d * Math.sin(100 * percent) + 0.3d * Math.cos(percent);
+            var dy = 0.25d * Math.cos(100 * percent) + 0.3d * Math.sin(percent);
 
             matrices.push();
             matrices.scale(2, 2, 2);
@@ -139,13 +198,13 @@ public class SealBlockRenderer {
             RenderSystem.setShaderTexture(0, sealType.getTextureId());
 
             matrices.push();
-            matrices.translate(dx+32, dy+32, 0);
+            matrices.translate(dx + 32, dy + 32, 0);
             RenderUtils.renderTexture(matrices, 0, 0, 0, 0, 0, 64, 64, 64, 64);
             matrices.pop();
 
             matrices.push();
             matrices.multiply(RotationAxis.POSITIVE_Y.rotation(MathHelper.PI));
-            matrices.translate(dx+32, dy+32, 0);
+            matrices.translate(dx + 32, dy + 32, 0);
             RenderUtils.renderTexture(matrices, 0, 0, 0, 0, 0, 64, 64, 64, 64);
             matrices.pop();
 
@@ -157,7 +216,7 @@ public class SealBlockRenderer {
             float fillPercent = seal.getFillPercent();
             for (int i = 0, sealLightsSize = sealLights.size(); i < sealLightsSize; i++) {
                 SealLight sealLight = sealLights.get(i);
-                sealLight.render(matrices, sealType.getTextureLightId(), time, fillPercent, tickDelta, i*0.01f);
+                sealLight.render(matrices, sealType.getTextureLightId(), time, fillPercent, tickDelta, i * 0.01f);
             }
         }
 
@@ -174,6 +233,12 @@ public class SealBlockRenderer {
             lastLightTime = time;
 
             sealLights.add(new SealLight(maxAge, time, targetDx, targetDy, targetRoll));
+        }
+
+        static {
+            AURA_TEXTURES = IntStream.range(0, 23)
+                    .mapToObj(i -> EIdentifier.of("textures/gui/seal_aura/seal_aura_" + i + ".png"))
+                    .toArray(Identifier[]::new);
         }
     }
 
@@ -203,7 +268,7 @@ public class SealBlockRenderer {
 
         private void renderFace(MatrixStack matrices, float percent, float dz) {
             matrices.push();
-            matrices.translate(targetDx * percent, targetDy + percent, 0.1+dz);
+            matrices.translate(targetDx * percent, targetDy + percent, 0.1 + dz);
             matrices.multiply(new Quaternionf().rotateLocalZ(targetRoll * percent));
             matrices.translate(32, 32, 0);
             RenderUtils.renderTexture(matrices, 0, 0, 0, 0, 0, 64, 64, 64, 64);

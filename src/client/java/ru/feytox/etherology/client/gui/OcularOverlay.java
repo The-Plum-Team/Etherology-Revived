@@ -55,9 +55,6 @@ public class OcularOverlay {
     }
 
     public static void enableShader(MinecraftClient client) {
-        if (shaderEnabled)
-            return;
-
         var postProcessor = client.gameRenderer.getPostProcessor();
         if (postProcessor != null)
             return;
@@ -67,9 +64,6 @@ public class OcularOverlay {
     }
 
     public static void disableShader(MinecraftClient client) {
-        if (!shaderEnabled)
-            return;
-
         var postProcessor = client.gameRenderer.getPostProcessor();
         if (postProcessor == null)
             return;

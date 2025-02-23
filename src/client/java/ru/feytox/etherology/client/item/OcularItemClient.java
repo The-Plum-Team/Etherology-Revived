@@ -13,7 +13,7 @@ public class OcularItemClient {
         var client = MinecraftClient.getInstance();
 
         if (client.options.getPerspective().isFirstPerson()) {
-            SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), true);
+            SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), true, true);
             OcularOverlay.enableShader(client);
         } else
             OcularOverlay.disableShader(client);

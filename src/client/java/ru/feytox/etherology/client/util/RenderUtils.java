@@ -125,4 +125,9 @@ public class RenderUtils {
     public static void applyColor(Color color, DrawContext context) {
         context.setShaderColor(color.red(), color.green(), color.blue(), 1.0f);
     }
+
+    public static void applyColor(int hex) {
+        var color = Color.of(hex);
+        RenderSystem.setShaderColor(color.red(), color.green(), color.blue(), 1.0f);
+    }
 }

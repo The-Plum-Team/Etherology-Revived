@@ -38,7 +38,7 @@ public class OculusItemClient {
             return;
         }
 
-        SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), false);
+        SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), false, false);
         tickHud((ClientWorld) world);
     }
 

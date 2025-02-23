@@ -31,7 +31,7 @@ public abstract class EtherProxy {
 
     public abstract void tickStaff(ItemStack stack, PlayerEntity player);
 
-    public abstract void tickRevelationView(World world, PlayerEntity player);
+    public abstract void tickPranaVision(World world, PlayerEntity player);
 
     public abstract void tickOcular(World world);
 

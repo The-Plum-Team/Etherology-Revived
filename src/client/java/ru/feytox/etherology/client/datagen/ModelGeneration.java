@@ -28,7 +28,7 @@ import static ru.feytox.etherology.registry.block.EBlockFamilies.FAMILIES;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_CHANNEL;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_FORK;
 import static ru.feytox.etherology.registry.item.ArmorItems.ARMOR_ITEMS;
-import static ru.feytox.etherology.registry.item.ArmorItems.REVELATION_VIEW;
+import static ru.feytox.etherology.registry.item.ArmorItems.PRANA_VISION;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
 import static ru.feytox.etherology.registry.item.ToolItems.*;
@@ -69,7 +69,7 @@ public class ModelGeneration extends FabricModelProvider {
         // warp counter
         registerMultipleModels(WARP_COUNTER, generator, 1, 15);
         // simple items
-        registerItems(generator, Models.GENERATED, AZEL_INGOT, AZEL_NUGGET, EBONY_INGOT, EBONY_NUGGET, ETHRIL_INGOT, ETHRIL_NUGGET, BEAM_FRUIT, BEAMER_SEEDS, OCULUS, OCULAR, CORRUPTION_BUCKET, THUJA_OIL, THUJA_SEEDS, ETHEROSCOPE, RAW_AZEL, ATTRAHITE_BRICK, ENRICHED_ATTRAHITE, BINDER, ETHEREAL_CHANNEL, ETHEREAL_FORK, REVELATION_VIEW, EBONY, FOREST_LANTERN, FOREST_LANTERN_CRUMB, PEACH_BOAT, PEACH_CHEST_BOAT);
+        registerItems(generator, Models.GENERATED, AZEL_INGOT, AZEL_NUGGET, EBONY_INGOT, EBONY_NUGGET, ETHRIL_INGOT, ETHRIL_NUGGET, BEAM_FRUIT, BEAMER_SEEDS, OCULUS, OCULAR, CORRUPTION_BUCKET, THUJA_OIL, THUJA_SEEDS, ETHEROSCOPE, RAW_AZEL, ATTRAHITE_BRICK, ENRICHED_ATTRAHITE, BINDER, ETHEREAL_CHANNEL, ETHEREAL_FORK, PRANA_VISION, EBONY, FOREST_LANTERN, FOREST_LANTERN_CRUMB, PEACH_BOAT, PEACH_CHEST_BOAT);
         registerItems(generator, Models.GENERATED, LENSES);
         registerItems(generator, Models.GENERATED, EBlocks.SEALS);
         // handheld (swords, pickaxe etc.)

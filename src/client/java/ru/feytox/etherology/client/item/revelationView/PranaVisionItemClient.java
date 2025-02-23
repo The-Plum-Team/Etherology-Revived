@@ -6,10 +6,10 @@ import net.minecraft.world.World;
 import ru.feytox.etherology.client.block.seal.SealBlockRenderer;
 
 @UtilityClass
-public class RevelationViewItemClient {
+public class PranaVisionItemClient {
 
-    public static void tickRevelationView(World world, PlayerEntity player) {
+    public static void tickPranaVision(World world, PlayerEntity player) {
         SealBlockRenderer.refreshSeeSealsAbility(world.getTime(), false);
-        RevelationViewRenderer.tickData(world, player);
+        RevelationRenderer.tickData(world, player);
     }
 }

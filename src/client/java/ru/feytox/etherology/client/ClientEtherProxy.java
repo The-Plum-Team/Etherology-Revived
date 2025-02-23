@@ -17,7 +17,7 @@ import ru.feytox.etherology.client.gui.teldecore.TeldecoreScreen;
 import ru.feytox.etherology.client.item.OcularItemClient;
 import ru.feytox.etherology.client.item.OculusItemClient;
 import ru.feytox.etherology.client.item.StaffItemClient;
-import ru.feytox.etherology.client.item.revelationView.RevelationViewItemClient;
+import ru.feytox.etherology.client.item.revelationView.PranaVisionItemClient;
 import ru.feytox.etherology.network.util.AbstractC2SPacket;
 import ru.feytox.etherology.util.misc.EtherProxy;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
@@ -31,8 +31,8 @@ public class ClientEtherProxy extends EtherProxy {
     }
 
     @Override
-    public void tickRevelationView(World world, PlayerEntity player){
-        RevelationViewItemClient.tickRevelationView(world, player);
+    public void tickPranaVision(World world, PlayerEntity player){
+        PranaVisionItemClient.tickPranaVision(world, player);
     }
 
     @Override

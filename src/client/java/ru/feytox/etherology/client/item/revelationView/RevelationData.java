@@ -18,14 +18,14 @@ import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.List;
 
-public abstract class RevelationViewData {
+public abstract class RevelationData {
 
     public abstract boolean isEmpty();
 
     public abstract void render(MinecraftClient client, MatrixStack matrices, float progress);
 
     @RequiredArgsConstructor
-    public static class Aspects extends RevelationViewData {
+    public static class Aspects extends RevelationData {
 
         private static final int ROW_SIZE = 5;
 
@@ -85,7 +85,7 @@ public abstract class RevelationViewData {
     }
 
     @RequiredArgsConstructor
-    public static class Ether extends RevelationViewData {
+    public static class Ether extends RevelationData {
 
         private static final Identifier ETHER_TEXTURE = EIdentifier.of("textures/item/ether.png");
 

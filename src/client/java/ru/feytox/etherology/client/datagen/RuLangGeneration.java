@@ -150,7 +150,7 @@ public class RuLangGeneration extends FabricLanguageProvider {
 
         builder.add(EBlocks.CHANNEL_CASE, "Обшивка канала");
         builder.add(STREAM_KEY, "Ключ трансляции");
-        builder.add(REVELATION_VIEW, "Очки откровения");
+        builder.add(PRANA_VISION, "Очи в иномирье");
 
         builder.add(TUNING_FORK, "Камертон");
 

@@ -10,12 +10,12 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
-import ru.feytox.etherology.client.model.custom.RevelationViewModel;
+import ru.feytox.etherology.client.model.custom.PranaVisionModel;
 import ru.feytox.etherology.util.misc.EIdentifier;
 
-public class RevelationViewItemRenderer implements TrinketRenderer {
+public class PranaVisionItemRenderer implements TrinketRenderer {
 
-    private static final Identifier TEXTURE = EIdentifier.of("textures/entity/trinket/revelation_view.png");
+    private static final Identifier TEXTURE = EIdentifier.of("textures/entity/trinket/prana_vision_layer_1.png");
     private BipedEntityModel<LivingEntity> model;
 
     @Override
@@ -29,8 +29,10 @@ public class RevelationViewItemRenderer implements TrinketRenderer {
     }
 
     private BipedEntityModel<LivingEntity> getModel() {
-        if (model != null) return model;
-        model = new RevelationViewModel(RevelationViewModel.getTexturedModelData().createModel());
+        if (model != null)
+            return model;
+
+        model = new PranaVisionModel(PranaVisionModel.getTexturedModelData().createModel());
         return model;
     }
 }

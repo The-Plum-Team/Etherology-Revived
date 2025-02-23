@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.network.ClientPlayerEntity;
 import ru.feytox.etherology.client.block.ClientBlockTickers;
 import ru.feytox.etherology.client.block.seal.SealBlockRenderer;
+import ru.feytox.etherology.client.gui.OcularOverlay;
 import ru.feytox.etherology.client.gui.staff.StaffIndicator;
 import ru.feytox.etherology.client.item.OculusItemClient;
 import ru.feytox.etherology.client.model.EtherologyModelProvider;
@@ -42,6 +43,7 @@ public class EtherologyClient implements ClientModInitializer {
 
             StaffIndicator.tickHudData(client);
             SealBlockRenderer.tickDataResetting(client);
+            OcularOverlay.tickOcularShader();
 
             ClientPlayerEntity player = client.player;
             if (player == null) return;

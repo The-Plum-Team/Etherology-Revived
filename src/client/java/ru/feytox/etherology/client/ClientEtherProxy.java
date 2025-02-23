@@ -12,6 +12,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import ru.feytox.etherology.client.block.ClientBlockTickers;
+import ru.feytox.etherology.client.gui.OcularOverlay;
 import ru.feytox.etherology.client.gui.teldecore.TeldecoreScreen;
 import ru.feytox.etherology.client.item.OcularItemClient;
 import ru.feytox.etherology.client.item.OculusItemClient;
@@ -37,6 +38,11 @@ public class ClientEtherProxy extends EtherProxy {
     @Override
     public void tickOcular(World world) {
         OcularItemClient.tickOcular(world);
+    }
+
+    @Override
+    public void onOcularStopUsing() {
+        OcularOverlay.disableShader(MinecraftClient.getInstance());
     }
 
     @Override

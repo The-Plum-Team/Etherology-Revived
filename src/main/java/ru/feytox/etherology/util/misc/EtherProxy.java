@@ -35,6 +35,8 @@ public abstract class EtherProxy {
 
     public abstract void tickOcular(World world);
 
+    public abstract void onOcularStopUsing();
+
     public abstract void tickOculus(World world, boolean selected);
 
     public abstract <T extends TickableBlockEntity> boolean tryTickBlockEntity(T blockEntity, World world, BlockPos blockPos, BlockState state);

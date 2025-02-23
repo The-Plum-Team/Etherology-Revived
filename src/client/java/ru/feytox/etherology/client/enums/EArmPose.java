@@ -10,7 +10,6 @@ import net.minecraft.util.UseAction;
 import net.minecraft.util.math.MathHelper;
 import org.apache.commons.lang3.EnumUtils;
 import ru.feytox.etherology.item.LensItem;
-import ru.feytox.etherology.item.OcularItem;
 import ru.feytox.etherology.item.StaffItem;
 
 import java.util.Optional;
@@ -26,8 +25,7 @@ import static net.minecraft.util.math.MathHelper.RADIANS_PER_DEGREE;
 public enum EArmPose {
     OCULUS_ETHEROLOGY(EArmPose::oculusPoser),
     STAFF_ETHEROLOGY(EArmPose::staffPoser),
-    TWOHANDHELD_ETHEROLOGY(EArmPose::twoPoser),
-    OCULAR_ETHEROLOGY(EArmPose::ocularPoser);
+    TWOHANDHELD_ETHEROLOGY(EArmPose::twoPoser);
 
     private final ModelPoser modelPoser;
 
@@ -99,21 +97,6 @@ public enum EArmPose {
         otherArm.pitch = -35 * RADIANS_PER_DEGREE;
         otherArm.yaw = 43 * RADIANS_PER_DEGREE * d;
         otherArm.roll = 5 * RADIANS_PER_DEGREE * d;
-    }
-
-    // TODO: 16.02.2025 replace with vanilla use action if poses will be same
-    private static void ocularPoser(BipedEntityModel<?> model, LivingEntity entity, boolean isRightArm) {
-        var arm = isRightArm ? model.rightArm : model.leftArm;
-
-        var ocularStack = entity.getActiveItem();
-        if (!(ocularStack.getItem() instanceof OcularItem)) {
-            // ocular in arm, but not using = vanilla
-            arm.pitch = arm.pitch * 0.5F - 0.31415927F;
-            return;
-        }
-
-        arm.pitch = MathHelper.clamp(model.head.pitch - 1.9198622F - (entity.isInSneakingPose() ? 0.2617994F : 0.0F), -2.4F, 3.3F);
-        arm.yaw = model.head.yaw + 0.2617994F * (isRightArm ? -1 : 1);
     }
 
     public interface ModelPoser {

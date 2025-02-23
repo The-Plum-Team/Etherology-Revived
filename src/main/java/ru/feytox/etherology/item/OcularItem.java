@@ -22,8 +22,6 @@ public class OcularItem extends Item implements DoubleModel {
 
     @Override
     public UseAction getUseAction(ItemStack stack) {
-//        return EUseAction.OCULAR_ETHEROLOGY.getUseAction();
-//        return UseAction.NONE;
         return UseAction.SPYGLASS;
     }
 
@@ -35,7 +33,8 @@ public class OcularItem extends Item implements DoubleModel {
 
     @Override
     public void usageTick(World world, LivingEntity user, ItemStack stack, int remainingUseTicks) {
-        EtherProxy.getInstance().tickOcular(world);
+        if (world.isClient)
+            EtherProxy.getInstance().tickOcular(world);
     }
 
     public int getMaxUseTime(ItemStack stack, LivingEntity user) {
@@ -44,11 +43,15 @@ public class OcularItem extends Item implements DoubleModel {
 
     public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
         this.playStopUsingSound(user);
+        if (world.isClient)
+            EtherProxy.getInstance().onOcularStopUsing();
         return stack;
     }
 
     public void onStoppedUsing(ItemStack stack, World world, LivingEntity user, int remainingUseTicks) {
         this.playStopUsingSound(user);
+        if (world.isClient)
+            EtherProxy.getInstance().onOcularStopUsing();
     }
 
     private void playStopUsingSound(LivingEntity user) {

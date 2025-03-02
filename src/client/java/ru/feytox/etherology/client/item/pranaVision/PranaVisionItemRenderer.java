@@ -1,4 +1,4 @@
-package ru.feytox.etherology.client.item.revelationView;
+package ru.feytox.etherology.client.item.pranaVision;
 
 import dev.emi.trinkets.api.SlotReference;
 import dev.emi.trinkets.api.client.TrinketRenderer;

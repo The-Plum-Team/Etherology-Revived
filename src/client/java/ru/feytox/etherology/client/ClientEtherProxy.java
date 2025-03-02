@@ -17,7 +17,7 @@ import ru.feytox.etherology.client.gui.teldecore.TeldecoreScreen;
 import ru.feytox.etherology.client.item.OcularItemClient;
 import ru.feytox.etherology.client.item.OculusItemClient;
 import ru.feytox.etherology.client.item.StaffItemClient;
-import ru.feytox.etherology.client.item.revelationView.PranaVisionItemClient;
+import ru.feytox.etherology.client.item.pranaVision.PranaVisionItemClient;
 import ru.feytox.etherology.network.util.AbstractC2SPacket;
 import ru.feytox.etherology.util.misc.EtherProxy;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;

@@ -1,4 +1,4 @@
-package ru.feytox.etherology.client.item.revelationView;
+package ru.feytox.etherology.client.item.pranaVision;
 
 import lombok.experimental.UtilityClass;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;

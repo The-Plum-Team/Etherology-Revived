@@ -1,4 +1,4 @@
-package ru.feytox.etherology.client.item.revelationView;
+package ru.feytox.etherology.client.item.pranaVision;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.datafixers.util.Pair;

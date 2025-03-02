@@ -6,7 +6,7 @@ import lombok.experimental.UtilityClass;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import ru.feytox.etherology.client.gui.staff.StaffIndicator;
 import ru.feytox.etherology.client.item.OculusItemClient;
-import ru.feytox.etherology.client.item.revelationView.PranaVisionItemRenderer;
+import ru.feytox.etherology.client.item.pranaVision.PranaVisionItemRenderer;
 import ru.feytox.etherology.registry.item.ArmorItems;
 import ru.feytox.etherology.util.misc.EIdentifier;
 

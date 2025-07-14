@@ -137,3 +137,6 @@ sourceSets {
         }
     }
 }
+base {
+    archivesName = project.archives_base_name
+}

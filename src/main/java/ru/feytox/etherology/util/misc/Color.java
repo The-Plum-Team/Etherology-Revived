@@ -12,7 +12,7 @@ public record Color(float red, float green, float blue) {
         return of(color.asHex());
     }
 
-    private static Color of(int hex) {
+    public static Color of(int hex) {
         float r = ((hex >> 16) & 0xFF) / 255f;
         float g = ((hex >> 8) & 0xFF) / 255f;
         float b = (hex & 0xFF) / 255f;

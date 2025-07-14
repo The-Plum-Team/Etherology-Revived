@@ -16,7 +16,6 @@ import net.minecraft.world.gen.GenerationStep;
 import net.minecraft.world.gen.carver.ConfiguredCarver;
 import net.minecraft.world.gen.feature.DefaultBiomeFeatures;
 import net.minecraft.world.gen.feature.PlacedFeature;
-import ru.feytox.etherology.Etherology;
 import ru.feytox.etherology.mixin.OverworldBiomeCreatorAccessor;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 
@@ -33,10 +32,6 @@ public class BiomesGen {
     }
 
     private static void addGoldenForest(Registerable<Biome> context, RegistryEntryLookup<PlacedFeature> featureLookup, RegistryEntryLookup<ConfiguredCarver<?>> carverLookup) {
-        for (BiomeEffects.GrassColorModifier value : BiomeEffects.GrassColorModifier.values()) {
-            Etherology.ELOGGER.info("{}", value.name());
-        }
-
         val baseSpawnerBuilder = new SpawnSettings.Builder();
         DefaultBiomeFeatures.addBatsAndMonsters(baseSpawnerBuilder);
         DefaultBiomeFeatures.addFarmAnimals(baseSpawnerBuilder);

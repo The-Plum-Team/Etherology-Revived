@@ -6,7 +6,7 @@ import lombok.experimental.UtilityClass;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import ru.feytox.etherology.client.gui.staff.StaffIndicator;
 import ru.feytox.etherology.client.item.OculusItemClient;
-import ru.feytox.etherology.client.item.revelationView.RevelationViewItemRenderer;
+import ru.feytox.etherology.client.item.pranaVision.PranaVisionItemRenderer;
 import ru.feytox.etherology.registry.item.ArmorItems;
 import ru.feytox.etherology.util.misc.EIdentifier;
 
@@ -15,7 +15,7 @@ public class RenderingRegistry {
 
     public static void registerAll() {
         registerHUD();
-        TrinketRendererRegistry.registerRenderer(ArmorItems.REVELATION_VIEW, new RevelationViewItemRenderer());
+        TrinketRendererRegistry.registerRenderer(ArmorItems.PRANA_VISION, new PranaVisionItemRenderer());
     }
 
     private static void registerHUD() {

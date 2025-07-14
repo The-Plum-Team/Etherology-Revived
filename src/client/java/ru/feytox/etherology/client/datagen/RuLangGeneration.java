@@ -150,7 +150,7 @@ public class RuLangGeneration extends FabricLanguageProvider {
 
         builder.add(EBlocks.CHANNEL_CASE, "Обшивка канала");
         builder.add(STREAM_KEY, "Ключ трансляции");
-        builder.add(REVELATION_VIEW, "Окуляр");
+        builder.add(PRANA_VISION, "Очи в иномирье");
 
         builder.add(TUNING_FORK, "Камертон");
 
@@ -183,6 +183,7 @@ public class RuLangGeneration extends FabricLanguageProvider {
         builder.add(ETHER, "Эфир");
         builder.add(IRON_SHIELD, "Железный щит");
         builder.add(OCULUS, "Окулус");
+        builder.add(OCULAR, "Окуляр");
         builder.add(CORRUPTION_BUCKET, "Ведро с мутной водой");
         builder.add(CLOSET_SLAB, "Шкаф [WIP]");
         builder.add(SHELF_SLAB, "Полка [WIP]");

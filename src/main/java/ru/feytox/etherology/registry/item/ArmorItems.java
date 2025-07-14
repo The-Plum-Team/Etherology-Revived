@@ -12,7 +12,7 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Util;
 import ru.feytox.etherology.item.EbonyArmorItem;
-import ru.feytox.etherology.item.RevelationViewItem;
+import ru.feytox.etherology.item.PranaVisionItem;
 import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.EnumMap;
@@ -42,7 +42,7 @@ public class ArmorItems {
     public static final Item[] ARMOR_ITEMS = {EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS};
 
     // trinkets
-    public static final Item REVELATION_VIEW = register("revelation_view", new RevelationViewItem());
+    public static final Item PRANA_VISION = register("prana_vision", new PranaVisionItem());
 
     public static void registerAll() {}
 

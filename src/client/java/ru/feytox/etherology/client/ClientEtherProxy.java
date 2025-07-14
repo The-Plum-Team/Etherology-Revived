@@ -12,10 +12,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import ru.feytox.etherology.client.block.ClientBlockTickers;
+import ru.feytox.etherology.client.gui.OcularOverlay;
 import ru.feytox.etherology.client.gui.teldecore.TeldecoreScreen;
+import ru.feytox.etherology.client.item.OcularItemClient;
 import ru.feytox.etherology.client.item.OculusItemClient;
 import ru.feytox.etherology.client.item.StaffItemClient;
-import ru.feytox.etherology.client.item.revelationView.RevelationViewItemClient;
+import ru.feytox.etherology.client.item.pranaVision.PranaVisionItemClient;
 import ru.feytox.etherology.network.util.AbstractC2SPacket;
 import ru.feytox.etherology.util.misc.EtherProxy;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
@@ -29,8 +31,18 @@ public class ClientEtherProxy extends EtherProxy {
     }
 
     @Override
-    public void tickRevelationView(World world, PlayerEntity player){
-        RevelationViewItemClient.tickRevelationView(world, player);
+    public void tickPranaVision(World world, PlayerEntity player){
+        PranaVisionItemClient.tickPranaVision(world, player);
+    }
+
+    @Override
+    public void tickOcular(World world) {
+        OcularItemClient.tickOcular(world);
+    }
+
+    @Override
+    public void onOcularStopUsing() {
+        OcularOverlay.disableShader(MinecraftClient.getInstance());
     }
 
     @Override

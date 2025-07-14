@@ -1,4 +1,4 @@
-package ru.feytox.etherology.client.item.revelationView;
+package ru.feytox.etherology.client.item.pranaVision;
 
 import lombok.experimental.UtilityClass;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
@@ -10,25 +10,25 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import ru.feytox.etherology.item.RevelationViewItem;
+import ru.feytox.etherology.item.PranaVisionItem;
 import ru.feytox.etherology.magic.aspects.RevelationAspectProvider;
 import ru.feytox.etherology.magic.ether.EtherDisplay;
 
 @UtilityClass
-public class RevelationViewRenderer {
+public class RevelationRenderer {
 
     private static final int DATA_TICK_RATE = 5;
 
     // data cache
     private static @Nullable BlockPos lastTargetPos = null;
-    private static @Nullable RevelationViewData data = null;
+    private static @Nullable RevelationData data = null;
     private static @Nullable Vec3d targetPos = null;
     private static @Nullable Vec3d offsetVec = null;
     private static float progress = 0.0f;
 
     public static void tickData(World world, PlayerEntity player) {
         if (world.getTime() % DATA_TICK_RATE != 0) return;
-        if (!RevelationViewItem.isEquipped(player)) return;
+        if (!PranaVisionItem.isEquipped(player)) return;
 
         MinecraftClient client = MinecraftClient.getInstance();
         HitResult hitResult = client.crosshairTarget;
@@ -52,18 +52,18 @@ public class RevelationViewRenderer {
     }
 
     @Nullable
-    private static RevelationViewData.Aspects getSortedAspects(World world, HitResult hitResult) {
+    private static RevelationData.Aspects getSortedAspects(World world, HitResult hitResult) {
         var data = RevelationAspectProvider.getData(world, hitResult);
         if (data == null) return null;
         var aspects = data.getFirst();
         Integer limit = data.getSecond();
         if (aspects == null || limit == null) return null;
 
-        return new RevelationViewData.Aspects(aspects.sorted(true, limit));
+        return new RevelationData.Aspects(aspects.sorted(true, limit));
     }
 
     public static void registerRendering() {
-        WorldRenderEvents.LAST.register(RevelationViewRenderer::renderBlockRevelationOverlay);
+        WorldRenderEvents.LAST.register(RevelationRenderer::renderBlockRevelationOverlay);
     }
 
     private static void renderBlockRevelationOverlay(WorldRenderContext context) {
@@ -71,7 +71,7 @@ public class RevelationViewRenderer {
         var client = MinecraftClient.getInstance();
         var world = context.world();
         var hitResult = client.crosshairTarget;
-        if (world == null || hitResult == null || !RevelationViewItem.isEquipped(client.player)) return;
+        if (world == null || hitResult == null || !PranaVisionItem.isEquipped(client.player)) return;
 
         if (isNewTarget(hitResult)) {
             progress = 0.0f;
@@ -96,7 +96,7 @@ public class RevelationViewRenderer {
     }
 
     @Nullable
-    private static RevelationViewData getChannelData(World world, HitResult hitResult) {
+    private static RevelationData getChannelData(World world, HitResult hitResult) {
         if (!(hitResult instanceof BlockHitResult blockHit))
             return null;
 
@@ -104,7 +104,7 @@ public class RevelationViewRenderer {
         if (!(blockEntity instanceof EtherDisplay display))
             return null;
 
-        return new RevelationViewData.Ether(display.getDisplayEther(), display.getDisplayMaxEther());
+        return new RevelationData.Ether(display.getDisplayEther(), display.getDisplayMaxEther());
     }
 
     @Nullable

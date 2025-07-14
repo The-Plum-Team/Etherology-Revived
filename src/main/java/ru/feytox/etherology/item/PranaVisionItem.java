@@ -11,9 +11,9 @@ import net.minecraft.world.World;
 import ru.feytox.etherology.registry.item.ArmorItems;
 import ru.feytox.etherology.util.misc.EtherProxy;
 
-public class RevelationViewItem extends TrinketItem {
+public class PranaVisionItem extends TrinketItem {
 
-    public RevelationViewItem() {
+    public PranaVisionItem() {
         super(new Settings().maxCount(1));
     }
 
@@ -23,12 +23,12 @@ public class RevelationViewItem extends TrinketItem {
         if (world == null || !world.isClient) return;
         if (!(entity instanceof PlayerEntity player)) return;
 
-        EtherProxy.getInstance().tickRevelationView(world, player);
+        EtherProxy.getInstance().tickPranaVision(world, player);
     }
 
     public static boolean isEquipped(LivingEntity entity) {
         val trinket = TrinketsApi.getTrinketComponent(entity).orElse(null);
         if (trinket == null) return false;
-        return trinket.isEquipped(ArmorItems.REVELATION_VIEW);
+        return trinket.isEquipped(ArmorItems.PRANA_VISION);
     }
 }

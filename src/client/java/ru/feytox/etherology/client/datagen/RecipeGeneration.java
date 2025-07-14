@@ -246,7 +246,7 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 .pattern(" G ")
                 .pattern("GAG")
                 .pattern(" G ").offerTo(exporter);
-        EmpowerRecipeBuilder.create(REVELATION_VIEW).rella(4).input('G', Items.GOLD_INGOT).input('O', OCULUS).input('L', Items.LEATHER)
+        EmpowerRecipeBuilder.create(PRANA_VISION).rella(4).input('G', Items.GOLD_INGOT).input('O', OCULUS).input('L', Items.LEATHER)
                 .pattern(" L ")
                 .pattern("OGO")
                 .pattern("   ").offerTo(exporter);

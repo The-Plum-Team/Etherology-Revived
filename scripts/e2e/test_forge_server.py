@@ -348,7 +348,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v15",
+            "etherology-e2e-forge-server-1.20.1-v16",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -374,12 +374,17 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v15_snapshot_and_preserves_prior_versions(self) -> None:
+    def test_active_profile_matches_v16_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
-        v15_snapshot = (
+        v16_snapshot = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v16.json"
+        ).read_bytes()
+        v15_snapshot_path = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v15.json"
-        ).read_bytes()
+        )
+        v15_snapshot = v15_snapshot_path.read_bytes()
         v14_snapshot = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v14.json"
@@ -394,10 +399,19 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v15_snapshot, active)
+        self.assertEqual(v16_snapshot, active)
+        self.assertNotEqual(v15_snapshot, active)
         self.assertNotEqual(v14_snapshot, active)
         self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v15",
+            json.loads(v15_snapshot)["profile"]["id"],
+        )
+        self.assertEqual(
+            "b0ddfd9ac8ac9073d055a492bd71250995b42c69a6c54a30eef0f379319cf58c",
+            forge_server.sha256_file(v15_snapshot_path),
+        )
         self.assertEqual(
             "etherology-e2e-forge-server-1.20.1-v14",
             json.loads(v14_snapshot)["profile"]["id"],

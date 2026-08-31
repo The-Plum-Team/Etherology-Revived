@@ -96,7 +96,7 @@ record ForestLanternProbeState(
     static final Map<String, String> EXPECTED_OUTLINE_SHAPES = expectedOutlineShapes();
     static final String EXPECTED_PROPERTIES = BLOCK_CLASS
             + "|hardness=0.2|blast=0.2|grass_sound=true|tool_required=false"
-            + "|luminance=8|opaque=false|full_cube=false|transparent=true"
+            + "|luminance=8|opaque=true|full_cube=false|transparent=true"
             + "|post_process=true|emissive=true|piston=DESTROY"
             + "|mature_random_ticks=false|bud_random_ticks=true";
     static final String EXPECTED_DEFAULT_STATE = "age=4,facing=north";

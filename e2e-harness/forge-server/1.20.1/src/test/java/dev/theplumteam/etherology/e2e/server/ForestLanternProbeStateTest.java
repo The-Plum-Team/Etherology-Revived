@@ -46,6 +46,9 @@ final class ForestLanternProbeStateTest {
                         "age=4,facing=east"
                 )
         );
+        assertTrue(ForestLanternProbeState.EXPECTED_PROPERTIES.contains(
+                "|luminance=8|opaque=true|full_cube=false|transparent=true|"
+        ));
     }
 
     @Test

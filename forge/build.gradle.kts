@@ -424,17 +424,24 @@ val forgeFoodItemRegistryServerEvidenceTest =
 val forgeServerContractV14 = rootProject.file("scripts/e2e/forge_server_contract_v14.py")
 val forgeServerProfileSnapshotV14 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v14.json")
-val forgeForestLanternServerEvidenceArchive =
-    forgeRegistryFoundationServerEvidenceRoot.resolve(
-        "forest-lantern-server-v15",
-    )
-val forgeForestLanternServerEvidenceVerifier =
+val forgeForestLanternServerEvidenceVerifierV15 =
     rootProject.file("scripts/e2e/forge_server_forest_lantern_evidence_v15.py")
-val forgeForestLanternServerEvidenceTest =
+val forgeForestLanternServerEvidenceTestV15 =
     rootProject.file("scripts/e2e/test_forge_server_forest_lantern_evidence_v15.py")
 val forgeServerContractV15 = rootProject.file("scripts/e2e/forge_server_contract_v15.py")
 val forgeServerProfileSnapshotV15 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v15.json")
+val forgeForestLanternServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "forest-lantern-server-v16",
+    )
+val forgeForestLanternServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_forest_lantern_evidence_v16.py")
+val forgeForestLanternServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_forest_lantern_evidence_v16.py")
+val forgeServerContractV16 = rootProject.file("scripts/e2e/forge_server_contract_v16.py")
+val forgeServerProfileSnapshotV16 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v16.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -3484,7 +3491,7 @@ fun missingForgeForestLanternServerEvidenceMilestone(): List<String> {
         .orEmpty()
     if (archiveDirectories != listOf(forgeForestLanternServerEvidenceArchive)) {
         missingConditions.add(
-            "the exact frozen Forge Forest Lantern server-v15 evidence archive is required",
+            "the exact frozen Forge Forest Lantern server-v16 evidence archive is required",
         )
         return missingConditions
     }
@@ -5349,7 +5356,12 @@ val forgeFoodItemRegistryServerSafetyTest =
         )
         inputs.files(
             forgeServerContractV14,
+            forgeServerContractV16,
+            forgeServerProfileSnapshotV12,
+            forgeServerProfileSnapshotV13,
             forgeServerProfileSnapshotV14,
+            forgeServerProfileSnapshotV15,
+            forgeServerProfileSnapshotV16,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
             forgeFoodItemRegistryServerEvidenceVerifier,
@@ -5358,6 +5370,7 @@ val forgeFoodItemRegistryServerSafetyTest =
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
             rootProject.file("gradle.properties"),
+            rootProject.file("gradlew"),
             project.buildFile,
         )
         inputs.dir(
@@ -5368,13 +5381,36 @@ val forgeFoodItemRegistryServerSafetyTest =
         ).withPropertyName("forgeFoodItemRegistryServerProbeTests")
     }
 
+val forgeForestLanternServerV15SafetyTest =
+    tasks.register<Exec>("forgeForestLanternServerV15SafetyTest") {
+        group = "verification"
+        description =
+            "Runs the consumed Forge Forest Lantern v15 verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_forest_lantern_evidence_v15.py",
+        )
+        inputs.files(
+            forgeServerContractV14,
+            forgeServerContractV15,
+            forgeServerProfileSnapshotV15,
+            forgeForestLanternServerEvidenceVerifierV15,
+            forgeForestLanternServerEvidenceTestV15,
+        )
+    }
+
 val forgeForestLanternServerSafetyTest =
     tasks.register<Exec>("forgeForestLanternServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge Forest Lantern runner and v15 verifier safety tests."
+            "Runs the active Forge Forest Lantern runner and v16 verifier safety tests."
         dependsOn(
             forgeFoodItemRegistryServerSafetyTest,
+            forgeForestLanternServerV15SafetyTest,
             serverProbeSafetyInterlockTest,
         )
         workingDir(rootProject.projectDir)
@@ -5384,11 +5420,16 @@ val forgeForestLanternServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_forest_lantern_evidence_v15.py",
+            "scripts/e2e/test_forge_server_forest_lantern_evidence_v16.py",
         )
         inputs.files(
-            forgeServerContractV15,
+            forgeServerContractV14,
+            forgeServerContractV16,
+            forgeServerProfileSnapshotV12,
+            forgeServerProfileSnapshotV13,
+            forgeServerProfileSnapshotV14,
             forgeServerProfileSnapshotV15,
+            forgeServerProfileSnapshotV16,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
             forgeForestLanternServerEvidenceVerifier,
@@ -5397,6 +5438,7 @@ val forgeForestLanternServerSafetyTest =
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
             rootProject.file("gradle.properties"),
+            rootProject.file("gradlew"),
             project.buildFile,
         )
         inputs.dir(
@@ -5585,11 +5627,11 @@ val validateForgeForestLanternServerEvidenceArchiveIntegrity =
     tasks.register("validateForgeForestLanternServerEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge Forest Lantern dedicated-server v15 archive."
+            "Validates the immutable Forge Forest Lantern dedicated-server v16 archive."
         dependsOn(forgeForestLanternServerSafetyTest)
         inputs.files(
-            forgeServerContractV15,
-            forgeServerProfileSnapshotV15,
+            forgeServerContractV16,
+            forgeServerProfileSnapshotV16,
             forgeForestLanternServerEvidenceVerifier,
         )
         if (forgeForestLanternServerEvidenceArchive.exists()) {
@@ -6375,6 +6417,10 @@ tasks.register("verifyForgePortGateClosed") {
         forgeFoodItemRegistryServerEvidenceVerifier,
         forgeServerContractV15,
         forgeServerProfileSnapshotV15,
+        forgeForestLanternServerEvidenceVerifierV15,
+        forgeForestLanternServerEvidenceTestV15,
+        forgeServerContractV16,
+        forgeServerProfileSnapshotV16,
         forgeForestLanternServerEvidenceVerifier,
         forgeForestLanternEvidenceVerifier,
         forgeForestLanternProfileSnapshotV12,
@@ -6640,8 +6686,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v15",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v15",
+                "id" to "etherology-e2e-forge-server-1.20.1-v16",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v16",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -6908,7 +6954,7 @@ if (minecraftVersion == "1.20.1") {
                         "ru.feytox.etherology.block.forestLantern.ForestLanternBlock",
                         "ru.feytox.etherology.block.forestLantern.ForestLanternBlock" +
                             "|hardness=0.2|blast=0.2|grass_sound=true" +
-                            "|tool_required=false|luminance=8|opaque=false" +
+                            "|tool_required=false|luminance=8|opaque=true" +
                             "|full_cube=false|transparent=true|post_process=true" +
                             "|emissive=true|piston=DESTROY|mature_random_ticks=false" +
                             "|bud_random_ticks=true",

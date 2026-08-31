@@ -3011,10 +3011,10 @@ def install_minecraft_in_owned_worker(
     configuration: Configuration, root: Path
 ) -> None:
     try:
-        process_context = multiprocessing.get_context("fork")
+        process_context = multiprocessing.get_context("spawn")
     except ValueError as exception:
         raise BaselineError(
-            "This macOS baseline requires a killable fork installation worker"
+            "This macOS baseline requires a killable spawned installation worker"
         ) from exception
     result_reader, result_writer = process_context.Pipe(duplex=False)
     process = process_context.Process(

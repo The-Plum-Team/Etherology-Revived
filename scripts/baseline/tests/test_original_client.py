@@ -116,6 +116,31 @@ def write_json(path: Path, value: object) -> None:
     path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
 
 
+def hanging_minecraft_install_worker_fixture(
+    _configuration: object,
+    _root: Path,
+    _result_connection: object,
+) -> None:
+    for termination_signal in client.CONTROLLER_TERMINATION_SIGNALS:
+        signal.signal(termination_signal, signal.SIG_DFL)
+    time.sleep(60)
+
+
+def failing_minecraft_install_worker_fixture(
+    _configuration: object,
+    _root: Path,
+    result_connection: object,
+) -> None:
+    result_connection.send(
+        {
+            "status": "failed",
+            "error_type": "FixtureError",
+            "error": "fixture worker failure",
+        }
+    )
+    result_connection.close()
+
+
 FIXTURE_ASSET_CONTENT = b"fixture-asset"
 FIXTURE_CLIENT_CONTENT = b"fixture"
 
@@ -1614,15 +1639,6 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
         self.assertEqual(signal.getsignal(signal.SIGTERM), previous_handler)
 
     def test_minecraft_installation_worker_has_a_hard_timeout(self) -> None:
-        def hang_in_worker(
-            _configuration: object,
-            _root: Path,
-            _result_connection: object,
-        ) -> None:
-            for termination_signal in client.CONTROLLER_TERMINATION_SIGNALS:
-                signal.signal(termination_signal, signal.SIG_DFL)
-            time.sleep(60)
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(temporary_root)
@@ -1634,34 +1650,26 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
                     client, "PROVISION_INSTALL_TIMEOUT_SECONDS", 0.05
                 ),
                 mock.patch.object(client, "PROCESS_STOP_TIMEOUT_SECONDS", 0.25),
-                mock.patch.object(client, "minecraft_install_worker", hang_in_worker),
+                mock.patch.object(
+                    client,
+                    "minecraft_install_worker",
+                    hanging_minecraft_install_worker_fixture,
+                ),
             ):
                 with self.assertRaisesRegex(client.BaselineError, "one-hour worker"):
                     client.install_minecraft_in_owned_worker(configuration, root)
             self.assertLess(time.monotonic() - started, 3)
 
     def test_minecraft_installation_worker_propagates_failure(self) -> None:
-        def fail_in_worker(
-            _configuration: object,
-            _root: Path,
-            result_connection: object,
-        ) -> None:
-            result_connection.send(
-                {
-                    "status": "failed",
-                    "error_type": "FixtureError",
-                    "error": "fixture worker failure",
-                }
-            )
-            result_connection.close()
-
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(temporary_root)
             root = temporary_root / "owned-runtime"
             root.mkdir()
             with mock.patch.object(
-                client, "minecraft_install_worker", fail_in_worker
+                client,
+                "minecraft_install_worker",
+                failing_minecraft_install_worker_fixture,
             ):
                 with self.assertRaisesRegex(
                     client.BaselineError, "FixtureError: fixture worker failure"

@@ -99,7 +99,7 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v2.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v3.json"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -192,7 +192,7 @@ EXPECTED_NATIVE_CLASSPATH_INDEXES = (
 _VERIFIED_LAUNCHER_DISTRIBUTION_SHA256: str | None = None
 _VERIFIED_HTTP_DISTRIBUTIONS_SHA256: str | None = None
 
-EXPECTED_ASSERTION_NAMES = (
+FOREST_LANTERN_EXPECTED_ASSERTION_NAMES = (
     "fabric_mod_loaded:etherology",
     "forest_lantern_resources_exact",
     "registry:block:etherology:forest_lantern",
@@ -226,6 +226,57 @@ EXPECTED_ASSERTION_NAMES = (
     "forest_lantern_jump_stepping_position_exact",
     "forest_lantern_jump_break_exact",
     "forest_lantern_jump_drop_exact",
+    "live_world_identity",
+    "forced_world_save",
+    "isolated_save_directory_present",
+)
+EXPECTED_ASSERTION_NAMES = (
+    "fabric_mod_loaded:etherology",
+    "attrahite_canonical_resources_exact",
+    "registry:block:etherology:attrahite",
+    "registry:item:etherology:attrahite",
+    "registry:block:etherology:attrahite_bricks",
+    "registry:item:etherology:attrahite_bricks",
+    "registry:block:etherology:attrahite_brick_slab",
+    "registry:item:etherology:attrahite_brick_slab",
+    "registry:block:etherology:attrahite_brick_stairs",
+    "registry:item:etherology:attrahite_brick_stairs",
+    "attrahite_block_classes_exact",
+    "attrahite_block_items_exact",
+    "attrahite_default_states_exact",
+    "attrahite_state_counts_exact",
+    "attrahite_state_network_ids_exact",
+    "packaged_root_jar:etherology",
+    "packaged_root_jar:etherology_original_baseline_harness",
+    "native_framebuffer_dimensions",
+    "completed_world_renders_before_capture",
+    "capture_render_ready",
+    "capture_camera_exact",
+    "native_screenshot_written",
+    "integrated_world_joined",
+    "server_arena_chunk_loaded",
+    "server_player_creative",
+    "server_attrahite_default_states_exact",
+    "client_attrahite_default_states_exact",
+    "server_attrahite_state_network_ids_exact",
+    "attrahite_block_tags_exact",
+    "attrahite_item_tags_exact",
+    "recipe:etherology:attrahite_brick",
+    "recipe:etherology:attrahite_bricks",
+    "recipe:etherology:attrahite_brick_slab",
+    "recipe:etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting",
+    "recipe:etherology:attrahite_brick_stairs",
+    "recipe:etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting",
+    "recipe:etherology:raw_azel",
+    "recipe:etherology:azel_ingot",
+    "recipe:etherology:azel_ingot_from_blasting",
+    "attrahite_loot_shared_seed_roll_exact",
+    "loot:etherology:attrahite:silk_touch",
+    "loot:etherology:attrahite:no_silk_no_fortune",
+    "loot:etherology:attrahite:fortune_iii",
+    "loot:etherology:attrahite_bricks",
+    "loot:etherology:attrahite_brick_slab",
+    "loot:etherology:attrahite_brick_stairs",
     "live_world_identity",
     "forced_world_save",
     "isolated_save_directory_present",
@@ -295,6 +346,80 @@ FOREST_LANTERN_RECIPE_RESULTS = {
     ),
     "recipe:etherology:leather": (
         "etherology:leather=minecraft:crafting->minecraft:leatherx1"
+    ),
+}
+ATTRAHITE_RESOURCES = (
+    "minecraft:texts/splashes.txt",
+    "etherology:blockstates/attrahite.json",
+    "etherology:blockstates/attrahite_bricks.json",
+    "etherology:blockstates/attrahite_brick_slab.json",
+    "etherology:blockstates/attrahite_brick_stairs.json",
+    "etherology:models/block/attrahite.json",
+    "etherology:models/block/attrahite_bricks.json",
+    "etherology:models/block/attrahite_brick_slab.json",
+    "etherology:models/block/attrahite_brick_slab_top.json",
+    "etherology:models/block/attrahite_brick_stairs.json",
+    "etherology:models/block/attrahite_brick_stairs_inner.json",
+    "etherology:models/block/attrahite_brick_stairs_outer.json",
+    "etherology:models/item/attrahite.json",
+    "etherology:models/item/attrahite_bricks.json",
+    "etherology:models/item/attrahite_brick_slab.json",
+    "etherology:models/item/attrahite_brick_stairs.json",
+    "etherology:textures/block/attrahite.png",
+    "etherology:textures/block/attrahite_bricks.png",
+)
+ATTRAHITE_BLOCK_IDS = (
+    "etherology:attrahite",
+    "etherology:attrahite_bricks",
+    "etherology:attrahite_brick_slab",
+    "etherology:attrahite_brick_stairs",
+)
+ATTRAHITE_DEFAULT_PROPERTIES = (
+    {},
+    {},
+    {"type": "bottom", "waterlogged": "false"},
+    {
+        "facing": "north",
+        "half": "bottom",
+        "shape": "straight",
+        "waterlogged": "false",
+    },
+)
+ATTRAHITE_STATE_COUNTS = (1, 1, 6, 80)
+ATTRAHITE_RECIPE_RESULTS = {
+    "recipe:etherology:attrahite_brick": (
+        "etherology:attrahite_brick=minecraft:smelting"
+        "->etherology:attrahite_brickx1"
+    ),
+    "recipe:etherology:attrahite_bricks": (
+        "etherology:attrahite_bricks=minecraft:crafting"
+        "->etherology:attrahite_bricksx1"
+    ),
+    "recipe:etherology:attrahite_brick_slab": (
+        "etherology:attrahite_brick_slab=minecraft:crafting"
+        "->etherology:attrahite_brick_slabx6"
+    ),
+    "recipe:etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting": (
+        "etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting="
+        "minecraft:stonecutting->etherology:attrahite_brick_slabx2"
+    ),
+    "recipe:etherology:attrahite_brick_stairs": (
+        "etherology:attrahite_brick_stairs=minecraft:crafting"
+        "->etherology:attrahite_brick_stairsx4"
+    ),
+    "recipe:etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting": (
+        "etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting="
+        "minecraft:stonecutting->etherology:attrahite_brick_stairsx1"
+    ),
+    "recipe:etherology:raw_azel": (
+        "etherology:raw_azel=minecraft:crafting->etherology:raw_azelx1"
+    ),
+    "recipe:etherology:azel_ingot": (
+        "etherology:azel_ingot=minecraft:smelting->etherology:azel_ingotx1"
+    ),
+    "recipe:etherology:azel_ingot_from_blasting": (
+        "etherology:azel_ingot_from_blasting=minecraft:blasting"
+        "->etherology:azel_ingotx1"
     ),
 }
 
@@ -500,6 +625,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
     profile_revisions = {
         "etherology-original-fabric-1.21.1-published-0.1.7-v1": "v1",
         "etherology-original-fabric-1.21.1-published-0.1.7-v2": "v2",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v3": "v3",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -788,7 +914,11 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
     harness_file_name = safe_leaf_name(
         harness.get("file_name"), "capture.harness.file_name"
     )
-    expected_harness_version = "1.0.0" if profile_revision == "v1" else "1.1.0"
+    expected_harness_version = {
+        "v1": "1.0.0",
+        "v2": "1.1.0",
+        "v3": "1.2.0",
+    }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
         f"{expected_harness_version}.jar"
@@ -826,8 +956,8 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         },
         "The capture scenario object",
     )
-    exact_scenario = (
-        {
+    exact_scenarios = {
+        "v1": {
             "id": "phase0-smoke",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -835,9 +965,8 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_directory_name": "etherology-original-phase0-smoke-world",
             "world_display_name": "Etherology Original 0.1.7 Phase 0",
             "world_seed": 19514442935972151,
-        }
-        if profile_revision == "v1"
-        else {
+        },
+        "v2": {
             "id": "forest-lantern",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -845,8 +974,20 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_directory_name": "etherology-original-forest-lantern-world",
             "world_display_name": "Etherology Original 0.1.7 Forest Lantern",
             "world_seed": 4995697353423860023,
-        }
-    )
+        },
+        "v3": {
+            "id": "attrahite-block-registry",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "attrahite-block-registry.png",
+            "world_directory_name": (
+                "etherology-original-attrahite-block-registry-world"
+            ),
+            "world_display_name": "Etherology Original 0.1.7 Attrahite Blocks",
+            "world_seed": 4995697332085600305,
+        },
+    }
+    exact_scenario = exact_scenarios[profile_revision]
     for field_name, expected_value in exact_scenario.items():
         if scenario.get(field_name) != expected_value:
             raise BaselineError(
@@ -1369,7 +1510,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "dev/theplumteam/etherology/baseline/fabric/mixin/"
                 "PlayerEntityJumpInvoker.class"
             )
-            expects_jump_invoker = harness["version"] == "1.1.0"
+            expects_jump_invoker = harness["version"] in {"1.1.0", "1.2.0"}
             class_entries = {
                 name
                 for name, entry in entries.items()
@@ -5482,6 +5623,335 @@ def verify_forest_lantern_assertion_semantics(
     raise BaselineError(f"Original-baseline assertion {name} has no exact semantics")
 
 
+def parse_java_string_map(value: str, description: str) -> dict[str, str]:
+    if value == "{}":
+        return {}
+    if not value.startswith("{") or not value.endswith("}"):
+        raise BaselineError(f"{description} is not a Java-style map")
+    entries = value[1:-1].split(", ")
+    parsed: dict[str, str] = {}
+    for entry in entries:
+        if entry.count("=") != 1:
+            raise BaselineError(f"{description} contains an invalid map entry")
+        key, entry_value = entry.split("=", 1)
+        if (
+            re.fullmatch(r"[a-z_]+", key) is None
+            or re.fullmatch(r"[a-z_]+", entry_value) is None
+            or key in parsed
+        ):
+            raise BaselineError(f"{description} contains an unsafe map entry")
+        parsed[key] = entry_value
+    return parsed
+
+
+def split_attrahite_descriptions(value: str, description: str) -> list[str]:
+    if not value.startswith("[") or not value.endswith("]"):
+        raise BaselineError(f"{description} is not a bounded list")
+    content = value[1:-1]
+    entries = re.split(r", (?=etherology:)", content) if content else []
+    if len(entries) != len(ATTRAHITE_BLOCK_IDS):
+        raise BaselineError(f"{description} has another block inventory")
+    return entries
+
+
+def validate_attrahite_registry_description(value: str) -> None:
+    entries = split_attrahite_descriptions(
+        value, "Attrahite registry description"
+    )
+    expected_classes = (
+        "net.minecraft.block.Block",
+        "net.minecraft.block.Block",
+        "net.minecraft.block.SlabBlock",
+        "net.minecraft.block.StairsBlock",
+    )
+    for index, entry in enumerate(entries):
+        match = re.fullmatch(
+            r"(etherology:[a-z_]+)=block_class:([^,]+),"
+            r"item_class:([^,]+),default:(\{[^}]*\}),states:([0-9]+),"
+            r"raw_ids:([0-9]+)",
+            entry,
+        )
+        if match is None:
+            raise BaselineError("Attrahite registry description is malformed")
+        (
+            block_id,
+            block_class,
+            item_class,
+            properties,
+            state_count,
+            raw_id_count,
+        ) = match.groups()
+        if (
+            block_id != ATTRAHITE_BLOCK_IDS[index]
+            or block_class != expected_classes[index]
+            or item_class != "net.minecraft.item.BlockItem"
+            or parse_java_string_map(
+                properties, "Attrahite registry default state"
+            )
+            != ATTRAHITE_DEFAULT_PROPERTIES[index]
+            or int(state_count) != ATTRAHITE_STATE_COUNTS[index]
+            or int(raw_id_count) != ATTRAHITE_STATE_COUNTS[index]
+        ):
+            raise BaselineError("Attrahite registry description changed")
+
+
+def parse_attrahite_placed_states(
+    value: str, description: str, *, with_network_ids: bool
+) -> list[tuple[str, dict[str, str], int | None]]:
+    entries = split_attrahite_descriptions(value, description)
+    parsed: list[tuple[str, dict[str, str], int | None]] = []
+    network_ids: set[int] = set()
+    for index, entry in enumerate(entries):
+        suffix = r"#([0-9]+)" if with_network_ids else ""
+        match = re.fullmatch(
+            rf"(etherology:[a-z_]+)=(\{{[^}}]*\}}){suffix}", entry
+        )
+        if match is None:
+            raise BaselineError(f"{description} contains a malformed state")
+        block_id = match.group(1)
+        properties = parse_java_string_map(
+            match.group(2), "Attrahite placed default state"
+        )
+        network_id = int(match.group(3)) if with_network_ids else None
+        if (
+            block_id != ATTRAHITE_BLOCK_IDS[index]
+            or properties != ATTRAHITE_DEFAULT_PROPERTIES[index]
+        ):
+            raise BaselineError(f"{description} changed")
+        if network_id is not None:
+            if network_id in network_ids:
+                raise BaselineError(f"{description} duplicates a network id")
+            network_ids.add(network_id)
+        parsed.append((block_id, properties, network_id))
+    return parsed
+
+
+def attrahite_tag_description() -> str:
+    values = (
+        (True, True, False, False, False, False),
+        (True, False, False, False, False, False),
+        (True, False, True, False, True, False),
+        (True, False, False, True, False, True),
+    )
+    descriptions = []
+    for block_id, value in zip(ATTRAHITE_BLOCK_IDS, values):
+        pickaxe, needs_stone, block_slab, block_stairs, item_slab, item_stairs = value
+        descriptions.append(
+            f"{block_id}=pickaxe:{str(pickaxe).lower()},"
+            f"needs_stone:{str(needs_stone).lower()},"
+            f"block_slab:{str(block_slab).lower()},"
+            f"block_stairs:{str(block_stairs).lower()},"
+            f"item_slab:{str(item_slab).lower()},"
+            f"item_stairs:{str(item_stairs).lower()}"
+        )
+    return "[" + ", ".join(descriptions) + "]"
+
+
+def verify_attrahite_assertion_semantics(
+    configuration: Configuration,
+    root: Path,
+    assertion: dict[str, object],
+) -> None:
+    name = str(assertion["name"])
+    expected = str(assertion["expected"])
+    actual = str(assertion["actual"])
+    if (
+        not expected
+        or not actual
+        or len(expected) > 8192
+        or len(actual) > 8192
+        or expected.casefold() == "expected"
+        or actual.casefold() == "actual"
+        or any(value in expected or value in actual for value in ("\x00", "\r", "\n"))
+    ):
+        raise BaselineError(
+            f"Original-baseline assertion {name} has placeholder or unsafe evidence"
+        )
+
+    exact_values = {
+        "fabric_mod_loaded:etherology": ("loaded", "loaded"),
+        "attrahite_canonical_resources_exact": (
+            "[" + ", ".join(ATTRAHITE_RESOURCES) + "]",
+            "[" + ", ".join(ATTRAHITE_RESOURCES) + "]",
+        ),
+        "native_framebuffer_dimensions": ("1920x1080", "1920x1080"),
+        "capture_render_ready": (
+            "terrain complete and all four Attrahite positions rendering-ready",
+            "ready",
+        ),
+        "integrated_world_joined": (
+            "running server and connected client",
+            "joined",
+        ),
+        "server_arena_chunk_loaded": ("full chunk", "true"),
+        "server_player_creative": ("creative", "true"),
+        "client_attrahite_default_states_exact": (
+            "all four exact default states mirrored",
+            "mirrored",
+        ),
+        "attrahite_block_tags_exact": (
+            "pickaxe=all four; needs_stone=raw; slabs=slab; stairs=stairs",
+            attrahite_tag_description(),
+        ),
+        "attrahite_item_tags_exact": (
+            "slabs=slab item; stairs=stairs item",
+            attrahite_tag_description(),
+        ),
+        "attrahite_loot_shared_seed_roll_exact": (
+            "0.05 <= first roll < 0.20",
+            "seed=4096,roll=0.09789288",
+        ),
+        "loot:etherology:attrahite:silk_touch": (
+            "[etherology:attrahitex1]",
+            "[etherology:attrahitex1]",
+        ),
+        "loot:etherology:attrahite:no_silk_no_fortune": ("[]", "[]"),
+        "loot:etherology:attrahite:fortune_iii": (
+            "[etherology:enriched_attrahitex1]",
+            "[etherology:enriched_attrahitex1]",
+        ),
+        "loot:etherology:attrahite_bricks": (
+            "[etherology:attrahite_bricksx1]",
+            "[etherology:attrahite_bricksx1]",
+        ),
+        "loot:etherology:attrahite_brick_slab": (
+            "[etherology:attrahite_brick_slabx1]",
+            "[etherology:attrahite_brick_slabx1]",
+        ),
+        "loot:etherology:attrahite_brick_stairs": (
+            "[etherology:attrahite_brick_stairsx1]",
+            "[etherology:attrahite_brick_stairsx1]",
+        ),
+        "forced_world_save": ("true", "true"),
+        "isolated_save_directory_present": (
+            str(scenario_spec(configuration)["world_directory_name"]),
+            str(scenario_spec(configuration)["world_directory_name"]),
+        ),
+    }
+    for block_id in ATTRAHITE_BLOCK_IDS:
+        exact_values[f"registry:block:{block_id}"] = ("present", "present")
+        exact_values[f"registry:item:{block_id}"] = ("present", "present")
+    if name in exact_values:
+        if (expected, actual) != exact_values[name]:
+            raise BaselineError(f"Scenario assertion {name} is not exact")
+        return
+
+    if name.startswith("packaged_root_jar:"):
+        if (expected, actual) != (
+            "one regular root JAR",
+            "one regular root JAR",
+        ):
+            raise BaselineError(f"Packaged-artifact assertion {name} is not exact")
+        return
+
+    if name in {
+        "attrahite_block_classes_exact",
+        "attrahite_block_items_exact",
+        "attrahite_default_states_exact",
+        "attrahite_state_counts_exact",
+        "attrahite_state_network_ids_exact",
+    }:
+        expected_by_name = {
+            "attrahite_block_classes_exact": "[Block, Block, SlabBlock, StairsBlock]",
+            "attrahite_block_items_exact": (
+                "four exact BlockItem instances bound to their registered blocks"
+            ),
+            "attrahite_default_states_exact": (
+                "raw/bricks={}, slab={type=bottom,waterlogged=false}, "
+                "stairs={facing=north,half=bottom,shape=straight,waterlogged=false}"
+            ),
+            "attrahite_state_counts_exact": "[1, 1, 6, 80]",
+            "attrahite_state_network_ids_exact": "88 unique non-negative raw ids",
+        }
+        if expected != expected_by_name[name]:
+            raise BaselineError(f"Attrahite registry assertion {name} changed")
+        validate_attrahite_registry_description(actual)
+        return
+
+    if name == "completed_world_renders_before_capture":
+        if expected != "120" or not actual.isdecimal() or int(actual) < 120:
+            raise BaselineError("Completed-render assertion is not meaningful")
+        return
+
+    if name == "capture_camera_exact":
+        expected_camera = (
+            "first_person=true;x=0.5;y=128.0;z=-15.5;yaw=0.0;pitch=23.0;"
+            "on_ground=true;tolerance=1.0E-4"
+        )
+        number = r"[-+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][-+]?[0-9]+)?"
+        actual_match = re.fullmatch(
+            rf"first_person=true;x=({number});y=({number});z=({number});"
+            rf"yaw=({number});pitch=({number});on_ground=true",
+            actual,
+        )
+        if expected != expected_camera or actual_match is None:
+            raise BaselineError("Capture camera-pose assertion is not exact")
+        actual_values = tuple(float(value) for value in actual_match.groups())
+        expected_values = (0.5, 128.0, -15.5, 0.0, 23.0)
+        if any(
+            abs(actual_value - expected_value) > 0.0001
+            for actual_value, expected_value in zip(actual_values, expected_values)
+        ):
+            raise BaselineError("Capture camera pose exceeds its pinned tolerance")
+        return
+
+    if name == "native_screenshot_written":
+        screenshot = screenshot_path(configuration, root)
+        if screenshot.is_symlink() or not screenshot.is_file():
+            raise BaselineError("Native-screenshot assertion has no regular PNG")
+        exact_actual = (
+            f"{screenshot.stat().st_size} bytes, sha256={sha256_file(screenshot)}"
+        )
+        if (
+            expected != "one non-empty unedited 1920x1080 framebuffer PNG"
+            or actual != exact_actual
+        ):
+            raise BaselineError("Native-screenshot assertion is not exact")
+        return
+
+    if name == "server_attrahite_default_states_exact":
+        expected_states = parse_attrahite_placed_states(
+            expected,
+            "Expected Attrahite placed states",
+            with_network_ids=False,
+        )
+        actual_states = parse_attrahite_placed_states(
+            actual,
+            "Actual Attrahite placed states",
+            with_network_ids=False,
+        )
+        if expected_states != actual_states:
+            raise BaselineError("Server Attrahite state fixture is not exact")
+        return
+
+    if name == "server_attrahite_state_network_ids_exact":
+        if expected != "four placed states with non-negative raw ids":
+            raise BaselineError("Placed-state network-id expectation changed")
+        parse_attrahite_placed_states(
+            actual,
+            "Attrahite placed-state network ids",
+            with_network_ids=True,
+        )
+        return
+
+    if name in ATTRAHITE_RECIPE_RESULTS:
+        exact_recipe = ATTRAHITE_RECIPE_RESULTS[name]
+        if (expected, actual) != (exact_recipe, exact_recipe):
+            raise BaselineError(f"Attrahite recipe assertion {name} is not exact")
+        return
+
+    if name == "live_world_identity":
+        identity = (
+            "Etherology Original 0.1.7 Attrahite Blocks;"
+            "4995697332085600305;minecraft:overworld"
+        )
+        if (expected, actual) != (identity, identity):
+            raise BaselineError("Live-world identity assertion is not exact")
+        return
+
+    raise BaselineError(f"Original-baseline assertion {name} has no exact semantics")
+
+
 def verify_assertion_semantics(
     configuration: Configuration,
     root: Path,
@@ -5493,6 +5963,9 @@ def verify_assertion_semantics(
         return
     if scenario_id == "forest-lantern":
         verify_forest_lantern_assertion_semantics(configuration, root, assertion)
+        return
+    if scenario_id == "attrahite-block-registry":
+        verify_attrahite_assertion_semantics(configuration, root, assertion)
         return
     raise BaselineError(f"No assertion contract exists for scenario {scenario_id}")
 
@@ -5528,7 +6001,10 @@ def verify_scenario_evidence(
     report = load_json_object(
         report_path(configuration, root), "Original-baseline scenario report"
     )
-    forest_lantern_scenario = scenario["id"] == "forest-lantern"
+    scenario_id = str(scenario["id"])
+    forest_lantern_scenario = scenario_id == "forest-lantern"
+    attrahite_scenario = scenario_id == "attrahite-block-registry"
+    schema_two_scenario = forest_lantern_scenario or attrahite_scenario
     expected_report_fields = {
         "schema",
         "reference_id",
@@ -5542,7 +6018,7 @@ def verify_scenario_evidence(
         "artifacts",
         "screenshots",
     }
-    if forest_lantern_scenario:
+    if schema_two_scenario:
         expected_report_fields.add("mechanics")
     require_exact_fields(
         report,
@@ -5550,7 +6026,7 @@ def verify_scenario_evidence(
         "The original-baseline scenario report",
     )
     if (
-        report.get("schema") != (2 if forest_lantern_scenario else 1)
+        report.get("schema") != (2 if schema_two_scenario else 1)
         or report.get("reference_id") != "published-0.1.7"
         or report.get("scenario") != scenario["id"]
         or report.get("lane") != "fabric-1.21.1-original"
@@ -5580,11 +6056,14 @@ def verify_scenario_evidence(
             )
         assertion_names.append(str(assertion["name"]))
         verify_assertion_semantics(configuration, root, assertion)
-    expected_assertion_names = (
-        EXPECTED_ASSERTION_NAMES
-        if forest_lantern_scenario
-        else PHASE_ZERO_EXPECTED_ASSERTION_NAMES
-    )
+    expected_assertion_names_by_scenario = {
+        "phase0-smoke": PHASE_ZERO_EXPECTED_ASSERTION_NAMES,
+        "forest-lantern": FOREST_LANTERN_EXPECTED_ASSERTION_NAMES,
+        "attrahite-block-registry": EXPECTED_ASSERTION_NAMES,
+    }
+    expected_assertion_names = expected_assertion_names_by_scenario.get(scenario_id)
+    if expected_assertion_names is None:
+        raise BaselineError(f"No assertion inventory exists for scenario {scenario_id}")
     if tuple(assertion_names) != expected_assertion_names:
         raise BaselineError(
             "Original-baseline scenario report assertion order/inventory changed: "
@@ -5599,6 +6078,19 @@ def verify_scenario_evidence(
         "limitations": [],
     }:
         raise BaselineError("Original-baseline Forest Lantern mechanics record changed")
+    if attrahite_scenario and report.get("mechanics") != {
+        "gallery_block_count": 4,
+        "recipe_count": 9,
+        "loot_table_count": 4,
+        "fortune_level": 3,
+        "base_drop_chance": 0.05,
+        "fortune_multiplier": 0.05,
+        "loot_probe": (
+            "same seeded first roll for plain and Fortune III diamond pickaxes"
+        ),
+        "limitations": [],
+    }:
+        raise BaselineError("Original-baseline Attrahite mechanics record changed")
 
     world = report.get("world")
     if world != {
@@ -5723,9 +6215,13 @@ def verify_scenario_evidence(
     screenshots_node = report.get("screenshots")
     expected_screenshot = {
         "step": (
-            "forest-lantern-age-facing-gallery"
-            if forest_lantern_scenario
-            else "integrated-world-fixture"
+            "attrahite-four-block-gallery"
+            if attrahite_scenario
+            else (
+                "forest-lantern-age-facing-gallery"
+                if forest_lantern_scenario
+                else "integrated-world-fixture"
+            )
         ),
         "file": f"screenshots/{scenario['screenshot_file']}",
         "width": framebuffer["width"],
@@ -5866,11 +6362,19 @@ def verify_game_lifecycle(
         )
     if "Stopping!" not in content:
         raise BaselineError("Original-baseline client did not record a normal shutdown")
-    success_marker = (
-        "Original forest-lantern evidence published with status passed:"
-        if scenario_spec(configuration)["id"] == "forest-lantern"
-        else "Original phase0-smoke evidence published with status passed:"
-    )
+    success_markers = {
+        "phase0-smoke": "Original phase0-smoke evidence published with status passed:",
+        "forest-lantern": (
+            "Original forest-lantern evidence published with status passed:"
+        ),
+        "attrahite-block-registry": (
+            "Original Attrahite evidence published with status passed:"
+        ),
+    }
+    scenario_id = str(scenario_spec(configuration)["id"])
+    success_marker = success_markers.get(scenario_id)
+    if success_marker is None:
+        raise BaselineError(f"No lifecycle log contract exists for scenario {scenario_id}")
     if content.count(success_marker) != 1:
         raise BaselineError(
             "Original-baseline game log lacks one exact evidence-publication marker"

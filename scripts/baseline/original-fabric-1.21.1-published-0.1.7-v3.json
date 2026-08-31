@@ -1,0 +1,259 @@
+{
+  "schema": 1,
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v3",
+    "runtime_directory": "etherology-original-fabric-1.21.1-published-0.1.7-v3",
+    "game_directory": "game",
+    "launcher_directory": "launcher",
+    "evidence_directory": "evidence",
+    "logs_directory": "logs",
+    "installer_directory": "installer",
+    "home_directory": "home",
+    "temporary_directory": "tmp",
+    "marker_file": ".etherology-original-profile.json",
+    "artifact_lock_file": "artifact-lock.json",
+    "runtime_lock_file": "runtime-lock.json",
+    "lifecycle_lock_file": "lifecycle.lock",
+    "process_state_file": "process.json",
+    "launch_attempt_file": "launch-attempt.json"
+  },
+  "provenance": {
+    "reference_id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit": null,
+    "source_commit_binding": "unavailable"
+  },
+  "reference_bundle": {
+    "path": "scripts/baseline/.state/Etherology E2E 1.21.1.mrpack",
+    "size": 7838299,
+    "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b",
+    "members": [
+      {
+        "archive_path": "overrides/mods/Etherology-1.21-0.1.7.jar",
+        "file_name": "Etherology-1.21-0.1.7.jar",
+        "mod_id": "etherology",
+        "size": 2743963,
+        "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+      },
+      {
+        "archive_path": "overrides/mods/FabricShieldLib-1.7.2-1.21.1.jar",
+        "file_name": "FabricShieldLib-1.7.2-1.21.1.jar",
+        "mod_id": "fabricshieldlib",
+        "size": 182013,
+        "sha256": "ed78792595ce0410da1e88124429aaa95f6549a23d69af674acd53ef69fdb5bb"
+      },
+      {
+        "archive_path": "overrides/mods/biolith-fabric-3.0.14.jar",
+        "file_name": "biolith-fabric-3.0.14.jar",
+        "mod_id": "biolith",
+        "size": 218094,
+        "sha256": "12987c4e1eedafa6a6e208f0b9579dd9d0f6262131ddbdd0557ed78c549deda1"
+      },
+      {
+        "archive_path": "overrides/mods/cardinal-components-api-6.1.3.jar",
+        "file_name": "cardinal-components-api-6.1.3.jar",
+        "mod_id": "cardinal-components",
+        "size": 229645,
+        "sha256": "302a8a4bc2e34cbffaf61af75ab5de47c06bfa159436665870ae61092b0f69a2"
+      },
+      {
+        "archive_path": "overrides/mods/fabric-api-0.110.0+1.21.1.jar",
+        "file_name": "fabric-api-0.110.0+1.21.1.jar",
+        "mod_id": "fabric-api",
+        "size": 2384492,
+        "sha256": "0890088b1a2b1d74f71aa4334aa7c221c1d530a786ba12811d1c7b859fd5b590"
+      },
+      {
+        "archive_path": "overrides/mods/geckolib-fabric-1.21.1-4.9.2.jar",
+        "file_name": "geckolib-fabric-1.21.1-4.9.2.jar",
+        "mod_id": "geckolib",
+        "size": 660416,
+        "sha256": "eac4cf55e1cb99b22cb91ea87c774d2a670c1711a80f4aff50e6ad56b6c58e7e"
+      },
+      {
+        "archive_path": "overrides/mods/owo-lib-0.13.0-alpha.15+1.21.jar",
+        "file_name": "owo-lib-0.13.0-alpha.15+1.21.jar",
+        "mod_id": "owo",
+        "size": 1963544,
+        "sha256": "bf14fd85d3d360e5c1f8e4e2294a8b2ee5c0baf7f3788160473b6d217ef3816f"
+      },
+      {
+        "archive_path": "overrides/mods/trinkets-3.10.0.jar",
+        "file_name": "trinkets-3.10.0.jar",
+        "mod_id": "trinkets",
+        "size": 272944,
+        "sha256": "349fd2aa8930b232050ee5304db55e4ef738b017971afe7c84acd589a95fda2f"
+      }
+    ]
+  },
+  "runtime": {
+    "minecraft_version": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java_major": 21,
+    "metadata": {
+      "url": "https://piston-meta.mojang.com/v1/packages/7d538f57bd7f3d0638755fa605a432494e736db3/1.21.1.json",
+      "size": 38408,
+      "sha1": "7d538f57bd7f3d0638755fa605a432494e736db3",
+      "sha256": "06ba60da1f8c6fe469bed1b348a064648bfdda57fc2fb56920e3f177f844fdfd",
+      "asset_index": {
+        "id": "17",
+        "url": "https://piston-meta.mojang.com/v1/packages/1f22f8f4b4575831ce8d1d74b5656eb1bc04732c/17.json",
+        "size": 449557,
+        "total_size": 824474118,
+        "sha1": "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c",
+        "sha256": "8779cb0b10b5edbe494b69a3c5aaf823e1489b22497f40a985f5c35688eba635"
+      },
+      "client": {
+        "url": "https://piston-data.mojang.com/v1/objects/30c73b1c5da787909b2f73340419fdf13b9def88/client.jar",
+        "size": 26836906,
+        "sha1": "30c73b1c5da787909b2f73340419fdf13b9def88",
+        "sha256": "499f6897d1837516680f3114072d8106e11c9adcd933fe5cf051b551089b0c99"
+      }
+    },
+    "fabric_profile": {
+      "url": "https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.17.3/profile/json",
+      "size": 2847,
+      "sha1": "45cebc4643ef2ef296e0162334596cdc183def04",
+      "sha256": "95904f86cb85064223216f6ff5cd14517bd1a30169f93d88a2857654979561bf",
+      "snapshot": {
+        "path": "scripts/baseline/fixtures/fabric-loader-0.17.3-1.21.1-profile.json",
+        "size": 2848,
+        "sha256": "089b5998a295e3ba5ab6119354f76d2cb57fca4050806cc10329523fb480b9cb"
+      },
+      "libraries": [
+        {
+          "coordinate": "org.ow2.asm:asm:9.9",
+          "path": "org/ow2/asm/asm/9.9/asm-9.9.jar",
+          "url": "https://maven.fabricmc.net/org/ow2/asm/asm/9.9/asm-9.9.jar",
+          "size": 126122,
+          "sha1": "c29635c8a7afa03d74b33c1884df8abb2b3f3dcc",
+          "sha256": "03d99a74ad1ee5c71334ef67437f4ef4fe3488caa7c96d8645abc73c8e2017d4"
+        },
+        {
+          "coordinate": "org.ow2.asm:asm-analysis:9.9",
+          "path": "org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.jar",
+          "url": "https://maven.fabricmc.net/org/ow2/asm/asm-analysis/9.9/asm-analysis-9.9.jar",
+          "size": 35149,
+          "sha1": "0bf4fa6e66638851c1cd22c2caea0c3ee5d5f437",
+          "sha256": "6a15d28e8bd29ba4fd5bca4baf9b50e8fba2d7b51fbf78cfa0c875a7214c678b"
+        },
+        {
+          "coordinate": "org.ow2.asm:asm-commons:9.9",
+          "path": "org/ow2/asm/asm-commons/9.9/asm-commons-9.9.jar",
+          "url": "https://maven.fabricmc.net/org/ow2/asm/asm-commons/9.9/asm-commons-9.9.jar",
+          "size": 74348,
+          "sha1": "db9165a3bf908ded6b08612d583a15d1d0c7bda0",
+          "sha256": "db2f6f26150bbe7c126606b4a1151836bcc22a1e05a423b3585698bece995ff8"
+        },
+        {
+          "coordinate": "org.ow2.asm:asm-tree:9.9",
+          "path": "org/ow2/asm/asm-tree/9.9/asm-tree-9.9.jar",
+          "url": "https://maven.fabricmc.net/org/ow2/asm/asm-tree/9.9/asm-tree-9.9.jar",
+          "size": 51947,
+          "sha1": "f8de6eead6d24dd0f45bd065bbe112b2cda6ea21",
+          "sha256": "42178f3775c9c63f9e5e1446747d29b4eca4d91bd6e75e5c43cfa372a47d38c6"
+        },
+        {
+          "coordinate": "org.ow2.asm:asm-util:9.9",
+          "path": "org/ow2/asm/asm-util/9.9/asm-util-9.9.jar",
+          "url": "https://maven.fabricmc.net/org/ow2/asm/asm-util/9.9/asm-util-9.9.jar",
+          "size": 94565,
+          "sha1": "42fdfc0508b43807c8078d6e82ecff2ce2112ae8",
+          "sha256": "3842e13cfe324ee9ab7cdc4914be9943541ead397c17e26daf0b8a755bede717"
+        },
+        {
+          "coordinate": "net.fabricmc:sponge-mixin:0.16.5+mixin.0.8.7",
+          "path": "net/fabricmc/sponge-mixin/0.16.5+mixin.0.8.7/sponge-mixin-0.16.5+mixin.0.8.7.jar",
+          "url": "https://maven.fabricmc.net/net/fabricmc/sponge-mixin/0.16.5+mixin.0.8.7/sponge-mixin-0.16.5+mixin.0.8.7.jar",
+          "size": 1504519,
+          "sha1": "80fc3a9f592673cea87f4cd702f87991c6c9fe4d",
+          "sha256": "bf65996f6edd93ba4061a175e2c814205c1ba694357a1e5a336c7ba5078ca376"
+        },
+        {
+          "coordinate": "net.fabricmc:intermediary:1.21.1",
+          "path": "net/fabricmc/intermediary/1.21.1/intermediary-1.21.1.jar",
+          "url": "https://maven.fabricmc.net/net/fabricmc/intermediary/1.21.1/intermediary-1.21.1.jar",
+          "size": 657725,
+          "sha1": "4b96f58657aa282efa6bb8ae9369c2d42cf96e8c",
+          "sha256": "6059157dfb4a536ec151697004f74f6004b7d346b289c2f89849e0e585aa36fa"
+        },
+        {
+          "coordinate": "net.fabricmc:fabric-loader:0.17.3",
+          "path": "net/fabricmc/fabric-loader/0.17.3/fabric-loader-0.17.3.jar",
+          "url": "https://maven.fabricmc.net/net/fabricmc/fabric-loader/0.17.3/fabric-loader-0.17.3.jar",
+          "size": 1917330,
+          "sha1": "deafaba5de4d9bbd76105783ff4e21ce0773874f",
+          "sha256": "b53c81e5d187643d4853b2a567c2eb19d87c8ef935e4f475f7d4b170a0301db7"
+        }
+      ]
+    }
+  },
+  "launch": {
+    "offline_username": "EtherologyE2E",
+    "resolution": {
+      "width": 960,
+      "height": 540
+    },
+    "maximum_memory_mb": 4096,
+    "timeout_seconds": 1800
+  },
+  "capture": {
+    "harness": {
+      "status": "implemented",
+      "path": "baseline-harness/fabric/1.21.1/build/libs/Etherology-Original-E2E-Harness-Fabric-1.21.1-1.2.0.jar",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.2.0.jar",
+      "mod_id": "etherology_original_baseline_harness",
+      "version": "1.2.0",
+      "size": 125738,
+      "sha256": "3d7380b7de06cbbf479535cb30371e5878a6f6602292c038882f9a852d31488a",
+      "client_entrypoint": "dev.theplumteam.etherology.baseline.fabric.OriginalPhaseZeroHarness",
+      "mixin_config": "etherology-original-baseline-harness.mixins.json"
+    },
+    "scenario": {
+      "id": "attrahite-block-registry",
+      "report_file": "report.json",
+      "completion_marker_file": "done.marker",
+      "screenshot_file": "attrahite-block-registry.png",
+      "world_directory_name": "etherology-original-attrahite-block-registry-world",
+      "world_display_name": "Etherology Original 0.1.7 Attrahite Blocks",
+      "world_seed": 4995697332085600305,
+      "framebuffer": {
+        "width": 1920,
+        "height": 1080
+      }
+    }
+  },
+  "profile_directories": [
+    "config",
+    "crash-reports",
+    "logs",
+    "mods",
+    "resourcepacks",
+    "saves",
+    "screenshots"
+  ],
+  "options": [
+    "version:3955",
+    "fullscreen:false",
+    "enableVsync:false",
+    "maxFps:60",
+    "guiScale:2",
+    "renderDistance:12",
+    "simulationDistance:10",
+    "autoJump:false",
+    "narrator:0",
+    "onboardAccessibility:false",
+    "pauseOnLostFocus:false",
+    "tutorialStep:none",
+    "lang:en_us",
+    "resourcePacks:[\"fabric\"]",
+    "incompatibleResourcePacks:[]"
+  ],
+  "forbidden_mod_ids": [
+    "quickskin",
+    "cpm",
+    "ears",
+    "architectury"
+  ]
+}

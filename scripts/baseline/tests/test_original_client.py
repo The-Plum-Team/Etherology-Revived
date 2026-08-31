@@ -30,10 +30,13 @@ sys.modules[SPECIFICATION.name] = client
 SPECIFICATION.loader.exec_module(client)
 
 TRACKED_MANIFEST_PATH = (
-    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v2.json"
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v3.json"
 )
 LEGACY_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
+)
+LEGACY_FOREST_LANTERN_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v2.json"
 )
 TRACKED_EVIDENCE_ARCHIVE = (
     BASELINE_DIRECTORY.parents[1]
@@ -49,6 +52,7 @@ TRACKED_FOREST_LANTERN_EVIDENCE_ARCHIVE = (
     / "original-1.21.1"
     / "forest-lantern-v2"
 )
+ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME = "attrahite-block-registry-v3"
 
 
 def fabric_jar_bytes(mod_id: str, nested_mod_id: str | None = None) -> bytes:
@@ -70,10 +74,10 @@ def fabric_jar_bytes(mod_id: str, nested_mod_id: str | None = None) -> bytes:
 
 def harness_jar_bytes(
     *,
-    harness_version: str = "1.1.0",
+    harness_version: str = "1.2.0",
     production_link: bool = False,
 ) -> bytes:
-    jump_invoker_enabled = harness_version == "1.1.0"
+    jump_invoker_enabled = harness_version in {"1.1.0", "1.2.0"}
     metadata = {
         "schemaVersion": 1,
         "id": "etherology_original_baseline_harness",
@@ -703,31 +707,66 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
     region.mkdir()
     (region / "r.0.0.mca").write_bytes(b"region-data")
 
-    state_descriptions = client.forest_lantern_state_descriptions()
-    exact_states = "[" + ", ".join(state_descriptions) + "]"
+    registry_descriptions = (
+        "etherology:attrahite=block_class:net.minecraft.block.Block,"
+        "item_class:net.minecraft.item.BlockItem,default:{},states:1,raw_ids:1",
+        "etherology:attrahite_bricks=block_class:net.minecraft.block.Block,"
+        "item_class:net.minecraft.item.BlockItem,default:{},states:1,raw_ids:1",
+        "etherology:attrahite_brick_slab=block_class:net.minecraft.block.SlabBlock,"
+        "item_class:net.minecraft.item.BlockItem,"
+        "default:{type=bottom, waterlogged=false},states:6,raw_ids:6",
+        "etherology:attrahite_brick_stairs="
+        "block_class:net.minecraft.block.StairsBlock,"
+        "item_class:net.minecraft.item.BlockItem,"
+        "default:{facing=north, half=bottom, shape=straight, waterlogged=false},"
+        "states:80,raw_ids:80",
+    )
+    registry_description = "[" + ", ".join(registry_descriptions) + "]"
+    placed_states = (
+        "etherology:attrahite={}",
+        "etherology:attrahite_bricks={}",
+        "etherology:attrahite_brick_slab={type=bottom, waterlogged=false}",
+        "etherology:attrahite_brick_stairs="
+        "{facing=north, half=bottom, shape=straight, waterlogged=false}",
+    )
+    exact_states = "[" + ", ".join(placed_states) + "]"
     placed_state_network_ids = "[" + ", ".join(
         f"{description}#{100 + index}"
-        for index, description in enumerate(state_descriptions)
+        for index, description in enumerate(placed_states)
     ) + "]"
-    exact_shears_speeds = "[" + ", ".join(
-        f"{description}=15.0" for description in state_descriptions
-    ) + "]"
-    exact_resources = "[" + ", ".join(client.FOREST_LANTERN_RESOURCES) + "]"
+    exact_resources = "[" + ", ".join(client.ATTRAHITE_RESOURCES) + "]"
+    tag_description = client.attrahite_tag_description()
     assertion_values = {
         "fabric_mod_loaded:etherology": ("loaded", "loaded"),
-        "forest_lantern_resources_exact": (exact_resources, exact_resources),
-        "registry:block:etherology:forest_lantern": ("present", "present"),
-        "registry:item:etherology:forest_lantern": ("present", "present"),
-        "registry:item:etherology:forest_lantern_crumb": ("present", "present"),
-        "forest_lantern_properties_exact": ("[age, facing]", "[age, facing]"),
-        "forest_lantern_default_state_exact": (
-            "age=4,facing=north",
-            "age=4,facing=north",
+        "attrahite_canonical_resources_exact": (exact_resources, exact_resources),
+        "registry:block:etherology:attrahite": ("present", "present"),
+        "registry:item:etherology:attrahite": ("present", "present"),
+        "registry:block:etherology:attrahite_bricks": ("present", "present"),
+        "registry:item:etherology:attrahite_bricks": ("present", "present"),
+        "registry:block:etherology:attrahite_brick_slab": ("present", "present"),
+        "registry:item:etherology:attrahite_brick_slab": ("present", "present"),
+        "registry:block:etherology:attrahite_brick_stairs": ("present", "present"),
+        "registry:item:etherology:attrahite_brick_stairs": ("present", "present"),
+        "attrahite_block_classes_exact": (
+            "[Block, Block, SlabBlock, StairsBlock]",
+            registry_description,
         ),
-        "forest_lantern_state_count_exact": ("20", "20"),
-        "forest_lantern_state_network_ids_exact": (
-            "20 unique non-negative raw ids",
-            "20 unique non-negative raw ids",
+        "attrahite_block_items_exact": (
+            "four exact BlockItem instances bound to their registered blocks",
+            registry_description,
+        ),
+        "attrahite_default_states_exact": (
+            "raw/bricks={}, slab={type=bottom,waterlogged=false}, "
+            "stairs={facing=north,half=bottom,shape=straight,waterlogged=false}",
+            registry_description,
+        ),
+        "attrahite_state_counts_exact": (
+            "[1, 1, 6, 80]",
+            registry_description,
+        ),
+        "attrahite_state_network_ids_exact": (
+            "88 unique non-negative raw ids",
+            registry_description,
         ),
         "packaged_root_jar:etherology": (
             "one regular root JAR",
@@ -740,17 +779,17 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
         "native_framebuffer_dimensions": ("1920x1080", "1920x1080"),
         "completed_world_renders_before_capture": ("120", "120"),
         "capture_render_ready": (
-            "terrain complete and all 20 Forest Lantern positions rendering-ready",
+            "terrain complete and all four Attrahite positions rendering-ready",
             "ready",
         ),
         "capture_camera_exact": (
-            "first_person=true;x=0.5;y=128.0;z=-17.5;yaw=0.0;pitch=23.0;"
+            "first_person=true;x=0.5;y=128.0;z=-15.5;yaw=0.0;pitch=23.0;"
             "on_ground=true;tolerance=1.0E-4",
-            "first_person=true;x=0.5;y=128.0;z=-17.5;yaw=0.0;pitch=23.0;"
+            "first_person=true;x=0.5;y=128.0;z=-15.5;yaw=0.0;pitch=23.0;"
             "on_ground=true",
         ),
         "native_screenshot_written": (
-            "one non-empty unedited framebuffer PNG",
+            "one non-empty unedited 1920x1080 framebuffer PNG",
             f"{len(screenshot_content)} bytes, sha256="
             f"{hashlib.sha256(screenshot_content).hexdigest()}",
         ),
@@ -760,48 +799,53 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
         ),
         "server_arena_chunk_loaded": ("full chunk", "true"),
         "server_player_creative": ("creative", "true"),
-        "server_forest_lantern_states_exact": (exact_states, exact_states),
-        "client_forest_lantern_states_exact": (
-            "all 20 exact age/facing states mirrored",
+        "server_attrahite_default_states_exact": (exact_states, exact_states),
+        "client_attrahite_default_states_exact": (
+            "all four exact default states mirrored",
             "mirrored",
         ),
-        "server_forest_lantern_state_network_ids_exact": (
-            "20 placed states with non-negative raw ids",
+        "server_attrahite_state_network_ids_exact": (
+            "four placed states with non-negative raw ids",
             placed_state_network_ids,
         ),
-        "forest_lantern_shears_speed_exact": (
-            "15.0 for all 20 states",
-            exact_shears_speeds,
+        "attrahite_block_tags_exact": (
+            "pickaxe=all four; needs_stone=raw; slabs=slab; stairs=stairs",
+            tag_description,
         ),
-        "forest_lantern_immature_loot_empty": (
-            "ages 0..3=[]",
-            "[0=[], 1=[], 2=[], 3=[]]",
+        "attrahite_item_tags_exact": (
+            "slabs=slab item; stairs=stairs item",
+            tag_description,
         ),
-        "forest_lantern_mature_loot_exact": (
-            "age 4=[etherology:forest_lanternx1]",
-            "4=[etherology:forest_lanternx1]",
-        ),
-        "forest_lantern_jump_seed_exact": (
-            "first vanilla world-random roll <= 0.4",
+        "attrahite_loot_shared_seed_roll_exact": (
+            "0.05 <= first roll < 0.20",
             "seed=4096,roll=0.09789288",
         ),
-        "forest_lantern_jump_stepping_position_exact": (
-            "player stepping position contains mature Forest Lantern",
-            "14, 120, -12",
+        "loot:etherology:attrahite:silk_touch": (
+            "[etherology:attrahitex1]",
+            "[etherology:attrahitex1]",
         ),
-        "forest_lantern_jump_break_exact": (
-            "mature Forest Lantern removed by one seeded vanilla jump",
-            "removed",
+        "loot:etherology:attrahite:no_silk_no_fortune": ("[]", "[]"),
+        "loot:etherology:attrahite:fortune_iii": (
+            "[etherology:enriched_attrahitex1]",
+            "[etherology:enriched_attrahitex1]",
         ),
-        "forest_lantern_jump_drop_exact": (
-            "[etherology:forest_lanternx1]",
-            "[etherology:forest_lanternx1]",
+        "loot:etherology:attrahite_bricks": (
+            "[etherology:attrahite_bricksx1]",
+            "[etherology:attrahite_bricksx1]",
+        ),
+        "loot:etherology:attrahite_brick_slab": (
+            "[etherology:attrahite_brick_slabx1]",
+            "[etherology:attrahite_brick_slabx1]",
+        ),
+        "loot:etherology:attrahite_brick_stairs": (
+            "[etherology:attrahite_brick_stairsx1]",
+            "[etherology:attrahite_brick_stairsx1]",
         ),
         "live_world_identity": (
-            "Etherology Original 0.1.7 Forest Lantern;"
-            "4995697353423860023;minecraft:overworld",
-            "Etherology Original 0.1.7 Forest Lantern;"
-            "4995697353423860023;minecraft:overworld",
+            "Etherology Original 0.1.7 Attrahite Blocks;"
+            "4995697332085600305;minecraft:overworld",
+            "Etherology Original 0.1.7 Attrahite Blocks;"
+            "4995697332085600305;minecraft:overworld",
         ),
         "forced_world_save": ("true", "true"),
         "isolated_save_directory_present": (
@@ -809,7 +853,7 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
             str(scenario["world_directory_name"]),
         ),
     }
-    for name, exact_recipe in client.FOREST_LANTERN_RECIPE_RESULTS.items():
+    for name, exact_recipe in client.ATTRAHITE_RECIPE_RESULTS.items():
         assertion_values[name] = (exact_recipe, exact_recipe)
     etherology = next(
         member
@@ -858,15 +902,20 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
             },
         ],
         "mechanics": {
-            "fixture_state_count": 20,
-            "ages": "0,1,2,3,4",
-            "facings": "north,east,south,west",
-            "jump_probe": "seeded vanilla PlayerEntity.jump invoker",
+            "gallery_block_count": 4,
+            "recipe_count": 9,
+            "loot_table_count": 4,
+            "fortune_level": 3,
+            "base_drop_chance": 0.05,
+            "fortune_multiplier": 0.05,
+            "loot_probe": (
+                "same seeded first roll for plain and Fortune III diamond pickaxes"
+            ),
             "limitations": [],
         },
         "screenshots": [
             {
-                "step": "forest-lantern-age-facing-gallery",
+                "step": "attrahite-four-block-gallery",
                 "file": f"screenshots/{scenario['screenshot_file']}",
                 "width": framebuffer["width"],
                 "height": framebuffer["height"],
@@ -887,7 +936,7 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
     )
     latest_log = client.game_directory(configuration, root) / "logs" / "latest.log"
     latest_log.write_text(
-        "Original forest-lantern evidence published with status passed: fixture\n"
+        "Original Attrahite evidence published with status passed: fixture\n"
         "Stopping!\n",
         encoding="utf-8",
     )
@@ -935,6 +984,22 @@ class TrackedManifestTests(unittest.TestCase):
             "etherology-original-fabric-1.21.1-published-0.1.7-v1",
         )
         self.assertEqual(manifest["capture"]["scenario"]["id"], "phase0-smoke")
+
+    def test_consumed_v2_manifest_remains_byte_exact(self) -> None:
+        self.assertEqual(
+            hashlib.sha256(
+                LEGACY_FOREST_LANTERN_MANIFEST_PATH.read_bytes()
+            ).hexdigest(),
+            "0fed21fae4a00522407069e8ee97bda3fa5714245ea4c750d491b507de8e1361",
+        )
+        manifest = json.loads(
+            LEGACY_FOREST_LANTERN_MANIFEST_PATH.read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            manifest["profile"]["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v2",
+        )
+        self.assertEqual(manifest["capture"]["scenario"]["id"], "forest-lantern")
 
     def test_tracked_original_evidence_archive_is_exact(self) -> None:
         archive_manifest = client.load_json_object(
@@ -1009,7 +1074,7 @@ class TrackedManifestTests(unittest.TestCase):
             "etherology-original-fabric-1.21.1-published-0.1.7-v2",
         )
         client.verify_exact_file(
-            TRACKED_MANIFEST_PATH,
+            LEGACY_FOREST_LANTERN_MANIFEST_PATH,
             archive_manifest["profile"]["manifest_sha256"],
             archive_manifest["profile"]["manifest_size"],
             "Tracked original Forest Lantern profile manifest",
@@ -1088,7 +1153,16 @@ class TrackedManifestTests(unittest.TestCase):
         client.verify_harness_artifact(configuration)
         self.assertEqual(
             client.profile_spec(configuration)["id"],
-            "etherology-original-fabric-1.21.1-published-0.1.7-v2",
+            "etherology-original-fabric-1.21.1-published-0.1.7-v3",
+        )
+        self.assertEqual(
+            client.scenario_spec(configuration)["id"],
+            "attrahite-block-registry",
+        )
+        self.assertEqual(len(client.EXPECTED_ASSERTION_NAMES), 49)
+        self.assertEqual(
+            ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME,
+            "attrahite-block-registry-v3",
         )
         self.assertEqual(len(inventory), 8)
         self.assertEqual(
@@ -1467,7 +1541,9 @@ class CaptureContractTests(unittest.TestCase):
                 with mock.patch.object(client, "verify_staged_reference"):
                     with mock.patch.object(client, "resolve_java_21") as resolve_java:
                         with self.assertRaisesRegex(client.BaselineError, "overwrite"):
-                            client.check_environment(configuration, "forest-lantern")
+                            client.check_environment(
+                                configuration, "attrahite-block-registry"
+                            )
                         resolve_java.assert_not_called()
 
     def test_preexisting_world_fails_closed(self) -> None:
@@ -2239,10 +2315,17 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
     def test_scenario_requires_exact_allowlist_entry(self) -> None:
         configuration = client.load_configuration()
         self.assertEqual(
-            client.resolve_scenario_id(configuration, "forest-lantern"),
-            "forest-lantern",
+            client.resolve_scenario_id(configuration, "attrahite-block-registry"),
+            "attrahite-block-registry",
         )
-        for scenario in (None, "", "forest-lantern ", "../forest-lantern", "other"):
+        for scenario in (
+            None,
+            "",
+            "attrahite-block-registry ",
+            "../attrahite-block-registry",
+            "forest-lantern",
+            "other",
+        ):
             with self.subTest(scenario=scenario):
                 with self.assertRaises(client.BaselineError):
                     client.resolve_scenario_id(configuration, scenario)
@@ -2252,7 +2335,7 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
         client.require_capture_harness(configuration)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "f5b52ccbc3b0048abac75ff5e942d7348d3000a1c9f68e5051478bb712951d7f",
+            "3d7380b7de06cbbf479535cb30371e5878a6f6602292c038882f9a852d31488a",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:
@@ -2396,7 +2479,7 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                     configuration,
                     java,
                     root,
-                    "forest-lantern",
+                    "attrahite-block-registry",
                 )
             self.assertEqual(
                 command,
@@ -2408,15 +2491,15 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(temporary_root)
             command, java, root = self.command_fixture(
-                configuration, temporary_root, "forest-lantern"
+                configuration, temporary_root, "attrahite-block-registry"
             )
             client.verify_launch_command(
-                configuration, command, java, root, "forest-lantern"
+                configuration, command, java, root, "attrahite-block-registry"
             )
             command.append(f"-D{client.SCENARIO_PROPERTY_NAME}=other")
             with self.assertRaises(client.BaselineError):
                 client.verify_launch_command(
-                    configuration, command, java, root, "forest-lantern"
+                    configuration, command, java, root, "attrahite-block-registry"
                 )
 
     def test_launch_command_rejects_external_classpath(self) -> None:
@@ -2436,12 +2519,12 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(temporary_root)
             command, java, root = self.command_fixture(
-                configuration, temporary_root, "forest-lantern"
+                configuration, temporary_root, "attrahite-block-registry"
             )
             command.extend(("--gameDir", "/tmp/foreign"))
             with self.assertRaises(client.BaselineError):
                 client.verify_launch_command(
-                    configuration, command, java, root, "forest-lantern"
+                    configuration, command, java, root, "attrahite-block-registry"
                 )
 
     def test_process_state_rejects_external_log(self) -> None:
@@ -2456,7 +2539,7 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                 "process_group_id": 123,
                 "version_id": client.version_id(configuration),
                 "game_directory": str(client.game_directory(configuration, root)),
-                "scenario": "forest-lantern",
+                "scenario": "attrahite-block-registry",
                 "log": "/tmp/foreign.log",
                 "launch_attempt_sha256": "0" * 64,
             }
@@ -2479,7 +2562,7 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                 "process_group_id": 999999,
                 "version_id": client.version_id(configuration),
                 "game_directory": str(client.game_directory(configuration, root)),
-                "scenario": "forest-lantern",
+                "scenario": "attrahite-block-registry",
                 "log": str(log_path),
                 "launch_attempt_sha256": "0" * 64,
             }

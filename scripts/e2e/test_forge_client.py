@@ -351,25 +351,18 @@ class MetadataIntegrityTests(unittest.TestCase):
             "architectury": ("[9.2.14,)", "BOTH"),
             "geckolib": ("[4.7.4,5)", "BOTH"),
         }
+        production_entries = [
+            ("ru/feytox/etherology/forge/EtherologyForge.class", b"bytecode"),
+            *(
+                (entry, b"{}")
+                for entry in sorted(forge_client.EXPECTED_PRODUCTION_DATA_ENTRIES)
+            ),
+        ]
         content = forge_jar_bytes(
             "etherology",
             version,
             ranges,
-            [
-                ("ru/feytox/etherology/forge/EtherologyForge.class", b"bytecode"),
-                (
-                    "data/etherology/loot_tables/blocks/ethereal_storage.json",
-                    b"{}",
-                ),
-                (
-                    "data/minecraft/tags/game_events/vibrations.json",
-                    b"{}",
-                ),
-                (
-                    "data/minecraft/tags/game_events/warden_can_listen.json",
-                    b"{}",
-                ),
-            ],
+            production_entries,
             {"Etherology-E2E-Only": "true"},
         )
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -386,21 +379,34 @@ class MetadataIntegrityTests(unittest.TestCase):
                     "etherology",
                     version,
                     ranges,
+                    production_entries[:-1],
+                    {"Etherology-E2E-Only": "true"},
+                )
+            )
+            with self.assertRaisesRegex(forge_client.E2EError, "server-data inventory"):
+                forge_client.verify_production_artifact_metadata(configuration, path)
+
+            path.write_bytes(
+                forge_jar_bytes(
+                    "etherology",
+                    version,
+                    ranges,
                     [
-                        ("ru/feytox/etherology/forge/EtherologyForge.class", b"bytecode"),
-                        (
-                            "data/etherology/loot_tables/blocks/ethereal_storage.json",
-                            b"{}",
-                        ),
-                        (
-                            "data/minecraft/tags/game_events/vibrations.json",
-                            b"{}",
-                        ),
-                        (
-                            "data/minecraft/tags/game_events/warden_can_listen.json",
-                            b"{}",
-                        ),
+                        *production_entries,
+                        ("data/etherology/unexpected.json", b"{}"),
                     ],
+                    {"Etherology-E2E-Only": "true"},
+                )
+            )
+            with self.assertRaisesRegex(forge_client.E2EError, "server-data inventory"):
+                forge_client.verify_production_artifact_metadata(configuration, path)
+
+            path.write_bytes(
+                forge_jar_bytes(
+                    "etherology",
+                    version,
+                    ranges,
+                    production_entries,
                 )
             )
             with self.assertRaisesRegex(forge_client.E2EError, "E2E-only"):

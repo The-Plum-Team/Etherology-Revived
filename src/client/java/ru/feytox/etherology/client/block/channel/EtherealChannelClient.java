@@ -11,7 +11,7 @@ import net.minecraft.util.math.random.Random;
 import ru.feytox.etherology.block.etherealChannel.EtherealChannelBlockEntity;
 import ru.feytox.etherology.magic.ether.EtherStorage;
 import ru.feytox.etherology.particle.effects.MovingParticleEffect;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 import static ru.feytox.etherology.block.etherealChannel.EtherealChannel.ACTIVATED;
 
@@ -40,7 +40,9 @@ public class EtherealChannelClient {
 
         Vec3d channelVec = Vec3d.of(direction.getVector());
         Vec3d startPos = pos.toCenterPos().add(channelVec.multiply(0.5d));
-        val particleType = random.nextFloat() < 0.25 ? EtherParticleTypes.ETHER_STAR : EtherParticleTypes.ETHER_DOT;
+        val particleType = random.nextFloat() < 0.25
+                ? SharedParticleTypes.ETHER_STAR.get()
+                : SharedParticleTypes.ETHER_DOT.get();
         val effect = new MovingParticleEffect(particleType, channelVec);
         effect.spawnParticles(world, random.nextBetween(1, 2), 0, startPos);
     }

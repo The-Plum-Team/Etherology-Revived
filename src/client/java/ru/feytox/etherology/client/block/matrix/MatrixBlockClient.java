@@ -17,7 +17,7 @@ import ru.feytox.etherology.client.util.ClientTickableBlock;
 import ru.feytox.etherology.particle.effects.ElectricityParticleEffect;
 import ru.feytox.etherology.particle.effects.MovingParticleEffect;
 import ru.feytox.etherology.particle.subtype.ElectricitySubtype;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 import java.util.Optional;
 
@@ -95,7 +95,10 @@ public class MatrixBlockClient extends ClientTickableBlock<MatrixBlockEntity> {
         randomVec = randomVec.multiply(random.nextInt(2)*2 - 1, random.nextInt(2)*2 - 1, random.nextInt(2)*2 - 1);
         Vec3d startPos = centerPos.add(randomVec);
 
-        val effect = new MovingParticleEffect(EtherParticleTypes.ARMILLARY_SPHERE, randomVec);
+        val effect = new MovingParticleEffect(
+                SharedParticleTypes.ARMILLARY_SPHERE.get(),
+                randomVec
+        );
         effect.spawnParticles(world, 2, 0, startPos);
     }
 
@@ -114,7 +117,7 @@ public class MatrixBlockClient extends ClientTickableBlock<MatrixBlockEntity> {
      */
     private void spawnConsumingParticle(World world, LivingEntity entity, Vec3d centerPos) {
         if (world.getTime() % 2 == 0) return;
-        val effect = new MovingParticleEffect(EtherParticleTypes.VITAL, centerPos);
+        val effect = new MovingParticleEffect(SharedParticleTypes.VITAL.get(), centerPos);
         effect.spawnParticles(world, 1, 0.1, entity.getBoundingBox().getCenter());
     }
 }

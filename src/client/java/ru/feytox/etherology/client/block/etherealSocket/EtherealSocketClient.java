@@ -10,7 +10,7 @@ import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.block.etherealSocket.EtherealSocketBlockEntity;
 import ru.feytox.etherology.client.util.ClientTickableBlock;
 import ru.feytox.etherology.particle.effects.MovingParticleEffect;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.deprecated.EVec3d;
 
 import static net.minecraft.block.FacingBlock.FACING;
@@ -91,7 +91,7 @@ public class EtherealSocketClient extends ClientTickableBlock<EtherealSocketBloc
                     .subtract(centerPos)
                     .multiply(random.nextDouble() * 1);
             path = particlePos.add(path);
-            val effect = new MovingParticleEffect(EtherParticleTypes.GLINT, path);
+            val effect = new MovingParticleEffect(SharedParticleTypes.GLINT.get(), path);
             effect.spawnParticles(world, 2, 0.01, particlePos);
         }
     }

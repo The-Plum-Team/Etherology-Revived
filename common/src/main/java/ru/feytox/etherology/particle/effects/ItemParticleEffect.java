@@ -4,7 +4,6 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import lombok.Getter;
 import net.minecraft.item.Item;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
@@ -13,7 +12,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 
-@Getter
 public class ItemParticleEffect extends FeyParticleEffect<ItemParticleEffect> {
 
     private final Item item;
@@ -27,6 +25,14 @@ public class ItemParticleEffect extends FeyParticleEffect<ItemParticleEffect> {
 
     public ItemParticleEffect(ParticleType<ItemParticleEffect> type) {
         this(type, null, null);
+    }
+
+    public Item getItem() {
+        return item;
+    }
+
+    public Vec3d getMoveVec() {
+        return moveVec;
     }
 
     @Override

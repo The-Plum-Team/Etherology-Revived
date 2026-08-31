@@ -50,7 +50,7 @@ import ru.feytox.etherology.recipes.matrix.MatrixRecipe;
 import ru.feytox.etherology.recipes.matrix.MatrixRecipeSerializer;
 import ru.feytox.etherology.registry.item.ToolItems;
 import ru.feytox.etherology.registry.misc.RecipesRegistry;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.gecko.EGeo2BlockEntity;
 import ru.feytox.etherology.util.gecko.EGeoAnimation;
 import ru.feytox.etherology.util.inventory.ListBackedInventory;
@@ -379,13 +379,25 @@ public class MatrixBlockEntity extends TickableBlockEntity implements ListBacked
         Vec3d centerPos = getCenterPos();
         Random random = world.getRandom();
 
-        ItemParticleEffect itemEffect = new ItemParticleEffect(EtherParticleTypes.ITEM, target.getStack(0).getItem(), centerPos);
+        ItemParticleEffect itemEffect = new ItemParticleEffect(
+                SharedParticleTypes.ITEM.get(),
+                target.getStack(0).getItem(),
+                centerPos
+        );
         itemEffect.spawnParticles(world, 5, 0.2, pedestalPos);
 
-        LightParticleEffect sparkLightEffect = new LightParticleEffect(EtherParticleTypes.LIGHT, LightSubtype.SPARK, centerPos);
+        LightParticleEffect sparkLightEffect = new LightParticleEffect(
+                SharedParticleTypes.LIGHT.get(),
+                LightSubtype.SPARK,
+                centerPos
+        );
         sparkLightEffect.spawnParticles(world, random.nextBetween(10, 25), 0.35, pedestalPos);
 
-        SparkParticleEffect sparkEffect = new SparkParticleEffect(EtherParticleTypes.SPARK, centerPos, SparkSubtype.SIMPLE);
+        SparkParticleEffect sparkEffect = new SparkParticleEffect(
+                SharedParticleTypes.SPARK.get(),
+                centerPos,
+                SparkSubtype.SIMPLE
+        );
         sparkEffect.spawnParticles(world, random.nextBetween(1, 5), 0.35, pedestalPos);
         return true;
     }

@@ -10,7 +10,7 @@ import ru.feytox.etherology.client.util.ClientTickableBlock;
 import ru.feytox.etherology.item.OculusItem;
 import ru.feytox.etherology.particle.effects.LightParticleEffect;
 import ru.feytox.etherology.particle.subtype.LightSubtype;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 import static ru.feytox.etherology.block.generators.AbstractGenerator.STALLED;
 
@@ -38,7 +38,11 @@ public class AbstractGeneratorClient extends ClientTickableBlock<AbstractGenerat
         var targetPos = blockPos.toCenterPos();
         var direction = state.get(AbstractGenerator.FACING).getOpposite();
         var particlePos = blockPos.add(direction.getVector()).toCenterPos();
-        var effect = new LightParticleEffect(EtherParticleTypes.LIGHT, LightSubtype.GENERATOR, targetPos);
+        var effect = new LightParticleEffect(
+                SharedParticleTypes.LIGHT.get(),
+                LightSubtype.GENERATOR,
+                targetPos
+        );
         effect.spawnParticles(world, 4, 1.0d, particlePos);
     }
 }

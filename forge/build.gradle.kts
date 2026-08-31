@@ -341,6 +341,17 @@ val forgeEnchantmentRegistryServerEvidenceTest =
 val forgeServerContractV7 = rootProject.file("scripts/e2e/forge_server_contract_v7.py")
 val forgeServerProfileSnapshotV7 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v7.json")
+val forgeParticleRegistryServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "particle-registry-server-v8",
+    )
+val forgeParticleRegistryServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_particle_evidence_v8.py")
+val forgeParticleRegistryServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_particle_evidence_v8.py")
+val forgeServerContractV8 = rootProject.file("scripts/e2e/forge_server_contract_v8.py")
+val forgeServerProfileSnapshotV8 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v8.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -2883,9 +2894,70 @@ fun missingForgeEnchantmentRegistryServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeParticleRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeParticleRegistryServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeParticleRegistryServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge particle-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("particle-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeParticleRegistryServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge particle-registry server-v8 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeParticleRegistryServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeParticleRegistryServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge particle-registry server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge particle-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
-    "entity, recipe, screen, effect, loot, particle, tree, and " +
+    "entity, recipe, screen, effect, loot, tree, and " +
         "world-generation registries are not loader-neutral",
     "creative tabs, fuel, lifecycle, trade, brewing, wood, sculk-frequency, and " +
         "command hooks are not accepted on both loaders",
@@ -2993,6 +3065,13 @@ fun firstIncompleteForgeMilestone(
     if (missingEnchantmentRegistryServerEvidence.isNotEmpty()) {
         return "enchantment-registry dedicated-server evidence" to
             missingEnchantmentRegistryServerEvidence
+    }
+
+    val missingParticleRegistryServerEvidence =
+        missingForgeParticleRegistryServerEvidenceMilestone()
+    if (missingParticleRegistryServerEvidence.isNotEmpty()) {
+        return "particle-registry dedicated-server evidence" to
+            missingParticleRegistryServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -3243,6 +3322,7 @@ tasks.named<Test>("test").configure {
     exclude("**/LootConditionRegistryResourcesTest.class")
     exclude("**/EtherSourceReloadResourcesTest.class")
     exclude("**/EnchantmentRegistryResourcesTest.class")
+    exclude("**/ParticleRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -3544,6 +3624,95 @@ val enchantmentRegistryTest = tasks.register<Test>("enchantmentRegistryTest") {
     }
 }
 
+val particleRegistryTest = tasks.register<Test>("particleRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader particle ownership and packaged-texture tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.ParticleRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("particleCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("particleFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("particleForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("particleFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("particleFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("particleForgeShadowJar")
+    inputs.dir(rootProject.file("src/client/resources/assets/etherology/particles"))
+        .withPropertyName("canonicalParticleDefinitions")
+    inputs.dir(rootProject.file("src/client/resources/assets/etherology/textures/particle"))
+        .withPropertyName("canonicalParticleTextures")
+    inputs.files(
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/block") {
+            include("*_seal.png")
+            include("*_seal_light.png")
+        },
+    ).withPropertyName("canonicalSealTextures")
+    inputs.files(
+        rootProject.fileTree("src/main/java/ru/feytox/etherology") {
+            include("particle/**")
+            include("magic/seal/SealType.java")
+            include("util/misc/RGBColor.java")
+            include("registry/particle/EtherParticleTypes.java")
+        },
+    ).withPropertyName("legacyFabricParticleOwners").optional()
+    doFirst {
+        systemProperty(
+            "etherology.particles.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.particles.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.particles.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.particles.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.particles.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.particles.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.particles.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
 val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
     group = "verification"
     description =
@@ -3686,7 +3855,28 @@ val forgeEnchantmentRegistryServerSafetyTest =
     tasks.register<Exec>("forgeEnchantmentRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge enchantment-registry runner and v7 verifier safety tests."
+            "Runs the historical Forge enchantment-registry v7 verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_enchantment_evidence_v7.py",
+        )
+        inputs.files(
+            forgeServerContractV7,
+            forgeServerProfileSnapshotV7,
+            forgeEnchantmentRegistryServerEvidenceVerifier,
+            forgeEnchantmentRegistryServerEvidenceTest,
+        )
+    }
+
+val forgeParticleRegistryServerSafetyTest =
+    tasks.register<Exec>("forgeParticleRegistryServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge particle-registry runner and v8 verifier safety tests."
         workingDir(rootProject.projectDir)
         commandLine(
             "python3",
@@ -3694,15 +3884,15 @@ val forgeEnchantmentRegistryServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_enchantment_evidence_v7.py",
+            "scripts/e2e/test_forge_server_particle_evidence_v8.py",
         )
         inputs.files(
-            forgeServerContractV7,
-            forgeServerProfileSnapshotV7,
+            forgeServerContractV8,
+            forgeServerProfileSnapshotV8,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
-            forgeEnchantmentRegistryServerEvidenceVerifier,
-            forgeEnchantmentRegistryServerEvidenceTest,
+            forgeParticleRegistryServerEvidenceVerifier,
+            forgeParticleRegistryServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
@@ -3711,10 +3901,10 @@ val forgeEnchantmentRegistryServerSafetyTest =
         )
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
-        ).withPropertyName("forgeEnchantmentRegistryServerProbeSources")
+        ).withPropertyName("forgeParticleRegistryServerProbeSources")
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
-        ).withPropertyName("forgeEnchantmentRegistryServerProbeTests")
+        ).withPropertyName("forgeParticleRegistryServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -3781,6 +3971,32 @@ val validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity =
                 missingForgeEnchantmentRegistryServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion enchantment-registry server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeParticleRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeParticleRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge particle-registry server-v8 archive."
+        dependsOn(forgeParticleRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV8,
+            forgeServerProfileSnapshotV8,
+            forgeParticleRegistryServerEvidenceVerifier,
+        )
+        if (forgeParticleRegistryServerEvidenceArchive.exists()) {
+            inputs.dir(forgeParticleRegistryServerEvidenceArchive)
+                .withPropertyName("forgeParticleRegistryServerEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeParticleRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion particle-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -3981,12 +4197,214 @@ val validateForgeEnchantmentRegistryMilestone =
         )
     }
 
+val validateForgeParticleRegistryStaticMilestone =
+    tasks.register("validateForgeParticleRegistryStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the bounded shared particle registry and exact packaged assets statically."
+        dependsOn(
+            validateForgeEnchantmentRegistryMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            particleRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("particleFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("particleForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.dir(rootProject.file("src/client/resources/assets/etherology/particles"))
+            .withPropertyName("canonicalParticleDefinitions")
+        inputs.dir(rootProject.file("src/client/resources/assets/etherology/textures/particle"))
+            .withPropertyName("canonicalParticleTextures")
+        inputs.files(
+            rootProject.fileTree("src/client/resources/assets/etherology/textures/block") {
+                include("*_seal.png")
+                include("*_seal_light.png")
+            },
+        ).withPropertyName("canonicalSealTextures")
+        inputs.files(
+            rootProject.fileTree("src/main/java/ru/feytox/etherology") {
+                include("particle/**")
+                include("magic/seal/SealType.java")
+                include("util/misc/RGBColor.java")
+                include("registry/particle/EtherParticleTypes.java")
+            },
+        ).withPropertyName("legacyFabricParticleOwners").optional()
+        doLast {
+            val artifacts = listOf(
+                commonJar.get().archiveFile.get().asFile,
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ),
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ),
+                fabricShadowJar.get().archiveFile.get().asFile,
+                fabricRemapJar.get().archiveFile.get().asFile,
+                forgeShadowJar.get().archiveFile.get().asFile,
+            )
+            artifacts.forEach { artifact ->
+                check(artifact.isFile && !Files.isSymbolicLink(artifact.toPath())) {
+                    "Particle static milestone artifact is missing or linked: $artifact"
+                }
+            }
+
+            val legacySources = listOf(
+                "src/main/java/ru/feytox/etherology/registry/particle/"
+                    + "EtherParticleTypes.java",
+                "src/main/java/ru/feytox/etherology/magic/seal/SealType.java",
+                "src/main/java/ru/feytox/etherology/util/misc/RGBColor.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "ElectricityParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "ItemParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "LightParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "MovingParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "ScalableParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "SealParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "SimpleParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/"
+                    + "SparkParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/misc/"
+                    + "FeyParticleEffect.java",
+                "src/main/java/ru/feytox/etherology/particle/effects/misc/"
+                    + "FeyParticleType.java",
+                "src/main/java/ru/feytox/etherology/particle/subtype/"
+                    + "ElectricitySubtype.java",
+                "src/main/java/ru/feytox/etherology/particle/subtype/"
+                    + "LightSubtype.java",
+                "src/main/java/ru/feytox/etherology/particle/subtype/"
+                    + "SparkSubtype.java",
+            )
+            legacySources.forEach { legacySource ->
+                val sourceFile = rootProject.file(legacySource)
+                check(!sourceFile.exists() && !Files.isSymbolicLink(sourceFile.toPath())) {
+                    "Legacy Fabric particle owner remains: $legacySource"
+                }
+            }
+
+            val expectedDefinitions = setOf(
+                "alchemy.json",
+                "armillary_sphere.json",
+                "electricity1.json",
+                "electricity2.json",
+                "energy_absorption.json",
+                "ether_dot.json",
+                "ether_star.json",
+                "glint_particle.json",
+                "haze.json",
+                "light.json",
+                "lightning_bolt.json",
+                "redstone_flash.json",
+                "redstone_stream.json",
+                "resonation.json",
+                "rising.json",
+                "scalable_sweep.json",
+                "seal.json",
+                "shockwave.json",
+                "spark.json",
+                "steam.json",
+                "vital.json",
+            )
+            val definitionDirectory =
+                rootProject.file("src/client/resources/assets/etherology/particles")
+            check(
+                definitionDirectory.isDirectory
+                    && !Files.isSymbolicLink(definitionDirectory.toPath()),
+            ) {
+                "Canonical particle definition directory is missing or linked"
+            }
+            val actualDefinitions = definitionDirectory.listFiles()
+                ?.filter { file -> file.isFile && file.extension == "json" }
+                ?.onEach { file ->
+                    check(!Files.isSymbolicLink(file.toPath())) {
+                        "Canonical particle definition is linked: $file"
+                    }
+                }
+                ?.map { file -> file.name }
+                ?.toSet()
+                ?: emptySet()
+            check(actualDefinitions == expectedDefinitions) {
+                "Canonical particle definitions differ: "
+                    .plus("expected=$expectedDefinitions, actual=$actualDefinitions")
+            }
+
+            val textureDirectory =
+                rootProject.file("src/client/resources/assets/etherology/textures/particle")
+            check(
+                textureDirectory.isDirectory
+                    && !Files.isSymbolicLink(textureDirectory.toPath()),
+            ) {
+                "Canonical particle texture directory is missing or linked"
+            }
+            val particleTextures = textureDirectory.walkTopDown()
+                .filter { file -> file.isFile && file.extension == "png" }
+                .onEach { file ->
+                    check(!Files.isSymbolicLink(file.toPath())) {
+                        "Canonical particle texture is linked: $file"
+                    }
+                }
+                .toList()
+            check(particleTextures.size == 134) {
+                "Expected 134 canonical particle textures, found ${particleTextures.size}"
+            }
+
+            val sealTextureDirectory =
+                rootProject.file("src/client/resources/assets/etherology/textures/block")
+            val sealTextureNames = setOf(
+                "keta_seal.png",
+                "keta_seal_light.png",
+                "rella_seal.png",
+                "rella_seal_light.png",
+                "via_seal.png",
+                "via_seal_light.png",
+                "clos_seal.png",
+                "clos_seal_light.png",
+            )
+            sealTextureNames.forEach { textureName ->
+                val texture = sealTextureDirectory.resolve(textureName)
+                check(texture.isFile && !Files.isSymbolicLink(texture.toPath())) {
+                    "Canonical seal texture is missing or linked: $texture"
+                }
+            }
+        }
+    }
+
+val validateForgeParticleRegistryMilestone =
+    tasks.register("validateForgeParticleRegistryMilestone") {
+        group = "verification"
+        description =
+            "Accepts shared particles with their frozen native Forge registry proof."
+        dependsOn(
+            validateForgeParticleRegistryStaticMilestone,
+            validateForgeParticleRegistryServerEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeEnchantmentRegistryMilestone)
+        dependsOn(validateForgeParticleRegistryMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -4029,6 +4447,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeRegistryFoundationMilestone,
         validateForgeEtherSourceReloadMilestone,
         validateForgeEnchantmentRegistryMilestone,
+        validateForgeParticleRegistryMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -4037,7 +4456,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeEnchantmentRegistryMilestone)
+    dependsOn(validateForgeParticleRegistryStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -4062,6 +4481,9 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV7,
         forgeServerProfileSnapshotV7,
         forgeEnchantmentRegistryServerEvidenceVerifier,
+        forgeServerContractV8,
+        forgeServerProfileSnapshotV8,
+        forgeParticleRegistryServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -4072,6 +4494,10 @@ tasks.register("verifyForgePortGateClosed") {
     inputs.dir(forgeEnchantmentRegistryServerEvidenceArchive)
         .withPropertyName("forgeEnchantmentRegistryServerEvidenceArchive")
         .optional()
+    if (forgeParticleRegistryServerEvidenceArchive.exists()) {
+        inputs.dir(forgeParticleRegistryServerEvidenceArchive)
+            .withPropertyName("forgeParticleRegistryServerEvidenceArchive")
+    }
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
     inputs.files(commonTransformProductionForge)
@@ -4200,7 +4626,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 enchantment-registry server probe")
+            displayName.set("Etherology Forge 1.20.1 particle-registry server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -4281,8 +4707,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v7",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v7",
+                "id" to "etherology-e2e-forge-server-1.20.1-v8",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v8",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -4302,14 +4728,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "enchantment-registry",
+                "scenario" to "particle-registry",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "enchantment-registry",
+                "scenario_directory" to "particle-registry",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -4479,6 +4905,15 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ParticleProbeState\$ParticleEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ParticleProbeState\$ParticleSpec.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ParticleProbeState\$SealTypeEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ParticleProbeState\$SealTypeSpec.class",
+                    "dev/theplumteam/etherology/e2e/server/ParticleProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter\$WrittenPack.class",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter.class",
                     "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.class",
@@ -4503,12 +4938,19 @@ if (minecraftVersion == "1.20.1") {
                         "ru.feytox.etherology.registry.misc.ReflectionEnchantment",
                         "ru.feytox.etherology.util.misc." +
                             "RandomChanceWithFortuneConditionSerializer",
+                        "ru/feytox/etherology/magic/seal/SealType",
+                        "ru/feytox/etherology/particle/effects/misc/FeyParticleType",
+                        "ru/feytox/etherology/util/misc/RGBColor",
+                    )
+                    val allowedProductionConstantPrefixes = setOf(
+                        "ru.feytox.etherology.particle.effects.",
                     )
                     check(constants.none { constant ->
                         (constant.startsWith("net/minecraft/client/")
                             || constant.startsWith("ru/feytox/etherology/")
                             || constant.startsWith("ru.feytox.etherology."))
                             && constant !in allowedProductionConstants
+                            && allowedProductionConstantPrefixes.none(constant::startsWith)
                     }) {
                         "Dedicated-server probe class $classEntryName links client or production code"
                     }
@@ -4623,6 +5065,70 @@ if (minecraftVersion == "1.20.1") {
                         (requiredEnchantmentStateConstants - enchantmentStateConstants).sorted()
                 }
 
+                val particleStateEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/ParticleProbeState.class",
+                    ),
+                )
+                val particleStateConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(particleStateEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredParticleStateConstants = setOf(
+                    "minecraft:particle_type",
+                    "etherology",
+                    "alchemy",
+                    "armillary_sphere",
+                    "electricity1",
+                    "electricity2",
+                    "energy_absorption",
+                    "ether_dot",
+                    "ether_star",
+                    "glint_particle",
+                    "haze",
+                    "item",
+                    "light",
+                    "lightning_bolt",
+                    "redstone_flash",
+                    "redstone_stream",
+                    "resonation",
+                    "rising",
+                    "scalable_sweep",
+                    "seal",
+                    "shockwave",
+                    "spark",
+                    "steam",
+                    "vital",
+                    "ru/feytox/etherology/magic/seal/SealType",
+                    "ru/feytox/etherology/particle/effects/misc/FeyParticleType",
+                    "ru/feytox/etherology/util/misc/RGBColor",
+                    "getParametersFactory",
+                    "getCodec",
+                    "shouldAlwaysSpawn",
+                    "asString",
+                    "write",
+                    "CODEC",
+                    "getStartColor",
+                    "getEndColor",
+                    "getTextureId",
+                    "getTextureLightId",
+                    "KETA",
+                    "RELLA",
+                    "VIA",
+                    "CLOS",
+                    "etherology:textures/block/keta_seal.png",
+                    "etherology:textures/block/clos_seal_light.png",
+                )
+                check(
+                    requiredParticleStateConstants.all(
+                        particleStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its particle registry contract: " +
+                        (requiredParticleStateConstants - particleStateConstants).sorted()
+                }
+
                 val reloadResourceDigests = mapOf(
                     "probe-inputs/ether-source-reload-pack/pack.mcmeta" to
                         "0ba7dc05c7ce2955fab716f5c4a2a1ca9cde1da6ed0a06b0f06b937c11b69e00",
@@ -4698,6 +5204,28 @@ if (minecraftVersion == "1.20.1") {
                     "enchantment_registry_stable_after_reload",
                     "enchantment_properties_stable_after_reload",
                     "enchantment_tag_stable_after_reload",
+                    "particles",
+                    "registry:particle_type_etherology_ids_exact",
+                    "particle_capture_error",
+                    "particle_payload_families_exact",
+                    "particle_type_classes_exact",
+                    "particle_should_always_spawn_false_exact",
+                    "particle_codecs_present_exact",
+                    "particle_parameters_factories_present_exact",
+                    "particle_factory_sample_effect_classes_exact",
+                    "particle_factory_sample_types_exact",
+                    "particle_factory_sample_as_strings_exact",
+                    "particle_packet_round_trips_exact",
+                    "particle_codec_round_trips_exact",
+                    "seal_type_order_exact",
+                    "seal_type_codec_round_trips_exact",
+                    "seal_type_colors_exact",
+                    "seal_type_textures_exact",
+                    "particles_captured_after_server_data_load",
+                    "server_started_particles_rechecked",
+                    "particle_registry_stable_after_reload",
+                    "particle_type_contract_stable_after_reload",
+                    "particle_wire_contract_stable_after_reload",
                     "loot_condition",
                     "registry:loot_condition:etherology:random_chance_with_fortune",
                     "registry:loot_condition_etherology_ids_exact",
@@ -4739,6 +5267,7 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState",
+                    "dev/theplumteam/etherology/e2e/server/ParticleProbeState",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
@@ -4838,10 +5367,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 enchantment-registry server probe."
+                "Builds and validates the Forge 1.20.1 particle-registry server probe."
             dependsOn(
-                validateForgeEnchantmentRegistryStaticMilestone,
-                forgeEnchantmentRegistryServerSafetyTest,
+                validateForgeParticleRegistryStaticMilestone,
+                forgeParticleRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,

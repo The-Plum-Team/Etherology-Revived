@@ -4,14 +4,12 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import lombok.Getter;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.magic.seal.SealType;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 
-@Getter
 public class SealParticleEffect extends FeyParticleEffect<SealParticleEffect> {
 
     private final SealType zoneType;
@@ -25,6 +23,14 @@ public class SealParticleEffect extends FeyParticleEffect<SealParticleEffect> {
 
     public SealParticleEffect(ParticleType<SealParticleEffect> type) {
         this(type, null, null);
+    }
+
+    public SealType getZoneType() {
+        return zoneType;
+    }
+
+    public Vec3d getEndPos() {
+        return endPos;
     }
 
     @Override

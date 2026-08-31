@@ -9,6 +9,7 @@ import ru.feytox.etherology.registry.misc.SharedGameEvents;
 import ru.feytox.etherology.registry.misc.SharedLootConditions;
 import ru.feytox.etherology.registry.misc.SharedScreenHandlers;
 import ru.feytox.etherology.registry.misc.SharedSounds;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 /**
  * Installs loader-neutral Etherology registrations and coordinates the loader lifecycle handshake.
@@ -39,6 +40,7 @@ public final class EtherologyBootstrap {
         SharedGameEvents.register();
         SharedLootConditions.register();
         SharedEnchantments.register();
+        SharedParticleTypes.register();
         ResourceReloaders.registerServerData();
         LIFECYCLE.initialize(registrar);
     }

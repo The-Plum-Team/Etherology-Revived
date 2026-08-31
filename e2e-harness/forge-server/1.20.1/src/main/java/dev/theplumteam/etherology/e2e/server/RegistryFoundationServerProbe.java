@@ -90,6 +90,9 @@ public final class RegistryFoundationServerProbe {
             EnchantmentProbeState.missing();
     private EnchantmentProbeState serverStartedEnchantmentState =
             EnchantmentProbeState.missing();
+    private ParticleProbeState initialParticleState = ParticleProbeState.missing();
+    private ParticleProbeState reloadedParticleState = ParticleProbeState.missing();
+    private ParticleProbeState serverStartedParticleState = ParticleProbeState.missing();
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
@@ -122,8 +125,10 @@ public final class RegistryFoundationServerProbe {
     private boolean serverStartedEtherSourcesRechecked;
     private boolean lootConditionCapturedAfterServerDataLoad;
     private boolean enchantmentsCapturedAfterServerDataLoad;
+    private boolean particlesCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
+    private boolean serverStartedParticlesRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
     private boolean reloadCompleted;
@@ -136,6 +141,9 @@ public final class RegistryFoundationServerProbe {
     private boolean enchantmentRegistryStableAfterReload;
     private boolean enchantmentPropertiesStableAfterReload;
     private boolean enchantmentTagStableAfterReload;
+    private boolean particleRegistryStableAfterReload;
+    private boolean particleTypeContractStableAfterReload;
+    private boolean particleWireContractStableAfterReload;
     private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
@@ -195,6 +203,7 @@ public final class RegistryFoundationServerProbe {
             captureEtherologyTagMemberships();
             initialEtherSourceState = EtherSourceProbeState.capture();
             initialEnchantmentState = EnchantmentProbeState.capture();
+            initialParticleState = ParticleProbeState.capture();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
         }
@@ -204,6 +213,7 @@ public final class RegistryFoundationServerProbe {
         reloadShouldUpdateStaticData = event.shouldUpdateStaticData();
         reloadedEtherSourceState = EtherSourceProbeState.capture();
         reloadedEnchantmentState = EnchantmentProbeState.capture();
+        reloadedParticleState = ParticleProbeState.capture();
         reloadTagsObserved = tagUpdateCount == 2 && startedServer != null && reloadRequested;
         GameEvent reloadedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
         registryStableAfterReload = reloadTagsObserved
@@ -236,6 +246,12 @@ public final class RegistryFoundationServerProbe {
                 && initialEnchantmentState.hasSameTagMembership(
                         reloadedEnchantmentState
                 );
+        particleRegistryStableAfterReload = reloadTagsObserved
+                && initialParticleState.hasSameRegistry(reloadedParticleState);
+        particleTypeContractStableAfterReload = reloadTagsObserved
+                && initialParticleState.hasSameTypeContract(reloadedParticleState);
+        particleWireContractStableAfterReload = reloadTagsObserved
+                && initialParticleState.hasSameWireContract(reloadedParticleState);
         LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
@@ -254,6 +270,10 @@ public final class RegistryFoundationServerProbe {
                 && initialEnchantmentState.hasExactRegistry()
                 && initialEnchantmentState.hasExactProperties()
                 && initialEnchantmentState.hasExactTagMembership();
+        particlesCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialParticleState.hasExactRegistry()
+                && initialParticleState.hasExactTypeContract()
+                && initialParticleState.hasExactWireContract();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
@@ -308,6 +328,10 @@ public final class RegistryFoundationServerProbe {
         serverStartedEnchantmentState = EnchantmentProbeState.capture();
         serverStartedEnchantmentsRechecked = initialEnchantmentState
                 .sameStateAtServerStarted(serverStartedEnchantmentState);
+        serverStartedParticleState = ParticleProbeState.capture();
+        serverStartedParticlesRechecked = initialParticleState.sameStateAtServerStarted(
+                serverStartedParticleState
+        );
 
         try {
             ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
@@ -592,6 +616,125 @@ public final class RegistryFoundationServerProbe {
                 assertions,
                 "enchantment_tag_stable_after_reload",
                 enchantmentTagStableAfterReload
+        );
+        ParticleProbeState.EXPECTED_PARTICLES.forEach((path, spec) -> addAssertion(
+                assertions,
+                "registry:particle_type:" + spec.id(),
+                "present",
+                presentState(
+                        initialParticleState.entries().containsKey(path)
+                                && initialParticleState.entries()
+                                .get(path)
+                                .typeIdentity() != null
+                )
+        ));
+        addAssertion(
+                assertions,
+                "registry:particle_type_etherology_ids_exact",
+                String.join(",", ParticleProbeState.EXPECTED_PARTICLE_IDS),
+                String.join(",", initialParticleState.etherologyParticleIds())
+        );
+        addAssertion(
+                assertions,
+                "particle_capture_error",
+                "none",
+                errorState(initialParticleState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "particle_payload_families_exact",
+                String.join(",", ParticleProbeState.EXPECTED_PAYLOAD_FAMILIES),
+                String.join(",", initialParticleState.payloadFamilies())
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_type_classes_exact",
+                initialParticleState.hasExactTypeClasses()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_should_always_spawn_false_exact",
+                initialParticleState.hasExactAlwaysSpawnPolicy()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_codecs_present_exact",
+                initialParticleState.hasAllCodecs()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_parameters_factories_present_exact",
+                initialParticleState.hasAllParametersFactories()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_factory_sample_effect_classes_exact",
+                initialParticleState.hasExactFactorySampleEffectClasses()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_factory_sample_types_exact",
+                initialParticleState.hasExactFactorySampleTypes()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_factory_sample_as_strings_exact",
+                initialParticleState.hasExactFactorySampleStrings()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_packet_round_trips_exact",
+                initialParticleState.hasExactPacketRoundTrips()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_codec_round_trips_exact",
+                initialParticleState.hasExactCodecRoundTrips()
+        );
+        addBooleanAssertion(
+                assertions,
+                "seal_type_order_exact",
+                initialParticleState.hasExactSealTypeOrder()
+        );
+        addBooleanAssertion(
+                assertions,
+                "seal_type_codec_round_trips_exact",
+                initialParticleState.hasExactSealTypeCodec()
+        );
+        addBooleanAssertion(
+                assertions,
+                "seal_type_colors_exact",
+                initialParticleState.hasExactSealTypeColors()
+        );
+        addBooleanAssertion(
+                assertions,
+                "seal_type_textures_exact",
+                initialParticleState.hasExactSealTypeTextures()
+        );
+        addBooleanAssertion(
+                assertions,
+                "particles_captured_after_server_data_load",
+                particlesCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_particles_rechecked",
+                serverStartedParticlesRechecked
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_registry_stable_after_reload",
+                particleRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_type_contract_stable_after_reload",
+                particleTypeContractStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "particle_wire_contract_stable_after_reload",
+                particleWireContractStableAfterReload
         );
         addAssertion(
                 assertions,
@@ -893,7 +1036,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 5);
+        report.addProperty("schema", 6);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -908,6 +1051,7 @@ public final class RegistryFoundationServerProbe {
         report.add("mods", buildMods(etherologyLoaded, probeLoaded));
         report.add("registry", buildRegistry());
         report.add("enchantments", buildEnchantments());
+        report.add("particles", buildParticles());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
         report.add("reload", buildReload());
@@ -1042,6 +1186,60 @@ public final class RegistryFoundationServerProbe {
         return enchantments;
     }
 
+    private JsonObject buildParticles() {
+        JsonObject particles = new JsonObject();
+        particles.addProperty(
+                "registry_id",
+                ParticleProbeState.PARTICLE_REGISTRY_ID
+        );
+        particles.addProperty("capture_error", initialParticleState.captureError());
+        particles.add(
+                "etherology_particle_ids",
+                buildStringArray(initialParticleState.etherologyParticleIds())
+        );
+        particles.add(
+                "payload_families",
+                buildStringArray(initialParticleState.payloadFamilies())
+        );
+        JsonObject entries = new JsonObject();
+        initialParticleState.entries().forEach((path, entry) ->
+                entries.add(path, buildParticle(entry))
+        );
+        particles.add("entries", entries);
+        JsonObject sealTypes = new JsonObject();
+        sealTypes.add(
+                "order",
+                buildStringArray(initialParticleState.sealTypeOrder())
+        );
+        sealTypes.addProperty(
+                "codec_round_trips_exact",
+                initialParticleState.sealTypeCodecRoundTripsExact()
+        );
+        JsonObject sealTypeEntries = new JsonObject();
+        initialParticleState.sealTypes().forEach((name, entry) ->
+                sealTypeEntries.add(name, buildSealType(entry))
+        );
+        sealTypes.add("entries", sealTypeEntries);
+        particles.add("seal_types", sealTypes);
+        particles.addProperty(
+                "same_state_at_server_started",
+                serverStartedParticlesRechecked
+        );
+        particles.addProperty(
+                "registry_stable_after_reload",
+                particleRegistryStableAfterReload
+        );
+        particles.addProperty(
+                "type_contract_stable_after_reload",
+                particleTypeContractStableAfterReload
+        );
+        particles.addProperty(
+                "wire_contract_stable_after_reload",
+                particleWireContractStableAfterReload
+        );
+        return particles;
+    }
+
     private JsonObject buildLootCondition() {
         JsonObject lootCondition = new JsonObject();
         lootCondition.addProperty(
@@ -1140,6 +1338,18 @@ public final class RegistryFoundationServerProbe {
                 "enchantment_tag_stable",
                 enchantmentTagStableAfterReload
         );
+        reload.addProperty(
+                "particle_registry_stable",
+                particleRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "particle_type_contract_stable",
+                particleTypeContractStableAfterReload
+        );
+        reload.addProperty(
+                "particle_wire_contract_stable",
+                particleWireContractStableAfterReload
+        );
         reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
         return reload;
     }
@@ -1218,6 +1428,55 @@ public final class RegistryFoundationServerProbe {
         enchantment.add("max_powers", buildIntegerArray(maxPowers));
         enchantment.addProperty("in_non_treasure", inNonTreasure);
         return enchantment;
+    }
+
+    private static JsonObject buildParticle(
+            ParticleProbeState.ParticleEntry entry
+    ) {
+        JsonObject particle = new JsonObject();
+        particle.addProperty("id", entry.id());
+        particle.addProperty("family", entry.family());
+        particle.addProperty("type_class", entry.typeClass());
+        particle.addProperty("should_always_spawn", entry.shouldAlwaysSpawn());
+        particle.addProperty("codec_present", entry.codecPresent());
+        particle.addProperty(
+                "parameters_factory_present",
+                entry.parametersFactoryPresent()
+        );
+        particle.addProperty(
+                "factory_sample_effect_class",
+                entry.factorySampleEffectClass()
+        );
+        particle.addProperty(
+                "factory_sample_type_matches",
+                entry.factorySampleTypeMatches()
+        );
+        particle.addProperty(
+                "factory_sample_as_string",
+                entry.factorySampleAsString()
+        );
+        particle.addProperty(
+                "packet_round_trip_exact",
+                entry.packetRoundTripExact()
+        );
+        particle.addProperty(
+                "codec_round_trip_exact",
+                entry.codecRoundTripExact()
+        );
+        return particle;
+    }
+
+    private static JsonObject buildSealType(
+            ParticleProbeState.SealTypeEntry entry
+    ) {
+        JsonObject sealType = new JsonObject();
+        sealType.addProperty("enum_name", entry.enumName());
+        sealType.addProperty("as_string", entry.asString());
+        sealType.addProperty("start_color", entry.startColor());
+        sealType.addProperty("end_color", entry.endColor());
+        sealType.addProperty("texture_id", entry.textureId());
+        sealType.addProperty("texture_light_id", entry.textureLightId());
+        return sealType;
     }
 
     private static JsonObject buildEtherSourceCapture(EtherSourceProbeState state) {

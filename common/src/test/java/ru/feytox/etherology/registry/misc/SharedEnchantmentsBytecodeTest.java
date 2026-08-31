@@ -253,7 +253,7 @@ final class SharedEnchantmentsBytecodeTest {
     }
 
     @Test
-    void attachesBetweenLootConditionsAndServerDataReloaders() throws IOException {
+    void attachesBetweenLootConditionsAndParticleTypes() throws IOException {
         List<String> invocations = invocationsByMethod(BOOTSTRAP_CLASS).get(
                 "initialize(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
         );
@@ -263,14 +263,13 @@ final class SharedEnchantmentsBytecodeTest {
         int enchantments = invocations.indexOf(
                 SHARED_ENCHANTMENTS + "#register()V"
         );
-        int resourceReloaders = invocations.indexOf(
-                "ru/feytox/etherology/registry/misc/ResourceReloaders"
-                        + "#registerServerData()V"
+        int particleTypes = invocations.indexOf(
+                "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V"
         );
 
         assertTrue(lootConditions >= 0);
         assertEquals(lootConditions + 1, enchantments);
-        assertEquals(enchantments + 1, resourceReloaders);
+        assertEquals(enchantments + 1, particleTypes);
         assertEquals(1, count(invocations, SHARED_ENCHANTMENTS + "#register()V"));
         assertNull(SharedEnchantmentsBytecodeTest.class.getResource(
                 "/ru/feytox/etherology/registry/misc/EtherEnchantments.class"

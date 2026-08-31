@@ -213,6 +213,9 @@ final class SharedLootConditionsBytecodeTest {
         int enchantments = invocations.indexOf(
                 "ru/feytox/etherology/registry/misc/SharedEnchantments#register()V"
         );
+        int particleTypes = invocations.indexOf(
+                "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V"
+        );
         int resourceReloaders = invocations.indexOf(
                 "ru/feytox/etherology/registry/misc/ResourceReloaders"
                         + "#registerServerData()V"
@@ -225,7 +228,8 @@ final class SharedLootConditionsBytecodeTest {
         assertTrue(gameEvents >= 0);
         assertEquals(gameEvents + 1, lootConditions);
         assertEquals(lootConditions + 1, enchantments);
-        assertEquals(enchantments + 1, resourceReloaders);
+        assertEquals(enchantments + 1, particleTypes);
+        assertEquals(particleTypes + 1, resourceReloaders);
         assertEquals(resourceReloaders + 1, lifecycle);
         assertEquals(1, count(invocations, SHARED_LOOT_CONDITIONS + "#register()V"));
     }

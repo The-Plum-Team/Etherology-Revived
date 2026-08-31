@@ -11,33 +11,33 @@ import net.minecraft.particle.ParticleEffect;
 import net.minecraft.particle.ParticleType;
 import ru.feytox.etherology.client.particle.*;
 
-import static ru.feytox.etherology.registry.particle.EtherParticleTypes.*;
+import static ru.feytox.etherology.registry.particle.SharedParticleTypes.*;
 
 @UtilityClass
 public class ClientParticleRegistry {
     public static void registerAll() {
-        register(LIGHT, LightParticle::new);
-        register(STEAM, SteamParticle::new);
-        register(SPARK, SparkParticle::new);
-        register(ELECTRICITY1, ElectricityParticle::new);
-        register(ELECTRICITY2, ElectricityParticle::new);
-        register(ITEM, ItemParticle::new);
-        register(RISING, RisingParticle::new);
-        register(VITAL, VitalParticle::new);
-        register(SHOCKWAVE, ShockwaveParticle::new);
-        register(GLINT, GlintParticle::new);
-        register(ENERGY_ABSORPTION, EnergyAbsorptionParticle::new);
-        register(ARMILLARY_SPHERE, SphereParticle::new);
-        register(HAZE, HazeParticle::new);
-        register(ALCHEMY, AlchemyParticle::new);
-        register(ETHER_STAR, EtherParticle.EtherStarParticle::new);
-        register(ETHER_DOT, EtherParticle.EtherDotParticle::new);
-        register(RESONATION, ResonationParticle::new);
-        register(LIGHTNING_BOLT, LightningBoltParticle::new);
-        register(SCALABLE_SWEEP, ScalableSweepParticle::new);
-        register(REDSTONE_FLASH, RedstoneFlashParticle::new);
-        register(REDSTONE_STREAM, RedstoneStreamParticle::new);
-        register(SEAL, SealParticle::new);
+        register(LIGHT.get(), LightParticle::new);
+        register(STEAM.get(), SteamParticle::new);
+        register(SPARK.get(), SparkParticle::new);
+        register(ELECTRICITY1.get(), ElectricityParticle::new);
+        register(ELECTRICITY2.get(), ElectricityParticle::new);
+        register(ITEM.get(), ItemParticle::new);
+        register(RISING.get(), RisingParticle::new);
+        register(VITAL.get(), VitalParticle::new);
+        register(SHOCKWAVE.get(), ShockwaveParticle::new);
+        register(GLINT.get(), GlintParticle::new);
+        register(ENERGY_ABSORPTION.get(), EnergyAbsorptionParticle::new);
+        register(ARMILLARY_SPHERE.get(), SphereParticle::new);
+        register(HAZE.get(), HazeParticle::new);
+        register(ALCHEMY.get(), AlchemyParticle::new);
+        register(ETHER_STAR.get(), EtherParticle.EtherStarParticle::new);
+        register(ETHER_DOT.get(), EtherParticle.EtherDotParticle::new);
+        register(RESONATION.get(), ResonationParticle::new);
+        register(LIGHTNING_BOLT.get(), LightningBoltParticle::new);
+        register(SCALABLE_SWEEP.get(), ScalableSweepParticle::new);
+        register(REDSTONE_FLASH.get(), RedstoneFlashParticle::new);
+        register(REDSTONE_STREAM.get(), RedstoneStreamParticle::new);
+        register(SEAL.get(), SealParticle::new);
     }
 
     private static <T extends ParticleEffect, P extends Particle> void register(ParticleType<T> particleType, ParticleConstructor<T, P> particleConstructor) {

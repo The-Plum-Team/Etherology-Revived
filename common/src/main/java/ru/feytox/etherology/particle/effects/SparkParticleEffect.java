@@ -4,14 +4,12 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import lombok.Getter;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.particle.subtype.SparkSubtype;
 
-@Getter
 public class SparkParticleEffect extends FeyParticleEffect<SparkParticleEffect> {
 
     private final Vec3d moveVec;
@@ -25,6 +23,14 @@ public class SparkParticleEffect extends FeyParticleEffect<SparkParticleEffect> 
 
     public SparkParticleEffect(ParticleType<SparkParticleEffect> type) {
         this(type, null, null);
+    }
+
+    public Vec3d getMoveVec() {
+        return moveVec;
+    }
+
+    public SparkSubtype getSparkType() {
+        return sparkType;
     }
 
     @Override

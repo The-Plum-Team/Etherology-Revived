@@ -3,14 +3,12 @@ package ru.feytox.etherology.particle.effects;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
-import lombok.Getter;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 
 public class ScalableParticleEffect extends FeyParticleEffect<ScalableParticleEffect> {
 
-    @Getter
     private final Float scale;
 
     public ScalableParticleEffect(ParticleType<ScalableParticleEffect> type, Float scale) {
@@ -20,6 +18,10 @@ public class ScalableParticleEffect extends FeyParticleEffect<ScalableParticleEf
 
     public ScalableParticleEffect(ParticleType<ScalableParticleEffect> type) {
         this(type, null);
+    }
+
+    public Float getScale() {
+        return scale;
     }
 
     @Override

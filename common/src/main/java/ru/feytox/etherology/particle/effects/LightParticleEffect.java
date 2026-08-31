@@ -4,14 +4,12 @@ import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import lombok.Getter;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.particle.subtype.LightSubtype;
 
-@Getter
 public class LightParticleEffect extends FeyParticleEffect<LightParticleEffect> {
 
     private final LightSubtype lightType;
@@ -25,6 +23,14 @@ public class LightParticleEffect extends FeyParticleEffect<LightParticleEffect> 
 
     public LightParticleEffect(ParticleType<LightParticleEffect> type) {
         this(type, null, null);
+    }
+
+    public LightSubtype getLightType() {
+        return lightType;
+    }
+
+    public Vec3d getMoveVec() {
+        return moveVec;
     }
 
     @Override

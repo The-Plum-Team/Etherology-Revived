@@ -318,6 +318,9 @@ final class EtherSourceReloadResourcesTest {
         int enchantments = invocations.indexOf(
                 "ru/feytox/etherology/registry/misc/SharedEnchantments#register()V"
         );
+        int particleTypes = invocations.indexOf(
+                "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V"
+        );
         int resourceReloaders = invocations.indexOf(
                 RESOURCE_RELOADERS_OWNER + "#registerServerData()V"
         );
@@ -328,7 +331,8 @@ final class EtherSourceReloadResourcesTest {
 
         assertTrue(lootConditions >= 0, description);
         assertEquals(lootConditions + 1, enchantments, description);
-        assertEquals(enchantments + 1, resourceReloaders, description);
+        assertEquals(enchantments + 1, particleTypes, description);
+        assertEquals(particleTypes + 1, resourceReloaders, description);
         assertEquals(resourceReloaders + 1, lifecycle, description);
         assertEquals(1, count(invocations,
                 RESOURCE_RELOADERS_OWNER + "#registerServerData()V"), description);

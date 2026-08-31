@@ -195,6 +195,9 @@ final class EtherSourceOwnershipBytecodeTest {
         int enchantments = bootstrapInvocations.indexOf(
                 "ru/feytox/etherology/registry/misc/SharedEnchantments#register()V"
         );
+        int particleTypes = bootstrapInvocations.indexOf(
+                "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V"
+        );
         int resourceReloaders = bootstrapInvocations.indexOf(
                 RESOURCE_RELOADERS + "#registerServerData()V"
         );
@@ -205,7 +208,8 @@ final class EtherSourceOwnershipBytecodeTest {
 
         assertTrue(lootConditions >= 0);
         assertEquals(lootConditions + 1, enchantments);
-        assertEquals(enchantments + 1, resourceReloaders);
+        assertEquals(enchantments + 1, particleTypes);
+        assertEquals(particleTypes + 1, resourceReloaders);
         assertEquals(resourceReloaders + 1, lifecycle);
         assertEquals(1, count(
                 bootstrapInvocations,

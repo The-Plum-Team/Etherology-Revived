@@ -12,7 +12,7 @@ import ru.feytox.etherology.magic.ether.EtherStorage;
 import ru.feytox.etherology.mixin.LivingEntityAccessor;
 import ru.feytox.etherology.particle.effects.LightParticleEffect;
 import ru.feytox.etherology.particle.subtype.LightSubtype;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.deprecated.EVec3d;
 import ru.feytox.etherology.util.misc.PlayerUtil;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
@@ -165,7 +165,11 @@ public class LevitatorBlockEntity extends TickableBlockEntity implements EtherSt
 
     private void tickParticles(World world, BlockBox levitationBox, Vec3d directionVec, boolean isPushing) {
         var lightType = isPushing ? LightSubtype.PUSHING : LightSubtype.ATTRACT;
-        var effect = new LightParticleEffect(EtherParticleTypes.LIGHT, lightType, directionVec);
+        var effect = new LightParticleEffect(
+                SharedParticleTypes.LIGHT.get(),
+                lightType,
+                directionVec
+        );
 
         BlockPos.stream(levitationBox)
                 .map(BlockPos::toCenterPos)

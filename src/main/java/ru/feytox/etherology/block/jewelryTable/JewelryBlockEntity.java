@@ -27,7 +27,7 @@ import ru.feytox.etherology.particle.effects.SparkParticleEffect;
 import ru.feytox.etherology.particle.subtype.ElectricitySubtype;
 import ru.feytox.etherology.particle.subtype.SparkSubtype;
 import ru.feytox.etherology.recipes.jewelry.AbstractJewelryRecipe;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.delayedTask.DelayedTask;
 import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
@@ -78,7 +78,11 @@ public class JewelryBlockEntity extends TickableBlockEntity implements EtherStor
         }
 
         Vec3d particlePos = blockPos.toCenterPos().add(0, 0.75d, 0);
-        val effect = new SparkParticleEffect(EtherParticleTypes.SPARK, new Vec3d(0, 2.0d, 0), SparkSubtype.JEWELRY);
+        val effect = new SparkParticleEffect(
+                SharedParticleTypes.SPARK.get(),
+                new Vec3d(0, 2.0d, 0),
+                SparkSubtype.JEWELRY
+        );
         effect.spawnParticles(world, 6, 0.25d, particlePos);
     }
 
@@ -88,7 +92,7 @@ public class JewelryBlockEntity extends TickableBlockEntity implements EtherStor
         corruption.placeInChunk(serverWorld, pos);
 
         Vec3d start = pos.toCenterPos().add(0, 0.75f, 0);
-        val effect = new SimpleParticleEffect(EtherParticleTypes.HAZE);
+        val effect = new SimpleParticleEffect(SharedParticleTypes.HAZE.get());
         effect.spawnParticles(serverWorld, 5, 0.2, start);
     }
 

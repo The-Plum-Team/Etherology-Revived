@@ -34,7 +34,7 @@ import ru.feytox.etherology.recipes.alchemy.AlchemyRecipeInventory;
 import ru.feytox.etherology.recipes.alchemy.AlchemyRecipeSerializer;
 import ru.feytox.etherology.registry.misc.RecipesRegistry;
 import ru.feytox.etherology.registry.misc.SharedSounds;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
 import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
@@ -47,7 +47,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static ru.feytox.etherology.registry.block.EBlocks.BREWING_CAULDRON_BLOCK_ENTITY;
-import static ru.feytox.etherology.registry.particle.EtherParticleTypes.STEAM;
+import static ru.feytox.etherology.registry.particle.SharedParticleTypes.STEAM;
 
 public class BrewingCauldronBlockEntity extends TickableBlockEntity implements ListBackedInventory, SidedInventory, EGeoBlockEntity, RevelationAspectProvider {
 
@@ -175,7 +175,7 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements L
     private void spawnResultParticles(ServerWorld world, BlockState state) {
         Random random = world.getRandom();
         Vec3d start = getWaterPos(state).add(Vec3d.of(pos));
-        val effect = new SimpleParticleEffect(EtherParticleTypes.ALCHEMY);
+        val effect = new SimpleParticleEffect(SharedParticleTypes.ALCHEMY.get());
         effect.spawnParticles(world, random.nextBetween(6, 10), 0.1f, start);
     }
 
@@ -215,7 +215,7 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements L
         if (oldCount != 0) vaporizeAspects(world, 0.2d, 0.1d, world.getRandom(), oldCount);
 
         Vec3d centerPos = getWaterPos(state).add(Vec3d.of(pos));
-        val effect = new SimpleParticleEffect(STEAM);
+        val effect = new SimpleParticleEffect(STEAM.get());
         effect.spawnParticles(world, count.get(), 0.35, centerPos);
 
         syncData(world);

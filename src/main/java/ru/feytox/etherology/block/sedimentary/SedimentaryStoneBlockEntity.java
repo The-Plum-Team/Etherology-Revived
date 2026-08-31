@@ -21,7 +21,7 @@ import ru.feytox.etherology.magic.seal.EssenceSupplier;
 import ru.feytox.etherology.magic.seal.SealType;
 import ru.feytox.etherology.particle.effects.SparkParticleEffect;
 import ru.feytox.etherology.particle.subtype.SparkSubtype;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import java.util.ArrayList;
@@ -88,7 +88,11 @@ public class SedimentaryStoneBlockEntity extends TickableBlockEntity implements 
         Random random = world.getRandom();
         particlePoses.forEach(pos -> {
             if (random.nextDouble() > 0.005) return;
-            SparkParticleEffect effect = new SparkParticleEffect(EtherParticleTypes.SPARK, pos.add(0, -0.2, 0), sparkType);
+            SparkParticleEffect effect = new SparkParticleEffect(
+                    SharedParticleTypes.SPARK.get(),
+                    pos.add(0, -0.2, 0),
+                    sparkType
+            );
             effect.spawnParticles(world, 1, 0, pos);
         });
     }

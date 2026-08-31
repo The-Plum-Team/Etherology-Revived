@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 5,
+        "schema": 6,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -123,6 +123,24 @@ def valid_report() -> dict[str, object]:
             "registry_stable_after_reload": True,
             "properties_stable_after_reload": True,
             "tag_stable_after_reload": True,
+        },
+        "particles": {
+            "registry_id": forge_server.PARTICLE_REGISTRY_ID,
+            "capture_error": "",
+            "etherology_particle_ids": list(forge_server.PARTICLE_IDS),
+            "payload_families": list(
+                forge_server.PARTICLE_PAYLOAD_FAMILIES
+            ),
+            "entries": copy.deepcopy(forge_server.PARTICLES),
+            "seal_types": {
+                "order": list(forge_server.SEAL_TYPE_ORDER),
+                "codec_round_trips_exact": True,
+                "entries": copy.deepcopy(forge_server.SEAL_TYPES),
+            },
+            "same_state_at_server_started": True,
+            "registry_stable_after_reload": True,
+            "type_contract_stable_after_reload": True,
+            "wire_contract_stable_after_reload": True,
         },
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
@@ -180,6 +198,9 @@ def valid_report() -> dict[str, object]:
             "enchantment_registry_stable": True,
             "enchantment_properties_stable": True,
             "enchantment_tag_stable": True,
+            "particle_registry_stable": True,
+            "particle_type_contract_stable": True,
+            "particle_wire_contract_stable": True,
             "stop_requested_after_completion": True,
         },
         "tags": {
@@ -237,7 +258,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v7",
+            "etherology-e2e-forge-server-1.20.1-v8",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -566,7 +587,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(95, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(138, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -639,6 +660,24 @@ class ProbeReportTests(unittest.TestCase):
             "enchantment reload instability": lambda report: report["reload"].__setitem__(
                 "enchantment_registry_stable", False
             ),
+            "wrong particle type class": lambda report: report["particles"][
+                "entries"
+            ]["alchemy"].__setitem__("type_class", "wrong.FeyParticleType"),
+            "wrong particle spawn policy": lambda report: report["particles"][
+                "entries"
+            ]["alchemy"].__setitem__("should_always_spawn", True),
+            "wrong particle factory sample": lambda report: report["particles"][
+                "entries"
+            ]["spark"].__setitem__("factory_sample_as_string", "wrong"),
+            "failed particle packet round trip": lambda report: report[
+                "particles"
+            ]["entries"]["seal"].__setitem__("packet_round_trip_exact", False),
+            "wrong SealType color": lambda report: report["particles"][
+                "seal_types"
+            ]["entries"]["keta"].__setitem__("start_color", "0,0,0"),
+            "particle reload instability": lambda report: report[
+                "reload"
+            ].__setitem__("particle_wire_contract_stable", False),
             "integer loot identity": lambda report: report["loot_condition"].__setitem__(
                 "same_state_at_server_started", 1
             ),

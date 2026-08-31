@@ -3,18 +3,16 @@ package ru.feytox.etherology.particle.effects;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
-import lombok.Getter;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.random.Random;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleType;
 import ru.feytox.etherology.particle.subtype.ElectricitySubtype;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 public class ElectricityParticleEffect extends FeyParticleEffect<ElectricityParticleEffect> {
 
-    @Getter
     private final ElectricitySubtype electricityType;
 
     private ElectricityParticleEffect(ParticleType<ElectricityParticleEffect> type, ElectricitySubtype electricityType) {
@@ -24,6 +22,10 @@ public class ElectricityParticleEffect extends FeyParticleEffect<ElectricityPart
 
     public ElectricityParticleEffect(ParticleType<ElectricityParticleEffect> type) {
         this(type, null);
+    }
+
+    public ElectricitySubtype getElectricityType() {
+        return electricityType;
     }
 
     @Override
@@ -58,6 +60,8 @@ public class ElectricityParticleEffect extends FeyParticleEffect<ElectricityPart
     }
 
     public static FeyParticleType<ElectricityParticleEffect> getRandomType(Random random) {
-        return random.nextBoolean() ? EtherParticleTypes.ELECTRICITY1 : EtherParticleTypes.ELECTRICITY2;
+        return random.nextBoolean()
+                ? SharedParticleTypes.ELECTRICITY1.get()
+                : SharedParticleTypes.ELECTRICITY2.get();
     }
 }

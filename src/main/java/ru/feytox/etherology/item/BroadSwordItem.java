@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.enums.EUseAction;
 import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
 import ru.feytox.etherology.registry.misc.SharedSounds;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.misc.DoubleModel;
 
 public class BroadSwordItem extends TwoHandheldSword implements DoubleModel {
@@ -40,7 +40,7 @@ public class BroadSwordItem extends TwoHandheldSword implements DoubleModel {
     }
 
     public static void replaceSweepParticle(ServerWorld world, double x, double y, double z) {
-        val effect = new ScalableParticleEffect(EtherParticleTypes.SCALABLE_SWEEP, 2.0f);
+        val effect = new ScalableParticleEffect(SharedParticleTypes.SCALABLE_SWEEP.get(), 2.0f);
         effect.spawnParticles(world, 1, 0, new Vec3d(x, y, z));
     }
 

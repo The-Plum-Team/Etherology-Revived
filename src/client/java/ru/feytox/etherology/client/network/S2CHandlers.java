@@ -8,7 +8,7 @@ import ru.feytox.etherology.network.animation.SwitchBlockAnimS2C;
 import ru.feytox.etherology.network.interaction.RedstoneLensStreamS2C;
 import ru.feytox.etherology.network.interaction.RemoveBlockEntityS2C;
 import ru.feytox.etherology.particle.effects.SimpleParticleEffect;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.deprecated.EVec3d;
 import ru.feytox.etherology.util.gecko.EGeo2BlockEntity;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
@@ -24,12 +24,16 @@ public class S2CHandlers {
         ClientWorld world = client.world;
         if (world == null) return;
 
-        SimpleParticleEffect effect = new SimpleParticleEffect(EtherParticleTypes.REDSTONE_FLASH);
+        SimpleParticleEffect effect = new SimpleParticleEffect(
+                SharedParticleTypes.REDSTONE_FLASH.get()
+        );
         EVec3d.lineOf(packet.start(), packet.end(), 0.5d)
                 .forEach(pos -> effect.spawnParticles(world, 1, 0, pos));
         if (packet.isMiss()) return;
 
-        SimpleParticleEffect redstoneEffect = new SimpleParticleEffect(EtherParticleTypes.REDSTONE_STREAM);
+        SimpleParticleEffect redstoneEffect = new SimpleParticleEffect(
+                SharedParticleTypes.REDSTONE_STREAM.get()
+        );
         redstoneEffect.spawnParticles(world, world.random.nextBetween(8, 12), 0.1, packet.end());
     }
 

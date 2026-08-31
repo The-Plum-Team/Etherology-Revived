@@ -11,7 +11,7 @@ import ru.feytox.etherology.block.sedimentary.SedimentaryStoneBlockEntity;
 import ru.feytox.etherology.item.OculusItem;
 import ru.feytox.etherology.magic.seal.EssenceSupplier;
 import ru.feytox.etherology.particle.effects.SealParticleEffect;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 public class SedimentaryBlockClient {
 
@@ -40,7 +40,11 @@ public class SedimentaryBlockClient {
 
         var zonePercent = essenceSupplier.getFillPercent();
         int count = MathHelper.ceil(5 * zonePercent);
-        var effect = new SealParticleEffect(EtherParticleTypes.SEAL, essenceSupplier.getSealType(), pos.toCenterPos());
+        var effect = new SealParticleEffect(
+                SharedParticleTypes.SEAL.get(),
+                essenceSupplier.getSealType(),
+                pos.toCenterPos()
+        );
         var random = world.getRandom();
 
         for (int dx = -RADIUS; dx <= RADIUS; dx++) {

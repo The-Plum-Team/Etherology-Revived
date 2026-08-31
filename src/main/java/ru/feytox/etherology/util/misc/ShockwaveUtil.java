@@ -24,7 +24,7 @@ import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
 import ru.feytox.etherology.registry.misc.EtherEnchantments;
 import ru.feytox.etherology.registry.misc.SharedEnchantments;
 import ru.feytox.etherology.registry.misc.SharedSounds;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 import ru.feytox.etherology.util.delayedTask.DelayedTask;
 
 import java.util.Comparator;
@@ -144,7 +144,7 @@ public class ShockwaveUtil {
 
     private static void spawnResonationParticle(World world, Entity target) {
         if (world.isClient) return;
-        val effect = new ScalableParticleEffect(EtherParticleTypes.RESONATION, 1.0f);
+        val effect = new ScalableParticleEffect(SharedParticleTypes.RESONATION.get(), 1.0f);
         Vec3d targetCenter = target.getBoundingBox().getCenter();
         effect.spawnParticles(world, 1, 0.05, targetCenter);
     }
@@ -215,7 +215,7 @@ public class ShockwaveUtil {
 
     private static void spawnLightningParticle(ServerWorld world, Entity target) {
         float scale = target.getWidth() / 0.5f;
-        val effect = new ScalableParticleEffect(EtherParticleTypes.LIGHTNING_BOLT, scale);
+        val effect = new ScalableParticleEffect(SharedParticleTypes.LIGHTNING_BOLT.get(), scale);
         effect.spawnParticles(world, 1, 0.05, target.getBoundingBox().getCenter());
     }
 }

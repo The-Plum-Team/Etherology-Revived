@@ -21,7 +21,6 @@ import ru.feytox.etherology.registry.entity.EntityRegistry;
 import ru.feytox.etherology.registry.item.EItemGroups;
 import ru.feytox.etherology.registry.item.EItems;
 import ru.feytox.etherology.registry.misc.*;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 import ru.feytox.etherology.util.delayedTask.ServerTaskManager;
 
@@ -68,7 +67,6 @@ public class Etherology {
         EffectsRegistry.registerAll();
         ComponentTypes.registerAll();
         ForestLanternBlock.registerJumpEvent();
-        EtherParticleTypes.registerAll();
         ChannelShapes.cacheAll();
 
         LifecycleEvent.SERVER_LEVEL_LOAD.register(loadedWorlds::add);

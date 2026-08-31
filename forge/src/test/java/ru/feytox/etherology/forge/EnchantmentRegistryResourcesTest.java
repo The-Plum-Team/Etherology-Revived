@@ -508,15 +508,19 @@ final class EnchantmentRegistryResourcesTest {
         String lootConditions =
                 "ru/feytox/etherology/registry/misc/SharedLootConditions#register()V";
         String enchantments = SHARED_ENCHANTMENTS_OWNER + "#register()V";
+        String particleTypes =
+                "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V";
         String reloaders =
                 "ru/feytox/etherology/registry/misc/ResourceReloaders#registerServerData()V";
         int lootConditionIndex = invocations.indexOf(lootConditions);
         int enchantmentIndex = invocations.indexOf(enchantments);
+        int particleTypeIndex = invocations.indexOf(particleTypes);
         int reloaderIndex = invocations.indexOf(reloaders);
 
         assertTrue(lootConditionIndex >= 0, description);
         assertEquals(lootConditionIndex + 1, enchantmentIndex, description);
-        assertEquals(enchantmentIndex + 1, reloaderIndex, description);
+        assertEquals(enchantmentIndex + 1, particleTypeIndex, description);
+        assertEquals(particleTypeIndex + 1, reloaderIndex, description);
         assertEquals(1, count(invocations, enchantments), description);
     }
 

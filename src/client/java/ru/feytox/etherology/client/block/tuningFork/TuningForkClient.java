@@ -8,7 +8,7 @@ import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.block.tuningFork.TuningFork;
 import ru.feytox.etherology.block.tuningFork.TuningForkBlockEntity;
 import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 @UtilityClass
 public class TuningForkClient {
@@ -19,7 +19,7 @@ public class TuningForkClient {
         if (!blockEntity.isResonating() || world.getTime() % PARTICLE_TICK_RATE != 0) return;
 
         var offset = Vec3d.of(state.get(TuningFork.VERTICAL_FACING).getVector()).multiply(0.25d);
-        var effect = new ScalableParticleEffect(EtherParticleTypes.RESONATION, 0.5f);
+        var effect = new ScalableParticleEffect(SharedParticleTypes.RESONATION.get(), 0.5f);
         effect.spawnParticles(world, 1, 0, blockPos.toCenterPos().add(offset));
     }
 }

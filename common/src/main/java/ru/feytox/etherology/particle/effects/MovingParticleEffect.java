@@ -3,7 +3,6 @@ package ru.feytox.etherology.particle.effects;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.serialization.Codec;
-import lombok.Getter;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
@@ -11,7 +10,6 @@ import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 
 public class MovingParticleEffect extends FeyParticleEffect<MovingParticleEffect> {
 
-    @Getter
     private final Vec3d moveVec;
 
     public MovingParticleEffect(ParticleType<MovingParticleEffect> type, Vec3d moveVec) {
@@ -21,6 +19,10 @@ public class MovingParticleEffect extends FeyParticleEffect<MovingParticleEffect
 
     public MovingParticleEffect(ParticleType<MovingParticleEffect> type) {
         this(type, null);
+    }
+
+    public Vec3d getMoveVec() {
+        return moveVec;
     }
 
     @Override

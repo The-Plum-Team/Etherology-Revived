@@ -16,7 +16,7 @@ import ru.feytox.etherology.block.brewingCauldron.BrewingCauldronBlockEntity;
 import ru.feytox.etherology.client.util.ClientTickableBlock;
 import ru.feytox.etherology.particle.effects.SimpleParticleEffect;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
-import ru.feytox.etherology.registry.particle.EtherParticleTypes;
+import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 import static ru.feytox.etherology.block.brewingCauldron.BrewingCauldronBlockEntity.getWaterPos;
 
@@ -76,7 +76,7 @@ public class BrewingCauldronClient extends ClientTickableBlock<BrewingCauldronBl
         if (world.getRandom().nextFloat() < 0.5) return;
 
         Vec3d start = getWaterPos(state).add(Vec3d.of(pos));
-        val effect = new SimpleParticleEffect(EtherParticleTypes.HAZE);
+        val effect = new SimpleParticleEffect(SharedParticleTypes.HAZE.get());
         effect.spawnParticles(world, 1, 0.1, start);
     }
 }

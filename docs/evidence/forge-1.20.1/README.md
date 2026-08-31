@@ -179,8 +179,8 @@ native run before they can claim equivalence.
 `validateForgeChannelEvidenceArchiveIntegrity` is the positive Gradle gate for
 that immutable historical record. `validateForgeChannelCurrentArtifactDiagnostic`
 is deliberately separate: it compares the current whole production and harness
-JARs with their capture-time digests. It now fails because the unrelated
-SharedSounds milestone changed the production JAR after this capture. That
+JARs with their capture-time digests. It now fails because later registry
+milestones changed the production JAR after this capture. That
 expected whole-JAR mismatch neither invalidates the archive nor demonstrates a
 Channel regression, and it must not be described as current-artifact equality.
 Only a new isolated native run can establish equality for later artifacts.
@@ -193,3 +193,87 @@ deferred. The bounded SharedSounds registry/resource milestone has since passed,
 but no native sound-playback E2E was run and this directory is not playback
 evidence. The broader authoritative registry spine is the next forward gate.
 The Forge release gate remains closed.
+
+## Shared game-event dedicated server (v2)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v2`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v2`
+- Tracked profile manifest SHA-256:
+  `9dc0c3c3162ebe25d9d65f38296ccf0c506d871e31d1627377b3d5d95a83fa31`
+- Tracked profile manifest size: `1183` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: Loom userdev dedicated server
+- Named task: `:forge:1.20.1:runGameEventServerProbe`
+- Report status: `passed`
+- Assertions: `31` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef24394`
+
+This fresh, repository-owned Java 17 server loaded the exact sorted mod-ID
+inventory `architectury`, `etherology`, `etherology_e2e_server_probe`, `forge`,
+`geckolib`, `generated_a85b72e`, and `minecraft`. The generated ID belongs to
+the Loom userdev launch composition. The full inventory contained none of the
+seven forbidden client or foreign-mod IDs, and the recorded forbidden
+intersection is empty.
+
+The server observed exactly one Etherology game event,
+`etherology:etherology_resonance`, in the vanilla game-event registry. It
+verified the internal ID `etherology_resonance`, range 16, and the same runtime
+instance after server start. One `SERVER_DATA_LOAD` static tag update bound the
+event to exactly `minecraft:vibrations` and
+`minecraft:warden_can_listen`. The server then requested `stop(false)`, saved
+all three dimensions, and traversed `tags_updated`, `server_started`,
+`server_stopping`, and `server_stopped` before publishing the report.
+
+The Loom userdev launcher left non-daemon transformation workers alive after a
+normal v1 server stop. The v2 probe therefore schedules a probe-only daemon
+terminator after publishing its report. It joins the actual stopped-event
+server thread for at most 30 seconds and permits exit code zero only after that
+thread ends; timeout, interruption, publication failure, or a failed report
+uses exit code one. This workaround is isolated from the production artifact.
+The external runner independently requires the passing report, normal save and
+log markers, exact successful termination token, saved `level.dat`, no crash
+report, zero process exit, and publication of `done.marker` last.
+
+The scenario is a headless registry and data-pack proof. It produces no
+screenshots and does not claim a visual mechanic. Frozen file digests:
+
+- `game-event-registry-server-v2/archive-manifest.json`:
+  `a5396bdae7bcf462c60688955eea970ee541f7e7a70dd5425c5f707b386c7dcd`
+- `game-event-registry-server-v2/reports/report.json`:
+  `ffce96f7f4adb51adfc434d1ae282b622f60088a085df021d9c8310106486739`
+- `game-event-registry-server-v2/reports/launcher-result.json`:
+  `edbdcfec5fab673a2687870dd1fb8febfd9d4fda2983ed41374b183bb44b51a9`
+- `game-event-registry-server-v2/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `game-event-registry-server-v2/logs/latest.log`:
+  `89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef24394`
+
+Validate the five-file archive without the ignored live runtime:
+
+```text
+Validated archived game-event-registry for etherology-e2e-forge-server-1.20.1-v2: 31 assertions
+Server log SHA-256: 89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef24394
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+Run `python3 -B scripts/e2e/forge_server_evidence.py --archive
+docs/evidence/forge-1.20.1/game-event-registry-server-v2` from the repository
+root to repeat that check. `validateForgeGameEventServerEvidenceArchiveIntegrity`
+and the combined `validateForgeGameEventMilestone` make this immutable record a
+positive gate. `validateForgeGameEventRegistryMilestone` separately inspects
+the current Common, Fabric, and Forge artifacts; the archive itself does not
+claim current-source or rebuilt-artifact identity.
+
+This accepts only the shared resonance declaration, its two listening tags,
+and dedicated-server registry/data-load lifecycle. Fabric's supported custom
+sculk frequency 10 is covered statically, while Forge 47 has no supported
+equivalent and remains deferred. The proof does not cover sound playback, the
+full registry-ID manifest, every catalog entry's placement/save behavior, or
+the remaining gameplay and native E2E matrix. The Forge release gate remains
+closed on the broader authoritative registry spine.

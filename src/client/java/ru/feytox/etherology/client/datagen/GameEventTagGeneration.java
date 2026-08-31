@@ -6,7 +6,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.tag.GameEventTags;
 import net.minecraft.world.event.GameEvent;
-import ru.feytox.etherology.registry.misc.EventsRegistry;
+import ru.feytox.etherology.registry.misc.SharedGameEvents;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -18,7 +18,10 @@ public class GameEventTagGeneration extends FabricTagProvider<GameEvent> {
 
     @Override
     protected void configure(RegistryWrapper.WrapperLookup arg) {
-        getOrCreateTagBuilder(GameEventTags.VIBRATIONS).add(EventsRegistry.RESONANCE);
-        getOrCreateTagBuilder(GameEventTags.WARDEN_CAN_LISTEN).add(EventsRegistry.RESONANCE);
+        GameEvent resonance = SharedGameEvents.RESONANCE.get();
+        getOrCreateTagBuilder(GameEventTags.VIBRATIONS)
+                .add(resonance);
+        getOrCreateTagBuilder(GameEventTags.WARDEN_CAN_LISTEN)
+                .add(resonance);
     }
 }

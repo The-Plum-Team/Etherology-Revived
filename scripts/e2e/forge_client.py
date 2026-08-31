@@ -47,6 +47,8 @@ EXPECTED_ARTIFACT_TASKS = {
 EXPECTED_DEPENDENCY_MOD_IDS = {"architectury", "geckolib"}
 EXPECTED_PRODUCTION_DATA_ENTRIES = {
     "data/etherology/loot_tables/blocks/ethereal_storage.json",
+    "data/minecraft/tags/game_events/vibrations.json",
+    "data/minecraft/tags/game_events/warden_can_listen.json",
 }
 STOP_TIMEOUT_SECONDS = 20
 START_STABILITY_SECONDS = 2.0

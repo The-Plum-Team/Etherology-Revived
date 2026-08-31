@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "profile": {
+    "id": "etherology-e2e-forge-server-1.20.1-v2",
+    "runtime_directory": "etherology-e2e-forge-server-1.20.1-v2",
+    "game_directory": "game"
+  },
+  "release": {
+    "matrix": "release/release-matrix.json",
+    "artifact_node": "forge-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "forge",
+    "loader_version": "47.4.9",
+    "java": 17
+  },
+  "launch": {
+    "kind": "loom-userdev",
+    "task_path": ":forge:1.20.1:runGameEventServerProbe",
+    "scenario": "game-event-registry",
+    "maximum_memory_mb": 2048
+  },
+  "evidence": {
+    "directory": "evidence",
+    "scenario_directory": "game-event-registry",
+    "report": "reports/report.json",
+    "launcher_result": "reports/launcher-result.json",
+    "completion_marker": "reports/done.marker",
+    "server_log": "logs/latest.log"
+  },
+  "profile_directories": [
+    "config",
+    "crash-reports",
+    "evidence",
+    "logs",
+    "mods",
+    "world"
+  ],
+  "required_mod_ids": [
+    "etherology",
+    "etherology_e2e_server_probe"
+  ],
+  "forbidden_mod_ids": [
+    "etherology_e2e_harness",
+    "quickskin",
+    "cpm",
+    "ears",
+    "modmenu",
+    "roughlyenoughitems",
+    "emi"
+  ]
+}

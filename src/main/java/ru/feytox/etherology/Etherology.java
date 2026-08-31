@@ -42,6 +42,8 @@ public class Etherology {
         initialized = true;
 
         SharedSounds.register();
+        SharedGameEvents.register();
+        FabricGameEventHooks.registerSculkSensorFrequency();
         ExtraBlocksRegistry.registerAll();
         RegistriesRegistry.registerAll();
         EItems.registerItems();
@@ -61,7 +63,6 @@ public class Etherology {
         EntityRegistry.registerServerSide();
         LootConditions.registerAll();
         DispenserBehaviors.registerAll();
-        EventsRegistry.registerGameEvents();
         LensModifier.registerAll();
         EffectsRegistry.registerAll();
         ComponentTypes.registerAll();

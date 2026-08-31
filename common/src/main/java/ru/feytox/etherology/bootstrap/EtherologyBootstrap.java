@@ -3,6 +3,7 @@ package ru.feytox.etherology.bootstrap;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.block.SharedBlocks;
 import ru.feytox.etherology.registry.item.SharedItems;
+import ru.feytox.etherology.registry.misc.SharedGameEvents;
 import ru.feytox.etherology.registry.misc.SharedScreenHandlers;
 import ru.feytox.etherology.registry.misc.SharedSounds;
 
@@ -32,6 +33,7 @@ public final class EtherologyBootstrap {
         SharedBlockEntities.register();
         SharedScreenHandlers.register();
         SharedSounds.register();
+        SharedGameEvents.register();
         LIFECYCLE.initialize(registrar);
     }
 }

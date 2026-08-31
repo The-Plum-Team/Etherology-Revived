@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage and Channel native-E2E verticals plus the shared sound registry/resources are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, and the shared game-event registry with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -25,14 +25,27 @@ client, native-loader, and E2E parity gates pass. See
 the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.md),
 and the bounded [Forge 1.20.1 runtime evidence](docs/evidence/forge-1.20.1/README.md).
 The next Forge forward gate is the remainder of the authoritative registry
-spine. Its bounded shared-sound step is complete, but no native sound-playback
-E2E is claimed yet; the mechanics that consume each sound must prove playback.
-The exact shared-registry Fabric artifact has separately passed a fresh `v20`
-packaged startup, integrated-world, screenshot, save, and normal-shutdown smoke.
-Frozen evidence archives prove their capture-time artifacts only. The sound
-work left the preceding archives internally valid but required this new run;
-the same rule requires another isolated native run after every later rebuild
-before that rebuilt JAR can claim equivalent runtime evidence.
+spine. Its bounded shared-sound and game-event steps are complete.
+`SharedGameEvents` is the sole Common deferred owner of
+`etherology:etherology_resonance`, whose internal ID is
+`etherology_resonance` and whose range is 16. Both loaders package exact
+membership in the vanilla `vibrations` and `warden_can_listen` tags. Fabric
+uses its supported `SculkSensorFrequencyRegistry` hook for frequency 10; Forge
+47 has no supported equivalent, so custom sculk-frequency behavior remains
+deferred instead of being approximated.
+
+The game-event step has both an exact cross-loader artifact gate and a real
+Java 17 Forge dedicated-server run in the fresh repository-owned `v2`
+Loom-userdev profile. That headless run passed all 31 registry, tag data-load,
+full mod-inventory/isolation, and lifecycle assertions. The runner additionally
+required a saved world, normal stop, and process exit code zero; the proof does
+not need screenshots. No native sound-playback E2E is claimed yet—the
+mechanics that consume each sound must prove playback. The earlier Fabric
+`v20` packaged startup, integrated-world, screenshot, save, and normal-shutdown
+smoke predates the game-event rebuild and therefore does not claim equality
+with the current Fabric artifact. Frozen evidence archives prove only their
+capture-time artifacts, so every later rebuilt JAR needs another isolated
+native run before it can claim equivalent runtime evidence.
 
 ## About Etherology
 

@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.architectury.plugin.ArchitectPluginExtension
+import groovy.json.JsonSlurper
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
 import org.gradle.api.tasks.Exec
@@ -33,14 +34,19 @@ val fabricProjectPath = requireNotNull(stonecutter.node.sibling("fabric")).hiera
 val fabricProject = project(fabricProjectPath)
 evaluationDependsOn(fabricProjectPath)
 val fabricTest = fabricProject.tasks.named("test")
+val fabricJar = fabricProject.tasks.named<Jar>("jar")
 val fabricRemapJar = fabricProject.tasks.named<RemapJarTask>("remapJar")
 val forgeJavaRoot = rootProject.file("forge/src/main/java")
 val forgeResourcesRoot = rootProject.file("forge/src/main/resources")
 val forgeMainClasses = layout.buildDirectory.dir("classes/java/main")
 val forgeMainResources = layout.buildDirectory.dir("resources/main")
+val canonicalGameEventTagEntries = setOf(
+    "data/minecraft/tags/game_events/vibrations.json",
+    "data/minecraft/tags/game_events/warden_can_listen.json",
+)
 val acceptedForgeDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
-)
+) + canonicalGameEventTagEntries.map { entry -> entry.removePrefix("data/") }
 val commonBootstrapClassEntry =
     "ru/feytox/etherology/bootstrap/EtherologyBootstrap.class"
 val platformRegistrarClassEntry =
@@ -67,10 +73,16 @@ val sharedScreenHandlerRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedScreenHandlers.class"
 val sharedSoundRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedSounds.class"
+val sharedGameEventRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/SharedGameEvents.class"
 val canonicalFabricSoundRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/EtherSounds.class"
+val canonicalFabricGameEventRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/EventsRegistry.class"
 val canonicalFabricInitializerClassEntry =
     "ru/feytox/etherology/Etherology.class"
+val fabricGameEventHooksClassEntry =
+    "ru/feytox/etherology/FabricGameEventHooks.class"
 val fabricEntrypointClassEntry =
     "ru/feytox/etherology/EtherologyFabric.class"
 val forgeEntrypointClassEntry =
@@ -161,6 +173,9 @@ val etherealChannelTextures = listOf(
 val etherealChannelResources =
     listOf(etherealChannelBlockstate, etherealChannelItemModel) +
         etherealChannelBlockModels + etherealChannelTextures
+val canonicalGameEventTagFiles = canonicalGameEventTagEntries.associateWith { entry ->
+    rootProject.file("src/main/generated/$entry")
+}
 val soundManifest =
     rootProject.file("src/client/resources/assets/etherology/sounds.json")
 val soundDirectory =
@@ -207,6 +222,20 @@ val canonicalSoundFiles = setOf(
 val forgeChannelEvidenceRoot = rootProject.file("docs/evidence/forge-1.20.1")
 val forgeChannelEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_channel_evidence.py")
+val forgeGameEventServerEvidenceRoot =
+    rootProject.file("docs/evidence/forge-1.20.1")
+val forgeGameEventServerEvidenceArchive = forgeGameEventServerEvidenceRoot.resolve(
+    "game-event-registry-server-v2",
+)
+val forgeGameEventServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_evidence.py")
+val forgeGameEventServerRunner = rootProject.file("scripts/e2e/forge_server.py")
+val forgeGameEventServerRunnerTest =
+    rootProject.file("scripts/e2e/test_forge_server.py")
+val forgeGameEventServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_evidence.py")
+val forgeGameEventServerProfileManifest =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile.json")
 val forgeE2eProfileManifest = rootProject.file("scripts/e2e/forge-1.20.1-profile.json")
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
@@ -273,6 +302,7 @@ sourceSets {
             )
             include("assets/**")
             include("data/etherology/loot_tables/blocks/ethereal_storage.json")
+            canonicalGameEventTagEntries.forEach { entry -> include(entry) }
             include("META-INF/**")
             include("pack.mcmeta")
             include("etherology.forge.mixins.json")
@@ -1658,12 +1688,294 @@ fun missingForgeSoundRegistryMilestone(
     return missingConditions
 }
 
+fun missingForgeGameEventRegistryMilestone(
+    commonJarFile: File,
+    fabricTransformedCommonJarFile: File,
+    forgeTransformedCommonJarFile: File,
+    fabricProductionJarFile: File,
+    forgeShadowJarFile: File,
+): List<String> {
+    val missingConditions = mutableListOf<String>()
+    val resonanceId = "etherology_resonance"
+
+    canonicalGameEventTagFiles.forEach { (entryPath, sourceFile) ->
+        if (!sourceFile.isFile || Files.isSymbolicLink(sourceFile.toPath())) {
+            missingConditions.add("canonical game-event tag is missing or linked: $entryPath")
+        }
+    }
+
+    fun inspectArtifact(
+        artifact: File,
+        description: String,
+        requireTagResources: Boolean,
+        requireFabricHook: Boolean,
+    ) {
+        if (!artifact.isFile || Files.isSymbolicLink(artifact.toPath())) {
+            missingConditions.add("$description is missing or linked")
+            return
+        }
+
+        try {
+            ZipFile(artifact).use { zip ->
+                val entryNames = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                val classEntryNames = entryNames.filter { entry -> entry.endsWith(".class") }
+                val sharedOwnerCount = entryNames.count(sharedGameEventRegistryClassEntry::equals)
+                if (sharedOwnerCount != 1) {
+                    missingConditions.add(
+                        "$description must contain one shared game-event registry, " +
+                            "found $sharedOwnerCount",
+                    )
+                } else {
+                    val sharedEntry = requireNotNull(
+                        zip.getEntry(sharedGameEventRegistryClassEntry),
+                    )
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(sharedEntry).use { input -> input.readAllBytes() },
+                    )
+                    val requiredConstants = setOf(
+                        resonanceId,
+                        "ru/feytox/etherology/registry/SharedDeferredRegister",
+                        "register",
+                        "attach",
+                    )
+                    val missingConstants = requiredConstants - constants
+                    if (missingConstants.isNotEmpty()) {
+                        missingConditions.add(
+                            "$description shared game-event owner lost its deferred contract: " +
+                                missingConstants.sorted(),
+                        )
+                    }
+                }
+
+                val legacyOwnerCount = entryNames.count(
+                    canonicalFabricGameEventRegistryClassEntry::equals,
+                )
+                if (legacyOwnerCount != 0) {
+                    missingConditions.add(
+                        "$description contains $legacyOwnerCount legacy EventsRegistry owner(s)",
+                    )
+                }
+
+                val fabricHookCount = entryNames.count(fabricGameEventHooksClassEntry::equals)
+                val expectedFabricHookCount = if (requireFabricHook) 1 else 0
+                if (fabricHookCount != expectedFabricHookCount) {
+                    missingConditions.add(
+                        "$description Fabric game-event hook count changed: " +
+                            "expected=$expectedFabricHookCount, actual=$fabricHookCount",
+                    )
+                }
+
+                val resonanceRegistrationOwners = mutableSetOf<String>()
+                val fabricFrequencyApiOwners = mutableSetOf<String>()
+                val directFrequencyMutationOwners = mutableSetOf<String>()
+                classEntryNames.forEach { classEntryName ->
+                    val classEntry = requireNotNull(zip.getEntry(classEntryName))
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(classEntry).use { input -> input.readAllBytes() },
+                    )
+                    val referencesRegistrationOwner =
+                        "ru/feytox/etherology/registry/SharedDeferredRegister" in constants
+                            || "dev/architectury/registry/registries/DeferredRegister" in constants
+                            || "net/minecraft/registry/Registry" in constants
+                    if (resonanceId in constants
+                        && referencesRegistrationOwner
+                        && "register" in constants
+                    ) {
+                        resonanceRegistrationOwners.add(classEntryName)
+                    }
+                    if ("net/fabricmc/fabric/api/registry/SculkSensorFrequencyRegistry"
+                        in constants
+                    ) {
+                        fabricFrequencyApiOwners.add(classEntryName)
+                    }
+                    if ("net/minecraft/world/event/Vibrations" in constants
+                        && "FREQUENCIES" in constants
+                    ) {
+                        directFrequencyMutationOwners.add(classEntryName)
+                    }
+                }
+                if (resonanceRegistrationOwners != setOf(sharedGameEventRegistryClassEntry)) {
+                    missingConditions.add(
+                        "$description resonance registration owners changed: " +
+                            resonanceRegistrationOwners.sorted(),
+                    )
+                }
+                val expectedFrequencyOwners = if (requireFabricHook) {
+                    setOf(fabricGameEventHooksClassEntry)
+                } else {
+                    emptySet()
+                }
+                if (fabricFrequencyApiOwners != expectedFrequencyOwners) {
+                    missingConditions.add(
+                        "$description Fabric sculk-frequency owners changed: " +
+                        fabricFrequencyApiOwners.sorted(),
+                    )
+                }
+                if (directFrequencyMutationOwners.isNotEmpty()) {
+                    missingConditions.add(
+                        "$description directly mutates vanilla vibration frequencies: " +
+                            directFrequencyMutationOwners.sorted(),
+                    )
+                }
+
+                val bootstrapEntry = zip.getEntry(commonBootstrapClassEntry)
+                if (bootstrapEntry == null) {
+                    missingConditions.add("$description has no loader-neutral bootstrap")
+                } else {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(bootstrapEntry).use { input -> input.readAllBytes() },
+                    )
+                    if ("ru/feytox/etherology/registry/misc/SharedGameEvents" !in constants) {
+                        missingConditions.add(
+                            "$description bootstrap does not attach the shared game-event registry",
+                        )
+                    }
+                }
+
+                if (requireFabricHook) {
+                    val initializerEntry = zip.getEntry(canonicalFabricInitializerClassEntry)
+                    if (initializerEntry == null) {
+                        missingConditions.add("$description has no canonical Fabric initializer")
+                    } else {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(initializerEntry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                        if ("ru/feytox/etherology/registry/misc/SharedGameEvents"
+                            !in constants
+                            || "ru/feytox/etherology/FabricGameEventHooks" !in constants
+                            || "ru/feytox/etherology/bootstrap/EtherologyBootstrap" in constants
+                        ) {
+                            missingConditions.add(
+                                "$description initializer does not own the bounded Fabric " +
+                                    "game-event attachment and frequency path",
+                            )
+                        }
+                    }
+                }
+
+                if (requireTagResources) {
+                    canonicalGameEventTagFiles.forEach tag@ { (entryPath, sourceFile) ->
+                        val packagedEntryCount = entryNames.count(entryPath::equals)
+                        if (packagedEntryCount != 1) {
+                            missingConditions.add(
+                                "$description must contain one $entryPath, " +
+                                    "found $packagedEntryCount",
+                            )
+                            return@tag
+                        }
+                        if (!sourceFile.isFile || Files.isSymbolicLink(sourceFile.toPath())) {
+                            return@tag
+                        }
+                        val packagedEntry = requireNotNull(zip.getEntry(entryPath))
+                        val packagedBytes = zip.getInputStream(packagedEntry).use { input ->
+                            input.readAllBytes()
+                        }
+                        if (!packagedBytes.contentEquals(sourceFile.readBytes())) {
+                            missingConditions.add(
+                                "$description $entryPath differs from its canonical source",
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (exception: Exception) {
+            missingConditions.add(
+                "$description could not be inspected for game-event ownership: " +
+                    "${exception.javaClass.simpleName}: ${exception.message}",
+            )
+        }
+    }
+
+    inspectArtifact(commonJarFile, "common JAR", false, false)
+    inspectArtifact(
+        fabricTransformedCommonJarFile,
+        "Fabric-transformed common JAR",
+        false,
+        false,
+    )
+    inspectArtifact(
+        forgeTransformedCommonJarFile,
+        "Forge-transformed common JAR",
+        false,
+        false,
+    )
+    inspectArtifact(
+        fabricProductionJarFile,
+        "Fabric remapped production JAR",
+        true,
+        true,
+    )
+    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", true, false)
+    return missingConditions
+}
+
+fun missingForgeGameEventServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeGameEventServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeGameEventServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add("strict Forge game-event server evidence verifier is missing")
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeGameEventServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("game-event-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeGameEventServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge game-event server-v2 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeGameEventServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeGameEventServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge game-event server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge game-event server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
-    "entity, enchantment, recipe, screen, effect, event, loot, particle, tree, and " +
+    "entity, enchantment, recipe, screen, effect, loot, particle, tree, and " +
         "world-generation registries are not loader-neutral",
-    "creative tabs, fuel, reload, lifecycle, trade, brewing, wood, sculk, and command hooks " +
-        "are not accepted on both loaders",
+    "creative tabs, fuel, reload, lifecycle, trade, brewing, wood, sculk-frequency, and " +
+        "command hooks are not accepted on both loaders",
     "the exact Fabric/Forge registry manifest and dedicated-server placement/save smoke are " +
         "not accepted",
 )
@@ -1706,6 +2018,23 @@ fun firstIncompleteForgeMilestone(
     )
     if (missingSoundRegistry.isNotEmpty()) {
         return "sound registry and resources" to missingSoundRegistry
+    }
+
+    val missingGameEventRegistry = missingForgeGameEventRegistryMilestone(
+        commonJarFile,
+        fabricTransformedCommonJarFile,
+        forgeTransformedCommonJarFile,
+        fabricProductionJarFile,
+        forgeShadowJarFile,
+    )
+    if (missingGameEventRegistry.isNotEmpty()) {
+        return "game-event registry and tags" to missingGameEventRegistry
+    }
+
+    val missingGameEventServerEvidence =
+        missingForgeGameEventServerEvidenceMilestone()
+    if (missingGameEventServerEvidence.isNotEmpty()) {
+        return "game-event dedicated-server evidence" to missingGameEventServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -1951,6 +2280,76 @@ val validateForgeChannelNetworkMilestone = tasks.register("validateForgeChannelN
 }
 
 val forgeShadowJar = tasks.named<ShadowJar>("shadowJar")
+tasks.named<Test>("test").configure {
+    exclude("**/GameEventRegistryResourcesTest.class")
+}
+val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
+    group = "verification"
+    description =
+        "Runs the bounded cross-loader game-event ownership and packaged-tag tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.GameEventRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("gameEventCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("gameEventFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("gameEventForgeTransformedCommonJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("gameEventFabricProductionJar")
+    inputs.file(fabricJar.flatMap { it.archiveFile })
+        .withPropertyName("gameEventFabricDevelopmentJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("gameEventForgeShadowJar")
+    doFirst {
+        systemProperty(
+            "etherology.gameEvents.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.gameEvents.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.gameEvents.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.gameEvents.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.gameEvents.fabricDevelopmentJar",
+            fabricJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.gameEvents.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+    }
+}
+
 val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
     group = "verification"
     description =
@@ -2002,12 +2401,112 @@ val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegi
     }
 }
 
+val validateForgeGameEventRegistryMilestone =
+    tasks.register("validateForgeGameEventRegistryMilestone") {
+        group = "verification"
+        description =
+            "Accepts shared resonance registration and exact cross-loader game-event tags."
+        dependsOn(
+            validateForgeSoundRegistryMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricRemapJar,
+            gameEventRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("fabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("forgeTransformedCommonJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(canonicalGameEventTagFiles.values)
+        doLast {
+            val commonJarFile = commonJar.get().archiveFile.get().asFile
+            val missingConditions = missingForgeGameEventRegistryMilestone(
+                commonJarFile,
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ),
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ),
+                fabricRemapJar.get().archiveFile.get().asFile,
+                forgeShadowJar.get().archiveFile.get().asFile,
+            )
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion shared game-event registry milestone is incomplete:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val forgeGameEventServerSafetyTest =
+    tasks.register<Exec>("forgeGameEventServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the isolated Forge server runner and archive-verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server.py",
+            "scripts/e2e/test_forge_server_evidence.py",
+        )
+        inputs.files(
+            forgeGameEventServerRunner,
+            forgeGameEventServerRunnerTest,
+            forgeGameEventServerEvidenceVerifier,
+            forgeGameEventServerEvidenceTest,
+            forgeGameEventServerProfileManifest,
+        )
+    }
+
+val validateForgeGameEventServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeGameEventServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge game-event dedicated-server archive."
+        dependsOn(forgeGameEventServerSafetyTest)
+        inputs.file(forgeGameEventServerEvidenceVerifier)
+        inputs.dir(forgeGameEventServerEvidenceArchive)
+            .withPropertyName("forgeGameEventServerEvidenceArchive")
+            .optional()
+        doLast {
+            val missingConditions = missingForgeGameEventServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion game-event server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeGameEventMilestone = tasks.register("validateForgeGameEventMilestone") {
+    group = "verification"
+    description =
+        "Accepts the shared game event, exact tags, and frozen Forge server proof."
+    dependsOn(
+        validateForgeGameEventRegistryMilestone,
+        validateForgeGameEventServerEvidenceArchiveIntegrity,
+    )
+}
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeSoundRegistryMilestone)
+        dependsOn(validateForgeGameEventMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -2045,6 +2544,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeChannelImplementationMilestone,
         validateForgeChannelNetworkMilestone,
         validateForgeSoundRegistryMilestone,
+        validateForgeGameEventMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -2053,12 +2553,20 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeSoundRegistryMilestone)
+    dependsOn(validateForgeGameEventMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
     inputs.files(soundManifest, englishLanguageFile)
     inputs.dir(soundDirectory)
+    inputs.files(canonicalGameEventTagFiles.values)
+    inputs.files(
+        forgeGameEventServerEvidenceVerifier,
+        forgeGameEventServerProfileManifest,
+    )
+    inputs.dir(forgeGameEventServerEvidenceArchive)
+        .withPropertyName("forgeGameEventServerEvidenceArchive")
+        .optional()
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
     inputs.files(commonTransformProductionForge)
@@ -2108,6 +2616,526 @@ tasks.matching { task -> task.name.startsWith("publish") }.configureEach {
 }
 
 if (minecraftVersion == "1.20.1") {
+    val serverProbeProfileFile =
+        rootProject.file("scripts/e2e/forge-server-1.20.1-profile.json")
+    check(serverProbeProfileFile.isFile && !Files.isSymbolicLink(serverProbeProfileFile.toPath())) {
+        "The Forge dedicated-server probe profile is missing or linked"
+    }
+    @Suppress("UNCHECKED_CAST")
+    val serverProbeProfile = JsonSlurper().parse(serverProbeProfileFile) as Map<String, Any>
+    @Suppress("UNCHECKED_CAST")
+    val serverProbeProfileIdentity =
+        serverProbeProfile.getValue("profile") as Map<String, Any>
+    @Suppress("UNCHECKED_CAST")
+    val serverProbeLaunch = serverProbeProfile.getValue("launch") as Map<String, Any>
+    @Suppress("UNCHECKED_CAST")
+    val serverProbeEvidence = serverProbeProfile.getValue("evidence") as Map<String, Any>
+    val serverProbeProfileId = serverProbeProfileIdentity.getValue("id").toString()
+    val serverProbeRuntimeDirectory =
+        serverProbeProfileIdentity.getValue("runtime_directory").toString()
+    val serverProbeGameDirectoryName =
+        serverProbeProfileIdentity.getValue("game_directory").toString()
+    val serverProbeScenarioId = serverProbeLaunch.getValue("scenario").toString()
+    @Suppress("UNCHECKED_CAST")
+    val serverProbeForbiddenModIds =
+        (serverProbeProfile.getValue("forbidden_mod_ids") as List<Any>)
+            .map(Any::toString)
+    val serverProbeGameDirectory = rootProject.file(
+        "scripts/e2e/.state/runtimes/$serverProbeRuntimeDirectory/" +
+            serverProbeGameDirectoryName,
+    )
+    val serverProbeEvidenceRoot = rootProject.file(
+        "scripts/e2e/.state/runtimes/$serverProbeRuntimeDirectory/" +
+            "${serverProbeEvidence.getValue("directory")}/" +
+            serverProbeEvidence.getValue("scenario_directory"),
+    )
+    val serverProbeJavaVersion = javaVersion
+
+    val serverProbe = sourceSets.create("serverProbe") {
+        java.setSrcDirs(
+            listOf(rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java")),
+        )
+        resources.setSrcDirs(
+            listOf(rootProject.file("e2e-harness/forge-server/1.20.1/src/main/resources")),
+        )
+        compileClasspath += sourceSets.main.get().compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+
+    val serverProbeTest = sourceSets.create("serverProbeTest") {
+        java.setSrcDirs(
+            listOf(rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java")),
+        )
+        resources.setSrcDirs(emptyList<String>())
+        compileClasspath += serverProbe.output + serverProbe.compileClasspath
+        runtimeClasspath += output + serverProbe.output + serverProbe.runtimeClasspath
+    }
+    configurations[serverProbeTest.implementationConfigurationName]
+        .extendsFrom(configurations["testImplementation"])
+    configurations[serverProbeTest.runtimeOnlyConfigurationName]
+        .extendsFrom(configurations["testRuntimeOnly"])
+
+    val expandedServerProbeMetadata = mapOf(
+        "version" to project.version.toString(),
+        "minecraft_version_range" to releaseArtifact["metadata_range"].toString(),
+        "forge_loader_range" to releaseMetadata["loader_api"].toString(),
+        "forge_version_range" to releaseMetadata["loader"].toString(),
+    )
+
+    tasks.named<ProcessResources>(serverProbe.processResourcesTaskName) {
+        inputs.properties(expandedServerProbeMetadata)
+        filesMatching("META-INF/mods.toml") {
+            expand(expandedServerProbeMetadata)
+        }
+    }
+
+    extensions.configure<LoomGradleExtensionAPI>("loom") {
+        val inheritedServerRun = runConfigs.named("server")
+        runConfigs.create("gameEventServerProbe") {
+            inherit(inheritedServerRun.get())
+            displayName.set("Etherology Forge 1.20.1 game-event server probe")
+            sourceSet.set(sourceSets.main.get().name)
+            runDirectory.set(serverProbeGameDirectory)
+            generateRunConfig.set(false)
+            systemProperties.put("etherology.serverProbe.profileId", serverProbeProfileId)
+            systemProperties.put("etherology.serverProbe.scenario", serverProbeScenarioId)
+            systemProperties.put(
+                "etherology.serverProbe.runtimeKind",
+                serverProbeLaunch.getValue("kind").toString(),
+            )
+            systemProperties.put(
+                "etherology.serverProbe.forbiddenModIds",
+                serverProbeForbiddenModIds.joinToString(","),
+            )
+            systemProperties.put(
+                "etherology.serverProbe.evidenceRoot",
+                serverProbeEvidenceRoot.absolutePath,
+            )
+            jvmArguments.add("-Xmx${serverProbeLaunch.getValue("maximum_memory_mb")}m")
+            mods {
+                create("etherology") {
+                    sourceSet(sourceSets.main.get())
+                }
+                create("etherology_e2e_server_probe") {
+                    sourceSet(serverProbe)
+                }
+            }
+        }
+    }
+
+    val serverProbeRunTask = tasks.named<JavaExec>("runGameEventServerProbe") {
+        dependsOn(tasks.named("classes"), serverProbe.classesTaskName)
+        javaLauncher.set(
+            javaToolchains.launcherFor {
+                languageVersion.set(JavaLanguageVersion.of(serverProbeJavaVersion))
+            },
+        )
+    }
+
+    val serverProbeTestTask = tasks.register<Test>("serverProbeTest") {
+        group = "verification"
+        description = "Runs focused unit tests for the Forge 1.20.1 server probe."
+        dependsOn(serverProbe.classesTaskName)
+        testClassesDirs = serverProbeTest.output.classesDirs
+        classpath = serverProbeTest.runtimeClasspath
+        useJUnitPlatform()
+    }
+
+    val serverProbeJar = tasks.register<Jar>("serverProbeJar") {
+        group = "e2e"
+        description = "Packages the isolated Forge 1.20.1 dedicated-server probe."
+        dependsOn(serverProbe.classesTaskName)
+        from(serverProbe.output)
+        archiveBaseName.set("Etherology-E2E-Server-Probe-Forge-$minecraftVersion")
+        archiveVersion.set(project.version.toString())
+        archiveClassifier.set("dev")
+        destinationDirectory.set(layout.buildDirectory.dir("server-probe/devlibs"))
+    }
+
+    val validateServerProbeProfile = tasks.register("validateServerProbeProfile") {
+        group = "verification"
+        description = "Validates the exact isolated Forge 1.20.1 server-probe profile."
+        inputs.file(serverProbeProfileFile)
+
+        doLast {
+            check(serverProbeProfile.keys == setOf(
+                "schema",
+                "profile",
+                "release",
+                "launch",
+                "evidence",
+                "profile_directories",
+                "required_mod_ids",
+                "forbidden_mod_ids",
+            )) {
+                "The dedicated-server probe profile field inventory changed"
+            }
+            check(serverProbeProfile["schema"] == 1) {
+                "The dedicated-server probe profile schema changed"
+            }
+            check(serverProbeProfileIdentity == mapOf(
+                "id" to "etherology-e2e-forge-server-1.20.1-v2",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v2",
+                "game_directory" to "game",
+            )) {
+                "The dedicated-server probe identity changed"
+            }
+            @Suppress("UNCHECKED_CAST")
+            val profileRelease = serverProbeProfile.getValue("release") as Map<String, Any>
+            check(profileRelease == mapOf(
+                "matrix" to "release/release-matrix.json",
+                "artifact_node" to "forge-1.20.1",
+                "minecraft" to minecraftVersion,
+                "loader" to "forge",
+                "loader_version" to versionProperty("forge_version").substringAfter('-'),
+                "java" to javaVersion,
+            )) {
+                "The dedicated-server probe release identity changed"
+            }
+            check(serverProbeLaunch == mapOf(
+                "kind" to "loom-userdev",
+                "task_path" to ":forge:1.20.1:runGameEventServerProbe",
+                "scenario" to "game-event-registry",
+                "maximum_memory_mb" to 2048,
+            )) {
+                "The dedicated-server probe launch contract changed"
+            }
+            check(serverProbeEvidence == mapOf(
+                "directory" to "evidence",
+                "scenario_directory" to "game-event-registry",
+                "report" to "reports/report.json",
+                "launcher_result" to "reports/launcher-result.json",
+                "completion_marker" to "reports/done.marker",
+                "server_log" to "logs/latest.log",
+            )) {
+                "The dedicated-server probe evidence contract changed"
+            }
+            check(serverProbeProfile["profile_directories"] == listOf(
+                "config",
+                "crash-reports",
+                "evidence",
+                "logs",
+                "mods",
+                "world",
+            )) {
+                "The dedicated-server probe directory inventory changed"
+            }
+            check(serverProbeProfile["required_mod_ids"] == listOf(
+                "etherology",
+                "etherology_e2e_server_probe",
+            )) {
+                "The dedicated-server probe required-mod inventory changed"
+            }
+            check(serverProbeProfile["forbidden_mod_ids"] == listOf(
+                "etherology_e2e_harness",
+                "quickskin",
+                "cpm",
+                "ears",
+                "modmenu",
+                "roughlyenoughitems",
+                "emi",
+            )) {
+                "The dedicated-server probe forbidden-mod inventory changed"
+            }
+        }
+    }
+
+    val validateServerProbeRunConfiguration =
+        tasks.register("validateServerProbeRunConfiguration") {
+            group = "verification"
+            description =
+                "Validates the server-only Loom run without launching Minecraft."
+            dependsOn(tasks.named("classes"), serverProbe.classesTaskName)
+
+            doLast {
+                val loomExtension = project.extensions.getByType<LoomGradleExtensionAPI>()
+                val runConfiguration = loomExtension.runConfigs
+                    .getByName("gameEventServerProbe")
+                check(runConfiguration.runtimeEnvironment.get() == "server") {
+                    "The dedicated-server probe does not inherit the server runtime"
+                }
+                check(runConfiguration.forgeTemplate.get() == "server") {
+                    "The dedicated-server probe does not inherit the Forge server template"
+                }
+                check(runConfiguration.sourceSet.get() == sourceSets.main.get().name) {
+                    "The dedicated-server probe run has the wrong primary source set"
+                }
+                check(
+                    runConfiguration.runDirectory.get().asFile.canonicalFile ==
+                        serverProbeGameDirectory.canonicalFile,
+                ) {
+                    "The dedicated-server probe run directory escaped its isolated profile"
+                }
+                check(!runConfiguration.generateRunConfig.get()) {
+                    "The dedicated-server probe generated a reusable IDE profile"
+                }
+                val probeSystemProperties = runConfiguration.systemProperties.get()
+                check(
+                    probeSystemProperties["etherology.serverProbe.profileId"] ==
+                        serverProbeProfileId
+                        && probeSystemProperties["etherology.serverProbe.scenario"] ==
+                        serverProbeScenarioId
+                        && probeSystemProperties["etherology.serverProbe.runtimeKind"] ==
+                        serverProbeLaunch.getValue("kind")
+                        && probeSystemProperties["etherology.serverProbe.forbiddenModIds"] ==
+                        serverProbeForbiddenModIds.joinToString(",")
+                        && probeSystemProperties["etherology.serverProbe.evidenceRoot"] ==
+                        serverProbeEvidenceRoot.absolutePath,
+                ) {
+                    "The dedicated-server probe system-property contract changed"
+                }
+                check(
+                    "-Xmx${serverProbeLaunch.getValue("maximum_memory_mb")}m" in
+                        runConfiguration.jvmArguments.get(),
+                ) {
+                    "The dedicated-server probe memory boundary changed"
+                }
+                check(
+                    serverProbeRunTask.get().javaLauncher.get()
+                        .metadata.languageVersion.asInt() == serverProbeJavaVersion,
+                ) {
+                    "The dedicated-server probe Java launcher is not Java $serverProbeJavaVersion"
+                }
+                val bootstrapClasspath = serverProbeRunTask.get().classpath.files
+                val missingProductionOutputs = sourceSets.main.get().output.files
+                    .filterNot(bootstrapClasspath::contains)
+                check(missingProductionOutputs.isEmpty()) {
+                    "The dedicated-server probe bootstrap classpath lost production output: " +
+                        missingProductionOutputs.map(File::getAbsolutePath).sorted()
+                }
+                val devLaunchInjectorJars = bootstrapClasspath.filter { classpathEntry ->
+                    classpathEntry.isFile
+                        && classpathEntry.extension == "jar"
+                        && classpathEntry.name.startsWith("dev-launch-injector-")
+                }
+                check(devLaunchInjectorJars.size == 1) {
+                    "The dedicated-server probe bootstrap classpath must contain exactly " +
+                        "one dev-launch-injector JAR: " +
+                        devLaunchInjectorJars.map(File::getAbsolutePath).sorted()
+                }
+                val devLaunchInjectorJar = devLaunchInjectorJars.single()
+                check(!Files.isSymbolicLink(devLaunchInjectorJar.toPath())) {
+                    "The dedicated-server probe dev-launch-injector JAR is a symbolic link"
+                }
+                ZipFile(devLaunchInjectorJar).use { devLaunchInjectorZip ->
+                    check(
+                        devLaunchInjectorZip.getEntry(
+                            "net/fabricmc/devlaunchinjector/Main.class",
+                        ) != null,
+                    ) {
+                        "The dedicated-server probe dev-launch-injector JAR has no launcher class"
+                    }
+                }
+                check(runConfiguration.mods.names == setOf(
+                    "etherology",
+                    "etherology_e2e_server_probe",
+                )) {
+                    "The dedicated-server probe run mod inventory changed: " +
+                        runConfiguration.mods.names.sorted()
+                }
+                check(
+                    runConfiguration.mods.getByName("etherology")
+                        .modFiles.files == sourceSets.main.get().output.files,
+                ) {
+                    "The dedicated-server probe run lost the production source set"
+                }
+                check(
+                    runConfiguration.mods.getByName("etherology_e2e_server_probe")
+                        .modFiles.files == serverProbe.output.files,
+                ) {
+                    "The dedicated-server probe mod does not own only its probe source set"
+                }
+                loomExtension.runConfigs
+                    .filter { configuration -> configuration.name != "gameEventServerProbe" }
+                    .forEach { configuration ->
+                        check("etherology_e2e_server_probe" !in configuration.mods.names) {
+                            "The probe mod leaked into run configuration ${configuration.name}"
+                        }
+                    }
+            }
+        }
+
+    val verifyServerProbeArtifact = tasks.register("verifyServerProbeArtifact") {
+        group = "verification"
+        description = "Validates the isolated Forge 1.20.1 dedicated-server probe JAR."
+        dependsOn(serverProbeJar)
+        inputs.file(serverProbeJar.flatMap { it.archiveFile })
+
+        doLast {
+            val probeFile = serverProbeJar.get().archiveFile.get().asFile
+            ZipFile(probeFile).use { probeZip ->
+                val probeEntries = probeZip.entries().asSequence().map { it.name }.toSet()
+                val probeClassEntries = probeEntries.filter { it.endsWith(".class") }.toSet()
+                check(probeClassEntries == setOf(
+                    "dev/theplumteam/etherology/e2e/server/GameEventServerProbe.class",
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeModInventory.class",
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator.class",
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeReportWriter.class",
+                )) {
+                    "The dedicated-server probe class inventory changed: " +
+                        probeClassEntries.sorted()
+                }
+                check(probeEntries.none { it.endsWith(".jar") }) {
+                    "The dedicated-server probe JAR contains nested dependencies"
+                }
+                probeClassEntries.forEach { classEntryName ->
+                    val classEntry = requireNotNull(probeZip.getEntry(classEntryName))
+                    val constants = readClassUtf8Constants(
+                        probeZip.getInputStream(classEntry).use { input -> input.readAllBytes() },
+                    )
+                    check(constants.none { constant ->
+                        constant.startsWith("net/minecraft/client/")
+                            || constant.startsWith("ru/feytox/etherology/")
+                            || constant.startsWith("ru.feytox.etherology.")
+                    }) {
+                        "Dedicated-server probe class $classEntryName links client or production code"
+                    }
+                }
+
+                val probeEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/GameEventServerProbe.class",
+                    ),
+                )
+                val probeConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(probeEntry).use { input -> input.readAllBytes() },
+                )
+                val requiredProbeConstants = setOf(
+                    "etherology_e2e_server_probe",
+                    "etherology",
+                    "etherology_resonance",
+                    "DEDICATED_SERVER",
+                    "net/minecraftforge/event/TagsUpdatedEvent",
+                    "SERVER_DATA_LOAD",
+                    "shouldUpdateStaticData",
+                    "getIds",
+                    "streamTagsAndEntries",
+                    "net/minecraftforge/event/server/ServerStartedEvent",
+                    "net/minecraftforge/event/server/ServerStoppingEvent",
+                    "net/minecraftforge/event/server/ServerStoppedEvent",
+                    "stop",
+                    "etherology.serverProbe.evidenceRoot",
+                    "etherology.serverProbe.runtimeKind",
+                    "etherology.serverProbe.forbiddenModIds",
+                    "loaded_mod_ids",
+                    "forbidden_mod_ids_loaded",
+                    "mods_forbidden_intersection_empty",
+                    "getMods",
+                    "getModId",
+                    "loom-userdev",
+                    "[EtherologyServerProbe] report_published",
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
+                    "java/lang/Thread",
+                    "currentThread",
+                    "exitStatusForReport",
+                    "[EtherologyServerProbe] loom_userdev_exit_scheduled " +
+                        "status={} server_thread_join_timeout_ms={}",
+                )
+                check(requiredProbeConstants.all(probeConstants::contains)) {
+                    "The dedicated-server probe lost part of its lifecycle contract: " +
+                        (requiredProbeConstants - probeConstants).sorted()
+                }
+
+                val terminatorEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/" +
+                            "ServerProbeProcessTerminator.class",
+                    ),
+                )
+                val terminatorConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(terminatorEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredTerminatorConstants = setOf(
+                    "loom-userdev",
+                    "etherology-e2e-server-probe-exit",
+                    "java/lang/System",
+                    "exit",
+                    "status",
+                    "passed",
+                    "java/lang/Thread",
+                    "isAlive",
+                    "join",
+                    "setDaemon",
+                    "start",
+                )
+                check(requiredTerminatorConstants.all(terminatorConstants::contains)) {
+                    "The dedicated-server probe lost its clean userdev exit contract: " +
+                        (requiredTerminatorConstants - terminatorConstants).sorted()
+                }
+                check(
+                    "java/lang/Runtime" !in terminatorConstants
+                        && "halt" !in terminatorConstants,
+                ) {
+                    "The dedicated-server probe bypasses clean JVM shutdown"
+                }
+
+                val metadataEntry = requireNotNull(probeZip.getEntry("META-INF/mods.toml")) {
+                    "The dedicated-server probe JAR has no META-INF/mods.toml"
+                }
+                val metadataText = probeZip.getInputStream(metadataEntry)
+                    .bufferedReader(StandardCharsets.UTF_8)
+                    .use { it.readText() }
+                check(metadataText.contains("modId=\"etherology_e2e_server_probe\"")) {
+                    "The dedicated-server probe metadata has the wrong mod id"
+                }
+                check(metadataText.contains("side=\"SERVER\"")) {
+                    "The dedicated-server probe metadata is not server-only"
+                }
+                check(metadataText.contains("modId=\"etherology\"")) {
+                    "The dedicated-server probe metadata does not require Etherology"
+                }
+                check(metadataText.contains("versionRange=\"[${project.version}]\"")) {
+                    "The dedicated-server probe does not require the exact Etherology version"
+                }
+            }
+        }
+    }
+
+    val verifyServerProbeIsolation = tasks.register("verifyServerProbeIsolation") {
+        group = "verification"
+        description = "Proves the dedicated-server probe stays outside production artifacts."
+        dependsOn(serverProbeJar, forgeShadowJar)
+        inputs.file(serverProbeJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+
+        doLast {
+            val probeFile = serverProbeJar.get().archiveFile.get().asFile
+            val productionFile = forgeShadowJar.get().archiveFile.get().asFile
+            check(probeFile != productionFile) {
+                "The production and dedicated-server probe resolve to the same artifact"
+            }
+            ZipFile(productionFile).use { productionZip ->
+                check(productionZip.entries().asSequence().none { entry ->
+                    entry.name.startsWith("dev/theplumteam/etherology/e2e/server/")
+                }) {
+                    "The Forge production artifact contains dedicated-server probe classes"
+                }
+            }
+        }
+    }
+
+    val verifyGameEventServerProbe = tasks.register("verifyGameEventServerProbe") {
+        group = "verification"
+        description =
+            "Builds and validates the Forge 1.20.1 game-event dedicated-server probe."
+        dependsOn(
+            forgeGameEventServerSafetyTest,
+            serverProbeTestTask,
+            validateServerProbeProfile,
+            validateServerProbeRunConfiguration,
+            verifyServerProbeArtifact,
+            verifyServerProbeIsolation,
+        )
+    }
+    validateForgeGameEventMilestone.configure {
+        dependsOn(verifyGameEventServerProbe)
+    }
+    serverProbeRunTask.configure {
+        dependsOn(verifyGameEventServerProbe)
+    }
+
     val e2eHarness = sourceSets.create("e2eHarness") {
         java.setSrcDirs(
             listOf(rootProject.file("e2e-harness/forge/1.20.1/src/main/java")),

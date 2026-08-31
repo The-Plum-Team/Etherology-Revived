@@ -328,6 +328,14 @@ class MetadataIntegrityTests(unittest.TestCase):
                     "data/etherology/loot_tables/blocks/ethereal_storage.json",
                     b"{}",
                 ),
+                (
+                    "data/minecraft/tags/game_events/vibrations.json",
+                    b"{}",
+                ),
+                (
+                    "data/minecraft/tags/game_events/warden_can_listen.json",
+                    b"{}",
+                ),
             ],
             {"Etherology-E2E-Only": "true"},
         )
@@ -349,6 +357,14 @@ class MetadataIntegrityTests(unittest.TestCase):
                         ("ru/feytox/etherology/forge/EtherologyForge.class", b"bytecode"),
                         (
                             "data/etherology/loot_tables/blocks/ethereal_storage.json",
+                            b"{}",
+                        ),
+                        (
+                            "data/minecraft/tags/game_events/vibrations.json",
+                            b"{}",
+                        ),
+                        (
+                            "data/minecraft/tags/game_events/warden_can_listen.json",
                             b"{}",
                         ),
                     ],

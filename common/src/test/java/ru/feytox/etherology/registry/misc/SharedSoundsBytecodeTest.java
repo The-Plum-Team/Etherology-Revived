@@ -243,6 +243,7 @@ final class SharedSoundsBytecodeTest {
                         "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",
                         "ru/feytox/etherology/registry/misc/SharedScreenHandlers#register()V",
                         SHARED_SOUNDS + "#register()V",
+                        "ru/feytox/etherology/registry/misc/SharedGameEvents#register()V",
                         "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"
                                 + "(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
                 ),

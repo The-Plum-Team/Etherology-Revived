@@ -14,7 +14,7 @@ import net.minecraft.world.event.BlockPositionSource;
 import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.event.listener.GameEventListener;
 import ru.feytox.etherology.mixin.VibrationListenerAccessor;
-import ru.feytox.etherology.registry.misc.EventsRegistry;
+import ru.feytox.etherology.registry.misc.SharedGameEvents;
 import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
@@ -61,7 +61,11 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
         world.setBlockState(pos, state.with(TuningFork.RESONATING, true));
         updateNeighbors(world, state);
         syncData(world);
-        world.emitGameEvent(EventsRegistry.RESONANCE, pos, GameEvent.Emitter.of(state));
+        world.emitGameEvent(
+                SharedGameEvents.RESONANCE.get(),
+                pos,
+                GameEvent.Emitter.of(state)
+        );
     }
 
     private boolean canAccept(BlockState state, int receivedNote) {
@@ -103,7 +107,7 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
 
     @Override
     public boolean listen(ServerWorld world, GameEvent event, GameEvent.Emitter emitter, Vec3d emitterPos) {
-        if (!event.equals(EventsRegistry.RESONANCE)) return false;
+        if (!event.equals(SharedGameEvents.RESONANCE.get())) return false;
         BlockState sourceState = emitter.affectedState();
         if (sourceState == null) return false;
 

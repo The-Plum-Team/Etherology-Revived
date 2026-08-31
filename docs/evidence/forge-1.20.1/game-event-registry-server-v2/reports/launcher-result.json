@@ -1,0 +1,18 @@
+{
+  "exit_code": 0,
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v2",
+  "profile_manifest": {
+    "relative_path": "scripts/e2e/forge-server-1.20.1-profile.json",
+    "sha256": "9dc0c3c3162ebe25d9d65f38296ccf0c506d871e31d1627377b3d5d95a83fa31",
+    "size": 1183
+  },
+  "scenario": "game-event-registry",
+  "schema": 1,
+  "server_log": {
+    "relative_path": "logs/latest.log",
+    "sha256": "89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef24394",
+    "size": 15284
+  },
+  "task_path": ":forge:1.20.1:runGameEventServerProbe",
+  "timed_out": false
+}

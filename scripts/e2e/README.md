@@ -335,9 +335,109 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Forge 1.20.1 dedicated-server Ether-source reload probe
+## Forge 1.20.1 dedicated-server enchantment-registry probe
 
-The current server-only harness proves the Common-owned Ether-source listener
+The current cumulative server-only proof is the Forge 1.20.1
+`enchantment-registry` scenario. It runs only Etherology and the isolated
+server probe in a fresh repository-owned profile; it never loads the Forge
+client harness and never consults, adopts, resets, or deletes an external
+Minecraft profile. Its exact one-shot runtime is:
+
+```text
+scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v7/
+  game/
+  evidence/enchantment-registry/
+```
+
+The tracked profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
+`:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete
+required and forbidden mod-ID inventories. Its SHA-256 is
+`36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`.
+`provision` succeeds only for a brand-new target. The accepted v7 runtime is
+immutable: the next native run must increment the profile ID and use another
+fresh directory rather than reuse, clean, or replace v7.
+
+The following commands are the active runner workflow used for v7. Build and
+validation do not launch Minecraft. Because v7 has already been accepted,
+`provision`, `check`, and `run` may be used for another native capture only
+after advancing the tracked profile and contract to a new ID and fresh runtime:
+
+```bash
+./gradlew --no-daemon --no-parallel \
+  :forge:1.20.1:verifyRegistryFoundationServerProbe --console=plain
+python3 -B scripts/e2e/forge_server.py validate
+python3 -B scripts/e2e/forge_server.py provision
+python3 -B scripts/e2e/forge_server.py check
+python3 -B scripts/e2e/forge_server.py run
+```
+
+The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
+dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
+and server logs independently, contains the process group, rejects crash and
+client markers, requires a saved world and normal shutdown, and publishes
+`done.marker` only after the report, copied server log, and launcher result
+pass. External game profiles consulted: zero.
+
+The accepted fresh v7 run emitted a schema-5 report and passed all 95 ordered
+assertions. It cumulatively rechecked the earlier game-event, exact listening
+tags, loot-condition evaluation, reloadable loot-table replacement, and
+Ether-source map contracts. The real `reload` command retained the exact game
+event and tag state, retained the loot-condition registry and behavior, and
+changed the Ether-source map from the exact 23-entry default to the expected
+24-entry probe map with `minecraft:redstone = 9.5` and
+`minecraft:diamond = 13`.
+
+The enchantment registry contained exactly `etherology:peal` and
+`etherology:reflection` in the Etherology namespace. Peal resolved to
+`ru.feytox.etherology.registry.misc.PealEnchantment`, with maximum level 3,
+minimum powers `[1, 12, 23]`, and maximum powers `[21, 32, 43]`. Reflection
+resolved to `ru.feytox.etherology.registry.misc.ReflectionEnchantment`, with
+maximum level 1, minimum power `[1]`, and maximum power `[21]`. Both were the
+exact Etherology members of the manually bound `minecraft:non_treasure` tag,
+whose canonical resource path remains the singular
+`data/minecraft/tags/enchantment/non_treasure.json`. Their registry objects,
+properties, and tag membership matched at `ServerStartedEvent` and remained
+stable through the real reload.
+
+The exact lifecycle was
+`tags_updated_initial > server_started > reload_requested > tags_updated_reload > reload_command_returned > stop_requested > server_stopping > server_stopped`.
+The server saved its world, completed normal `stop(false)`, exited with code
+zero, and its copied log contains no `ERROR` or `FATAL` marker. After
+`ServerStoppedEvent` and atomic report publication, the probe-only terminator
+joins the stopped-event server thread before `System.exit` to handle the proven
+Loom-userdev non-daemon thread leak. This path is absent from the production
+mod. The scenario is headless and therefore creates no screenshots.
+
+Validate the completed live runtime or the immutable five-file archive with
+the v7 verifier:
+
+```bash
+python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v7
+python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
+  --archive docs/evidence/forge-1.20.1/enchantment-registry-server-v7
+```
+
+The archive records report SHA-256
+`1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`,
+server-log SHA-256
+`b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
+and archive-manifest SHA-256
+`377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
+`validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity` owns the
+archive-only check, while `validateForgeEnchantmentRegistryMilestone` combines
+the frozen native proof with the exact current Common/Fabric/Forge registry,
+class, bootstrap, and tag-resource gates.
+
+This bounded proof does not establish enchanting applicability or gameplay:
+it does not exercise Peal shockwaves, projectile reflection, item acceptance,
+or combat interactions. It also does not prove client rendering or screenshots
+and has no screenshot evidence. It does not establish full combat parity, the
+remaining authoritative registries, or release readiness.
+
+## Historical Forge 1.20.1 dedicated-server Ether-source reload probe (v6)
+
+The v6 server-only harness proved the Common-owned Ether-source listener
 and default data in a separate repository-owned profile. It never loads the
 Forge client harness and never consults, adopts, resets, or deletes an external
 Minecraft profile. Its exact one-shot runtime is:
@@ -348,23 +448,15 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
   evidence/ether-source-reload/
 ```
 
-The tracked profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
+The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
-and forbidden mod-ID inventories. `provision` succeeds only for a brand-new
-target; a later recapture must bump the profile ID rather than reuse, clean, or
-replace `v6`.
+and forbidden mod-ID inventories. The mutable runner has advanced to v7, so v6
+must be inspected only through its immutable snapshot and verifier. It must
+never be provisioned, reused, cleaned, or replaced.
 
-Build and validate the isolated probe without launching Minecraft. Only a new
-profile revision may then be provisioned and run:
-
-```bash
-./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:verifyRegistryFoundationServerProbe --console=plain
-python3 -B scripts/e2e/forge_server.py validate
-python3 -B scripts/e2e/forge_server.py provision
-python3 -B scripts/e2e/forge_server.py check
-python3 -B scripts/e2e/forge_server.py run
-```
+At capture time, the v6 profile used the same named build verification and
+runner lifecycle shown above. Those mutable runner commands now target v7 and
+must not be used as instructions to recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
 dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
@@ -526,7 +618,8 @@ client evidence predates the registry rebuild and does not claim current
 equality. The immutable v2 game-event-only archive remains historical evidence;
 v4 superseded it as the registry-foundation proof, and the historical v4
 verifier intentionally does not accept v2 as its active archive. The v6
-Ether-source reload archive is the current dedicated-server proof.
+Ether-source reload archive remains immutable historical evidence; the v7
+enchantment-registry archive is the current cumulative dedicated-server proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
@@ -537,5 +630,6 @@ python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_channel_evidence.py \
   scripts/e2e/test_forge_server.py \
   scripts/e2e/test_forge_server_evidence.py \
-  scripts/e2e/test_forge_server_reload_evidence_v6.py
+  scripts/e2e/test_forge_server_reload_evidence_v6.py \
+  scripts/e2e/test_forge_server_enchantment_evidence_v7.py
 ```

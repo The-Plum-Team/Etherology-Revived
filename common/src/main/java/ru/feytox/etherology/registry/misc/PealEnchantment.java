@@ -7,7 +7,11 @@ import net.minecraft.entity.EquipmentSlot;
 final class PealEnchantment extends Enchantment {
 
     PealEnchantment() {
-        super(Rarity.COMMON, EnchantmentTarget.WEAPON, new EquipmentSlot[]{EquipmentSlot.MAINHAND});
+        super(
+                Rarity.COMMON,
+                EnchantmentTarget.WEAPON,
+                new EquipmentSlot[]{EquipmentSlot.MAINHAND}
+        );
     }
 
     @Override

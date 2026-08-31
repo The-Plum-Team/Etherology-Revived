@@ -36,6 +36,10 @@ run/
 logs/
 crash-reports/
 
+# Frozen Forge evidence logs are repository artifacts, not runtime logs.
+!/docs/evidence/forge-1.20.1/enchantment-registry-server-v7/logs/
+!/docs/evidence/forge-1.20.1/enchantment-registry-server-v7/logs/latest.log
+
 # java
 
 hs_err_*.log

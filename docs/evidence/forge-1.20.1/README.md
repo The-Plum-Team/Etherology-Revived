@@ -189,12 +189,99 @@ This accepts only the shared ethereal-channel foundation and its bounded
 network behavior with storage endpoints and native Forge lever support. Channel
 case interaction and registration, channel particles and the client ticker,
 channel loot and recipe data, and the wider machine/network graph remain
-deferred. The bounded SharedSounds, SharedGameEvents, and SharedLootConditions
-registry foundation has since passed, but no native sound-playback E2E was run
-and this directory is not playback evidence. The broader authoritative registry
-spine is the next forward gate. The Forge release gate remains closed.
+deferred. The bounded SharedSounds, SharedGameEvents, SharedLootConditions, and
+SharedEnchantments registry foundation has since passed, but no native
+sound-playback or enchantment-gameplay E2E was run. The broader authoritative
+registry spine is the next forward gate. The Forge release gate remains closed.
 
-## Current Ether-source reload dedicated server (v6)
+## Current enchantment-registry dedicated server (v7)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v7`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v7`
+- Scenario: `enchantment-registry`
+- Tracked profile manifest SHA-256:
+  `36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`
+- Tracked profile manifest size: `1194` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: fresh repository-owned Loom-userdev dedicated server
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `5`; archive-manifest schema: `1`
+- Report status: `passed`
+- Assertions: `95` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`
+
+Common is the sole declaration and implementation owner of the exact
+`etherology:peal` and `etherology:reflection` enchantment registry entries.
+The native server observed `PealEnchantment` with maximum level 3, minimum
+powers `[1, 12, 23]`, and maximum powers `[21, 32, 43]`. It observed
+`ReflectionEnchantment` with maximum level 1, minimum power `[1]`, and maximum
+power `[21]`. Those were the exact and only Etherology enchantment IDs. Both,
+and only those two Etherology enchantments, belonged to the singular vanilla
+tag `minecraft:non_treasure`.
+
+The registry IDs, concrete classes, level/power properties, and tag membership
+were identical at the initial server-data load and `ServerStartedEvent`. The
+run then enabled the isolated Ether-source probe pack and executed the real
+`reload` command. Enchantment registry identity, properties, and tag membership
+all remained stable after reload. The cumulative report also retains the
+accepted game-event registry and listening tags, loot-condition registry and
+evaluated behavior, and exact initial/reloaded Ether-source maps from the v6
+contract.
+
+The exact lifecycle was `tags_updated_initial`, `server_started`,
+`reload_requested`, `tags_updated_reload`, `reload_command_returned`,
+`stop_requested`, `server_stopping`, and `server_stopped`. The run saved the
+world, completed normal `stop(false)`, and exited with code zero. Its copied
+server log contains no `ERROR`, `FATAL`, or client-startup marker. This is a
+headless dedicated-server proof, so screenshots are neither produced nor
+required.
+
+Frozen file digests:
+
+- `enchantment-registry-server-v7/archive-manifest.json`:
+  `377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`
+- `enchantment-registry-server-v7/reports/report.json`:
+  `1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`
+- `enchantment-registry-server-v7/reports/launcher-result.json`:
+  `36999d3af873282ef9e6c17b3d74713239f1d6a95288edcce51874a242b1c827`
+- `enchantment-registry-server-v7/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `enchantment-registry-server-v7/logs/latest.log`:
+  `b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`
+
+Validate the five-file archive without the ignored live runtime:
+
+```bash
+python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
+  --archive docs/evidence/forge-1.20.1/enchantment-registry-server-v7
+```
+
+```text
+Validated archived enchantment-registry for etherology-e2e-forge-server-1.20.1-v7: 95 assertions
+Server log SHA-256: b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+`validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity` validates this
+immutable archive and its pinned v7 runner/verifier contract.
+`validateForgeEnchantmentRegistryMilestone` combines it with current Common,
+Fabric, Forge, resource, artifact, and isolation checks. The archive proves its
+capture-time observations and payload integrity; it does not by itself prove
+identity with later source or rebuilt artifacts.
+
+This bounded proof does not establish enchanting-table or item applicability,
+Peal shockwave behavior, projectile reflection, native client visuals or
+screenshots, full combat parity, the remaining authoritative registry spine,
+or release readiness. Those mechanics require their own fresh native-client or
+gameplay evidence.
+
+## Historical Ether-source reload dedicated server (v6)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v6`
 - Runtime directory:
@@ -280,7 +367,9 @@ integrity, not identity with later sources or rebuilt artifacts.
 
 This bounded record does not prove furnace or machine consumption, the wider
 Ether network, the full authoritative registry, native sound playback, Forge
-custom sculk-frequency behavior, Attrahite drops, or release readiness.
+custom sculk-frequency behavior, Attrahite drops, or release readiness. It is
+retained as immutable historical proof; the cumulative v7 enchantment-registry
+section is the current dedicated-server proof.
 
 ## Historical registry-foundation dedicated server (v4)
 
@@ -378,9 +467,9 @@ evidence predates this registry rebuild.
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v6 Ether-source reload archive is the current
-dedicated-server proof. No current acceptance task or verifier treats v2 as
-the active archive.
+registry-foundation proof. The v7 enchantment-registry archive is the current
+cumulative dedicated-server proof. No current acceptance task or verifier
+treats v2 as the active archive.
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v2`
 - Runtime directory:
@@ -460,5 +549,5 @@ equivalent and remains deferred. The proof does not cover sound playback, the
 full registry-ID manifest, every catalog entry's placement/save behavior, or
 the remaining gameplay and native E2E matrix. The Forge release gate remains
 closed on the broader authoritative registry spine. The v4 section above is
-the superseding registry-foundation proof; the v6 section is the current
-dedicated-server proof.
+the superseding registry-foundation proof; v6 is the historical Ether-source
+reload proof, and v7 is the current cumulative dedicated-server proof.

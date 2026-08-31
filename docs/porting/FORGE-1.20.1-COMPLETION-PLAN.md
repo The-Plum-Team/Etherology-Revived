@@ -7,9 +7,9 @@ semantics, and finish with deterministic acceptance. Every gameplay behavior mus
 runtime evidence before the release gate advances.
 
 The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation,
-bounded SharedSounds registry/resource milestone, and bounded SharedGameEvents/SharedLootConditions
-registry/server foundation, plus the bounded Common Ether-source reload path, are accepted, not the
-finished port.
+bounded SharedSounds registry/resource milestone, bounded SharedGameEvents/SharedLootConditions
+registry/server foundation, bounded Common Ether-source reload path, and bounded
+SharedEnchantments registry/server milestone are accepted, not the finished port.
 Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
 lifecycle, synchronized Gecko animation, and
 packaged save/restart/reopen proof. The channel foundation now has directed fifth-tick transfer,
@@ -19,7 +19,10 @@ resource inventory, but does not claim native playback. SharedGameEvents closes 
 resonance declaration and both vanilla listening tags. SharedLootConditions closes the sole
 deferred `random_chance_with_fortune` declaration and serializer. One real Forge dedicated-server
 registry-foundation proof covers both registries. A separate real reload proof covers the
-Common-owned Ether-source listener and default data. The broader authoritative registry spine is
+Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v7
+server record. SharedEnchantments closes the two canonical enchantment declarations, concrete
+types, and exact non-treasure tag on both loaders; enchanting applicability and the Peal/reflection
+combat mechanics are not part of that acceptance. The broader authoritative registry spine is
 still the first incomplete forward milestone. Broad content migration must follow the ownership
 and dependency order below.
 
@@ -46,11 +49,13 @@ canonical Fabric graph remains authoritative until each bounded slice is accepte
 
 `SharedItems`, `SharedBlocks`, and `SharedBlockEntities` are temporary catalogs used to establish
 the loader-neutral lifecycle without replacing canonical Fabric classes. They cannot remain a
-second permanent catalog for the same identifiers. `SharedSounds`, `SharedGameEvents`, and
-`SharedLootConditions` are the accepted parts of the authoritative registry spine and the single
-Common declaration owners for their IDs. Forge attaches them before lifecycle registry events,
-while Fabric attaches the same owners from its canonical initializer. The legacy eager
-`EtherSounds`, `EventsRegistry`, and `LootConditions` owners are removed. Before broad content
+second permanent catalog for the same identifiers. `SharedSounds`, `SharedGameEvents`,
+`SharedLootConditions`, and `SharedEnchantments` are the accepted parts of the authoritative
+registry spine and the single Common declaration owners for their IDs. Forge attaches them before
+lifecycle registry events, while Fabric attaches the same owners from its canonical initializer.
+The legacy eager `EtherSounds`, `EventsRegistry`, and `LootConditions` owners are removed, and the
+legacy concrete enchantment classes moved to Common. Fabric's `EtherEnchantments` remains only a
+policy/gameplay consumer of `SharedEnchantments`, not another registry owner. Before broad content
 migration, converge the remaining catalogs on one active
 declaration owner for every registry ID and attach that declaration once per loader.
 
@@ -73,18 +78,20 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 ### Slice 0: build and authoritative registry spine — current forward gate
 
-This is the current forward milestone. Its bounded shared-sound, game-event, loot-condition, and
-Ether-source reload steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
-incomplete work.
+This is the current forward milestone. Its bounded shared-sound, game-event, loot-condition,
+Ether-source reload, and enchantment-registry steps are accepted. The broader catalogs and
+lifecycle hooks in this slice remain the first incomplete work.
 
 Source owners:
 
 - Blocks: `ExtraBlocksRegistry`, `DecoBlocks`, `EBlocks`, `DevBlocks`, `EBlockFamilies`.
 - Items: `EItems`, `ToolItems`, `ArmorItems`, `DecoBlockItems`, `EItemGroups`.
-- Other registries: accepted Common `SharedSounds`, `SharedGameEvents`, and
-  `SharedLootConditions`, `EntityRegistry`, `EtherEnchantments`, `RecipesRegistry`,
-  `ScreenHandlersRegistry`, `EffectsRegistry`, `EtherParticleTypes`, `TreesRegistry`, and
-  `WorldGenRegistry`.
+- Other registries: accepted Common `SharedSounds`, `SharedGameEvents`,
+  `SharedLootConditions`, and `SharedEnchantments`; remaining `EntityRegistry`,
+  `RecipesRegistry`, `ScreenHandlersRegistry`, `EffectsRegistry`, `EtherParticleTypes`,
+  `TreesRegistry`, and `WorldGenRegistry`.
+- Enchantment consumers, not registry owners: Fabric `EtherEnchantments`, `ShockwaveUtil`, and the
+  applicability/projectile mixins remain part of later gameplay work.
 - Eager helpers: `RegistrableBlock` and `EBlock`.
 
 Accepted bounded sound foundation:
@@ -171,8 +178,52 @@ Accepted bounded Ether-source reload foundation:
   server-log SHA-256 `0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
   and archive-manifest SHA-256
   `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
+- The v6 archive remains immutable historical evidence for the Ether-source slice. The cumulative
+  v7 enchantment-registry archive below is the current dedicated-server proof.
 - It does not prove furnace or machine consumption, the wider Ether network, the full registry,
   native sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness.
+
+Accepted bounded enchantment-registry milestone:
+
+- `SharedEnchantments` is the sole Common deferred declaration owner for exactly
+  `etherology:peal` and `etherology:reflection`. Their concrete classes are exactly
+  `ru.feytox.etherology.registry.misc.PealEnchantment` and
+  `ru.feytox.etherology.registry.misc.ReflectionEnchantment`.
+- Peal is `COMMON`, targets `WEAPON`, occupies `MAINHAND`, has maximum level 3, minimum powers
+  `[1, 12, 23]`, and maximum powers `[21, 32, 43]`. Reflection is `COMMON`, targets `BREAKABLE`,
+  occupies `MAINHAND` and `OFFHAND`, has maximum level 1, minimum power `[1]`, and maximum power
+  `[21]`.
+- Fabric directly attaches `SharedEnchantments` from its canonical initializer, without invoking
+  the Common bootstrap, while Forge attaches it through `EtherologyBootstrap` before registry
+  events. Fabric's retained `EtherEnchantments` class owns only policy and gameplay consumption.
+- `validateForgeEnchantmentRegistryStaticMilestone` accepts exact ownership, construction,
+  supplier lifecycle, and artifact isolation across Common, both transformed Common artifacts,
+  Fabric development/remapped production, and the Forge shadow artifact. The loader artifacts
+  contain the exact additive singular resource
+  `data/minecraft/tags/enchantment/non_treasure.json` (`minecraft:non_treasure`) with
+  `replace: false` and exactly the two Etherology enchantment IDs.
+- `validateForgeEnchantmentRegistryMilestone` combines that static/resource gate with the immutable
+  [`enchantment-registry-server-v7`](../evidence/forge-1.20.1/enchantment-registry-server-v7)
+  archive. A fresh `etherology-e2e-forge-server-1.20.1-v7` Java 17 Forge 47.4.9 dedicated server
+  ran the `enchantment-registry` scenario through
+  `:forge:1.20.1:runRegistryFoundationServerProbe`; schema 5 passed all 95 ordered assertions.
+- The v7 run captured both enchantments after server-data load, rechecked the same registry state
+  at `ServerStartedEvent`, performed a real `reload`, and proved exact IDs, classes, powers,
+  `minecraft:non_treasure` membership, object/registry identity, properties, and tag membership
+  remained stable. Its cumulative assertions also re-proved the prior game-event/tags,
+  loot-condition registry and evaluated behavior, and initial/reloaded Ether-source maps.
+- The exact lifecycle was `tags_updated_initial > server_started > reload_requested >
+  tags_updated_reload > reload_command_returned > stop_requested > server_stopping >
+  server_stopped`. The world saved, `stop(false)` completed, the process exited zero, and the log
+  contained no `ERROR` or `FATAL` marker. This headless proof produces no screenshots.
+- The archive binds profile-manifest SHA-256
+  `36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`, report SHA-256
+  `1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`, server-log SHA-256
+  `b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`, and archive-manifest
+  SHA-256 `377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
+- This milestone does not prove enchanting-table, anvil, book, or item applicability; the Peal
+  shockwave; projectile reflection; client visuals or screenshots; full combat parity; or release
+  readiness. Those remain later consumer-mechanic and native-client/full-E2E work.
 
 Implementation:
 
@@ -354,9 +405,10 @@ record is the
 
 The bounded `validateForgeChannelNetworkMilestone` has since been accepted with its own fresh
 native evidence; the storage run was not reused as channel proof. The bounded
-`validateForgeSoundRegistryMilestone` and the SharedGameEvents/SharedLootConditions
-registry-foundation milestone are also accepted, so the broader authoritative registry spine is
-now the first incomplete stage in the release dependency graph. The unconditional
+`validateForgeSoundRegistryMilestone`, SharedGameEvents/SharedLootConditions registry-foundation,
+Ether-source reload, and SharedEnchantments registry milestones are also accepted, so the broader
+authoritative registry spine is now the first incomplete stage in the release dependency graph.
+The unconditional
 `validateForgeReleaseReadinessMilestone` remains behind every forward gate and cannot be satisfied
 by class or method stubs or by reusing either bounded archive. The release graph must never remove
 or relax a stage merely to allow `remapJar`.
@@ -419,9 +471,10 @@ effects.
 Accepted bounded proof:
 
 - One Common listener/default-data owner, exact 23-entry startup data, and exact 24-entry result
-  after a real Forge `reload` override/addition, frozen by the schema-4, 72-assertion v6
-  dedicated-server record. Registry and tags remain stable; loot-condition registry and evaluated
-  behavior remain stable while the probe loot-table instance is replaced.
+  after a real Forge `reload` override/addition, frozen by the historical schema-4, 72-assertion
+  v6 record and re-proved cumulatively by the current schema-5, 95-assertion v7 record. Registry
+  and tags remain stable; loot-condition registry and evaluated behavior remain stable while the
+  probe loot-table instance is replaced.
 - Shared Ether storage/pipe contracts, exact `ethereal_channel` block and block-entity IDs, storage
   endpoints, persistent direction and Ether state, and NBT reconstruction.
 - Redstone-gated retention followed by exact one-Ether transfer on the fifth-tick cadence, with no
@@ -758,17 +811,18 @@ gameplay evidence. Conversely, native evidence cannot excuse missing determinist
 integration tests.
 
 The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents,
-SharedLootConditions, and Ether-source reload gates are currently positive. The historical v4
-registry-foundation proof combines exact cross-loader artifact inspection with a real Java 17
-Forge 47.4.9 dedicated server, 39 independently checked assertions, and 63 Python safety tests.
-The current v6 reload proof adds schema-4, 72-of-72 native assertions for exact Common-owned
-startup/reloaded Ether-source maps, stable registry/tags/loot behavior, save, normal stop, zero
-exit, and a clean server log. Both remain narrower than full-catalog placement/save acceptance.
-The broader authoritative registry spine is the next
-fail-closed milestone. Sound playback and Forge's custom sculk frequency remain owned by later
-consumer-mechanic evidence, and the deferred portions of the channel and machine graph remain part
-of the later full-slice acceptance rather than being inferred from the Channel run, static sound
-gate, or bounded registry-foundation server run.
+SharedLootConditions, Ether-source reload, and SharedEnchantments registry gates are currently
+positive. The v4 registry-foundation and v6 Ether-source archives remain historical evidence. The
+current v7 proof is a fresh schema-5 Forge 47.4.9 dedicated-server run with 95 of 95 cumulative
+assertions for the two exact enchantments and singular `minecraft:non_treasure` tag, reload-stable
+enchantment identity/properties/tag membership, prior registry/tag/loot behavior, exact
+startup/reloaded Ether-source maps, save, exact lifecycle, normal stop, zero exit, and a clean
+server log. It remains narrower than full-catalog placement/save and combat acceptance. The
+broader authoritative registry spine is the next fail-closed milestone. Enchanting applicability,
+Peal shockwave behavior, projectile reflection, client visuals/screenshots, full combat, sound
+playback, and Forge's custom sculk frequency remain owned by later consumer-mechanic evidence; the
+deferred portions of the channel and machine graph likewise remain part of later full-slice
+acceptance rather than being inferred from bounded registry proofs.
 
 The final release-readiness task intentionally fails unconditionally until all required slices
 pass, a dedicated server starts cleanly, an isolated Forge client completes the required scenario

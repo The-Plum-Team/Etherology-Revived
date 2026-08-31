@@ -480,12 +480,16 @@ final class LootConditionRegistryResourcesTest {
         int lootConditionIndex = invocations.indexOf(
                 SHARED_LOOT_CONDITIONS_OWNER + "#register"
         );
+        int enchantmentIndex = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/SharedEnchantments#register"
+        );
         int frequencyHookIndex = invocations.indexOf(
                 "ru/feytox/etherology/FabricGameEventHooks#registerSculkSensorFrequency"
         );
         assertTrue(gameEventIndex >= 0, description);
         assertEquals(gameEventIndex + 1, lootConditionIndex, description);
-        assertEquals(lootConditionIndex + 1, frequencyHookIndex, description);
+        assertEquals(lootConditionIndex + 1, enchantmentIndex, description);
+        assertEquals(enchantmentIndex + 1, frequencyHookIndex, description);
         assertEquals(1, count(invocations, SHARED_LOOT_CONDITIONS_OWNER + "#register"),
                 description);
     }

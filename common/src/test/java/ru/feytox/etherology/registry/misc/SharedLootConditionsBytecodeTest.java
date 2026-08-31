@@ -200,7 +200,7 @@ final class SharedLootConditionsBytecodeTest {
     }
 
     @Test
-    void attachesAfterGameEventsAndBeforeResourceReloaders() throws IOException {
+    void attachesAfterGameEventsAndBeforeEnchantments() throws IOException {
         List<String> invocations = invocationsByMethod(BOOTSTRAP_CLASS).get(
                 "initialize(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
         );
@@ -209,6 +209,9 @@ final class SharedLootConditionsBytecodeTest {
         );
         int lootConditions = invocations.indexOf(
                 SHARED_LOOT_CONDITIONS + "#register()V"
+        );
+        int enchantments = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/SharedEnchantments#register()V"
         );
         int resourceReloaders = invocations.indexOf(
                 "ru/feytox/etherology/registry/misc/ResourceReloaders"
@@ -221,7 +224,8 @@ final class SharedLootConditionsBytecodeTest {
 
         assertTrue(gameEvents >= 0);
         assertEquals(gameEvents + 1, lootConditions);
-        assertEquals(lootConditions + 1, resourceReloaders);
+        assertEquals(lootConditions + 1, enchantments);
+        assertEquals(enchantments + 1, resourceReloaders);
         assertEquals(resourceReloaders + 1, lifecycle);
         assertEquals(1, count(invocations, SHARED_LOOT_CONDITIONS + "#register()V"));
     }

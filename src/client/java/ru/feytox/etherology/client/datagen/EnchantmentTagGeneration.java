@@ -10,8 +10,8 @@ import net.minecraft.util.Identifier;
 
 import java.util.concurrent.CompletableFuture;
 
-import static ru.feytox.etherology.registry.misc.EtherEnchantments.PEAL;
-import static ru.feytox.etherology.registry.misc.EtherEnchantments.REFLECTION;
+import static ru.feytox.etherology.registry.misc.SharedEnchantments.PEAL;
+import static ru.feytox.etherology.registry.misc.SharedEnchantments.REFLECTION;
 
 public class EnchantmentTagGeneration extends FabricTagProvider.EnchantmentTagProvider {
 
@@ -23,6 +23,6 @@ public class EnchantmentTagGeneration extends FabricTagProvider.EnchantmentTagPr
 
     @Override
     protected void configure(RegistryWrapper.WrapperLookup wrapperLookup) {
-        getOrCreateTagBuilder(NON_TREASURE).add(PEAL, REFLECTION);
+        getOrCreateTagBuilder(NON_TREASURE).add(PEAL.get(), REFLECTION.get());
     }
 }

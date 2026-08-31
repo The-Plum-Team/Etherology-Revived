@@ -46,10 +46,13 @@ val canonicalGameEventTagEntries = setOf(
     "data/minecraft/tags/game_events/vibrations.json",
     "data/minecraft/tags/game_events/warden_can_listen.json",
 )
+val canonicalEnchantmentTagEntry =
+    "data/minecraft/tags/enchantment/non_treasure.json"
 val commonEtherSourceDataEntry = "etherology/ether_sources/default.json"
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
-) + canonicalGameEventTagEntries.map { entry -> entry.removePrefix("data/") }
+) + (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
+    .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
     acceptedForgeDirectDataEntries + commonEtherSourceDataEntry
 val commonBootstrapClassEntry =
@@ -82,6 +85,14 @@ val sharedGameEventRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedGameEvents.class"
 val sharedLootConditionRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedLootConditions.class"
+val sharedEnchantmentRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/SharedEnchantments.class"
+val pealEnchantmentClassEntry =
+    "ru/feytox/etherology/registry/misc/PealEnchantment.class"
+val reflectionEnchantmentClassEntry =
+    "ru/feytox/etherology/registry/misc/ReflectionEnchantment.class"
+val canonicalFabricEnchantmentPolicyClassEntry =
+    "ru/feytox/etherology/registry/misc/EtherEnchantments.class"
 val randomChanceWithFortuneConditionClassEntry =
     "ru/feytox/etherology/util/misc/RandomChanceWithFortuneCondition.class"
 val randomChanceWithFortuneConditionSerializerClassEntry =
@@ -197,6 +208,16 @@ val etherealChannelResources =
 val canonicalGameEventTagFiles = canonicalGameEventTagEntries.associateWith { entry ->
     rootProject.file("src/main/generated/$entry")
 }
+val canonicalEnchantmentTagFile =
+    rootProject.file("src/main/generated/$canonicalEnchantmentTagEntry")
+val legacyFabricEnchantmentConcreteOwners = listOf(
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/registry/misc/PealEnchantment.java",
+    ),
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/registry/misc/ReflectionEnchantment.java",
+    ),
+)
 val canonicalAttrahiteLootTable =
     rootProject.file("src/main/generated/data/etherology/loot_tables/blocks/attrahite.json")
 val canonicalEtherSourceDefault = rootProject.file(
@@ -309,6 +330,17 @@ val forgeEtherSourceReloadServerEvidenceTest =
 val forgeServerContractV6 = rootProject.file("scripts/e2e/forge_server_contract_v6.py")
 val forgeServerProfileSnapshotV6 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v6.json")
+val forgeEnchantmentRegistryServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "enchantment-registry-server-v7",
+    )
+val forgeEnchantmentRegistryServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_enchantment_evidence_v7.py")
+val forgeEnchantmentRegistryServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_enchantment_evidence_v7.py")
+val forgeServerContractV7 = rootProject.file("scripts/e2e/forge_server_contract_v7.py")
+val forgeServerProfileSnapshotV7 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v7.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -385,6 +417,7 @@ sourceSets {
             include("assets/**")
             include("data/etherology/loot_tables/blocks/ethereal_storage.json")
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
+            include(canonicalEnchantmentTagEntry)
             include("META-INF/**")
             include("pack.mcmeta")
             include("etherology.forge.mixins.json")
@@ -2427,6 +2460,246 @@ fun missingForgeEtherSourceReloadMilestone(
     return missingConditions
 }
 
+fun missingForgeEnchantmentRegistryMilestone(
+    commonJarFile: File,
+    fabricTransformedCommonJarFile: File,
+    forgeTransformedCommonJarFile: File,
+    fabricDevelopmentJarFile: File,
+    fabricProductionJarFile: File,
+    forgeShadowJarFile: File,
+): List<String> {
+    val missingConditions = mutableListOf<String>()
+    val exactTagBytes = (
+        "{\n" +
+            "  \"replace\": false,\n" +
+            "  \"values\": [\n" +
+            "    \"etherology:peal\",\n" +
+            "    \"etherology:reflection\"\n" +
+            "  ]\n" +
+            "}"
+        ).toByteArray(StandardCharsets.UTF_8)
+    val sharedOwner = "ru/feytox/etherology/registry/misc/SharedEnchantments"
+    val sharedDeferredRegister =
+        "ru/feytox/etherology/registry/SharedDeferredRegister"
+    val registrySupplier = "dev/architectury/registry/registries/RegistrySupplier"
+
+    if (!canonicalEnchantmentTagFile.isFile
+        || Files.isSymbolicLink(canonicalEnchantmentTagFile.toPath())
+    ) {
+        missingConditions.add("canonical non-treasure enchantment tag is missing or linked")
+    } else if (!canonicalEnchantmentTagFile.readBytes().contentEquals(exactTagBytes)) {
+        missingConditions.add("canonical non-treasure enchantment tag bytes changed")
+    }
+
+    legacyFabricEnchantmentConcreteOwners.forEach { legacyOwner ->
+        if (legacyOwner.exists() || Files.isSymbolicLink(legacyOwner.toPath())) {
+            missingConditions.add(
+                "legacy Fabric enchantment implementation still exists: " +
+                    legacyOwner.relativeTo(rootProject.projectDir).invariantSeparatorsPath,
+            )
+        }
+    }
+
+    fun inspectArtifact(
+        artifact: File,
+        description: String,
+        requireFabricPolicy: Boolean,
+        requireCanonicalTag: Boolean,
+    ) {
+        if (!artifact.isFile || Files.isSymbolicLink(artifact.toPath())) {
+            missingConditions.add("$description is missing or linked")
+            return
+        }
+
+        try {
+            ZipFile(artifact).use { zip ->
+                val entryNames = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                val classEntryNames = entryNames.filter { entry -> entry.endsWith(".class") }
+                listOf(
+                    sharedEnchantmentRegistryClassEntry,
+                    pealEnchantmentClassEntry,
+                    reflectionEnchantmentClassEntry,
+                ).forEach { classEntry ->
+                    val actualCount = entryNames.count(classEntry::equals)
+                    if (actualCount != 1) {
+                        missingConditions.add(
+                            "$description has the wrong $classEntry count: " +
+                                "expected=1, actual=$actualCount",
+                        )
+                    }
+                }
+
+                val expectedPolicyCount = if (requireFabricPolicy) 1 else 0
+                val policyCount = entryNames.count(
+                    canonicalFabricEnchantmentPolicyClassEntry::equals,
+                )
+                if (policyCount != expectedPolicyCount) {
+                    missingConditions.add(
+                        "$description has the wrong Fabric enchantment-policy count: " +
+                            "expected=$expectedPolicyCount, actual=$policyCount",
+                    )
+                }
+
+                val expectedTagCount = if (requireCanonicalTag) 1 else 0
+                val tagCount = entryNames.count(canonicalEnchantmentTagEntry::equals)
+                if (tagCount != expectedTagCount) {
+                    missingConditions.add(
+                        "$description has the wrong non-treasure tag count: " +
+                            "expected=$expectedTagCount, actual=$tagCount",
+                    )
+                } else if (requireCanonicalTag && tagCount == 1) {
+                    val packagedTagBytes = zip.getInputStream(
+                        requireNotNull(zip.getEntry(canonicalEnchantmentTagEntry)),
+                    ).use { input -> input.readAllBytes() }
+                    if (!packagedTagBytes.contentEquals(exactTagBytes)) {
+                        missingConditions.add(
+                            "$description non-treasure enchantment tag bytes changed",
+                        )
+                    }
+                }
+
+                val sharedEntry = zip.getEntry(sharedEnchantmentRegistryClassEntry)
+                if (sharedEntry != null) {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(sharedEntry).use { input -> input.readAllBytes() },
+                    )
+                    val requiredConstants = setOf(
+                        "ENCHANTMENTS",
+                        "PEAL",
+                        "REFLECTION",
+                        "peal",
+                        "reflection",
+                        sharedDeferredRegister,
+                        "ru/feytox/etherology/registry/misc/PealEnchantment",
+                        "ru/feytox/etherology/registry/misc/ReflectionEnchantment",
+                        "create",
+                        "register",
+                        "attach",
+                    )
+                    val missingConstants = requiredConstants - constants
+                    val hasRegistrySupplierType = constants.any { constant ->
+                        registrySupplier in constant
+                    }
+                    val hasEnchantmentType = setOf(
+                        "net/minecraft/enchantment/Enchantment",
+                        "net/minecraft/class_1887",
+                        "net/minecraft/world/item/enchantment/Enchantment",
+                    ).any { owner -> constants.any { constant -> owner in constant } }
+                    if (missingConstants.isNotEmpty()
+                        || !hasRegistrySupplierType
+                        || !hasEnchantmentType
+                    ) {
+                        missingConditions.add(
+                            "$description shared enchantment owner lost its exact contract: " +
+                                "missing=${missingConstants.sorted()}, " +
+                                "registrySupplierType=$hasRegistrySupplierType, " +
+                                "enchantmentType=$hasEnchantmentType",
+                        )
+                    }
+                    if ("dev/architectury/registry/registries/DeferredRegister" in constants) {
+                        missingConditions.add(
+                            "$description shared enchantment owner bypasses its lifecycle wrapper",
+                        )
+                    }
+                }
+
+                val registrationOwners = classEntryNames.filter { classEntryName ->
+                    val classEntry = requireNotNull(zip.getEntry(classEntryName))
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(classEntry).use { input -> input.readAllBytes() },
+                    )
+                    "peal" in constants
+                        && "reflection" in constants
+                        && sharedDeferredRegister in constants
+                        && "register" in constants
+                }.toSet()
+                if (registrationOwners != setOf(sharedEnchantmentRegistryClassEntry)) {
+                    missingConditions.add(
+                        "$description enchantment registration owners changed: " +
+                            registrationOwners.sorted(),
+                    )
+                }
+
+                val bootstrapEntry = zip.getEntry(commonBootstrapClassEntry)
+                if (bootstrapEntry == null) {
+                    missingConditions.add("$description has no loader-neutral bootstrap")
+                } else {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(bootstrapEntry).use { input -> input.readAllBytes() },
+                    )
+                    if (sharedOwner !in constants || "register" !in constants) {
+                        missingConditions.add(
+                            "$description bootstrap does not attach shared enchantments",
+                        )
+                    }
+                }
+
+                if (requireFabricPolicy) {
+                    val policyEntry = zip.getEntry(canonicalFabricEnchantmentPolicyClassEntry)
+                    if (policyEntry != null) {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(policyEntry).use { input -> input.readAllBytes() },
+                        )
+                        if (sharedOwner !in constants
+                            || registrySupplier !in constants
+                            || "PEAL" !in constants
+                            || "REFLECTION" !in constants
+                        ) {
+                            missingConditions.add(
+                                "$description Fabric enchantment policy is not a shared consumer",
+                            )
+                        }
+                    }
+
+                    val initializerEntry = zip.getEntry(canonicalFabricInitializerClassEntry)
+                    if (initializerEntry == null) {
+                        missingConditions.add("$description has no canonical Fabric initializer")
+                    } else {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(initializerEntry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                        if (sharedOwner !in constants || "register" !in constants) {
+                            missingConditions.add(
+                                "$description initializer does not attach shared enchantments",
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (exception: Exception) {
+            missingConditions.add(
+                "$description could not be inspected for enchantment ownership: " +
+                    "${exception.javaClass.simpleName}: ${exception.message}",
+            )
+        }
+    }
+
+    inspectArtifact(commonJarFile, "common JAR", false, false)
+    inspectArtifact(
+        fabricTransformedCommonJarFile,
+        "Fabric-transformed common JAR",
+        false,
+        false,
+    )
+    inspectArtifact(
+        forgeTransformedCommonJarFile,
+        "Forge-transformed common JAR",
+        false,
+        false,
+    )
+    inspectArtifact(fabricDevelopmentJarFile, "Fabric development JAR", true, true)
+    inspectArtifact(
+        fabricProductionJarFile,
+        "Fabric remapped production JAR",
+        true,
+        true,
+    )
+    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", false, true)
+    return missingConditions
+}
+
 fun missingForgeRegistryFoundationServerEvidenceMilestone(): List<String> {
     val missingConditions = mutableListOf<String>()
     if (!forgeRegistryFoundationServerEvidenceVerifier.isFile
@@ -2549,9 +2822,70 @@ fun missingForgeEtherSourceReloadServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeEnchantmentRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeEnchantmentRegistryServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeEnchantmentRegistryServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge enchantment-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("enchantment-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeEnchantmentRegistryServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge enchantment-registry server-v7 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeEnchantmentRegistryServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeEnchantmentRegistryServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge enchantment-registry server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge enchantment-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
-    "entity, enchantment, recipe, screen, effect, loot, particle, tree, and " +
+    "entity, recipe, screen, effect, loot, particle, tree, and " +
         "world-generation registries are not loader-neutral",
     "creative tabs, fuel, lifecycle, trade, brewing, wood, sculk-frequency, and " +
         "command hooks are not accepted on both loaders",
@@ -2640,6 +2974,25 @@ fun firstIncompleteForgeMilestone(
     )
     if (missingEtherSourceReload.isNotEmpty()) {
         return "Ether-source server-data reload" to missingEtherSourceReload
+    }
+
+    val missingEnchantmentRegistry = missingForgeEnchantmentRegistryMilestone(
+        commonJarFile,
+        fabricTransformedCommonJarFile,
+        forgeTransformedCommonJarFile,
+        fabricDevelopmentJarFile,
+        fabricProductionJarFile,
+        forgeShadowJarFile,
+    )
+    if (missingEnchantmentRegistry.isNotEmpty()) {
+        return "enchantment registry and tag" to missingEnchantmentRegistry
+    }
+
+    val missingEnchantmentRegistryServerEvidence =
+        missingForgeEnchantmentRegistryServerEvidenceMilestone()
+    if (missingEnchantmentRegistryServerEvidence.isNotEmpty()) {
+        return "enchantment-registry dedicated-server evidence" to
+            missingEnchantmentRegistryServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -2889,6 +3242,7 @@ tasks.named<Test>("test").configure {
     exclude("**/GameEventRegistryResourcesTest.class")
     exclude("**/LootConditionRegistryResourcesTest.class")
     exclude("**/EtherSourceReloadResourcesTest.class")
+    exclude("**/EnchantmentRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -3110,6 +3464,86 @@ val etherSourceReloadTest = tasks.register<Test>("etherSourceReloadTest") {
     }
 }
 
+val enchantmentRegistryTest = tasks.register<Test>("enchantmentRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader enchantment ownership and packaged-tag tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.EnchantmentRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("enchantmentCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("enchantmentFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("enchantmentForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("enchantmentFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("enchantmentFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("enchantmentForgeShadowJar")
+    inputs.file(canonicalEnchantmentTagFile)
+        .withPropertyName("enchantmentCanonicalNonTreasureTag")
+    inputs.files(legacyFabricEnchantmentConcreteOwners)
+        .withPropertyName("legacyFabricEnchantmentConcreteOwners")
+        .optional()
+    doFirst {
+        systemProperty(
+            "etherology.enchantments.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.nonTreasureTag",
+            canonicalEnchantmentTagFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.enchantments.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
 val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
     group = "verification"
     description =
@@ -3231,7 +3665,28 @@ val forgeEtherSourceReloadServerSafetyTest =
     tasks.register<Exec>("forgeEtherSourceReloadServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the Forge Ether-source reload runner and v6 verifier safety tests."
+            "Runs the historical Forge Ether-source reload v6 verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_reload_evidence_v6.py",
+        )
+        inputs.files(
+            forgeServerContractV6,
+            forgeServerProfileSnapshotV6,
+            forgeEtherSourceReloadServerEvidenceVerifier,
+            forgeEtherSourceReloadServerEvidenceTest,
+        )
+    }
+
+val forgeEnchantmentRegistryServerSafetyTest =
+    tasks.register<Exec>("forgeEnchantmentRegistryServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge enchantment-registry runner and v7 verifier safety tests."
         workingDir(rootProject.projectDir)
         commandLine(
             "python3",
@@ -3239,21 +3694,27 @@ val forgeEtherSourceReloadServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_reload_evidence_v6.py",
+            "scripts/e2e/test_forge_server_enchantment_evidence_v7.py",
         )
         inputs.files(
-            forgeServerContractV6,
-            forgeServerProfileSnapshotV6,
+            forgeServerContractV7,
+            forgeServerProfileSnapshotV7,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
-            forgeEtherSourceReloadServerEvidenceVerifier,
-            forgeEtherSourceReloadServerEvidenceTest,
+            forgeEnchantmentRegistryServerEvidenceVerifier,
+            forgeEnchantmentRegistryServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
             rootProject.file("gradle.properties"),
             project.buildFile,
         )
+        inputs.dir(
+            rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
+        ).withPropertyName("forgeEnchantmentRegistryServerProbeSources")
+        inputs.dir(
+            rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
+        ).withPropertyName("forgeEnchantmentRegistryServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -3295,6 +3756,31 @@ val validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity =
             val missingConditions = missingForgeEtherSourceReloadServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion Ether-source reload server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge enchantment-registry server-v7 archive."
+        dependsOn(forgeEnchantmentRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV7,
+            forgeServerProfileSnapshotV7,
+            forgeEnchantmentRegistryServerEvidenceVerifier,
+        )
+        inputs.dir(forgeEnchantmentRegistryServerEvidenceArchive)
+            .withPropertyName("forgeEnchantmentRegistryServerEvidenceArchive")
+            .optional()
+        doLast {
+            val missingConditions =
+                missingForgeEnchantmentRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion enchantment-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -3431,12 +3917,76 @@ val validateForgeEtherSourceReloadMilestone =
         )
     }
 
+val validateForgeEnchantmentRegistryStaticMilestone =
+    tasks.register("validateForgeEnchantmentRegistryStaticMilestone") {
+        group = "verification"
+        description =
+            "Accepts the sole shared enchantment owner and exact cross-loader tag statically."
+        dependsOn(
+            validateForgeEtherSourceReloadMilestone,
+            validateForgeAcceptedDataSet,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            enchantmentRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("enchantmentFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("enchantmentForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.file(canonicalEnchantmentTagFile)
+        inputs.files(legacyFabricEnchantmentConcreteOwners)
+            .withPropertyName("legacyFabricEnchantmentConcreteOwners")
+            .optional()
+        doLast {
+            val missingConditions = missingForgeEnchantmentRegistryMilestone(
+                commonJar.get().archiveFile.get().asFile,
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ),
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ),
+                fabricShadowJar.get().archiveFile.get().asFile,
+                fabricRemapJar.get().archiveFile.get().asFile,
+                forgeShadowJar.get().archiveFile.get().asFile,
+            )
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion enchantment registry milestone is incomplete:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeEnchantmentRegistryMilestone =
+    tasks.register("validateForgeEnchantmentRegistryMilestone") {
+        group = "verification"
+        description =
+            "Accepts shared enchantments with their frozen native Forge reload proof."
+        dependsOn(
+            validateForgeEnchantmentRegistryStaticMilestone,
+            validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeEtherSourceReloadMilestone)
+        dependsOn(validateForgeEnchantmentRegistryMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -3478,6 +4028,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeLootConditionRegistryMilestone,
         validateForgeRegistryFoundationMilestone,
         validateForgeEtherSourceReloadMilestone,
+        validateForgeEnchantmentRegistryMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -3486,7 +4037,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeEtherSourceReloadMilestone)
+    dependsOn(validateForgeEnchantmentRegistryMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -3495,8 +4046,12 @@ tasks.register("verifyForgePortGateClosed") {
     inputs.files(canonicalGameEventTagFiles.values)
     inputs.file(canonicalAttrahiteLootTable)
     inputs.file(canonicalEtherSourceDefault)
+    inputs.file(canonicalEnchantmentTagFile)
     inputs.files(legacyFabricEtherSourceOwners)
         .withPropertyName("legacyFabricEtherSourceOwners")
+        .optional()
+    inputs.files(legacyFabricEnchantmentConcreteOwners)
+        .withPropertyName("legacyFabricEnchantmentConcreteOwners")
         .optional()
     inputs.files(
         forgeRegistryFoundationServerEvidenceVerifier,
@@ -3504,12 +4059,18 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV6,
         forgeServerProfileSnapshotV6,
         forgeEtherSourceReloadServerEvidenceVerifier,
+        forgeServerContractV7,
+        forgeServerProfileSnapshotV7,
+        forgeEnchantmentRegistryServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
         .optional()
     inputs.dir(forgeEtherSourceReloadServerEvidenceArchive)
         .withPropertyName("forgeEtherSourceReloadServerEvidenceArchive")
+        .optional()
+    inputs.dir(forgeEnchantmentRegistryServerEvidenceArchive)
+        .withPropertyName("forgeEnchantmentRegistryServerEvidenceArchive")
         .optional()
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -3639,7 +4200,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 Ether-source reload server probe")
+            displayName.set("Etherology Forge 1.20.1 enchantment-registry server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -3720,8 +4281,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v6",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v6",
+                "id" to "etherology-e2e-forge-server-1.20.1-v7",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v7",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -3741,14 +4302,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "ether-source-reload",
+                "scenario" to "enchantment-registry",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "ether-source-reload",
+                "scenario_directory" to "enchantment-registry",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -3915,6 +4476,7 @@ if (minecraftVersion == "1.20.1") {
                 val probeEntries = probeZip.entries().asSequence().map { it.name }.toSet()
                 val probeClassEntries = probeEntries.filter { it.endsWith(".class") }.toSet()
                 check(probeClassEntries == setOf(
+                    "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter\$WrittenPack.class",
@@ -3937,6 +4499,8 @@ if (minecraftVersion == "1.20.1") {
                     )
                     val allowedProductionConstants = setOf(
                         "ru.feytox.etherology.data.ethersource.EtherSourceLoader",
+                        "ru.feytox.etherology.registry.misc.PealEnchantment",
+                        "ru.feytox.etherology.registry.misc.ReflectionEnchantment",
                         "ru.feytox.etherology.util.misc." +
                             "RandomChanceWithFortuneConditionSerializer",
                     )
@@ -4025,6 +4589,40 @@ if (minecraftVersion == "1.20.1") {
                         (requiredEtherSourceStateConstants - etherSourceStateConstants).sorted()
                 }
 
+                val enchantmentStateEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState.class",
+                    ),
+                )
+                val enchantmentStateConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(enchantmentStateEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredEnchantmentStateConstants = setOf(
+                    "minecraft:enchantment",
+                    "etherology",
+                    "peal",
+                    "reflection",
+                    "minecraft",
+                    "non_treasure",
+                    "ru.feytox.etherology.registry.misc.PealEnchantment",
+                    "ru.feytox.etherology.registry.misc.ReflectionEnchantment",
+                    "getMaxLevel",
+                    "getMinPower",
+                    "getMaxPower",
+                    "getEntry",
+                    "isIn",
+                )
+                check(
+                    requiredEnchantmentStateConstants.all(
+                        enchantmentStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its enchantment registry contract: " +
+                        (requiredEnchantmentStateConstants - enchantmentStateConstants).sorted()
+                }
+
                 val reloadResourceDigests = mapOf(
                     "probe-inputs/ether-source-reload-pack/pack.mcmeta" to
                         "0ba7dc05c7ce2955fab716f5c4a2a1ca9cde1da6ed0a06b0f06b937c11b69e00",
@@ -4088,6 +4686,18 @@ if (minecraftVersion == "1.20.1") {
                     "loaded_mod_ids",
                     "forbidden_mod_ids_loaded",
                     "mods_forbidden_intersection_empty",
+                    "enchantments",
+                    "registry:enchantment:etherology:peal",
+                    "registry:enchantment:etherology:reflection",
+                    "registry:enchantment_etherology_ids_exact",
+                    "enchantment:peal_class",
+                    "enchantment:reflection_class",
+                    "tag:enchantment_non_treasure_etherology_entries_exact",
+                    "enchantments_captured_after_server_data_load",
+                    "server_started_enchantments_rechecked",
+                    "enchantment_registry_stable_after_reload",
+                    "enchantment_properties_stable_after_reload",
+                    "enchantment_tag_stable_after_reload",
                     "loot_condition",
                     "registry:loot_condition:etherology:random_chance_with_fortune",
                     "registry:loot_condition_etherology_ids_exact",
@@ -4126,6 +4736,7 @@ if (minecraftVersion == "1.20.1") {
                     "[EtherologyServerProbe] reload_command_returned",
                     "[EtherologyServerProbe] stop_requested",
                     "[EtherologyServerProbe] report_published",
+                    "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
@@ -4227,10 +4838,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 Ether-source reload server probe."
+                "Builds and validates the Forge 1.20.1 enchantment-registry server probe."
             dependsOn(
-                validateForgeEtherSourceReloadStaticMilestone,
-                forgeEtherSourceReloadServerSafetyTest,
+                validateForgeEnchantmentRegistryStaticMilestone,
+                forgeEnchantmentRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,

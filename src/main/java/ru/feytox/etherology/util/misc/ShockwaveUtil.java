@@ -22,6 +22,7 @@ import ru.feytox.etherology.item.TuningMaceItem;
 import ru.feytox.etherology.item.TwoHandheldSword;
 import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
 import ru.feytox.etherology.registry.misc.EtherEnchantments;
+import ru.feytox.etherology.registry.misc.SharedEnchantments;
 import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.util.delayedTask.DelayedTask;
@@ -169,7 +170,11 @@ public class ShockwaveUtil {
     private static void trySchedulePeal(World world, PlayerEntity attacker, Entity target, Vec3d shockPos, double knockbackStrength) {
         if (target == null) return;
 
-        int pealLevel = EtherEnchantments.getLevel(world, EtherEnchantments.PEAL, attacker);
+        int pealLevel = EtherEnchantments.getLevel(
+                world,
+                SharedEnchantments.PEAL.get(),
+                attacker
+        );
         if (world.isClient || pealLevel <= 0) return;
 
         DelayedTask.createTaskWithMs(world, 600, () -> {

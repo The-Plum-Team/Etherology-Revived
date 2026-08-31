@@ -44,6 +44,7 @@ public class Etherology {
         SharedSounds.register();
         SharedGameEvents.register();
         SharedLootConditions.register();
+        SharedEnchantments.register();
         FabricGameEventHooks.registerSculkSensorFrequency();
         ExtraBlocksRegistry.registerAll();
         RegistriesRegistry.registerAll();

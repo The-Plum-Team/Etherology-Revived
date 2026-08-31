@@ -22,8 +22,9 @@ moved into `common` by complete vertical slices.
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 E2E run
 in a real macOS client and integrated world. Forge has a native JavaFML entry point,
 metadata, accepted bounded Ethereal Storage and Ethereal Channel verticals, and accepted
-shared-sound, game-event, loot-condition, and Ether-source reload milestones. Storage and Channel have separate packaged
-save/restart evidence from fresh isolated macOS clients. `SharedSounds` owns the exact 14
+shared-sound, game-event, loot-condition, Ether-source reload, and enchantment-registry
+milestones. Storage and Channel have separate packaged save/restart evidence from fresh isolated
+macOS clients. `SharedSounds` owns the exact 14
 Common sound IDs, while the packaged resources close their 21 mono 44.1 kHz OGG files,
 `sounds.json` entries, attenuation values, and English subtitles. No native sound-playback E2E
 is claimed by that static registry milestone.
@@ -42,6 +43,11 @@ Common is also the sole implementation and resource owner of the
 Both loaders install that idempotent Common listener; Forge does not carry a
 copied loader-specific implementation or default-data shadow.
 
+`SharedEnchantments` is the sole Common deferred owner of exactly
+`etherology:peal` and `etherology:reflection`. Both loader artifacts package
+those two entries in the singular `minecraft:non_treasure` tag. Fabric's
+retained `EtherEnchantments` class owns gameplay policy only, not registration.
+
 The historical registry-foundation artifact checks are paired with a fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v4` Loom-userdev run on a real Java 17, Forge 47.4.9
 dedicated server. The headless `registry-foundation` scenario passed 39 of 39 ordered assertions
@@ -57,28 +63,32 @@ gameplay or drop parity. No screenshots or native sound-playback evidence are cl
 Fabric `v20` packaged client evidence predates this registry rebuild and does not prove current
 Fabric-artifact equality.
 
-The current bounded server proof is the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v6` `ether-source-reload` run. Its schema-4
-report passed 72 of 72 assertions on a real Java 17 Forge 47.4.9 dedicated
-server. The initial Common-owned data was exactly 23 entries, including the
-corrected `etherology:primoshard_rella = 4` and `minecraft:redstone = 2`. A real
-`reload` enabled the probe pack and produced exactly 24 entries with
-`minecraft:redstone = 9.5` and added `minecraft:diamond = 13`. The game-event
-registry and tags remained stable; the loot-condition registry and evaluated
-behavior remained stable while the probe `LootTable` instance was replaced.
-The server saved the world, stopped normally, exited zero, and logged no
-`ERROR` or `FATAL` marker. This headless scenario produced no screenshots. Its
-immutable archive is `ether-source-reload-server-v6`, with profile-manifest
-SHA-256
-`2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`,
+The current cumulative server proof is the fresh repository-owned
+`etherology-e2e-forge-server-1.20.1-v7` `enchantment-registry` run. Its schema-5
+report passed 95 of 95 assertions on a real Java 17 Forge 47.4.9 dedicated
+server. It observed only `etherology:peal` and `etherology:reflection` in the
+Etherology enchantment namespace, their exact concrete classes, levels and
+powers, and exact membership in `minecraft:non_treasure`. Registry identity,
+properties, and tag membership were unchanged at server start and after a real
+`reload`. The cumulative contract also re-proved the game-event, loot-condition,
+and exact initial/reloaded Ether-source states from the historical v6 run. The
+server saved the world, stopped normally, exited zero, and logged no `ERROR`,
+`FATAL`, or client-startup marker. This headless scenario produced no
+screenshots. Its immutable archive is `enchantment-registry-server-v7`, with
+profile-manifest SHA-256
+`36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`,
+report SHA-256
+`1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`,
 server-log SHA-256
-`0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
+`b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
 and archive-manifest SHA-256
-`6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
-It does not prove furnace or machine consumption, the wider Ether network, the
-full registry, native sound playback, Forge custom sculk frequency, Attrahite
-drops, or release readiness. The release artifact remains deliberately blocked on the rest of the
-authoritative registry spine and the remaining gameplay and native-readiness work.
+`377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
+It does not prove enchantment applicability, Peal shockwave behavior,
+projectile reflection, client visuals, full combat parity, the full registry,
+or release readiness. The v6 Ether-source archive remains immutable historical
+evidence. The release artifact remains deliberately blocked on the rest of the
+authoritative registry spine and the remaining gameplay and native-readiness
+work.
 
 ## Requirements
 
@@ -118,23 +128,23 @@ Compile and test every accepted bounded Forge milestone without claiming a relea
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:validateForgeEtherSourceReloadMilestone \
-  :forge:1.20.1:validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity \
+  :forge:1.20.1:validateForgeEnchantmentRegistryMilestone \
+  :forge:1.20.1:validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeChannelEvidenceArchiveIntegrity \
   :forge:1.20.1:verifyE2eUnderTestIsolation \
   :forge:1.20.1:verifyForgePortGateClosed
 ```
 
-The combined positive Ether-source reload task includes the accepted sound, game-event,
-loot-condition, and registry-foundation tasks, static listener/probe-contract checks, the frozen v4
-historical registry-foundation archive, the current v6 Ether-source reload archive,
-Common, Fabric, and Forge tests,
-both transformed Common artifacts, the Fabric development and remapped production JARs, and the
-Forge shadow JAR. It proves exact declaration multiplicity and ownership, constructor/range data
-flow, loader bootstrap paths, Fabric's sole supported frequency hook, absence of unsupported direct
-registration alternatives, and byte-exact packaged tags. The inherited sound gate proves that
-`SharedSounds` is the sole declaration owner on both loaders and locks the packaged sound bytes to
-their canonical sources; it still does not run or claim native playback.
+The combined positive enchantment-registry task includes the accepted sound,
+game-event, loot-condition, registry-foundation, and Ether-source tasks; static
+registry/resource/probe checks; the historical v4 and v6 archives; and the
+current v7 enchantment-registry archive. It exercises Common, Fabric, and Forge
+tests, both transformed Common artifacts, the Fabric development and remapped
+production JARs, and the Forge shadow JAR. It proves exact declaration
+multiplicity and ownership, loader bootstrap paths, absence of eager duplicate
+registration, and byte-exact packaged tags. The inherited sound gate still does
+not run or claim native playback, and the enchantment gate does not infer
+applicability or combat behavior from registry state.
 
 `verifyRegistryFoundationServerProbe` builds and validates the isolated server-only probe, its Java 17 Loom
 run configuration, and its separation from production artifacts. It deliberately does not launch
@@ -142,40 +152,57 @@ Minecraft. The under-test isolation task verifies the two explicit client-test a
 is the blocked release artifact. The final task is diagnostic only: it reports the broader
 authoritative registry spine as the first incomplete forward milestone.
 
-## Forge dedicated-server Ether-source reload proof
+## Forge dedicated-server enchantment-registry proof
 
-The native Ether-source reload proof is a one-shot run in a new repository-owned profile. `provision` refuses
-every existing target rather than adopting, deleting, or resetting it. For a newly bumped profile
-revision, validate, provision once, check the exact pristine layout, run the named Loom task through
-the bounded runner, and then validate the live evidence:
+The native enchantment-registry proof is a one-shot run in a new
+repository-owned profile. `provision` refuses every existing target rather than
+adopting, deleting, or resetting it. The accepted v7 runtime is immutable. The
+commands below record the accepted v7 workflow; `validate` and both verifier
+commands remain safe, but do not invoke `provision`, `check`, or `run` again
+until every profile, contract, directory, and verifier literal has been
+advanced to a fresh version.
 
 ```shell
 python3 -B scripts/e2e/forge_server.py validate
 python3 -B scripts/e2e/forge_server.py provision
 python3 -B scripts/e2e/forge_server.py check
 python3 -B scripts/e2e/forge_server.py run
-python3 -B scripts/e2e/forge_server_reload_evidence_v6.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6
+python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v7
+python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
+  --archive docs/evidence/forge-1.20.1/enchantment-registry-server-v7
+```
+
+The runner invokes the exact
+`:forge:1.20.1:runRegistryFoundationServerProbe` task under `caffeinate`, with a
+JDK 21-or-newer Gradle host and Java 17 dedicated server. It independently
+bounds the process and server logs, validates all 95 ordered assertions and the
+full mod inventory, requires a saved world, normal Forge lifecycle, no crash
+report, no fatal/client marker, and exit code zero, and publishes its done
+marker last. Report schema 5 records the exact enchantment registry, classes,
+level/power properties, singular non-treasure tag, real reload stability, and
+the cumulative prior registry/Ether-source states. The probe records
+`ServerStoppedEvent` and atomically publishes its report before scheduling a
+probe-only terminator. That narrow workaround joins the actual stopped-event
+server thread before `System.exit` and prevents a proven Loom-userdev
+non-daemon thread leak from hanging Gradle; it is not production mod behavior.
+This is a headless registry/tag/loot-condition/Ether-source/enchantment proof,
+so screenshots are neither produced nor claimed. It does not prove
+enchantment applicability, Peal shockwaves, projectile reflection, client
+visuals, full combat, the full authoritative registry, or release readiness.
+
+### Historical v6 Ether-source reload proof
+
+The immutable `ether-source-reload-server-v6` archive remains the accepted
+historical proof for Common listener/default-data ownership and the exact
+23-entry to 24-entry real reload transition. Its schema-4 report contains 72
+passing assertions. Validate it only through the pinned historical verifier;
+never provision or reuse the v6 runtime:
+
+```shell
 python3 -B scripts/e2e/forge_server_reload_evidence_v6.py \
   --archive docs/evidence/forge-1.20.1/ether-source-reload-server-v6
 ```
-
-The runner invokes the exact `:forge:1.20.1:runRegistryFoundationServerProbe` task under `caffeinate`, with
-a JDK 21-or-newer Gradle host and Java 17 dedicated server. It independently bounds the process and
-server logs, validates all 72 ordered assertions and the full mod inventory, requires a saved world,
-normal Forge lifecycle, no crash report, no `ERROR` or `FATAL` marker, and exit code zero, and
-publishes its done marker last. Report schema 4 records the exact initial 23-entry Ether-source
-map, the real reload command, the exact reloaded 24-entry map, and stable registry, tag, and
-loot-condition behavior. It separately records that the probe loot table is replaced, which is
-the expected reload behavior rather than a false same-instance claim. The
-probe records `ServerStoppedEvent` and atomically publishes its report before scheduling a
-probe-only terminator. That narrow workaround joins the actual stopped-event server thread before
-`System.exit` and prevents a proven Loom-userdev non-daemon thread leak from hanging Gradle; it is
-not production mod behavior.
-This is a headless registry/tag/loot-condition/Ether-source proof, so screenshots are neither
-produced nor claimed. It does not prove furnace or machine consumption, the wider Ether network,
-the full authoritative registry, native sound playback, Forge custom sculk frequency, Attrahite
-drops, or release readiness.
 
 ### Historical v4 registry-foundation proof
 

@@ -155,4 +155,6 @@ This record accepts only Common listener/default-data ownership and the bounded
 reload behavior above. It does not prove Ethereal Furnace or other machine
 consumption, the wider Ether network, the full authoritative registry, native
 sound playback, Forge custom sculk frequency, Attrahite drops, or release
-readiness.
+readiness. The v6 archive remains immutable historical evidence; the cumulative
+v7 enchantment-registry server record re-proves these Ether-source assertions
+and is now the current dedicated-server proof.

@@ -109,17 +109,22 @@ not replace any standard scenario or establish complete loader readiness.
 | `ethereal-storage` | `forge-1.20.1` | Bounded Ethereal Storage vertical in a fresh integrated world: four-slot block entity and NBT reconstruction; per-Glint Ether transfer with exact-total conservation; Forge item-handler access on the unsided view and all six faces with simulated/live insertion, blocked extraction, and hidden display slot; viewer open/close and synchronized Gecko animation; native menu; closed/open/closed-again plus pre-restart and post-restart menu captures; forced save, full disconnect/restart, exact Ether distribution, ordered input inventory, display state, block-entity type, and menu reopen. This scenario does not satisfy `ether-network`, general `persistence`, multiplayer, or full-loader readiness. |
 | `ethereal-channel` | `forge-1.20.1` | Bounded directed-channel vertical in a fresh integrated world and forced fixture chunk: exact channel/storage block and block-entity ids at non-overlapping fixture positions; redstone-fed powered repeaters provide exact strong power from the full solid arena floor while temporary support blocks are replaced by channels, then the first scheduled server tick resolves ACTIVATED with source-above `up=in` and target-east `east=out` without any manual neighbor refresh; an independent vanilla wall lever remains attached to a channel after natural propagation, reports `canPlaceAt=true`, produces the exact `north=in`, `east=out`, `west=empty`, cross topology, mirrors to the client, and survives save/restart; a strongly powered channel receives and retains exactly one Ether without forwarding; natural power removal transfers exactly one Ether on the fifth-tick cadence with total conservation and no reverse motion; a missing output evaporates exactly 0.2 Ether and exposes then naturally clears its evaporation flags after natural reactivation; channel NBT reconstruction and client sync; gated, transferred, and reopened 1920×1080 captures after 120 consecutive exact client/terrain-ready frames at the fixed first-person camera pose, with capture-time mirror, renderer, and camera assertions; forced save, full disconnect/restart, exact server state, and exact block-entity types. Storage Ether distribution is a server oracle because the storage foundation has no client update packet. This scenario does not satisfy the complete `ether-network`, general `persistence`, multiplayer, or full-loader readiness contracts. |
 | `ether-source-reload` | `forge-1.20.1` | Bounded dedicated-server data-reload vertical in a fresh repository-owned Loom-userdev profile: Common is the sole listener/default-data owner; exact initial 23-entry map with corrected `etherology:primoshard_rella = 4` and `minecraft:redstone = 2`; a real `reload` command with an enabled probe pack; exact reloaded 24-entry map with `minecraft:redstone = 9.5` and added `minecraft:diamond = 13`; stable game-event registry and tags; stable loot-condition registry and evaluated behavior while the probe `LootTable` instance is replaced; world save, normal stop, exit code zero, and no `ERROR` or `FATAL` marker. This headless scenario requires no screenshots and does not satisfy furnace/machine consumption, the wider Ether network, the full authoritative registry, sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness. |
+| `enchantment-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload proof in a fresh repository-owned Loom-userdev profile: Common owns exactly `etherology:peal` and `etherology:reflection` through `ru.feytox.etherology.registry.misc.PealEnchantment` and `ru.feytox.etherology.registry.misc.ReflectionEnchantment`; Peal has maximum level 3, minimum powers `1, 12, 23`, and maximum powers `21, 32, 43`; Reflection has maximum level 1, minimum power `1`, and maximum power `21`; both are the only Etherology entries in the singular `minecraft:non_treasure` tag; exact registry identities, properties, and tag membership remain stable at server start and through a real `reload`; the previously accepted game-event, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or client-only marker. This headless scenario requires no screenshots and does not prove enchantment applicability, Peal shockwaves, projectile reflection, client visuals, complete combat parity, the full authoritative registry, or release readiness. |
 
-The accepted `ether-source-reload` record is report schema 4 with 72 of 72
-passing assertions in
-`docs/evidence/forge-1.20.1/ether-source-reload-server-v6`. It binds profile
-manifest SHA-256
-`2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`,
+The current accepted cumulative record is `enchantment-registry` report schema
+5 with 95 of 95 passing assertions in
+`docs/evidence/forge-1.20.1/enchantment-registry-server-v7`. It binds
+profile-manifest SHA-256
+`36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`,
+report SHA-256
+`1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`,
 server-log SHA-256
-`0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
+`b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
 and archive-manifest SHA-256
-`6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
-The archive proves capture-time integrity; current-source or rebuilt-artifact
+`377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
+The v6 `ether-source-reload` archive remains historical evidence; its accepted
+state is included in and superseded by the cumulative v7 runtime proof. Frozen
+archives prove capture-time integrity; current-source or rebuilt-artifact
 identity still requires a new isolated native run.
 
 ## Screenshot contract

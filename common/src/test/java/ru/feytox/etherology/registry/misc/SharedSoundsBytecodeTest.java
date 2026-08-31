@@ -245,6 +245,7 @@ final class SharedSoundsBytecodeTest {
                         SHARED_SOUNDS + "#register()V",
                         "ru/feytox/etherology/registry/misc/SharedGameEvents#register()V",
                         "ru/feytox/etherology/registry/misc/SharedLootConditions#register()V",
+                        "ru/feytox/etherology/registry/misc/SharedEnchantments#register()V",
                         "ru/feytox/etherology/registry/misc/ResourceReloaders"
                                 + "#registerServerData()V",
                         "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"

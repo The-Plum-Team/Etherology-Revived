@@ -12,8 +12,6 @@ import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.TridentEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
@@ -23,7 +21,6 @@ import ru.feytox.etherology.item.BroadSwordItem;
 import ru.feytox.etherology.item.IronShield;
 import ru.feytox.etherology.item.TuningMaceItem;
 import ru.feytox.etherology.mixin.EntityHitResultAccessor;
-import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.List;
 import java.util.Map;
@@ -35,9 +32,6 @@ import static net.minecraft.enchantment.Enchantments.*;
 public class EtherEnchantments {
 
     private static final Map<Class<? extends Item>, List<Enchantment>> BANNED_ENCHANTMENTS = new Object2ObjectOpenHashMap<>();
-
-    public static final Enchantment PEAL = register("peal", new PealEnchantment());
-    public static final Enchantment REFLECTION = register("reflection", new ReflectionEnchantment());
 
     public static void registerAll() {
         banEnchantments(BattlePickaxe.class, FORTUNE, SILK_TOUCH);
@@ -54,16 +48,12 @@ public class EtherEnchantments {
     }
 
     public static boolean isAcceptableItem(Enchantment enchantment, Item item, boolean fallback) {
-        if (enchantment == PEAL) return item.getRegistryEntry().isIn(EItemTags.TUNING_MACES);
-        if (enchantment == REFLECTION) return item.getRegistryEntry().isIn(EItemTags.IRON_SHIELDS);
+        if (enchantment == SharedEnchantments.PEAL.get()) return item.getRegistryEntry().isIn(EItemTags.TUNING_MACES);
+        if (enchantment == SharedEnchantments.REFLECTION.get()) return item.getRegistryEntry().isIn(EItemTags.IRON_SHIELDS);
 
         boolean acceptable = fallback || item instanceof BattlePickaxe && enchantment.target == EnchantmentTarget.WEAPON;
         List<Enchantment> banned = BANNED_ENCHANTMENTS.get(item.getClass());
         return acceptable && (banned == null || !banned.contains(enchantment));
-    }
-
-    private static Enchantment register(String id, Enchantment enchantment) {
-        return Registry.register(Registries.ENCHANTMENT, EIdentifier.of(id), enchantment);
     }
 
     private static void banEnchantments(Class<? extends Item> itemClass, Enchantment... enchantments) {
@@ -78,7 +68,7 @@ public class EtherEnchantments {
         Optional<ItemStack> optionalShield = IronShield.getUsingShield(target);
         if (optionalShield.isEmpty()) return true;
         ItemStack shield = optionalShield.get();
-        if (getLevel(world, REFLECTION, shield) < 1) return true;
+        if (getLevel(world, SharedEnchantments.REFLECTION.get(), shield) < 1) return true;
 
         Vec3d targetRotation = target.getRotationVec(1.0F);
         Vec3d targetPos = target.getPos();

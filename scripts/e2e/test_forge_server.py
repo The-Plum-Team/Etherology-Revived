@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 4,
+        "schema": 5,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -107,6 +107,22 @@ def valid_report() -> dict[str, object]:
             "etherology_event_ids": ["etherology:etherology_resonance"],
             "same_instance_at_server_started": True,
             "stable_after_reload": True,
+        },
+        "enchantments": {
+            "registry_id": forge_server.ENCHANTMENT_REGISTRY_ID,
+            "non_treasure_tag_id": forge_server.NON_TREASURE_TAG_ID,
+            "etherology_enchantment_ids": list(forge_server.ENCHANTMENT_IDS),
+            "peal": copy.deepcopy(forge_server.ENCHANTMENTS["peal"]),
+            "reflection": copy.deepcopy(
+                forge_server.ENCHANTMENTS["reflection"]
+            ),
+            "non_treasure_etherology_enchantment_ids": list(
+                forge_server.ENCHANTMENT_IDS
+            ),
+            "same_state_at_server_started": True,
+            "registry_stable_after_reload": True,
+            "properties_stable_after_reload": True,
+            "tag_stable_after_reload": True,
         },
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
@@ -161,6 +177,9 @@ def valid_report() -> dict[str, object]:
             "tags_stable": True,
             "loot_condition_registry_and_behavior_stable": True,
             "loot_table_instance_replaced": True,
+            "enchantment_registry_stable": True,
+            "enchantment_properties_stable": True,
+            "enchantment_tag_stable": True,
             "stop_requested_after_completion": True,
         },
         "tags": {
@@ -218,7 +237,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v6",
+            "etherology-e2e-forge-server-1.20.1-v7",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -547,7 +566,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(72, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(95, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -606,6 +625,20 @@ class ProbeReportTests(unittest.TestCase):
                 "internal_id", "wrong"
             ),
             "wrong range": lambda report: report["registry"].__setitem__("range", 15),
+            "wrong enchantment class": lambda report: report["enchantments"][
+                "peal"
+            ].__setitem__("class", "wrong.PealEnchantment"),
+            "wrong enchantment power": lambda report: report["enchantments"][
+                "peal"
+            ]["max_powers"].__setitem__(2, 42),
+            "missing non-treasure enchantment": lambda report: report[
+                "enchantments"
+            ]["non_treasure_etherology_enchantment_ids"].remove(
+                "etherology:reflection"
+            ),
+            "enchantment reload instability": lambda report: report["reload"].__setitem__(
+                "enchantment_registry_stable", False
+            ),
             "integer loot identity": lambda report: report["loot_condition"].__setitem__(
                 "same_state_at_server_started", 1
             ),
@@ -671,6 +704,17 @@ class LifecycleEvidenceTests(unittest.TestCase):
 
             self.assertEqual(content, forge_server.validate_server_log(path))
 
+            allowed_client_class = (
+                content
+                + b"[LanServerPinger #1/WARN] "
+                + b"[net.minecraft.client.network.LanServerPinger/] No route\n"
+            )
+            path.write_bytes(allowed_client_class)
+            self.assertEqual(
+                allowed_client_class,
+                forge_server.validate_server_log(path),
+            )
+
     def test_server_log_uses_the_distinct_48_mib_boundary(self) -> None:
         self.assertEqual(48 * 1024 * 1024, forge_server.MAXIMUM_SERVER_LOG_SIZE)
         self.assertEqual(64 * 1024 * 1024, forge_server.MAXIMUM_PROCESS_LOG_SIZE)
@@ -690,12 +734,17 @@ class LifecycleEvidenceTests(unittest.TestCase):
             ):
                 forge_server.validate_server_log(path)
 
-    def test_server_log_rejects_fatal_missing_duplicate_and_reordered_markers(self) -> None:
+    def test_server_log_rejects_fatal_client_missing_duplicate_and_reordered_markers(
+        self,
+    ) -> None:
         base = valid_server_log().decode("utf-8")
         mutations = {
             "fatal": base + "[FATAL] failure\n",
             "error level": base + "[main/ERROR] failure\n",
             "reload failure": base + "Failed to execute reload\n",
+            "unexpected client class": base
+            + "[main/INFO] "
+            + "[net.minecraft.client.gui.screen.TitleScreen/] loaded\n",
             "missing save": base.replace("Saving worlds\n", ""),
             "duplicate lifecycle": base
             + "[Server thread/INFO] [EtherologyServerProbe] server_started\n",
@@ -717,6 +766,10 @@ class LifecycleEvidenceTests(unittest.TestCase):
                 "[EtherologyServerProbe] temporary",
                 "[EtherologyServerProbe] server_started",
             ),
+            **{
+                f"client marker {marker}": base + marker + "\n"
+                for marker in forge_server.CLIENT_LOG_MARKERS
+            },
         }
         for description, content in mutations.items():
             with self.subTest(description=description), tempfile.TemporaryDirectory() as directory:

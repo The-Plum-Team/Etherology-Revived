@@ -1,0 +1,18 @@
+{
+  "exit_code": 0,
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v7",
+  "profile_manifest": {
+    "relative_path": "scripts/e2e/forge-server-1.20.1-profile.json",
+    "sha256": "36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773",
+    "size": 1194
+  },
+  "scenario": "enchantment-registry",
+  "schema": 1,
+  "server_log": {
+    "relative_path": "logs/latest.log",
+    "sha256": "b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c",
+    "size": 17881
+  },
+  "task_path": ":forge:1.20.1:runRegistryFoundationServerProbe",
+  "timed_out": false
+}

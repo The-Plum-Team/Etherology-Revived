@@ -84,6 +84,12 @@ public final class RegistryFoundationServerProbe {
             EtherSourceProbeState.failed("not captured");
     private EtherSourceProbeState serverStartedEtherSourceState =
             EtherSourceProbeState.failed("not captured");
+    private EnchantmentProbeState initialEnchantmentState =
+            EnchantmentProbeState.missing();
+    private EnchantmentProbeState reloadedEnchantmentState =
+            EnchantmentProbeState.missing();
+    private EnchantmentProbeState serverStartedEnchantmentState =
+            EnchantmentProbeState.missing();
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
@@ -115,7 +121,9 @@ public final class RegistryFoundationServerProbe {
     private boolean serverStartedTagsRechecked;
     private boolean serverStartedEtherSourcesRechecked;
     private boolean lootConditionCapturedAfterServerDataLoad;
+    private boolean enchantmentsCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
+    private boolean serverStartedEnchantmentsRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
     private boolean reloadCompleted;
@@ -125,6 +133,9 @@ public final class RegistryFoundationServerProbe {
     private boolean tagsStableAfterReload;
     private boolean lootConditionStableAfterReload;
     private boolean lootTableInstanceReplacedAfterReload;
+    private boolean enchantmentRegistryStableAfterReload;
+    private boolean enchantmentPropertiesStableAfterReload;
+    private boolean enchantmentTagStableAfterReload;
     private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
@@ -183,6 +194,7 @@ public final class RegistryFoundationServerProbe {
             );
             captureEtherologyTagMemberships();
             initialEtherSourceState = EtherSourceProbeState.capture();
+            initialEnchantmentState = EnchantmentProbeState.capture();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
         }
@@ -191,6 +203,7 @@ public final class RegistryFoundationServerProbe {
         reloadUpdateCause = event.getUpdateCause().name();
         reloadShouldUpdateStaticData = event.shouldUpdateStaticData();
         reloadedEtherSourceState = EtherSourceProbeState.capture();
+        reloadedEnchantmentState = EnchantmentProbeState.capture();
         reloadTagsObserved = tagUpdateCount == 2 && startedServer != null && reloadRequested;
         GameEvent reloadedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
         registryStableAfterReload = reloadTagsObserved
@@ -215,6 +228,14 @@ public final class RegistryFoundationServerProbe {
                 && lootConditionState.hasReplacedProbeTableInstanceAfterReload(
                         reloadedLootConditionState
                 );
+        enchantmentRegistryStableAfterReload = reloadTagsObserved
+                && initialEnchantmentState.hasSameRegistry(reloadedEnchantmentState);
+        enchantmentPropertiesStableAfterReload = reloadTagsObserved
+                && initialEnchantmentState.hasSameProperties(reloadedEnchantmentState);
+        enchantmentTagStableAfterReload = reloadTagsObserved
+                && initialEnchantmentState.hasSameTagMembership(
+                        reloadedEnchantmentState
+                );
         LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
@@ -229,6 +250,10 @@ public final class RegistryFoundationServerProbe {
                 && lifecycle.equals(List.of("tags_updated_initial"));
         etherSourceCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialEtherSourceState.hasExactInitialEntries();
+        enchantmentsCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialEnchantmentState.hasExactRegistry()
+                && initialEnchantmentState.hasExactProperties()
+                && initialEnchantmentState.hasExactTagMembership();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
@@ -280,6 +305,9 @@ public final class RegistryFoundationServerProbe {
         serverStartedEtherSourceState = EtherSourceProbeState.capture();
         serverStartedEtherSourcesRechecked = initialEtherSourceState.hasExactInitialEntries()
                 && initialEtherSourceState.sameEntries(serverStartedEtherSourceState);
+        serverStartedEnchantmentState = EnchantmentProbeState.capture();
+        serverStartedEnchantmentsRechecked = initialEnchantmentState
+                .sameStateAtServerStarted(serverStartedEnchantmentState);
 
         try {
             ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
@@ -433,6 +461,138 @@ public final class RegistryFoundationServerProbe {
         );
         addAssertion(assertions, "registry_range", Integer.toString(EVENT_RANGE),
                 Integer.toString(eventRange));
+        addAssertion(
+                assertions,
+                "registry:enchantment:etherology:peal",
+                "present",
+                presentState(initialEnchantmentState.pealIdentity() != null)
+        );
+        addAssertion(
+                assertions,
+                "registry:enchantment:etherology:reflection",
+                "present",
+                presentState(initialEnchantmentState.reflectionIdentity() != null)
+        );
+        addAssertion(
+                assertions,
+                "registry:enchantment_etherology_ids_exact",
+                String.join(",", EnchantmentProbeState.EXPECTED_ENCHANTMENT_IDS),
+                String.join(",", initialEnchantmentState.etherologyEnchantmentIds())
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_class",
+                EnchantmentProbeState.PEAL_CLASS,
+                initialEnchantmentState.pealClass()
+        );
+        addAssertion(
+                assertions,
+                "enchantment:reflection_class",
+                EnchantmentProbeState.REFLECTION_CLASS,
+                initialEnchantmentState.reflectionClass()
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_max_level",
+                "3",
+                Integer.toString(initialEnchantmentState.pealMaxLevel())
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_min_power_level_1",
+                "1",
+                initialEnchantmentState.pealMinPower(1)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_min_power_level_2",
+                "12",
+                initialEnchantmentState.pealMinPower(2)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_min_power_level_3",
+                "23",
+                initialEnchantmentState.pealMinPower(3)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_max_power_level_1",
+                "21",
+                initialEnchantmentState.pealMaxPower(1)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_max_power_level_2",
+                "32",
+                initialEnchantmentState.pealMaxPower(2)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:peal_max_power_level_3",
+                "43",
+                initialEnchantmentState.pealMaxPower(3)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:reflection_max_level",
+                "1",
+                Integer.toString(initialEnchantmentState.reflectionMaxLevel())
+        );
+        addAssertion(
+                assertions,
+                "enchantment:reflection_min_power_level_1",
+                "1",
+                initialEnchantmentState.reflectionMinPower(1)
+        );
+        addAssertion(
+                assertions,
+                "enchantment:reflection_max_power_level_1",
+                "21",
+                initialEnchantmentState.reflectionMaxPower(1)
+        );
+        addBooleanAssertion(
+                assertions,
+                "tag:enchantment_non_treasure_contains_peal",
+                initialEnchantmentState.pealInNonTreasure()
+        );
+        addBooleanAssertion(
+                assertions,
+                "tag:enchantment_non_treasure_contains_reflection",
+                initialEnchantmentState.reflectionInNonTreasure()
+        );
+        addAssertion(
+                assertions,
+                "tag:enchantment_non_treasure_etherology_entries_exact",
+                String.join(",", EnchantmentProbeState.EXPECTED_ENCHANTMENT_IDS),
+                String.join(",", initialEnchantmentState
+                        .nonTreasureEtherologyEnchantmentIds())
+        );
+        addBooleanAssertion(
+                assertions,
+                "enchantments_captured_after_server_data_load",
+                enchantmentsCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_enchantments_rechecked",
+                serverStartedEnchantmentsRechecked
+        );
+        addBooleanAssertion(
+                assertions,
+                "enchantment_registry_stable_after_reload",
+                enchantmentRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "enchantment_properties_stable_after_reload",
+                enchantmentPropertiesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "enchantment_tag_stable_after_reload",
+                enchantmentTagStableAfterReload
+        );
         addAssertion(
                 assertions,
                 "registry:loot_condition:etherology:random_chance_with_fortune",
@@ -733,7 +893,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 4);
+        report.addProperty("schema", 5);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -747,6 +907,7 @@ public final class RegistryFoundationServerProbe {
         report.add("forbidden_mod_ids_loaded", buildStringArray(forbiddenModIdsLoaded));
         report.add("mods", buildMods(etherologyLoaded, probeLoaded));
         report.add("registry", buildRegistry());
+        report.add("enchantments", buildEnchantments());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
         report.add("reload", buildReload());
@@ -818,6 +979,67 @@ public final class RegistryFoundationServerProbe {
         );
         registry.addProperty("stable_after_reload", registryStableAfterReload);
         return registry;
+    }
+
+    private JsonObject buildEnchantments() {
+        JsonObject enchantments = new JsonObject();
+        enchantments.addProperty(
+                "registry_id",
+                EnchantmentProbeState.ENCHANTMENT_REGISTRY_ID
+        );
+        enchantments.addProperty(
+                "non_treasure_tag_id",
+                EnchantmentProbeState.NON_TREASURE_TAG_ID
+        );
+        enchantments.add(
+                "etherology_enchantment_ids",
+                buildStringArray(initialEnchantmentState.etherologyEnchantmentIds())
+        );
+        enchantments.add(
+                "peal",
+                buildEnchantment(
+                        initialEnchantmentState.pealId(),
+                        initialEnchantmentState.pealClass(),
+                        initialEnchantmentState.pealMaxLevel(),
+                        initialEnchantmentState.pealMinPowers(),
+                        initialEnchantmentState.pealMaxPowers(),
+                        initialEnchantmentState.pealInNonTreasure()
+                )
+        );
+        enchantments.add(
+                "reflection",
+                buildEnchantment(
+                        initialEnchantmentState.reflectionId(),
+                        initialEnchantmentState.reflectionClass(),
+                        initialEnchantmentState.reflectionMaxLevel(),
+                        initialEnchantmentState.reflectionMinPowers(),
+                        initialEnchantmentState.reflectionMaxPowers(),
+                        initialEnchantmentState.reflectionInNonTreasure()
+                )
+        );
+        enchantments.add(
+                "non_treasure_etherology_enchantment_ids",
+                buildStringArray(
+                        initialEnchantmentState.nonTreasureEtherologyEnchantmentIds()
+                )
+        );
+        enchantments.addProperty(
+                "same_state_at_server_started",
+                serverStartedEnchantmentsRechecked
+        );
+        enchantments.addProperty(
+                "registry_stable_after_reload",
+                enchantmentRegistryStableAfterReload
+        );
+        enchantments.addProperty(
+                "properties_stable_after_reload",
+                enchantmentPropertiesStableAfterReload
+        );
+        enchantments.addProperty(
+                "tag_stable_after_reload",
+                enchantmentTagStableAfterReload
+        );
+        return enchantments;
     }
 
     private JsonObject buildLootCondition() {
@@ -906,6 +1128,18 @@ public final class RegistryFoundationServerProbe {
                 "loot_table_instance_replaced",
                 lootTableInstanceReplacedAfterReload
         );
+        reload.addProperty(
+                "enchantment_registry_stable",
+                enchantmentRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "enchantment_properties_stable",
+                enchantmentPropertiesStableAfterReload
+        );
+        reload.addProperty(
+                "enchantment_tag_stable",
+                enchantmentTagStableAfterReload
+        );
         reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
         return reload;
     }
@@ -966,6 +1200,24 @@ public final class RegistryFoundationServerProbe {
         etherologyEventIds.forEach(etherologyEventIdsArray::add);
         tag.add("etherology_event_ids", etherologyEventIdsArray);
         return tag;
+    }
+
+    private static JsonObject buildEnchantment(
+            String id,
+            String className,
+            int maxLevel,
+            List<Integer> minPowers,
+            List<Integer> maxPowers,
+            boolean inNonTreasure
+    ) {
+        JsonObject enchantment = new JsonObject();
+        enchantment.addProperty("id", id);
+        enchantment.addProperty("class", className);
+        enchantment.addProperty("max_level", maxLevel);
+        enchantment.add("min_powers", buildIntegerArray(minPowers));
+        enchantment.add("max_powers", buildIntegerArray(maxPowers));
+        enchantment.addProperty("in_non_treasure", inNonTreasure);
+        return enchantment;
     }
 
     private static JsonObject buildEtherSourceCapture(EtherSourceProbeState state) {
@@ -1042,6 +1294,12 @@ public final class RegistryFoundationServerProbe {
     }
 
     private static JsonArray buildStringArray(List<String> values) {
+        JsonArray array = new JsonArray();
+        values.forEach(array::add);
+        return array;
+    }
+
+    private static JsonArray buildIntegerArray(List<Integer> values) {
         JsonArray array = new JsonArray();
         values.forEach(array::add);
         return array;

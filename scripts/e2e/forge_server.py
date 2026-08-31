@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded Forge 1.20.1 Ether-source reload probe in isolated state."""
+"""Run the bounded Forge 1.20.1 enchantment-registry probe in isolated state."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
-import forge_server_contract_v6 as contract_v6
+import forge_server_contract_v7 as contract_v7
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -33,9 +33,9 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v6.PROFILE_ID
-SCENARIO_ID = contract_v6.SCENARIO_ID
-TASK_PATH = contract_v6.TASK_PATH
+PROFILE_ID = contract_v7.PROFILE_ID
+SCENARIO_ID = contract_v7.SCENARIO_ID
+TASK_PATH = contract_v7.TASK_PATH
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -46,20 +46,29 @@ PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 MAXIMUM_SERVER_LOG_SIZE = 48 * 1024 * 1024
 COMPLETION_MARKER_CONTENT = b"complete\n"
-REQUIRED_MOD_IDS = contract_v6.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v6.FORBIDDEN_MOD_IDS
-RELOAD_PACK_DIRECTORY = contract_v6.RELOAD_PACK_DIRECTORY
-RELOAD_PACK_ENABLED_NAME = contract_v6.RELOAD_PACK_ENABLED_NAME
-RELOAD_PACK_RESOURCES = contract_v6.RELOAD_PACK_RESOURCES
-ETHER_SOURCE_LISTENER_CLASS = contract_v6.ETHER_SOURCE_LISTENER_CLASS
-INITIAL_ETHER_SOURCE_ENTRIES = contract_v6.INITIAL_ETHER_SOURCE_ENTRIES
-RELOADED_ETHER_SOURCE_ENTRIES = contract_v6.RELOADED_ETHER_SOURCE_ENTRIES
-canonical_ether_source_entries = contract_v6.canonical_ether_source_entries
-EXPECTED_LIFECYCLE = contract_v6.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v6.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v6.EXPECTED_ASSERTION_VALUES
-PROBE_LOG_PHASES = contract_v6.PROBE_LOG_PHASES
-SERVER_LOG_TOKENS = contract_v6.SERVER_LOG_TOKENS
+REQUIRED_MOD_IDS = contract_v7.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v7.FORBIDDEN_MOD_IDS
+RELOAD_PACK_DIRECTORY = contract_v7.RELOAD_PACK_DIRECTORY
+RELOAD_PACK_ENABLED_NAME = contract_v7.RELOAD_PACK_ENABLED_NAME
+RELOAD_PACK_RESOURCES = contract_v7.RELOAD_PACK_RESOURCES
+ETHER_SOURCE_LISTENER_CLASS = contract_v7.ETHER_SOURCE_LISTENER_CLASS
+ENCHANTMENT_REGISTRY_ID = contract_v7.ENCHANTMENT_REGISTRY_ID
+NON_TREASURE_TAG_ID = contract_v7.NON_TREASURE_TAG_ID
+ENCHANTMENT_IDS = contract_v7.ENCHANTMENT_IDS
+ENCHANTMENTS = contract_v7.ENCHANTMENTS
+INITIAL_ETHER_SOURCE_ENTRIES = contract_v7.INITIAL_ETHER_SOURCE_ENTRIES
+RELOADED_ETHER_SOURCE_ENTRIES = contract_v7.RELOADED_ETHER_SOURCE_ENTRIES
+canonical_ether_source_entries = contract_v7.canonical_ether_source_entries
+EXPECTED_LIFECYCLE = contract_v7.EXPECTED_LIFECYCLE
+EXPECTED_ASSERTION_NAMES = contract_v7.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v7.EXPECTED_ASSERTION_VALUES
+PROBE_LOG_PHASES = contract_v7.PROBE_LOG_PHASES
+SERVER_LOG_TOKENS = contract_v7.SERVER_LOG_TOKENS
+CLIENT_LOG_MARKERS = contract_v7.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v7.CLIENT_CLASS_PATTERN
+ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
+    contract_v7.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+)
 FATAL_SERVER_LOG_MARKERS = (
     "A mod crashed on startup!",
     "Encountered an unexpected exception",
@@ -312,12 +321,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v6.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v7.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v6.PROFILE_MANIFEST_SHA256
+        != contract_v7.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v6 contract"
+            "The dedicated-server profile bytes differ from the immutable v7 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -847,16 +856,16 @@ def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v6 contract."""
+    """Validates a probe report through the immutable profile-v7 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v6.validate_probe_report(
+        contract_v7.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v6.V6ContractError as exception:
+    except contract_v7.V7ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 
@@ -875,6 +884,26 @@ def validate_server_log(path: Path) -> bytes:
     )
     if fatal_marker is not None:
         raise E2EError(f"Dedicated-server latest log contains fatal marker: {fatal_marker}")
+    client_marker = next(
+        (marker for marker in CLIENT_LOG_MARKERS if marker in text), None
+    )
+    if client_marker is not None:
+        raise E2EError(
+            f"Dedicated-server latest log contains client marker: {client_marker}"
+        )
+    unexpected_client_class = next(
+        (
+            class_name
+            for class_name in re.findall(CLIENT_CLASS_PATTERN, text)
+            if class_name not in ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+        ),
+        None,
+    )
+    if unexpected_client_class is not None:
+        raise E2EError(
+            "Dedicated-server latest log contains unexpected client class marker: "
+            f"{unexpected_client_class}"
+        )
     phases = re.findall(r"\[EtherologyServerProbe\] ([a-z_]+)", text)
     expected_phases = [*PROBE_LOG_PHASES, "loom_userdev_exit_scheduled"]
     if phases != expected_phases:

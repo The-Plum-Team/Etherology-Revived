@@ -102,7 +102,7 @@ final class LootConditionRegistryIsolationTest {
     }
 
     @Test
-    void fabricInitializerAttachesLootConditionsBetweenGameEventsAndTheirHook()
+    void fabricInitializerAttachesLootConditionsBeforeEnchantmentsAndTheEventHook()
             throws IOException {
         List<String> invocations = methodInvocations(
                 classpathClass(FABRIC_INITIALIZER),
@@ -114,13 +114,17 @@ final class LootConditionRegistryIsolationTest {
         int lootConditionIndex = invocations.indexOf(
                 SHARED_LOOT_CONDITIONS_OWNER + "#register"
         );
+        int enchantmentIndex = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/SharedEnchantments#register"
+        );
         int frequencyHookIndex = invocations.indexOf(
                 "ru/feytox/etherology/FabricGameEventHooks#registerSculkSensorFrequency"
         );
 
         assertTrue(gameEventIndex >= 0);
         assertEquals(gameEventIndex + 1, lootConditionIndex);
-        assertEquals(lootConditionIndex + 1, frequencyHookIndex);
+        assertEquals(lootConditionIndex + 1, enchantmentIndex);
+        assertEquals(enchantmentIndex + 1, frequencyHookIndex);
         assertEquals(
                 1,
                 count(invocations, SHARED_LOOT_CONDITIONS_OWNER + "#register")

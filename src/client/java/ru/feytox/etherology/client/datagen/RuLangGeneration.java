@@ -13,7 +13,7 @@ import ru.feytox.etherology.registry.block.DevBlocks;
 import ru.feytox.etherology.registry.block.EBlocks;
 import ru.feytox.etherology.registry.block.ExtraBlocksRegistry;
 import ru.feytox.etherology.registry.misc.EffectsRegistry;
-import ru.feytox.etherology.registry.misc.EtherEnchantments;
+import ru.feytox.etherology.registry.misc.SharedEnchantments;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 
 import java.nio.file.Path;
@@ -215,8 +215,8 @@ public class RuLangGeneration extends FabricLanguageProvider {
         builder.add(PEACH_TRAPDOOR, "Персиковый люк");
         builder.add(BREWING_CAULDRON, "Варочный тигель");
         builder.add(SEDIMENTARY_STONE, "Осадочный камень");
-        builder.add(EtherEnchantments.PEAL, "Раскат");
-        builder.add(EtherEnchantments.REFLECTION, "Отражение");
+        builder.add(SharedEnchantments.PEAL.get(), "Раскат");
+        builder.add(SharedEnchantments.REFLECTION.get(), "Отражение");
 
         builder.add(PEACH_BOAT, "Персиковая лодка");
         builder.add(PEACH_CHEST_BOAT, "Персиковая грузовая лодка");

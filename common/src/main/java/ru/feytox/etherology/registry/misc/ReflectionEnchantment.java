@@ -7,7 +7,11 @@ import net.minecraft.entity.EquipmentSlot;
 final class ReflectionEnchantment extends Enchantment {
 
     ReflectionEnchantment() {
-        super(Rarity.COMMON, EnchantmentTarget.BREAKABLE, new EquipmentSlot[]{EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND});
+        super(
+                Rarity.COMMON,
+                EnchantmentTarget.BREAKABLE,
+                new EquipmentSlot[]{EquipmentSlot.MAINHAND, EquipmentSlot.OFFHAND}
+        );
     }
 
     @Override

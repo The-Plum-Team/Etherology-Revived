@@ -11,29 +11,29 @@ from pathlib import Path
 import re
 import sys
 
-import forge_server_contract_v9 as contract_v9
+import forge_server_contract_v10 as contract_v10
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parent.parent
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_MANIFEST_RELATIVE_PATH = Path(contract_v9.PROFILE_MANIFEST_RELATIVE_PATH)
+PROFILE_MANIFEST_RELATIVE_PATH = Path(contract_v10.PROFILE_MANIFEST_RELATIVE_PATH)
 PROFILE_MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
-PROFILE_ID = contract_v9.PROFILE_ID
-SCENARIO_ID = contract_v9.SCENARIO_ID
-TASK_PATH = contract_v9.TASK_PATH
+PROFILE_ID = contract_v10.PROFILE_ID
+SCENARIO_ID = contract_v10.SCENARIO_ID
+TASK_PATH = contract_v10.TASK_PATH
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 PROFILE_MANAGER = "scripts/e2e/forge_server.py"
 RUNTIME_RELATIVE_PATH = (
     Path("scripts/e2e/.state/runtimes") / PROFILE_ID
 )
 ARCHIVE_RELATIVE_PATH = Path(
-    "docs/evidence/forge-1.20.1/particle-registry-server-v9"
+    "docs/evidence/forge-1.20.1/particle-registry-server-v10"
 )
 DEFAULT_RUNTIME_ROOT = RUNTIMES_ROOT / PROFILE_ID
 DEFAULT_ARCHIVE_ROOT = REPOSITORY_ROOT / ARCHIVE_RELATIVE_PATH
-ARCHIVE_DIRECTORY_NAME = "particle-registry-server-v9"
+ARCHIVE_DIRECTORY_NAME = "particle-registry-server-v10"
 ARCHIVE_MANIFEST_NAME = "archive-manifest.json"
 ARCHIVE_KIND = "etherology-forge-dedicated-server-e2e-evidence"
 ARCHIVE_VERIFICATION_SCOPE = (
@@ -50,20 +50,20 @@ EVIDENCE_PAYLOAD_PATHS = (
     "reports/done.marker",
     "logs/latest.log",
 )
-REQUIRED_MOD_IDS = contract_v9.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v9.FORBIDDEN_MOD_IDS
+REQUIRED_MOD_IDS = contract_v10.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v10.FORBIDDEN_MOD_IDS
 EXPECTED_ASSERTIONS = tuple(
     zip(
-        contract_v9.EXPECTED_ASSERTION_NAMES,
-        contract_v9.EXPECTED_ASSERTION_VALUES,
+        contract_v10.EXPECTED_ASSERTION_NAMES,
+        contract_v10.EXPECTED_ASSERTION_VALUES,
         strict=True,
     )
 )
 PROBE_LOG_PHASES = (
-    *contract_v9.PROBE_LOG_PHASES,
+    *contract_v10.PROBE_LOG_PHASES,
     "loom_userdev_exit_scheduled",
 )
-TERMINATION_LOG_TOKEN = contract_v9.SERVER_LOG_TOKENS[-1]
+TERMINATION_LOG_TOKEN = contract_v10.SERVER_LOG_TOKENS[-1]
 NORMAL_SERVER_LOG_MARKERS = (
     "Done (",
     "Stopping server",
@@ -96,10 +96,10 @@ FATAL_LOG_MARKERS = (
     "dev.theplumteam.etherology.e2e.forge.ForgeE2eHarness",
     "The server-probe report could not be published",
 )
-CLIENT_LOG_MARKERS = contract_v9.CLIENT_LOG_MARKERS
-CLIENT_CLASS_PATTERN = contract_v9.CLIENT_CLASS_PATTERN
+CLIENT_LOG_MARKERS = contract_v10.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v10.CLIENT_CLASS_PATTERN
 ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
-    contract_v9.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+    contract_v10.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
 )
 PROFILE_FIELDS = {
     "schema",
@@ -362,11 +362,11 @@ def load_profile_manifest(path: Path = PROFILE_MANIFEST_PATH) -> ProfileRecord:
         sha256=sha256_file(path),
     )
     if (
-        record.size != contract_v9.PROFILE_MANIFEST_SIZE
-        or record.sha256 != contract_v9.PROFILE_MANIFEST_SHA256
+        record.size != contract_v10.PROFILE_MANIFEST_SIZE
+        or record.sha256 != contract_v10.PROFILE_MANIFEST_SHA256
     ):
         raise EvidenceError(
-            "The Forge server profile bytes differ from the immutable v9 contract"
+            "The Forge server profile bytes differ from the immutable v10 contract"
         )
     return record
 
@@ -413,16 +413,16 @@ def validate_profile_marker(runtime: Path, profile_record: ProfileRecord) -> Non
 
 
 def validate_report(report: dict[str, object]) -> None:
-    """Validates the report through the immutable profile-v9 contract."""
+    """Validates the report through the immutable profile-v10 contract."""
     try:
-        contract_v9.validate_probe_report(
+        contract_v10.validate_probe_report(
             report,
             list(REQUIRED_MOD_IDS),
             list(FORBIDDEN_MOD_IDS),
         )
-    except contract_v9.V9ContractError as exception:
+    except contract_v10.V10ContractError as exception:
         raise EvidenceError(
-            f"The Forge server report violates the v9 contract: {exception}"
+            f"The Forge server report violates the v10 contract: {exception}"
         ) from exception
 
 
@@ -774,10 +774,10 @@ def validate_live_runtime(
 
 
 def validate_archive_root_identity(archive_root: Path) -> None:
-    """Requires the immutable particle-registry server-v9 identity."""
+    """Requires the immutable particle-registry server-v10 identity."""
     if archive_root.name != ARCHIVE_DIRECTORY_NAME:
         raise EvidenceError(
-            "The Forge server archive directory does not identify particle-registry profile v9"
+            "The Forge server archive directory does not identify particle-registry profile v10"
         )
 
 
@@ -953,11 +953,11 @@ def validate_archive_manifest_shape(
         ),
     )
     if (
-        profile_record.size != contract_v9.PROFILE_MANIFEST_SIZE
-        or profile_record.sha256 != contract_v9.PROFILE_MANIFEST_SHA256
+        profile_record.size != contract_v10.PROFILE_MANIFEST_SIZE
+        or profile_record.sha256 != contract_v10.PROFILE_MANIFEST_SHA256
     ):
         raise EvidenceError(
-            "The archived Forge server profile differs from the immutable v9 contract"
+            "The archived Forge server profile differs from the immutable v10 contract"
         )
 
     runtime = manifest.get("runtime")

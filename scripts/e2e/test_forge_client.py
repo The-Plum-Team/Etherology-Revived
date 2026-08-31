@@ -191,7 +191,7 @@ class ConfigurationTests(unittest.TestCase):
 
         self.assertEqual("etherology-e2e-forge-1.20.1-v11", profile["id"])
         self.assertNotEqual(
-            "etherology-e2e-fabric-1.20.1-v19", profile["runtime_directory"]
+            "etherology-e2e-fabric-1.20.1-v20", profile["runtime_directory"]
         )
         self.assertEqual(
             forge_client.STATE_ROOT / "runtimes" / profile["runtime_directory"],

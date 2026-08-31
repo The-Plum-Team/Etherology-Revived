@@ -1,0 +1,312 @@
+{
+  "schema": 2,
+  "scenario": "phase0-smoke",
+  "lane": "fabric-1.20.1",
+  "role": "host",
+  "status": "passed",
+  "client_ticks": 198,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "registry:item:etherology:teldecore",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:oculus",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:staff",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:primoshard_keta",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:redstone_lens",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:brewing_cauldron",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:empowerment_table",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:armillary_sphere",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:ethereal_storage",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:levitator",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item_group:etherology:etherology_items",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:brewing_cauldron_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:armillary_sphere_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:screen_handler:etherology:empower_table_screen_handler",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:screen_handler:etherology:ethereal_storage_screen_handler",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:recipe_serializer:etherology:alchemy_recipe",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:recipe_serializer:etherology:empower_recipe",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:recipe_serializer:etherology:matrix_recipe",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:entity_type:etherology:redstone_charge",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:status_effect:etherology:devastation",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:status_effect:etherology:vital_energy",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "etherology_block_states_have_network_ids",
+      "passed": true,
+      "expected": "every registered Etherology block state has a non-negative raw ID",
+      "actual": "88420 inspected; missing\u003d[]"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_e2e_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "title_framebuffer_dimensions",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "world_framebuffer_dimensions",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "completed_title_renders_before_capture",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "completed_world_renders_before_capture",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "native_screenshot_written:title",
+      "passed": true,
+      "expected": "non-empty PNG",
+      "actual": "2227938 bytes, sha256\u003d98f5f36f4518bba67f809ddba8bc2cc6ee7202ee47fb9f9b8be800296c9f5892"
+    },
+    {
+      "name": "native_screenshot_written:world",
+      "passed": true,
+      "expected": "non-empty PNG",
+      "actual": "686458 bytes, sha256\u003d981293857e3113bdea6eb7d707a120f2c63ad952353dffd46e553fced2b9f456"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "client_world_mirrors_server_fixture",
+      "passed": true,
+      "expected": "all four blocks and block entities mirrored",
+      "actual": "mirrored"
+    },
+    {
+      "name": "server_arena_chunk_loaded",
+      "passed": true,
+      "expected": "full chunk",
+      "actual": "true"
+    },
+    {
+      "name": "server_player_creative",
+      "passed": true,
+      "expected": "creative",
+      "actual": "true"
+    },
+    {
+      "name": "server_fixture_blocks_placed",
+      "passed": true,
+      "expected": "all expected identifiers",
+      "actual": "[-3, 121, 2\u003detherology:brewing_cauldron, 0, 121, 2\u003detherology:empowerment_table, 3, 121, 2\u003detherology:ethereal_storage, 0, 121, 5\u003detherology:armillary_sphere]"
+    },
+    {
+      "name": "server_fixture_block_entities_present",
+      "passed": true,
+      "expected": "four block entities",
+      "actual": "true"
+    },
+    {
+      "name": "block_entity_nbt_round_trip",
+      "passed": true,
+      "expected": "matching reconstructed block-entity type",
+      "actual": "etherology:empowerment_table_block_entity"
+    },
+    {
+      "name": "creative_inventory_population",
+      "passed": true,
+      "expected": "at least 100 displayed stacks",
+      "actual": "152"
+    },
+    {
+      "name": "creative_inventory_expected_items",
+      "passed": true,
+      "expected": "[etherology:teldecore, etherology:oculus, etherology:staff, etherology:brewing_cauldron, etherology:ethereal_storage, etherology:armillary_sphere]",
+      "actual": "[etherology:teldecore, etherology:brewing_cauldron, etherology:pedestal, etherology:armillary_sphere, etherology:empowerment_table, etherology:inventor_table, etherology:jewelry_table, etherology:ethereal_storage, etherology:ethereal_furnace, etherology:ethereal_channel, etherology:channel_case, etherology:ethereal_fork, etherology:ethereal_socket, etherology:spinner, etherology:metronome, etherology:arcanelight_detector, etherology:levitator, etherology:furniture_slab, etherology:shelf_slab, etherology:closet_slab, etherology:samovar, etherology:jug, etherology:clay_jug, etherology:crate, etherology:tuning_fork, etherology:spill_barrel, etherology:sedimentary_stone, etherology:sedimentary_stone_keta_low, etherology:sedimentary_stone_keta_medium, etherology:sedimentary_stone_keta_high, etherology:sedimentary_stone_keta_full, etherology:sedimentary_stone_rella_low, etherology:sedimentary_stone_rella_medium, etherology:sedimentary_stone_rella_high, etherology:sedimentary_stone_rella_full, etherology:sedimentary_stone_via_low, etherology:sedimentary_stone_via_medium, etherology:sedimentary_stone_via_high, etherology:sedimentary_stone_via_full, etherology:sedimentary_stone_clos_low, etherology:sedimentary_stone_clos_medium, etherology:sedimentary_stone_clos_high, etherology:sedimentary_stone_clos_full, etherology:peach_log, etherology:stripped_peach_log, etherology:peach_wood, etherology:stripped_peach_wood, etherology:weeping_peach_log, etherology:peach_planks, etherology:peach_stairs, etherology:peach_slab, etherology:peach_button, etherology:peach_door, etherology:peach_sign, etherology:peach_hanging_sign, etherology:peach_boat, etherology:peach_chest_boat, etherology:peach_fence, etherology:peach_fence_gate, etherology:peach_pressure_plate, etherology:peach_trapdoor, etherology:peach_leaves, etherology:peach_sapling, etherology:slitherite, etherology:slitherite_stairs, etherology:slitherite_slab, etherology:slitherite_wall, etherology:polished_slitherite, etherology:polished_slitherite_stairs, etherology:polished_slitherite_slab, etherology:polished_slitherite_wall, etherology:polished_slitherite_button, etherology:polished_slitherite_pressure_plate, etherology:polished_slitherite_bricks, etherology:polished_slitherite_brick_stairs, etherology:polished_slitherite_brick_slab, etherology:polished_slitherite_brick_wall, etherology:chiseled_polished_slitherite, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks, etherology:attrahite, etherology:attrahite_bricks, etherology:attrahite_brick_slab, etherology:attrahite_brick_stairs, etherology:attrahite_brick, etherology:enriched_attrahite, etherology:raw_azel, etherology:azel_ingot, etherology:ethril_ingot, etherology:ebony_ingot, etherology:azel_nugget, etherology:ethril_nugget, etherology:ebony_nugget, etherology:azel_block, etherology:ethril_block, etherology:ebony_block, etherology:ebony_helmet, etherology:ebony_chestplate, etherology:ebony_leggings, etherology:ebony_boots, etherology:ebony_pickaxe, etherology:ebony_axe, etherology:ebony_sword, etherology:ebony_shovel, etherology:ebony_hoe, etherology:wooden_battle_pickaxe, etherology:stone_battle_pickaxe, etherology:iron_battle_pickaxe, etherology:golden_battle_pickaxe, etherology:ebony_battle_pickaxe, etherology:diamond_battle_pickaxe, etherology:netherite_battle_pickaxe, etherology:tuning_mace, etherology:broadsword, etherology:iron_shield, etherology:stream_key, etherology:warp_counter, etherology:aristocrat_pattern_tablet, etherology:astronomy_pattern_tablet, etherology:heavenly_pattern_tablet, etherology:ocular_pattern_tablet, etherology:ritual_pattern_tablet, etherology:royal_pattern_tablet, etherology:traditional_pattern_tablet, etherology:staff, etherology:unadjusted_lens, etherology:redstone_lens, etherology:oculus, etherology:ocular, etherology:prana_vision, etherology:primoshard_clos, etherology:primoshard_keta, etherology:primoshard_rella, etherology:primoshard_via, etherology:glint_shard, etherology:thuja_oil, etherology:corruption_bucket, etherology:keta_seal, etherology:rella_seal, etherology:via_seal, etherology:clos_seal, etherology:etheroscope, etherology:binder, etherology:ebony, etherology:resonating_wand, etherology:forest_lantern, etherology:forest_lantern_crumb, etherology:lightelet, etherology:beamer_seeds, etherology:thuja_seeds, etherology:beam_fruit]"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-e2e-phase0-world",
+      "actual": "etherology-e2e-phase0-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-e2e-phase0-world",
+    "display_name": "Etherology E2E Phase 0",
+    "seed": 19514442770435916,
+    "dimension": "minecraft:overworld",
+    "integrated": true
+  },
+  "ready_resources": [
+    "minecraft:texts/splashes.txt",
+    "etherology:models/item/oculus.json"
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "etherology-under-test.jar",
+      "size": 2873152,
+      "sha256": "999bf12e166c7d4ea67376373171e486c80779e85e4b281d4bac1f37776a7d37"
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "origin_kind": "PATH",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 133500,
+      "sha256": "b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "resource-loaded-title-screen",
+      "role": "host",
+      "file": "screenshots/phase0-smoke-title.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 2227938,
+      "sha256": "98f5f36f4518bba67f809ddba8bc2cc6ee7202ee47fb9f9b8be800296c9f5892",
+      "completed_render_count": 2
+    },
+    {
+      "step": "integrated-world-fixture",
+      "role": "host",
+      "file": "screenshots/phase0-smoke-world.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 686458,
+      "sha256": "981293857e3113bdea6eb7d707a120f2c63ad952353dffd46e553fced2b9f456",
+      "completed_render_count": 2
+    }
+  ]
+}

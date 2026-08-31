@@ -26,9 +26,10 @@ shared-sound registry/resource milestone. Storage and Channel have separate pack
 save/restart evidence from fresh isolated macOS clients. `SharedSounds` owns the exact 14
 Common sound IDs, while the packaged resources close their 21 mono 44.1 kHz OGG files,
 `sounds.json` entries, attenuation values, and English subtitles. No native sound-playback E2E
-is claimed by that static registry milestone. The release artifact remains deliberately blocked
-on the rest of the authoritative registry spine and the remaining gameplay and native-readiness
-work.
+is claimed by that static registry milestone. Its exact remapped Fabric production JAR has passed
+a separate fresh `v20` packaged startup/integrated-world smoke with two native framebuffers, save,
+and normal shutdown. The release artifact remains deliberately blocked on the rest of the
+authoritative registry spine and the remaining gameplay and native-readiness work.
 
 ## Requirements
 

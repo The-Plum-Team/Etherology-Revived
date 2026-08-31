@@ -27,9 +27,12 @@ and the bounded [Forge 1.20.1 runtime evidence](docs/evidence/forge-1.20.1/READM
 The next Forge forward gate is the remainder of the authoritative registry
 spine. Its bounded shared-sound step is complete, but no native sound-playback
 E2E is claimed yet; the mechanics that consume each sound must prove playback.
-Frozen evidence archives prove their capture-time artifacts only. Later changes,
-including the sound-registry work, leave those archives internally valid but
-require new isolated native runs before a rebuilt JAR can claim equivalence.
+The exact shared-registry Fabric artifact has separately passed a fresh `v20`
+packaged startup, integrated-world, screenshot, save, and normal-shutdown smoke.
+Frozen evidence archives prove their capture-time artifacts only. The sound
+work left the preceding archives internally valid but required this new run;
+the same rule requires another isolated native run after every later rebuild
+before that rebuilt JAR can claim equivalent runtime evidence.
 
 ## About Etherology
 

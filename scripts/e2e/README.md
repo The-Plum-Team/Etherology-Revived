@@ -5,7 +5,7 @@ copies, registers, inspects, or launches an existing game profile. Its only
 game directory is below the ignored repository path:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v19/game/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20/game/
 ```
 
 The parent runtime must contain the exact provenance marker written by this
@@ -156,14 +156,14 @@ python3 -B scripts/e2e/client.py stop-all-owned
 Minecraft screenshots are isolated at:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v19/game/screenshots/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20/game/screenshots/
 ```
 
 Those native files are raw captures. `provision` also creates a fail-closed
 scenario evidence tree at:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v19/evidence/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20/evidence/
   <scenario>/
     reports/
     screenshots/
@@ -188,6 +188,29 @@ screenshots, world, and logs before copying evidence into `docs/evidence`:
 
 ```bash
 python3 -B scripts/e2e/evidence.py --scenario phase0-smoke
+```
+
+For a new accepted Phase 0 capture, copy only its report, completion marker,
+and two report-named screenshots into the corresponding versioned repository
+archive. Seal that archive once from the exact tracked profile and exact owned
+runtime:
+
+```bash
+python3 -B scripts/e2e/evidence.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/phase0-smoke-v20 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
+```
+
+Manifest creation rejects a different repository destination, runtime, profile,
+archive inventory, payload byte, artifact lock, report contract, or publication
+order, and it never replaces an existing manifest. After publication, validate
+the self-contained archive without reading current source, build outputs, or
+live runtime state:
+
+```bash
+python3 -B scripts/e2e/evidence.py \
+  --archive docs/evidence/fabric-1.20.1/phase0-smoke-v20
 ```
 
 ## Forge 1.20.1 packaged client

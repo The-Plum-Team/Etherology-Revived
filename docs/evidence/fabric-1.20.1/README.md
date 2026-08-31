@@ -154,3 +154,61 @@ deterministic verifier:
 ```text
 Validated ether-network: 46 assertions, 2 screenshots, changed-pixel ratio 0.432843
 ```
+
+## SharedSounds current-artifact smoke (v20)
+
+The shared sound-registry checkpoint replaced Fabric's eager `EtherSounds`
+owner with the same deferred `SharedSounds` declaration used by Forge. A fresh
+profile reran the packaged Phase 0 scenario to prove that this exact Fabric JAR
+registers successfully, reaches the title screen, creates and joins an
+integrated world, mirrors the fixture, saves, and shuts down normally. This is
+loader/startup evidence; it does not claim native playback of all 14 events.
+
+- Profile: `etherology-e2e-fabric-1.20.1-v20`
+- Profile manifest SHA-256:
+  `77e2319ce711aa6c62de5aba4107f62d29ab96411c3fe2fba557e08e52444a8b`
+- Profile manifest size: `6963` bytes
+- Source checkpoint: `117167b6d1c47eaa8523b44516f05a821e1c51b8`
+- Production JAR SHA-256:
+  `999bf12e166c7d4ea67376373171e486c80779e85e4b281d4bac1f37776a7d37`
+- Harness JAR SHA-256:
+  `b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef`
+- Report status: `passed`
+- Assertions: `42` passed, `0` failed
+- Client ticks: `198`
+- Changed-pixel ratio (title to world): `0.979626`
+- Screenshot pair: native composed Minecraft framebuffers, `1920x1080`
+
+Frozen file digests:
+
+- `phase0-smoke-v20/archive-manifest.json`:
+  `ccdb80fc9b45283ead171869ceca9327986d7613851ac86a4c07aeeb4e801e78`
+- `phase0-smoke-v20/reports/report.json`:
+  `c6b7714fb04624afab84e49ae9553f1f429bad51cc1a5f4bac179043d63d3ff2`
+- `phase0-smoke-v20/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `phase0-smoke-v20/screenshots/phase0-smoke-title.png`:
+  `98f5f36f4518bba67f809ddba8bc2cc6ee7202ee47fb9f9b8be800296c9f5892`
+- `phase0-smoke-v20/screenshots/phase0-smoke-world.png`:
+  `981293857e3113bdea6eb7d707a120f2c63ad952353dffd46e553fced2b9f456`
+
+The live runtime passed the deterministic verifier before these four payload
+files were copied into the new archive:
+
+```text
+Validated phase0-smoke: 42 assertions, 2 screenshots, changed-pixel ratio 0.979626
+Production SHA-256: 999bf12e166c7d4ea67376373171e486c80779e85e4b281d4bac1f37776a7d37
+Harness SHA-256: b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef
+```
+
+The archive manifest was created only after the copied payloads were verified
+byte-for-byte against that explicit `v20` runtime. It seals their inventory,
+sizes, SHA-256 values, exact report contract, profile identity and digest,
+capture metadata digest, artifact identities, framebuffer contract, and the
+capture-time publication order. The archive-only command intentionally does not
+compare later source or rebuilt artifacts:
+
+```text
+python3 -B scripts/e2e/evidence.py --archive docs/evidence/fabric-1.20.1/phase0-smoke-v20
+Validated archived phase0-smoke (etherology-e2e-fabric-1.20.1-v20): 42 assertions, 2 screenshots, changed-pixel ratio 0.979626
+```

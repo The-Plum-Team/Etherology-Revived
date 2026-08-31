@@ -589,9 +589,14 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         {"url", "size", "sha1", "sha256", "snapshot", "libraries"},
         "The pinned Fabric profile object",
     )
-    validate_pinned_https_url(
+    fabric_profile_url = validate_pinned_https_url(
         fabric_profile.get("url"), "meta.fabricmc.net", "Fabric loader profile"
     )
+    if (
+        fabric_profile_url
+        != "https://meta.fabricmc.net/v2/versions/loader/1.21.1/0.17.3/profile/json"
+    ):
+        raise BaselineError("The Fabric loader profile provenance URL is invalid")
     fabric_profile_size = fabric_profile.get("size")
     if (
         type(fabric_profile_size) is not int
@@ -995,6 +1000,47 @@ def verify_exact_file(
         )
     if sha256_file(path) != expected_sha256:
         raise BaselineError(f"{description} failed SHA-256 validation: {path}")
+
+
+def read_exact_file_no_follow(
+    path: Path,
+    expected_sha256: str,
+    expected_size: int,
+    description: str,
+) -> bytes:
+    """Reads one exact regular file through a descriptor that rejects final links."""
+
+    no_follow = getattr(os, "O_NOFOLLOW", None)
+    if not isinstance(no_follow, int):
+        raise BaselineError("This platform cannot enforce link-free file reads")
+    descriptor = -1
+    try:
+        descriptor = os.open(path, os.O_RDONLY | no_follow)
+        file_status = os.fstat(descriptor)
+        if not stat.S_ISREG(file_status.st_mode):
+            raise BaselineError(f"{description} is not a regular file: {path}")
+        if file_status.st_size != expected_size:
+            raise BaselineError(
+                f"{description} has size {file_status.st_size}, "
+                f"expected {expected_size}: {path}"
+            )
+        with os.fdopen(descriptor, "rb") as handle:
+            descriptor = -1
+            content = handle.read()
+    except BaselineError:
+        raise
+    except OSError as exception:
+        raise BaselineError(f"Cannot read {description} {path}: {exception}") from exception
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    if len(content) != expected_size:
+        raise BaselineError(
+            f"{description} changed size while being read: {path}"
+        )
+    if hashlib.sha256(content).hexdigest() != expected_sha256:
+        raise BaselineError(f"{description} failed SHA-256 validation: {path}")
+    return content
 
 
 def zip_entry_is_symlink(entry: zipfile.ZipInfo) -> bool:
@@ -2736,18 +2782,17 @@ def verify_tracked_fabric_profile_snapshot(configuration: Configuration) -> byte
     pinned = require_object(runtime_spec(configuration), "fabric_profile")
     snapshot = require_object(pinned, "snapshot")
     source_path = configuration.fabric_profile_snapshot_path
-    verify_exact_file(
+    ensure_no_symlink_components(
+        configuration.repository_root,
+        source_path,
+        "Tracked Fabric loader profile snapshot",
+    )
+    snapshot_content = read_exact_file_no_follow(
         source_path,
         str(snapshot["sha256"]),
         int(snapshot["size"]),
         "Tracked Fabric loader profile snapshot",
     )
-    try:
-        snapshot_content = source_path.read_bytes()
-    except OSError as exception:
-        raise BaselineError(
-            f"Cannot read tracked Fabric loader profile snapshot {source_path}: {exception}"
-        ) from exception
     if not snapshot_content.endswith(b"\n") or snapshot_content.endswith(b"\n\n"):
         raise BaselineError(
             "Tracked Fabric loader profile snapshot must end in exactly one newline"

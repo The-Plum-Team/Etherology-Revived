@@ -139,11 +139,13 @@ their wheel `RECORD` files, import origins, loaders, and complete regular-file
 inventories. It also rejects unpinned optional HTTP implementations before any
 launcher package code executes.
 
-Only the harness build plus pure/static tests have run. No provision, stage,
-check, native launch, new screenshot, or completed `phase0-smoke` report exists
-yet. Consequently this milestone proves the capture machinery is buildable and
-fail-closed; it does not establish any new original mechanic behaviour or port
-acceptance claim.
+The first `provision` attempt on 2026-08-31 failed closed on Fabric Meta's new
+request timestamps, removed its staging directory, and published no runtime.
+The captured response is now tracked as described above. No successful
+provision, stage, check, native launch, new screenshot, or completed
+`phase0-smoke` report exists yet. Consequently this milestone proves the
+capture machinery is buildable and fail-closed; it does not establish any new
+original mechanic behaviour or port acceptance claim.
 
 ## Historical static gallery overview
 

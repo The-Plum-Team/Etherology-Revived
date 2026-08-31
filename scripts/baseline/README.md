@@ -169,9 +169,12 @@ record makes that ambient visual input inspectable; it is not treated as proof
 of an Etherology mechanic. Use an OS-level network policy if a fully offline
 process is required.
 
-`provision`, `stage`, `check`, and `run` were intentionally not executed while
-adding this harness. No native game runtime or new screenshot has therefore
-been proven. `minecraft-launcher-lib==8.0`, Requests `2.34.2`, urllib3 `2.7.0`,
+The first `provision` attempt on 2026-08-31 failed closed before publication
+because Fabric Meta returned newly timestamped bytes instead of the captured
+response. The controller removed its staging directory, and no owned runtime
+was created. The response is now the tracked input described above. `stage`,
+`check`, and `run` have not executed, so no native game launch or new screenshot
+has been proven. `minecraft-launcher-lib==8.0`, Requests `2.34.2`, urllib3 `2.7.0`,
 certifi `2026.6.17`, idna `3.18`, and charset-normalizer `3.4.9` must be available
 in the invoking Python environment even for `validate`. Before any launcher or
 HTTP package code is imported, the controller validates each exact wheel

@@ -886,6 +886,11 @@ class TrackedManifestTests(unittest.TestCase):
             },
         )
         fabric_profile = client.require_object(runtime, "fabric_profile")
+        self.assertEqual(
+            fabric_profile["url"],
+            "https://meta.fabricmc.net/v2/versions/loader/"
+            "1.21.1/0.17.3/profile/json",
+        )
         self.assertEqual(fabric_profile["size"], 2847)
         self.assertEqual(
             fabric_profile["sha256"],
@@ -926,6 +931,33 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertNotIn("source_profile", content)
         self.assertNotIn("app_root", content)
         self.assertNotIn("quick-skin", content)
+
+    def test_tracked_fabric_snapshot_symlink_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            snapshot_path = configuration.fabric_profile_snapshot_path
+            external = temporary_root / "external-fabric-profile.json"
+            snapshot_path.replace(external)
+            snapshot_path.symlink_to(external)
+            with self.assertRaises(client.BaselineError):
+                client.verify_tracked_fabric_profile_snapshot(configuration)
+
+    def test_tracked_fabric_snapshot_requires_one_repository_newline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            snapshot_path = configuration.fabric_profile_snapshot_path
+            content = snapshot_path.read_bytes() + b"\n"
+            snapshot_path.write_bytes(content)
+            fabric_profile = client.require_object(
+                client.runtime_spec(configuration), "fabric_profile"
+            )
+            snapshot = client.require_object(fabric_profile, "snapshot")
+            snapshot["size"] = len(content)
+            snapshot["sha256"] = hashlib.sha256(content).hexdigest()
+            with self.assertRaisesRegex(client.BaselineError, "exactly one newline"):
+                client.verify_tracked_fabric_profile_snapshot(configuration)
 
     def test_parser_has_no_profile_adoption_or_deletion_actions(self) -> None:
         with mock.patch("sys.stderr", io.StringIO()):

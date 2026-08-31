@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "kind": "etherology-fabric-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "forest-lantern",
+  "profile": {
+    "id": "etherology-e2e-fabric-1.20.1-v24",
+    "manifest_path": "scripts/e2e/fabric-1.20.1-profile.json",
+    "manifest_size": 7017,
+    "manifest_sha256": "77b9d33689d76e7b46d849f519337821744a81e3dd287bd4a1339a7c6a801a77"
+  },
+  "runtime": {
+    "artifact_node": "fabric-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 17,
+    "capture_kind": "composed-minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788215142916601391,
+      "reports/done.marker": 1788215142916881438,
+      "screenshots/forest-lantern-empty.png": 1788215125039635511,
+      "screenshots/forest-lantern-stages.png": 1788215127209849202,
+      "screenshots/forest-lantern-facing-north.png": 1788215129416578330,
+      "screenshots/forest-lantern-facing-east.png": 1788215131606449641,
+      "screenshots/forest-lantern-facing-south.png": 1788215133799397718,
+      "screenshots/forest-lantern-facing-west.png": 1788215136007527414,
+      "screenshots/forest-lantern-reopened.png": 1788215142887657764
+    }
+  },
+  "capture_metadata": {
+    "path": "artifact-lock.json",
+    "size": 1119,
+    "sha256": "d9129f990ad6269204b9ef399328ab4b4f1a8a146c9c5528470887b2cc814499"
+  },
+  "assertion_count": 68,
+  "screenshot_count": 7,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-under-test.jar",
+      "size": 2887517,
+      "sha256": "982f16bf04a99c416efd25406df167e3539faede5f8f1024f0269221916725a1"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 226562,
+      "sha256": "38bfa390cb0e9a7409f2dce23a938cc96ce97a3ad9c201a5ab418c36e3e9e52a"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 139876,
+      "sha256": "6d0a70a2617d5008e39c0a72664e01f200e7899baf082f14db19d509c0632204"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/forest-lantern-empty.png": {
+      "size": 524285,
+      "sha256": "a75a836b77a46fcf6e233ccfa360c45e257cdf03940a8e96c2ea453a6f515235"
+    },
+    "screenshots/forest-lantern-stages.png": {
+      "size": 512460,
+      "sha256": "b315fb454aed667ec7bd41e1714dfab100a6146dc5840cfbbec3a6de530953cd"
+    },
+    "screenshots/forest-lantern-facing-north.png": {
+      "size": 486959,
+      "sha256": "c8bd9bd859873f907bda051b0b60f2f1031880db17c805007e853e294f098fb6"
+    },
+    "screenshots/forest-lantern-facing-east.png": {
+      "size": 472820,
+      "sha256": "6dbc6c0932d862786b8e1afdf62428850399b83ec3af07850a3c4b9146ccd00c"
+    },
+    "screenshots/forest-lantern-facing-south.png": {
+      "size": 461908,
+      "sha256": "2c32ec1943ee4848ca046aeea87dc1b8304919e096977a2ce02d371f2a9c13af"
+    },
+    "screenshots/forest-lantern-facing-west.png": {
+      "size": 456334,
+      "sha256": "5b200ae96fd6004729c246dcf3603186be2575b7a62d60a967d7d8ddafebdbc9"
+    },
+    "screenshots/forest-lantern-reopened.png": {
+      "size": 449050,
+      "sha256": "91737c2423268cb682794492973ee622c936929e30c5007efef7dee17eeb8586"
+    }
+  }
+}

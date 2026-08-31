@@ -201,13 +201,25 @@ completion-marker SHA-256
 `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`,
 and server-log SHA-256
 `9a7c0d69aee66897cb7766b688a487fe98bc649e45f2a708a3c320283ed3935e`.
-The exact archive verifier and integrated Gradle archive gate both pass;
+The exact archive verifier and integrated Gradle archive gate both pass.
+
+The accepted Fabric packaged-client companion is the consumed v24
+`forest-lantern` profile with 68 of 68 passing assertions and seven unedited
+1920x1080 native framebuffer captures in
+`docs/evidence/fabric-1.20.1/forest-lantern-v24`. The profile manifest is 7,017
+bytes with SHA-256
+`77b9d33689d76e7b46d849f519337821744a81e3dd287bd4a1339a7c6a801a77`;
+the production and harness JAR SHA-256 values are
+`982f16bf04a99c416efd25406df167e3539faede5f8f1024f0269221916725a1`
+and
+`38bfa390cb0e9a7409f2dce23a938cc96ce97a3ad9c201a5ab418c36e3e9e52a`.
+The strict archive verifier and Fabric milestone gate pass. Forge
 packaged-client Forest Lantern evidence is the next incomplete milestone.
 
 The v6 `ether-source-reload`, v7 `enchantment-registry`, v10
 `particle-registry`, v11 `material-item-registry`, and v13
 `metal-block-registry` archives remain immutable historical evidence. All
-accepted states are included in and superseded by the cumulative v14 runtime
+accepted states are included in and superseded by the cumulative v16 runtime
 proof. The v12 metal-block profile was consumed by a failed diagnostic tag-load
 run and has no accepted archive. In the two tag files packaged by this bounded
 Forge slice—`mineable/pickaxe` and `needs_iron_tool`—still-unported IDs were

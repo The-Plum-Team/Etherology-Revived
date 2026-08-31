@@ -13,13 +13,12 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
-The tracked v24 profile reserves a fresh repository-owned runtime for the
-`forest-lantern` capture. It has not been provisioned, staged, checked, or
-launched by the implementation/build workflow. The v20 through v23 profiles,
-runtimes, and accepted archives remain immutable history. `client.py validate`
-and archive-only validation are safe because they do not mutate or launch a
-runtime. After v24 is consumed, advance the profile ID, runtime directory,
-snapshot, tests, verifier, and archive target before another lifecycle action.
+The tracked v24 profile is the consumed repository-owned runtime for the
+accepted `forest-lantern` capture. The v20 through v23 profiles, runtimes, and
+accepted archives remain immutable history. `client.py validate` and
+archive-only validation are safe because they do not mutate or launch a
+runtime. Before another lifecycle action, advance the profile ID, runtime
+directory, snapshot, tests, verifier, and archive target.
 
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
@@ -44,9 +43,9 @@ Validate the tracked configuration without creating or launching a game:
 python3 -B scripts/e2e/client.py validate
 ```
 
-The remaining preparation and lifecycle commands in this document describe the
-explicit future v24 capture workflow. They are not part of the build/unit-test
-gate.
+The remaining commands record the accepted v24 workflow and the shape to use
+only after every identity is advanced. They are not part of the build/unit-test
+gate and must not relaunch v24.
 
 ## Prepare a future profile without launching
 
@@ -148,9 +147,10 @@ The stable Fabric entrypoint remains
 `dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness`, so the isolated profile
 identity and staged-artifact contract do not change.
 
-## Future-profile client lifecycle
+## Recorded v24 client lifecycle
 
-Only after `check` succeeds for the fresh v24 profile:
+The accepted v24 run used these commands after `check` succeeded. Do not repeat
+`start`; the durable attempt marker must reject reuse:
 
 ```bash
 python3 -B scripts/e2e/client.py start --scenario forest-lantern
@@ -215,10 +215,10 @@ python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
   --no-daemon --console=plain
 ```
 
-## Prepared Fabric Forest Lantern evidence (v24)
+## Accepted Fabric Forest Lantern evidence (v24)
 
-The packaged v24 scenario and fail-closed verifier are ready for a future native
-capture. The verifier requires 68 exact ordered assertions and seven unedited
+The packaged v24 scenario and fail-closed verifier passed the native capture
+with 68 exact ordered assertions and seven unedited
 1920×1080 framebuffer PNGs: empty, the full twenty-state age×facing matrix,
 cumulative north/east/south/west mature placements, and reopened persistence.
 Every capture records 120 completed stable renders, exact twenty-cell
@@ -228,8 +228,8 @@ age 0–3 fixture states, real `BlockItem` action/stack/support evidence, and no
 missing-texture magenta. Each of the five fixture/placement transitions must
 materially change.
 
-After the harness stops itself, validate the live capture, copy only its exact
-scenario payload while preserving modification times, and seal it once:
+The following records the completed one-shot publication workflow. Manifest
+creation must not be repeated; archive-only verification remains safe:
 
 ```bash
 python3 -B scripts/e2e/fabric_forest_lantern_evidence.py --live
@@ -252,8 +252,8 @@ python3 -B scripts/e2e/fabric_forest_lantern_evidence.py \
   --no-daemon --console=plain
 ```
 
-The archive and milestone intentionally do not pass before that real capture is
-present. Manifest creation binds the exact active/snapshot profile bytes,
+The archive and milestone now pass. Manifest creation binds the exact
+active/snapshot profile bytes,
 repository-owned runtime and destination, artifact lock, copied payload bytes,
 and completion-marker publication order, and refuses replacement.
 
@@ -309,10 +309,10 @@ direct server-side placement and exact client rendering only. It does not prove
 enforcement, beacon activation, recipe execution, creative tabs, restart
 persistence, multiplayer, or release readiness.
 
-The v23 identity is consumed and remains archive-only history. The active v24
-identity is reserved solely for Forest Lantern; after it is consumed, advance
-every active profile, runtime, snapshot, test, verifier, and archive literal to
-a fresh unused v25-or-newer identity.
+The v23 and v24 identities are consumed and remain archive-only history. Before
+any later Fabric lifecycle action, advance every active profile, runtime,
+snapshot, test, verifier, and archive literal to a fresh unused v25-or-newer
+identity.
 
 ### Historical Phase 0 archive (v22)
 
@@ -543,7 +543,7 @@ python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
 The exact archive directory and launch-attempt marker now block another
 provision, check, or run. The v15 historical safety task, v16 active safety
 task, strict archive verifier, and integrated Gradle archive gate all pass.
-Packaged-client Forest Lantern evidence is the next incomplete milestone.
+Forge packaged-client Forest Lantern evidence is the next incomplete milestone.
 
 ## Historical Forge 1.20.1 dedicated-server metal-block-registry probe (v13)
 

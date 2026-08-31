@@ -5,7 +5,75 @@ the baseline Mac. Every run uses a new repository-owned profile under
 `scripts/e2e/.state/`; no external launcher profile is read, modified, or used as
 a source.
 
-## Current metal-block-registry visual proof (v23)
+## Current Forest Lantern visual proof (v24)
+
+The one-shot `etherology-e2e-fabric-1.20.1-v24` profile ran the packaged
+`forest-lantern` scenario in a fresh integrated world. The fixture records an
+empty support matrix, all twenty age/facing states, four cumulative real
+`BlockItem` placements, and the complete matrix after save, disconnect, and
+reopen. Every capture follows 120 consecutive exact mirror, terrain-ready, and
+fixed-camera renders. All seven PNGs are unedited native composed Minecraft
+framebuffers at `1920x1080`.
+
+- Profile: `etherology-e2e-fabric-1.20.1-v24`
+- Profile manifest: `7017` bytes, SHA-256
+  `77b9d33689d76e7b46d849f519337821744a81e3dd287bd4a1339a7c6a801a77`
+- Minecraft: `1.20.1`; Fabric Loader: `0.17.3`; runtime Java: `17`
+- Production JAR SHA-256:
+  `982f16bf04a99c416efd25406df167e3539faede5f8f1024f0269221916725a1`
+- Harness JAR SHA-256:
+  `38bfa390cb0e9a7409f2dce23a938cc96ce97a3ad9c201a5ab418c36e3e9e52a`
+- Report status: `passed`; assertions: `68` passed, `0` failed
+- Client ticks: `650`; screenshots: `7`
+- Minimum placement-transition changed-pixel ratio: `0.008737`
+
+The verifier proves exact registry and resource inventories, cutout rendering,
+baked non-empty models, luminance 8, twenty unique non-negative state network
+IDs, all sixteen forced immature states, rejection of the unsupported
+placement, and four consumed-stack mature placements in north/east/south/west
+order. The complete server/client matrix and placement evidence persist after
+reopen. Visual inspection confirms the five growth models render with their
+transparent glowing textures against every support orientation, no
+missing-texture magenta is present, each cumulative facing appears in the
+expected capture, and the reopened scene matches the final state.
+
+Frozen file digests:
+
+- `forest-lantern-v24/archive-manifest.json`:
+  `8b09e5e4094d6e23004721641acce30f3590afaf9337ac7f7e00180a82d9a0a8`
+- `forest-lantern-v24/reports/report.json`:
+  `6d0a70a2617d5008e39c0a72664e01f200e7899baf082f14db19d509c0632204`
+- `forest-lantern-v24/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `forest-lantern-v24/screenshots/forest-lantern-empty.png`:
+  `a75a836b77a46fcf6e233ccfa360c45e257cdf03940a8e96c2ea453a6f515235`
+- `forest-lantern-v24/screenshots/forest-lantern-stages.png`:
+  `b315fb454aed667ec7bd41e1714dfab100a6146dc5840cfbbec3a6de530953cd`
+- `forest-lantern-v24/screenshots/forest-lantern-facing-north.png`:
+  `c8bd9bd859873f907bda051b0b60f2f1031880db17c805007e853e294f098fb6`
+- `forest-lantern-v24/screenshots/forest-lantern-facing-east.png`:
+  `6dbc6c0932d862786b8e1afdf62428850399b83ec3af07850a3c4b9146ccd00c`
+- `forest-lantern-v24/screenshots/forest-lantern-facing-south.png`:
+  `2c32ec1943ee4848ca046aeea87dc1b8304919e096977a2ce02d371f2a9c13af`
+- `forest-lantern-v24/screenshots/forest-lantern-facing-west.png`:
+  `5b200ae96fd6004729c246dcf3603186be2575b7a62d60a967d7d8ddafebdbc9`
+- `forest-lantern-v24/screenshots/forest-lantern-reopened.png`:
+  `91737c2423268cb682794492973ee622c936929e30c5007efef7dee17eeb8586`
+
+Repeat the archive-only check with:
+
+```bash
+python3 -B scripts/e2e/fabric_forest_lantern_evidence.py \
+  --archive docs/evidence/fabric-1.20.1/forest-lantern-v24
+```
+
+This accepts the bounded Fabric visual and persistence vertical only. Natural
+growth on peach logs, bonemeal spreading, jump/mining/loot/recipe execution,
+multiplayer, the wider Golden Forest graph, and release readiness remain
+outside this client capture. The v24 identity is consumed and must not be used
+for another lifecycle action.
+
+## Historical metal-block-registry visual proof (v23)
 
 The fresh repository-owned `etherology-e2e-fabric-1.20.1-v23` profile ran the
 dedicated `metal-block-registry` scenario against the packaged Fabric artifact.
@@ -109,7 +177,7 @@ The tracked v23 profile and runtime are consumed and immutable.
 `python3 -B scripts/e2e/client.py validate` and the archive-only command above
 remain read-only, but no lifecycle action or native launch may use v23 again.
 Any next run requires every active profile, runtime, snapshot, test, verifier,
-and archive literal to advance to a fresh unused v24-or-newer identity first.
+and archive literal to advance to a fresh unused v25-or-newer identity first.
 
 ## Phase 0 smoke
 

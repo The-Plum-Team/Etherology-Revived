@@ -1,0 +1,3936 @@
+{
+  "schema": 2,
+  "scenario": "forest-lantern",
+  "lane": "fabric-1.20.1",
+  "role": "host",
+  "status": "passed",
+  "client_ticks": 650,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "registry:block:etherology:forest_lantern",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:forest_lantern",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "block_item_mapping",
+      "passed": true,
+      "expected": "vanilla BlockItem mapped to etherology:forest_lantern",
+      "actual": "vanilla BlockItem mapped to etherology:forest_lantern"
+    },
+    {
+      "name": "default_state_exact",
+      "passed": true,
+      "expected": "age\u003d4,facing\u003dnorth",
+      "actual": "age\u003d4,facing\u003dnorth"
+    },
+    {
+      "name": "state_inventory_exact",
+      "passed": true,
+      "expected": "[age\u003d0,facing\u003deast, age\u003d0,facing\u003dnorth, age\u003d0,facing\u003dsouth, age\u003d0,facing\u003dwest, age\u003d1,facing\u003deast, age\u003d1,facing\u003dnorth, age\u003d1,facing\u003dsouth, age\u003d1,facing\u003dwest, age\u003d2,facing\u003deast, age\u003d2,facing\u003dnorth, age\u003d2,facing\u003dsouth, age\u003d2,facing\u003dwest, age\u003d3,facing\u003deast, age\u003d3,facing\u003dnorth, age\u003d3,facing\u003dsouth, age\u003d3,facing\u003dwest, age\u003d4,facing\u003deast, age\u003d4,facing\u003dnorth, age\u003d4,facing\u003dsouth, age\u003d4,facing\u003dwest]",
+      "actual": "[age\u003d0,facing\u003deast, age\u003d0,facing\u003dnorth, age\u003d0,facing\u003dsouth, age\u003d0,facing\u003dwest, age\u003d1,facing\u003deast, age\u003d1,facing\u003dnorth, age\u003d1,facing\u003dsouth, age\u003d1,facing\u003dwest, age\u003d2,facing\u003deast, age\u003d2,facing\u003dnorth, age\u003d2,facing\u003dsouth, age\u003d2,facing\u003dwest, age\u003d3,facing\u003deast, age\u003d3,facing\u003dnorth, age\u003d3,facing\u003dsouth, age\u003d3,facing\u003dwest, age\u003d4,facing\u003deast, age\u003d4,facing\u003dnorth, age\u003d4,facing\u003dsouth, age\u003d4,facing\u003dwest]"
+    },
+    {
+      "name": "state_network_ids_exact",
+      "passed": true,
+      "expected": "20 unique non-negative raw IDs",
+      "actual": "[24139, 24140, 24141, 24142, 24143, 24144, 24145, 24146, 24147, 24148, 24149, 24150, 24151, 24152, 24153, 24154, 24155, 24156, 24157, 24158]"
+    },
+    {
+      "name": "client_render_resources",
+      "passed": true,
+      "expected": "13 exact resources with canonical SHA-256 digests",
+      "actual": "13 exact resources with canonical SHA-256 digests"
+    },
+    {
+      "name": "client_render_layer_cutout",
+      "passed": true,
+      "expected": "cutout",
+      "actual": "cutout"
+    },
+    {
+      "name": "client_models_baked",
+      "passed": true,
+      "expected": "20 block states and one item model",
+      "actual": "20 block states and one item model"
+    },
+    {
+      "name": "default_luminance",
+      "passed": true,
+      "expected": "8",
+      "actual": "8"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_e2e_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "server_arena_chunks_loaded",
+      "passed": true,
+      "expected": "four full chunks",
+      "actual": "true"
+    },
+    {
+      "name": "checker_backings_exact",
+      "passed": true,
+      "expected": "twenty alternating peach-log matrix supports, four polished-andesite supports, one iron-bars rejection support",
+      "actual": "exact"
+    },
+    {
+      "name": "forced_render_state_matrix_exact",
+      "passed": true,
+      "expected": "[age\u003d0,facing\u003dnorth, age\u003d1,facing\u003dnorth, age\u003d2,facing\u003dnorth, age\u003d3,facing\u003dnorth, age\u003d4,facing\u003dnorth, age\u003d0,facing\u003deast, age\u003d1,facing\u003deast, age\u003d2,facing\u003deast, age\u003d3,facing\u003deast, age\u003d4,facing\u003deast, age\u003d0,facing\u003dsouth, age\u003d1,facing\u003dsouth, age\u003d2,facing\u003dsouth, age\u003d3,facing\u003dsouth, age\u003d4,facing\u003dsouth, age\u003d0,facing\u003dwest, age\u003d1,facing\u003dwest, age\u003d2,facing\u003dwest, age\u003d3,facing\u003dwest, age\u003d4,facing\u003dwest]",
+      "actual": "[age\u003d0,facing\u003dnorth, age\u003d1,facing\u003dnorth, age\u003d2,facing\u003dnorth, age\u003d3,facing\u003dnorth, age\u003d4,facing\u003dnorth, age\u003d0,facing\u003deast, age\u003d1,facing\u003deast, age\u003d2,facing\u003deast, age\u003d3,facing\u003deast, age\u003d4,facing\u003deast, age\u003d0,facing\u003dsouth, age\u003d1,facing\u003dsouth, age\u003d2,facing\u003dsouth, age\u003d3,facing\u003dsouth, age\u003d4,facing\u003dsouth, age\u003d0,facing\u003dwest, age\u003d1,facing\u003dwest, age\u003d2,facing\u003dwest, age\u003d3,facing\u003dwest, age\u003d4,facing\u003dwest]"
+    },
+    {
+      "name": "stage_support_validation",
+      "passed": true,
+      "expected": "all twenty age-by-facing states canPlaceAt their peach-log backing",
+      "actual": "true"
+    },
+    {
+      "name": "unsupported_block_item_rejected",
+      "passed": true,
+      "expected": "not accepted; stack 1-\u003e1; target air; support invalid",
+      "actual": "accepted\u003dfalse;action\u003dFAIL;stack\u003d1-\u003e1;block_item_mapping\u003dtrue;support_valid\u003dfalse;state\u003d9,125,2\u003dminecraft:air;support\u003dminecraft:iron_bars"
+    },
+    {
+      "name": "real_block_item_placement:north",
+      "passed": true,
+      "expected": "accepted BlockItem; stack 1-\u003e0; mature exact facing; support valid",
+      "actual": "accepted\u003dtrue;action\u003dCONSUME;stack\u003d1-\u003e0;block_item_mapping\u003dtrue;support_valid\u003dtrue;state\u003d-6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];support\u003dminecraft:polished_andesite"
+    },
+    {
+      "name": "real_block_item_placement:east",
+      "passed": true,
+      "expected": "accepted BlockItem; stack 1-\u003e0; mature exact facing; support valid",
+      "actual": "accepted\u003dtrue;action\u003dCONSUME;stack\u003d1-\u003e0;block_item_mapping\u003dtrue;support_valid\u003dtrue;state\u003d-2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];support\u003dminecraft:polished_andesite"
+    },
+    {
+      "name": "real_block_item_placement:south",
+      "passed": true,
+      "expected": "accepted BlockItem; stack 1-\u003e0; mature exact facing; support valid",
+      "actual": "accepted\u003dtrue;action\u003dCONSUME;stack\u003d1-\u003e0;block_item_mapping\u003dtrue;support_valid\u003dtrue;state\u003d2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];support\u003dminecraft:polished_andesite"
+    },
+    {
+      "name": "real_block_item_placement:west",
+      "passed": true,
+      "expected": "accepted BlockItem; stack 1-\u003e0; mature exact facing; support valid",
+      "actual": "accepted\u003dtrue;action\u003dCONSUME;stack\u003d1-\u003e0;block_item_mapping\u003dtrue;support_valid\u003dtrue;state\u003d6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue];support\u003dminecraft:polished_andesite"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "restart_exact_state",
+      "passed": true,
+      "expected": "saved snapshot equals reopened snapshot",
+      "actual": "saved snapshot equals reopened snapshot"
+    },
+    {
+      "name": "capture_mirror_exact:empty",
+      "passed": true,
+      "expected": "stages\u003dair;mature_placements\u003d0;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003dminecraft:air;-4,122,2\u003dminecraft:air;0,122,2\u003dminecraft:air;4,122,2\u003dminecraft:air;8,122,2\u003dminecraft:air;-8,124,2\u003dminecraft:air;-4,124,2\u003dminecraft:air;0,124,2\u003dminecraft:air;4,124,2\u003dminecraft:air;8,124,2\u003dminecraft:air;-8,126,2\u003dminecraft:air;-4,126,2\u003dminecraft:air;0,126,2\u003dminecraft:air;4,126,2\u003dminecraft:air;8,126,2\u003dminecraft:air;-8,128,2\u003dminecraft:air;-4,128,2\u003dminecraft:air;0,128,2\u003dminecraft:air;4,128,2\u003dminecraft:air;8,128,2\u003dminecraft:air|placements\u003d-6,125,2\u003dminecraft:air;-2,125,2\u003dminecraft:air;2,125,2\u003dminecraft:air;6,125,2\u003dminecraft:air|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:empty",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:empty",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:empty",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:empty",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:empty",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "524285 bytes, sha256\u003da75a836b77a46fcf6e233ccfa360c45e257cdf03940a8e96c2ea453a6f515235"
+    },
+    {
+      "name": "capture_mirror_exact:stages",
+      "passed": true,
+      "expected": "stages\u003d20-state-age-facing-matrix;mature_placements\u003d0;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003detherology:forest_lantern[age\u003d0,facing\u003dnorth,can_place_at\u003dtrue];-4,122,2\u003detherology:forest_lantern[age\u003d1,facing\u003dnorth,can_place_at\u003dtrue];0,122,2\u003detherology:forest_lantern[age\u003d2,facing\u003dnorth,can_place_at\u003dtrue];4,122,2\u003detherology:forest_lantern[age\u003d3,facing\u003dnorth,can_place_at\u003dtrue];8,122,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-8,124,2\u003detherology:forest_lantern[age\u003d0,facing\u003deast,can_place_at\u003dtrue];-4,124,2\u003detherology:forest_lantern[age\u003d1,facing\u003deast,can_place_at\u003dtrue];0,124,2\u003detherology:forest_lantern[age\u003d2,facing\u003deast,can_place_at\u003dtrue];4,124,2\u003detherology:forest_lantern[age\u003d3,facing\u003deast,can_place_at\u003dtrue];8,124,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];-8,126,2\u003detherology:forest_lantern[age\u003d0,facing\u003dsouth,can_place_at\u003dtrue];-4,126,2\u003detherology:forest_lantern[age\u003d1,facing\u003dsouth,can_place_at\u003dtrue];0,126,2\u003detherology:forest_lantern[age\u003d2,facing\u003dsouth,can_place_at\u003dtrue];4,126,2\u003detherology:forest_lantern[age\u003d3,facing\u003dsouth,can_place_at\u003dtrue];8,126,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];-8,128,2\u003detherology:forest_lantern[age\u003d0,facing\u003dwest,can_place_at\u003dtrue];-4,128,2\u003detherology:forest_lantern[age\u003d1,facing\u003dwest,can_place_at\u003dtrue];0,128,2\u003detherology:forest_lantern[age\u003d2,facing\u003dwest,can_place_at\u003dtrue];4,128,2\u003detherology:forest_lantern[age\u003d3,facing\u003dwest,can_place_at\u003dtrue];8,128,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|placements\u003d-6,125,2\u003dminecraft:air;-2,125,2\u003dminecraft:air;2,125,2\u003dminecraft:air;6,125,2\u003dminecraft:air|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:stages",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:stages",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:stages",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:stages",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:stages",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "512460 bytes, sha256\u003db315fb454aed667ec7bd41e1714dfab100a6146dc5840cfbbec3a6de530953cd"
+    },
+    {
+      "name": "capture_mirror_exact:facing-north",
+      "passed": true,
+      "expected": "stages\u003d20-state-age-facing-matrix;mature_placements\u003d1;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003detherology:forest_lantern[age\u003d0,facing\u003dnorth,can_place_at\u003dtrue];-4,122,2\u003detherology:forest_lantern[age\u003d1,facing\u003dnorth,can_place_at\u003dtrue];0,122,2\u003detherology:forest_lantern[age\u003d2,facing\u003dnorth,can_place_at\u003dtrue];4,122,2\u003detherology:forest_lantern[age\u003d3,facing\u003dnorth,can_place_at\u003dtrue];8,122,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-8,124,2\u003detherology:forest_lantern[age\u003d0,facing\u003deast,can_place_at\u003dtrue];-4,124,2\u003detherology:forest_lantern[age\u003d1,facing\u003deast,can_place_at\u003dtrue];0,124,2\u003detherology:forest_lantern[age\u003d2,facing\u003deast,can_place_at\u003dtrue];4,124,2\u003detherology:forest_lantern[age\u003d3,facing\u003deast,can_place_at\u003dtrue];8,124,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];-8,126,2\u003detherology:forest_lantern[age\u003d0,facing\u003dsouth,can_place_at\u003dtrue];-4,126,2\u003detherology:forest_lantern[age\u003d1,facing\u003dsouth,can_place_at\u003dtrue];0,126,2\u003detherology:forest_lantern[age\u003d2,facing\u003dsouth,can_place_at\u003dtrue];4,126,2\u003detherology:forest_lantern[age\u003d3,facing\u003dsouth,can_place_at\u003dtrue];8,126,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];-8,128,2\u003detherology:forest_lantern[age\u003d0,facing\u003dwest,can_place_at\u003dtrue];-4,128,2\u003detherology:forest_lantern[age\u003d1,facing\u003dwest,can_place_at\u003dtrue];0,128,2\u003detherology:forest_lantern[age\u003d2,facing\u003dwest,can_place_at\u003dtrue];4,128,2\u003detherology:forest_lantern[age\u003d3,facing\u003dwest,can_place_at\u003dtrue];8,128,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|placements\u003d-6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-2,125,2\u003dminecraft:air;2,125,2\u003dminecraft:air;6,125,2\u003dminecraft:air|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:facing-north",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:facing-north",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:facing-north",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:facing-north",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:facing-north",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "486959 bytes, sha256\u003dc8bd9bd859873f907bda051b0b60f2f1031880db17c805007e853e294f098fb6"
+    },
+    {
+      "name": "capture_mirror_exact:facing-east",
+      "passed": true,
+      "expected": "stages\u003d20-state-age-facing-matrix;mature_placements\u003d2;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003detherology:forest_lantern[age\u003d0,facing\u003dnorth,can_place_at\u003dtrue];-4,122,2\u003detherology:forest_lantern[age\u003d1,facing\u003dnorth,can_place_at\u003dtrue];0,122,2\u003detherology:forest_lantern[age\u003d2,facing\u003dnorth,can_place_at\u003dtrue];4,122,2\u003detherology:forest_lantern[age\u003d3,facing\u003dnorth,can_place_at\u003dtrue];8,122,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-8,124,2\u003detherology:forest_lantern[age\u003d0,facing\u003deast,can_place_at\u003dtrue];-4,124,2\u003detherology:forest_lantern[age\u003d1,facing\u003deast,can_place_at\u003dtrue];0,124,2\u003detherology:forest_lantern[age\u003d2,facing\u003deast,can_place_at\u003dtrue];4,124,2\u003detherology:forest_lantern[age\u003d3,facing\u003deast,can_place_at\u003dtrue];8,124,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];-8,126,2\u003detherology:forest_lantern[age\u003d0,facing\u003dsouth,can_place_at\u003dtrue];-4,126,2\u003detherology:forest_lantern[age\u003d1,facing\u003dsouth,can_place_at\u003dtrue];0,126,2\u003detherology:forest_lantern[age\u003d2,facing\u003dsouth,can_place_at\u003dtrue];4,126,2\u003detherology:forest_lantern[age\u003d3,facing\u003dsouth,can_place_at\u003dtrue];8,126,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];-8,128,2\u003detherology:forest_lantern[age\u003d0,facing\u003dwest,can_place_at\u003dtrue];-4,128,2\u003detherology:forest_lantern[age\u003d1,facing\u003dwest,can_place_at\u003dtrue];0,128,2\u003detherology:forest_lantern[age\u003d2,facing\u003dwest,can_place_at\u003dtrue];4,128,2\u003detherology:forest_lantern[age\u003d3,facing\u003dwest,can_place_at\u003dtrue];8,128,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|placements\u003d-6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];2,125,2\u003dminecraft:air;6,125,2\u003dminecraft:air|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:facing-east",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:facing-east",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:facing-east",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:facing-east",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:facing-east",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "472820 bytes, sha256\u003d6dbc6c0932d862786b8e1afdf62428850399b83ec3af07850a3c4b9146ccd00c"
+    },
+    {
+      "name": "capture_mirror_exact:facing-south",
+      "passed": true,
+      "expected": "stages\u003d20-state-age-facing-matrix;mature_placements\u003d3;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003detherology:forest_lantern[age\u003d0,facing\u003dnorth,can_place_at\u003dtrue];-4,122,2\u003detherology:forest_lantern[age\u003d1,facing\u003dnorth,can_place_at\u003dtrue];0,122,2\u003detherology:forest_lantern[age\u003d2,facing\u003dnorth,can_place_at\u003dtrue];4,122,2\u003detherology:forest_lantern[age\u003d3,facing\u003dnorth,can_place_at\u003dtrue];8,122,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-8,124,2\u003detherology:forest_lantern[age\u003d0,facing\u003deast,can_place_at\u003dtrue];-4,124,2\u003detherology:forest_lantern[age\u003d1,facing\u003deast,can_place_at\u003dtrue];0,124,2\u003detherology:forest_lantern[age\u003d2,facing\u003deast,can_place_at\u003dtrue];4,124,2\u003detherology:forest_lantern[age\u003d3,facing\u003deast,can_place_at\u003dtrue];8,124,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];-8,126,2\u003detherology:forest_lantern[age\u003d0,facing\u003dsouth,can_place_at\u003dtrue];-4,126,2\u003detherology:forest_lantern[age\u003d1,facing\u003dsouth,can_place_at\u003dtrue];0,126,2\u003detherology:forest_lantern[age\u003d2,facing\u003dsouth,can_place_at\u003dtrue];4,126,2\u003detherology:forest_lantern[age\u003d3,facing\u003dsouth,can_place_at\u003dtrue];8,126,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];-8,128,2\u003detherology:forest_lantern[age\u003d0,facing\u003dwest,can_place_at\u003dtrue];-4,128,2\u003detherology:forest_lantern[age\u003d1,facing\u003dwest,can_place_at\u003dtrue];0,128,2\u003detherology:forest_lantern[age\u003d2,facing\u003dwest,can_place_at\u003dtrue];4,128,2\u003detherology:forest_lantern[age\u003d3,facing\u003dwest,can_place_at\u003dtrue];8,128,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|placements\u003d-6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];6,125,2\u003dminecraft:air|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:facing-south",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:facing-south",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:facing-south",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:facing-south",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:facing-south",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "461908 bytes, sha256\u003d2c32ec1943ee4848ca046aeea87dc1b8304919e096977a2ce02d371f2a9c13af"
+    },
+    {
+      "name": "capture_mirror_exact:facing-west",
+      "passed": true,
+      "expected": "stages\u003d20-state-age-facing-matrix;mature_placements\u003d4;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003detherology:forest_lantern[age\u003d0,facing\u003dnorth,can_place_at\u003dtrue];-4,122,2\u003detherology:forest_lantern[age\u003d1,facing\u003dnorth,can_place_at\u003dtrue];0,122,2\u003detherology:forest_lantern[age\u003d2,facing\u003dnorth,can_place_at\u003dtrue];4,122,2\u003detherology:forest_lantern[age\u003d3,facing\u003dnorth,can_place_at\u003dtrue];8,122,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-8,124,2\u003detherology:forest_lantern[age\u003d0,facing\u003deast,can_place_at\u003dtrue];-4,124,2\u003detherology:forest_lantern[age\u003d1,facing\u003deast,can_place_at\u003dtrue];0,124,2\u003detherology:forest_lantern[age\u003d2,facing\u003deast,can_place_at\u003dtrue];4,124,2\u003detherology:forest_lantern[age\u003d3,facing\u003deast,can_place_at\u003dtrue];8,124,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];-8,126,2\u003detherology:forest_lantern[age\u003d0,facing\u003dsouth,can_place_at\u003dtrue];-4,126,2\u003detherology:forest_lantern[age\u003d1,facing\u003dsouth,can_place_at\u003dtrue];0,126,2\u003detherology:forest_lantern[age\u003d2,facing\u003dsouth,can_place_at\u003dtrue];4,126,2\u003detherology:forest_lantern[age\u003d3,facing\u003dsouth,can_place_at\u003dtrue];8,126,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];-8,128,2\u003detherology:forest_lantern[age\u003d0,facing\u003dwest,can_place_at\u003dtrue];-4,128,2\u003detherology:forest_lantern[age\u003d1,facing\u003dwest,can_place_at\u003dtrue];0,128,2\u003detherology:forest_lantern[age\u003d2,facing\u003dwest,can_place_at\u003dtrue];4,128,2\u003detherology:forest_lantern[age\u003d3,facing\u003dwest,can_place_at\u003dtrue];8,128,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|placements\u003d-6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:facing-west",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:facing-west",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:facing-west",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:facing-west",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:facing-west",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "456334 bytes, sha256\u003d5b200ae96fd6004729c246dcf3603186be2575b7a62d60a967d7d8ddafebdbc9"
+    },
+    {
+      "name": "capture_mirror_exact:reopened",
+      "passed": true,
+      "expected": "stages\u003d20-state-age-facing-matrix;mature_placements\u003d4;unsupported\u003dair",
+      "actual": "stages\u003d-8,122,2\u003detherology:forest_lantern[age\u003d0,facing\u003dnorth,can_place_at\u003dtrue];-4,122,2\u003detherology:forest_lantern[age\u003d1,facing\u003dnorth,can_place_at\u003dtrue];0,122,2\u003detherology:forest_lantern[age\u003d2,facing\u003dnorth,can_place_at\u003dtrue];4,122,2\u003detherology:forest_lantern[age\u003d3,facing\u003dnorth,can_place_at\u003dtrue];8,122,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-8,124,2\u003detherology:forest_lantern[age\u003d0,facing\u003deast,can_place_at\u003dtrue];-4,124,2\u003detherology:forest_lantern[age\u003d1,facing\u003deast,can_place_at\u003dtrue];0,124,2\u003detherology:forest_lantern[age\u003d2,facing\u003deast,can_place_at\u003dtrue];4,124,2\u003detherology:forest_lantern[age\u003d3,facing\u003deast,can_place_at\u003dtrue];8,124,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];-8,126,2\u003detherology:forest_lantern[age\u003d0,facing\u003dsouth,can_place_at\u003dtrue];-4,126,2\u003detherology:forest_lantern[age\u003d1,facing\u003dsouth,can_place_at\u003dtrue];0,126,2\u003detherology:forest_lantern[age\u003d2,facing\u003dsouth,can_place_at\u003dtrue];4,126,2\u003detherology:forest_lantern[age\u003d3,facing\u003dsouth,can_place_at\u003dtrue];8,126,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];-8,128,2\u003detherology:forest_lantern[age\u003d0,facing\u003dwest,can_place_at\u003dtrue];-4,128,2\u003detherology:forest_lantern[age\u003d1,facing\u003dwest,can_place_at\u003dtrue];0,128,2\u003detherology:forest_lantern[age\u003d2,facing\u003dwest,can_place_at\u003dtrue];4,128,2\u003detherology:forest_lantern[age\u003d3,facing\u003dwest,can_place_at\u003dtrue];8,128,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|placements\u003d-6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dnorth,can_place_at\u003dtrue];-2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003deast,can_place_at\u003dtrue];2,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dsouth,can_place_at\u003dtrue];6,125,2\u003detherology:forest_lantern[age\u003d4,facing\u003dwest,can_place_at\u003dtrue]|unsupported\u003d9,125,2\u003dminecraft:air"
+    },
+    {
+      "name": "capture_render_ready:reopened",
+      "passed": true,
+      "expected": "terrain complete and all fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact:reopened",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d9.5;y\u003d121.0;z\u003d-10.5;yaw\u003d38.0;pitch\u003d-6.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:reopened",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:reopened",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:reopened",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "449050 bytes, sha256\u003d91737c2423268cb682794492973ee622c936929e30c5007efef7dee17eeb8586"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-e2e-forest-lantern-world",
+      "actual": "etherology-e2e-forest-lantern-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-e2e-forest-lantern-world",
+    "display_name": "Etherology E2E Forest Lantern",
+    "seed": 77306496635732,
+    "dimension": "minecraft:overworld",
+    "integrated": true,
+    "reopened": true
+  },
+  "ready_resources": [
+    "etherology:blockstates/forest_lantern.json",
+    "etherology:models/block/forest_lantern_0.json",
+    "etherology:models/block/forest_lantern_1.json",
+    "etherology:models/block/forest_lantern_2.json",
+    "etherology:models/block/forest_lantern_3.json",
+    "etherology:models/block/forest_lantern.json",
+    "etherology:models/item/forest_lantern.json",
+    "etherology:textures/block/forest_lantern_0.png",
+    "etherology:textures/block/forest_lantern_1.png",
+    "etherology:textures/block/forest_lantern_2.png",
+    "etherology:textures/block/forest_lantern_3.png",
+    "etherology:textures/block/forest_lantern.png",
+    "etherology:textures/item/forest_lantern.png"
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "etherology-under-test.jar",
+      "size": 2887517,
+      "sha256": "982f16bf04a99c416efd25406df167e3539faede5f8f1024f0269221916725a1"
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "origin_kind": "PATH",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 226562,
+      "sha256": "38bfa390cb0e9a7409f2dce23a938cc96ce97a3ad9c201a5ab418c36e3e9e52a"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "empty",
+      "role": "host",
+      "file": "screenshots/forest-lantern-empty.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 524285,
+      "sha256": "a75a836b77a46fcf6e233ccfa360c45e257cdf03940a8e96c2ea453a6f515235",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "stages",
+      "role": "host",
+      "file": "screenshots/forest-lantern-stages.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 512460,
+      "sha256": "b315fb454aed667ec7bd41e1714dfab100a6146dc5840cfbbec3a6de530953cd",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "facing-north",
+      "role": "host",
+      "file": "screenshots/forest-lantern-facing-north.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 486959,
+      "sha256": "c8bd9bd859873f907bda051b0b60f2f1031880db17c805007e853e294f098fb6",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "facing-east",
+      "role": "host",
+      "file": "screenshots/forest-lantern-facing-east.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 472820,
+      "sha256": "6dbc6c0932d862786b8e1afdf62428850399b83ec3af07850a3c4b9146ccd00c",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "facing-south",
+      "role": "host",
+      "file": "screenshots/forest-lantern-facing-south.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 461908,
+      "sha256": "2c32ec1943ee4848ca046aeea87dc1b8304919e096977a2ce02d371f2a9c13af",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "facing-west",
+      "role": "host",
+      "file": "screenshots/forest-lantern-facing-west.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 456334,
+      "sha256": "5b200ae96fd6004729c246dcf3603186be2575b7a62d60a967d7d8ddafebdbc9",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "reopened",
+      "role": "host",
+      "file": "screenshots/forest-lantern-reopened.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 449050,
+      "sha256": "91737c2423268cb682794492973ee622c936929e30c5007efef7dee17eeb8586",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    }
+  ],
+  "forest_lantern": {
+    "registry_id": "etherology:forest_lantern",
+    "item_id": "etherology:forest_lantern",
+    "block_item_mapping": true,
+    "default_state": "age\u003d4,facing\u003dnorth",
+    "state_count": 20,
+    "state_inventory": [
+      "age\u003d0,facing\u003deast",
+      "age\u003d0,facing\u003dnorth",
+      "age\u003d0,facing\u003dsouth",
+      "age\u003d0,facing\u003dwest",
+      "age\u003d1,facing\u003deast",
+      "age\u003d1,facing\u003dnorth",
+      "age\u003d1,facing\u003dsouth",
+      "age\u003d1,facing\u003dwest",
+      "age\u003d2,facing\u003deast",
+      "age\u003d2,facing\u003dnorth",
+      "age\u003d2,facing\u003dsouth",
+      "age\u003d2,facing\u003dwest",
+      "age\u003d3,facing\u003deast",
+      "age\u003d3,facing\u003dnorth",
+      "age\u003d3,facing\u003dsouth",
+      "age\u003d3,facing\u003dwest",
+      "age\u003d4,facing\u003deast",
+      "age\u003d4,facing\u003dnorth",
+      "age\u003d4,facing\u003dsouth",
+      "age\u003d4,facing\u003dwest"
+    ],
+    "raw_state_ids": [
+      24139,
+      24140,
+      24141,
+      24142,
+      24143,
+      24144,
+      24145,
+      24146,
+      24147,
+      24148,
+      24149,
+      24150,
+      24151,
+      24152,
+      24153,
+      24154,
+      24155,
+      24156,
+      24157,
+      24158
+    ],
+    "render_layer": "cutout",
+    "models_baked": true,
+    "luminance": 8,
+    "asset_sha256": {
+      "etherology:blockstates/forest_lantern.json": "2e73ec0f61ca32b3e5331c2410362ae2df599d41a5d1499cf2fc84de5dcf74e3",
+      "etherology:models/block/forest_lantern_0.json": "ff1afef383ebf725c102a11c36a4bd7671632841bfbdcd788a81824dcbb3af44",
+      "etherology:models/block/forest_lantern_1.json": "026b26bfba8c8cec6de47c6dc6e3b097b66e07be30204ff3a7cad420cd9c349d",
+      "etherology:models/block/forest_lantern_2.json": "a16895bea5f381c16c9454b349d172e527d3be2d639d2d8b05505d9a37a6e709",
+      "etherology:models/block/forest_lantern_3.json": "6d57d90558f8c270a6a6f00ffb43e4f66f69d2042bc0bb18cd34de38285dde8d",
+      "etherology:models/block/forest_lantern.json": "c45939dd725b11d2034406e3ec8b9040a97d6fa9c7c83d3782444a22e7cfd90c",
+      "etherology:models/item/forest_lantern.json": "d57283548233724975a2f7d9aeeee41a00df0c0d73b02c314da8829aa6ab3e34",
+      "etherology:textures/block/forest_lantern_0.png": "c850de55787124203c0176cf43364ad7459418ee401523cb71b733e58eff97a2",
+      "etherology:textures/block/forest_lantern_1.png": "bc9ce2c1e3c310e81c324326b5828924319ebb5c7d23e64fbb9fbf883e930c7f",
+      "etherology:textures/block/forest_lantern_2.png": "5e5d5df51ad75e06b99d3dd84bca8516c6b17b90948217a7a9624321ad1a9d1c",
+      "etherology:textures/block/forest_lantern_3.png": "f4a76d42b1f7ca0106698ea56ee5045012b33c1a1aa1d433e202b8f1433756cd",
+      "etherology:textures/block/forest_lantern.png": "5ab9532f8b9090492a84479b404c4c3c4ac3733a6d867e50534f54fcc8f310b6",
+      "etherology:textures/item/forest_lantern.png": "38bd46a7cb5b35dd28ee2b6ff718c190596f1a2b95a3138f90b6fa19fce7d143"
+    },
+    "forced_stage_ages": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "forced_state_inventory": [
+      "age\u003d0,facing\u003dnorth",
+      "age\u003d1,facing\u003dnorth",
+      "age\u003d2,facing\u003dnorth",
+      "age\u003d3,facing\u003dnorth",
+      "age\u003d0,facing\u003deast",
+      "age\u003d1,facing\u003deast",
+      "age\u003d2,facing\u003deast",
+      "age\u003d3,facing\u003deast",
+      "age\u003d0,facing\u003dsouth",
+      "age\u003d1,facing\u003dsouth",
+      "age\u003d2,facing\u003dsouth",
+      "age\u003d3,facing\u003dsouth",
+      "age\u003d0,facing\u003dwest",
+      "age\u003d1,facing\u003dwest",
+      "age\u003d2,facing\u003dwest",
+      "age\u003d3,facing\u003dwest"
+    ],
+    "rendered_state_inventory": [
+      "age\u003d0,facing\u003dnorth",
+      "age\u003d1,facing\u003dnorth",
+      "age\u003d2,facing\u003dnorth",
+      "age\u003d3,facing\u003dnorth",
+      "age\u003d4,facing\u003dnorth",
+      "age\u003d0,facing\u003deast",
+      "age\u003d1,facing\u003deast",
+      "age\u003d2,facing\u003deast",
+      "age\u003d3,facing\u003deast",
+      "age\u003d4,facing\u003deast",
+      "age\u003d0,facing\u003dsouth",
+      "age\u003d1,facing\u003dsouth",
+      "age\u003d2,facing\u003dsouth",
+      "age\u003d3,facing\u003dsouth",
+      "age\u003d4,facing\u003dsouth",
+      "age\u003d0,facing\u003dwest",
+      "age\u003d1,facing\u003dwest",
+      "age\u003d2,facing\u003dwest",
+      "age\u003d3,facing\u003dwest",
+      "age\u003d4,facing\u003dwest"
+    ],
+    "stage_fixtures": [
+      {
+        "age": 0,
+        "forced": true,
+        "facing": "north",
+        "position": "-8,122,2",
+        "support_position": "-8,122,3",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 1,
+        "forced": true,
+        "facing": "north",
+        "position": "-4,122,2",
+        "support_position": "-4,122,3",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 2,
+        "forced": true,
+        "facing": "north",
+        "position": "0,122,2",
+        "support_position": "0,122,3",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 3,
+        "forced": true,
+        "facing": "north",
+        "position": "4,122,2",
+        "support_position": "4,122,3",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 4,
+        "forced": false,
+        "facing": "north",
+        "position": "8,122,2",
+        "support_position": "8,122,3",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 0,
+        "forced": true,
+        "facing": "east",
+        "position": "-8,124,2",
+        "support_position": "-9,124,2",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 1,
+        "forced": true,
+        "facing": "east",
+        "position": "-4,124,2",
+        "support_position": "-5,124,2",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 2,
+        "forced": true,
+        "facing": "east",
+        "position": "0,124,2",
+        "support_position": "-1,124,2",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 3,
+        "forced": true,
+        "facing": "east",
+        "position": "4,124,2",
+        "support_position": "3,124,2",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 4,
+        "forced": false,
+        "facing": "east",
+        "position": "8,124,2",
+        "support_position": "7,124,2",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 0,
+        "forced": true,
+        "facing": "south",
+        "position": "-8,126,2",
+        "support_position": "-8,126,1",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 1,
+        "forced": true,
+        "facing": "south",
+        "position": "-4,126,2",
+        "support_position": "-4,126,1",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 2,
+        "forced": true,
+        "facing": "south",
+        "position": "0,126,2",
+        "support_position": "0,126,1",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 3,
+        "forced": true,
+        "facing": "south",
+        "position": "4,126,2",
+        "support_position": "4,126,1",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 4,
+        "forced": false,
+        "facing": "south",
+        "position": "8,126,2",
+        "support_position": "8,126,1",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 0,
+        "forced": true,
+        "facing": "west",
+        "position": "-8,128,2",
+        "support_position": "-7,128,2",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 1,
+        "forced": true,
+        "facing": "west",
+        "position": "-4,128,2",
+        "support_position": "-3,128,2",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 2,
+        "forced": true,
+        "facing": "west",
+        "position": "0,128,2",
+        "support_position": "1,128,2",
+        "support_id": "etherology:peach_log"
+      },
+      {
+        "age": 3,
+        "forced": true,
+        "facing": "west",
+        "position": "4,128,2",
+        "support_position": "5,128,2",
+        "support_id": "etherology:stripped_peach_log"
+      },
+      {
+        "age": 4,
+        "forced": false,
+        "facing": "west",
+        "position": "8,128,2",
+        "support_position": "9,128,2",
+        "support_id": "etherology:peach_log"
+      }
+    ],
+    "placement_fixtures": [
+      {
+        "facing": "north",
+        "position": "-6,125,2",
+        "support_position": "-6,125,3",
+        "support_id": "minecraft:polished_andesite"
+      },
+      {
+        "facing": "east",
+        "position": "-2,125,2",
+        "support_position": "-3,125,2",
+        "support_id": "minecraft:polished_andesite"
+      },
+      {
+        "facing": "south",
+        "position": "2,125,2",
+        "support_position": "2,125,1",
+        "support_id": "minecraft:polished_andesite"
+      },
+      {
+        "facing": "west",
+        "position": "6,125,2",
+        "support_position": "7,125,2",
+        "support_id": "minecraft:polished_andesite"
+      }
+    ],
+    "unsupported_placement": {
+      "direction": "north",
+      "action_result": "FAIL",
+      "accepted": false,
+      "stack_before": 1,
+      "stack_after": 1,
+      "block_item_mapping": true,
+      "support_valid": false,
+      "observation": {
+        "position": "9,125,2",
+        "block_id": "minecraft:air",
+        "age": "",
+        "facing": "",
+        "can_place_at": false
+      },
+      "support_id": "minecraft:iron_bars"
+    },
+    "placements": {
+      "north": {
+        "direction": "north",
+        "action_result": "CONSUME",
+        "accepted": true,
+        "stack_before": 1,
+        "stack_after": 0,
+        "block_item_mapping": true,
+        "support_valid": true,
+        "observation": {
+          "position": "-6,125,2",
+          "block_id": "etherology:forest_lantern",
+          "age": "4",
+          "facing": "north",
+          "can_place_at": true
+        },
+        "support_id": "minecraft:polished_andesite"
+      },
+      "east": {
+        "direction": "east",
+        "action_result": "CONSUME",
+        "accepted": true,
+        "stack_before": 1,
+        "stack_after": 0,
+        "block_item_mapping": true,
+        "support_valid": true,
+        "observation": {
+          "position": "-2,125,2",
+          "block_id": "etherology:forest_lantern",
+          "age": "4",
+          "facing": "east",
+          "can_place_at": true
+        },
+        "support_id": "minecraft:polished_andesite"
+      },
+      "south": {
+        "direction": "south",
+        "action_result": "CONSUME",
+        "accepted": true,
+        "stack_before": 1,
+        "stack_after": 0,
+        "block_item_mapping": true,
+        "support_valid": true,
+        "observation": {
+          "position": "2,125,2",
+          "block_id": "etherology:forest_lantern",
+          "age": "4",
+          "facing": "south",
+          "can_place_at": true
+        },
+        "support_id": "minecraft:polished_andesite"
+      },
+      "west": {
+        "direction": "west",
+        "action_result": "CONSUME",
+        "accepted": true,
+        "stack_before": 1,
+        "stack_after": 0,
+        "block_item_mapping": true,
+        "support_valid": true,
+        "observation": {
+          "position": "6,125,2",
+          "block_id": "etherology:forest_lantern",
+          "age": "4",
+          "facing": "west",
+          "can_place_at": true
+        },
+        "support_id": "minecraft:polished_andesite"
+      }
+    },
+    "persistence_exact": true,
+    "camera": {
+      "x": 9.5,
+      "y": 121.0,
+      "z": -10.5,
+      "yaw": 38.0,
+      "pitch": -6.0,
+      "first_person": true,
+      "on_ground": true
+    },
+    "required_stable_renders": 120,
+    "captures": {
+      "empty": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      },
+      "stages": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      },
+      "facing-north": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      },
+      "facing-east": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      },
+      "facing-south": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "minecraft:air",
+              "age": "",
+              "facing": "",
+              "can_place_at": false
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      },
+      "facing-west": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      },
+      "reopened": {
+        "mirror_exact": true,
+        "render_ready": true,
+        "camera_exact": true,
+        "stable_renders": 120,
+        "framebuffer": "1920x1080",
+        "server_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        },
+        "client_snapshot": {
+          "stages": [
+            {
+              "position": "-8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "0,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "4,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "8,122,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "0,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "4,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "8,124,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "0,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "4,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "8,126,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "-8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "0",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "-4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "1",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "0,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "2",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "4,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "3",
+              "facing": "west",
+              "can_place_at": true
+            },
+            {
+              "position": "8,128,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "stage_support_ids": [
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log",
+            "etherology:stripped_peach_log",
+            "etherology:peach_log"
+          ],
+          "placements": [
+            {
+              "position": "-6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "north",
+              "can_place_at": true
+            },
+            {
+              "position": "-2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "east",
+              "can_place_at": true
+            },
+            {
+              "position": "2,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "south",
+              "can_place_at": true
+            },
+            {
+              "position": "6,125,2",
+              "block_id": "etherology:forest_lantern",
+              "age": "4",
+              "facing": "west",
+              "can_place_at": true
+            }
+          ],
+          "placement_support_ids": [
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite",
+            "minecraft:polished_andesite"
+          ],
+          "unsupported_target": {
+            "position": "9,125,2",
+            "block_id": "minecraft:air",
+            "age": "",
+            "facing": "",
+            "can_place_at": false
+          },
+          "unsupported_support_id": "minecraft:iron_bars"
+        }
+      }
+    }
+  }
+}

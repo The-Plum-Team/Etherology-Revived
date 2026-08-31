@@ -335,24 +335,24 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Forge 1.20.1 dedicated-server game-event probe
+## Forge 1.20.1 dedicated-server registry-foundation probe
 
-The game-event registry has a separate server-only harness and a separate
+The accepted game-event and loot-condition foundation has a separate server-only harness and a separate
 repository-owned profile. It never loads the Forge client harness and never
 consults, adopts, resets, or deletes an external Minecraft profile. Its exact
 one-shot runtime is:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v2/
+scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
   game/
-  evidence/game-event-registry/
+  evidence/registry-foundation/
 ```
 
 The tracked profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
-`:forge:1.20.1:runGameEventServerProbe` task, and the complete required and
+`:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required and
 forbidden mod-ID inventories. `provision` succeeds only for a brand-new target;
 it cannot adopt or replace an existing runtime. A recapture therefore requires
-a newly bumped profile ID rather than reusing or cleaning `v2`.
+a newly bumped profile ID rather than reusing or cleaning `v4`.
 
 First build and validate the probe without launching Minecraft. Then, for a
 new profile revision only, provision once, verify the pristine layout, and let
@@ -360,7 +360,7 @@ the bounded runner invoke the named Loom task:
 
 ```bash
 ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:verifyGameEventServerProbe --console=plain
+  :forge:1.20.1:verifyRegistryFoundationServerProbe --console=plain
 python3 -B scripts/e2e/forge_server.py validate
 python3 -B scripts/e2e/forge_server.py provision
 python3 -B scripts/e2e/forge_server.py check
@@ -374,15 +374,26 @@ client markers, requires a saved world and normal shutdown, and publishes
 `done.marker` only after the report, copied server log, and launcher result pass.
 External game profiles consulted: zero.
 
-The `game-event-registry` probe checks exactly one Etherology game event:
+The `registry-foundation` probe checks exactly one Etherology game event:
 `etherology:etherology_resonance`, internal ID `etherology_resonance`, range 16.
 It observes one `SERVER_DATA_LOAD` static tag update and exact membership in
 only `minecraft:vibrations` and `minecraft:warden_can_listen`. It also records
-the full sorted loaded-mod inventory, requires Etherology and the server probe,
-and requires an empty intersection with all seven forbidden IDs. The accepted
-`v2` run passed all 31 ordered assertions, saved the world, traversed
+exactly one Etherology loot-condition type,
+`etherology:random_chance_with_fortune`, backed by
+`ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer`.
+The synthetic `etherology_e2e_server_probe:registry_foundation` table returned
+`[minecraft:gold_ingot, minecraft:stone]` for an empty tool and
+`[minecraft:diamond, minecraft:gold_ingot, minecraft:stone]` for Fortune I.
+Its pools cover chance `1`, chance `0` plus Fortune multiplier `1`, and the
+mixed chance `0.99` plus multiplier `0.01` case.
+
+The probe also records the full sorted loaded-mod inventory, requires
+Etherology and the server probe, and requires an empty intersection with all
+seven forbidden IDs. The accepted fresh repository-owned `v4` Loom-userdev run
+passed all 39 ordered assertions, saved the world, traversed
 `tags_updated`, `server_started`, `server_stopping`, and `server_stopped`, used
-`stop(false)`, and exited with code zero.
+normal `stop(false)`, and exited with code zero. The copied server log contains
+no `ERROR` or `FATAL` marker.
 
 Loom userdev leaves a proven non-daemon thread alive after normal Forge server
 shutdown on this path. Only the isolated probe schedules a terminator after it
@@ -390,42 +401,49 @@ observes `ServerStoppedEvent` and atomically publishes the report. The daemon
 terminator joins the actual stopped-event server thread before `System.exit`;
 timeout or interruption exits with status one. The runner still independently
 validates the lifecycle, report, logs, save, and zero exit. This workaround is
-not present in the production mod. The scenario is a headless registry/tag
-proof, so it neither creates nor requires screenshots.
+not present in the production mod. The scenario is a headless
+registry/tag/loot-condition proof, so it neither creates nor requires
+screenshots.
 
 Validate the completed live runtime with:
 
 ```bash
 python3 -B scripts/e2e/forge_server_evidence.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v2
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4
 ```
 
-After copying only `reports/report.json`, `reports/launcher-result.json`,
-`reports/done.marker`, and `logs/latest.log` into the exact versioned archive,
-seal it once and validate it without consulting the live runtime or current
-build outputs:
+The accepted five-file archive is
+`docs/evidence/forge-1.20.1/registry-foundation-server-v4`. Validate it without
+consulting the live runtime or current build outputs:
 
 ```bash
 python3 -B scripts/e2e/forge_server_evidence.py \
-  --create-archive-manifest \
-  docs/evidence/forge-1.20.1/game-event-registry-server-v2
-python3 -B scripts/e2e/forge_server_evidence.py \
-  --archive docs/evidence/forge-1.20.1/game-event-registry-server-v2
+  --archive docs/evidence/forge-1.20.1/registry-foundation-server-v4
 ```
 
-Archive validation proves internal capture-time integrity only.
-`validateForgeGameEventServerEvidenceArchiveIntegrity` owns that archive check,
-while `validateForgeGameEventRegistryMilestone` separately proves the exact
+That validation reports 39 assertions and the copied server-log SHA-256
+`085332dc956ea75327d820fc398e122779185c173b6f8002d9962862c9feaea2`.
+Archive validation proves capture-time payload integrity only; it does not
+compare current sources or rebuilt artifacts.
+`validateForgeRegistryFoundationServerEvidenceArchiveIntegrity` owns that
+archive check and runs the separate 63 Python runner/verifier safety tests.
+`validateForgeGameEventRegistryMilestone` and
+`validateForgeLootConditionRegistryMilestone` separately prove the exact
 current Common/Fabric/Forge artifact structure. The combined
-`validateForgeGameEventMilestone` requires both plus the current probe safety
-checks; each proof covers a distinct boundary. This narrow resonance run also
-does not satisfy the full authoritative
-registry/catalog placement-and-save smoke, sound playback, or Forge custom
-sculk-frequency behavior. Fabric's supported
+`validateForgeRegistryFoundationMilestone` requires those boundaries, the
+probe isolation checks, and v4 archive integrity.
+
+The canonical Attrahite resource remains Fabric-only because its items are not
+ported. The synthetic table proves the shared condition and serializer, not
+Attrahite gameplay or drop parity. This bounded run also does not satisfy the
+full authoritative registry/catalog placement-and-save smoke, native sound
+playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
 47 has no supported equivalent and remains deferred. The earlier Fabric `v20`
-client evidence predates the rebuilt game-event artifact and does not claim
-current equality.
+client evidence predates the registry rebuild and does not claim current
+equality. The immutable v2 game-event-only archive remains historical evidence;
+v4 supersedes it as current proof, and the current verifier intentionally does
+not accept v2 as its active archive.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:

@@ -108,7 +108,7 @@ def valid_report() -> dict[str, object]:
         for name, value in evidence.EXPECTED_ASSERTIONS
     ]
     return {
-        "schema": 1,
+        "schema": 2,
         "profile_id": evidence.PROFILE_ID,
         "scenario": evidence.SCENARIO_ID,
         "status": "passed",
@@ -127,6 +127,7 @@ def valid_report() -> dict[str, object]:
         "forbidden_mod_ids_loaded": [],
         "mods": copy.deepcopy(evidence.EXPECTED_MODS),
         "registry": copy.deepcopy(evidence.EXPECTED_REGISTRY),
+        "loot_condition": copy.deepcopy(evidence.EXPECTED_LOOT_CONDITION),
         "tags": copy.deepcopy(evidence.EXPECTED_TAGS),
         "lifecycle": list(evidence.EXPECTED_LIFECYCLE),
         "assertions": assertions,
@@ -136,6 +137,7 @@ def valid_report() -> dict[str, object]:
 def valid_server_log() -> bytes:
     lines = [
         "[Server thread/INFO] [EtherologyServerProbe] tags_updated",
+        "[Server thread/INFO] [EtherologyServerProbe] registry_foundation_checked",
         "[Server thread/INFO] Done (1.234s)! For help, type help",
         "[Server thread/INFO] [EtherologyServerProbe] server_started",
         "[LanServerPinger #1/WARN] "
@@ -266,7 +268,7 @@ class LiveEvidenceTests(unittest.TestCase):
             )
 
             self.assertEqual(evidence.PROFILE_ID, summary.profile_id)
-            self.assertEqual(31, summary.assertion_count)
+            self.assertEqual(39, summary.assertion_count)
             self.assertEqual(
                 evidence.sha256_file(fixture.scenario / "logs" / "latest.log"),
                 summary.log_sha256,
@@ -342,6 +344,44 @@ class LiveEvidenceTests(unittest.TestCase):
                 )
 
                 with self.assertRaisesRegex(evidence.EvidenceError, "registry evidence"):
+                    evidence.validate_live_runtime(
+                        fixture.runtime,
+                        fixture.profile,
+                        expected_runtime=fixture.runtime,
+                    )
+
+    def test_loot_condition_registry_and_evaluation_are_exact(self) -> None:
+        cases = (
+            ("registry_id", "minecraft:item"),
+            ("condition_id", "etherology:wrong"),
+            (
+                "etherology_condition_ids",
+                [
+                    "etherology:random_chance_with_fortune",
+                    "etherology:unexpected",
+                ],
+            ),
+            ("serializer_class", "java.lang.Object"),
+            ("probe_table_id", "etherology_e2e_server_probe:wrong"),
+            ("empty_tool_items", ["minecraft:stone"]),
+            ("fortune_one_items", ["minecraft:diamond"]),
+            ("same_state_at_server_started", 1),
+        )
+        for field, replacement in cases:
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as temporary:
+                fixture = build_fixture(Path(temporary))
+                report_path = fixture.scenario / "reports" / "report.json"
+                mutate_json(
+                    report_path,
+                    lambda report: report["loot_condition"].__setitem__(
+                        field, replacement
+                    ),
+                )
+
+                with self.assertRaisesRegex(
+                    evidence.EvidenceError,
+                    "loot-condition evidence",
+                ):
                     evidence.validate_live_runtime(
                         fixture.runtime,
                         fixture.profile,
@@ -641,6 +681,11 @@ class LiveEvidenceTests(unittest.TestCase):
         changes = (
             ("fatal", lambda log: log + "[FATAL] exploded\n", "fatal marker"),
             (
+                "error level",
+                lambda log: log + "[main/ERROR] exploded\n",
+                "fatal marker",
+            ),
+            (
                 "client",
                 lambda log: log + "[Render thread/INFO] client loaded\n",
                 "client marker",
@@ -812,23 +857,27 @@ class LiveEvidenceTests(unittest.TestCase):
             ("done", "launcher-result.json", "done.marker"),
         )
         for name, later_name, earlier_name in paths:
-            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
-                fixture = build_fixture(Path(temporary))
-                reports = fixture.scenario / "reports"
-                later = (reports / later_name).resolve()
-                earlier = (reports / earlier_name).resolve()
-                later_time = later.stat().st_mtime_ns
-                os.utime(earlier, ns=(later_time - 1, later_time - 1))
-
-                with self.assertRaisesRegex(
-                    evidence.EvidenceError,
-                    "predates|published last",
+            for offset in (-1, 0):
+                with (
+                    self.subTest(name=name, offset=offset),
+                    tempfile.TemporaryDirectory() as temporary,
                 ):
-                    evidence.validate_live_runtime(
-                        fixture.runtime,
-                        fixture.profile,
-                        expected_runtime=fixture.runtime,
-                    )
+                    fixture = build_fixture(Path(temporary))
+                    reports = fixture.scenario / "reports"
+                    later = (reports / later_name).resolve()
+                    earlier = (reports / earlier_name).resolve()
+                    invalid_time = later.stat().st_mtime_ns + offset
+                    os.utime(earlier, ns=(invalid_time, invalid_time))
+
+                    with self.assertRaisesRegex(
+                        evidence.EvidenceError,
+                        "predates|published last",
+                    ):
+                        evidence.validate_live_runtime(
+                            fixture.runtime,
+                            fixture.profile,
+                            expected_runtime=fixture.runtime,
+                        )
 
 
 class ArchiveEvidenceTests(unittest.TestCase):
@@ -854,7 +903,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
                 )
 
             self.assertEqual(evidence.PROFILE_ID, summary.profile_id)
-            self.assertEqual(31, summary.assertion_count)
+            self.assertEqual(39, summary.assertion_count)
             with self.assertRaisesRegex(evidence.EvidenceError, "already exists"):
                 evidence.write_archive_manifest(
                     fixture.profile,
@@ -965,7 +1014,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
                         expected_archive_root=archive,
                     )
 
-    def test_archive_requires_exact_destination_and_server_v2_name(self) -> None:
+    def test_archive_requires_exact_destination_and_registry_foundation_v4_name(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             fixture = build_fixture(Path(temporary_directory))
             archive = create_archive(fixture)
@@ -985,7 +1034,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
             shutil.copytree(archive, wrong_name, copy_function=shutil.copy2)
             with self.assertRaisesRegex(
                 evidence.EvidenceError,
-                "repository path|server profile v2",
+                "repository path|registry-foundation profile v4",
             ):
                 evidence.validate_archived_evidence(
                     wrong_name,
@@ -1008,7 +1057,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
                 expected_archive_root=archive,
             )
 
-            self.assertEqual(31, summary.assertion_count)
+            self.assertEqual(39, summary.assertion_count)
 
 
 if __name__ == "__main__":

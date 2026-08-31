@@ -7,18 +7,19 @@ semantics, and finish with deterministic acceptance. Every gameplay behavior mus
 runtime evidence before the release gate advances.
 
 The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation,
-bounded SharedSounds registry/resource milestone, and bounded SharedGameEvents registry/server
-milestone are accepted foundations, not the finished port.
+bounded SharedSounds registry/resource milestone, and bounded SharedGameEvents/SharedLootConditions
+registry/server foundation are accepted, not the finished port.
 Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
 lifecycle, synchronized Gecko animation, and
 packaged save/restart/reopen proof. The channel foundation now has directed fifth-tick transfer,
 redstone gating, exact `0.2` evaporation, storage endpoints, native Forge lever support, and its own
 packaged save/restart proof. SharedSounds closes the exact Common sound declarations and packaged
 resource inventory, but does not claim native playback. SharedGameEvents closes the sole deferred
-resonance declaration, both vanilla listening tags, and one real Forge dedicated-server
-registry/tag data-load proof. The broader authoritative registry spine is still the first
-incomplete forward milestone. Broad content migration must follow the ownership and dependency
-order below.
+resonance declaration and both vanilla listening tags. SharedLootConditions closes the sole
+deferred `random_chance_with_fortune` declaration and serializer. One real Forge dedicated-server
+registry-foundation proof covers both registries. The broader authoritative registry spine is
+still the first incomplete forward milestone. Broad content migration must follow the ownership
+and dependency order below.
 
 ## Audit snapshot
 
@@ -43,11 +44,12 @@ canonical Fabric graph remains authoritative until each bounded slice is accepte
 
 `SharedItems`, `SharedBlocks`, and `SharedBlockEntities` are temporary catalogs used to establish
 the loader-neutral lifecycle without replacing canonical Fabric classes. They cannot remain a
-second permanent catalog for the same identifiers. `SharedSounds` and `SharedGameEvents` are the
-accepted parts of the authoritative registry spine and the single Common declaration owners for
-their IDs. Forge attaches them before lifecycle registry events, while Fabric attaches the same
-owners from its canonical initializer. The legacy eager `EtherSounds` and `EventsRegistry` owners
-are removed. Before broad content migration, converge the remaining catalogs on one active
+second permanent catalog for the same identifiers. `SharedSounds`, `SharedGameEvents`, and
+`SharedLootConditions` are the accepted parts of the authoritative registry spine and the single
+Common declaration owners for their IDs. Forge attaches them before lifecycle registry events,
+while Fabric attaches the same owners from its canonical initializer. The legacy eager
+`EtherSounds`, `EventsRegistry`, and `LootConditions` owners are removed. Before broad content
+migration, converge the remaining catalogs on one active
 declaration owner for every registry ID and attach that declaration once per loader.
 
 The convergence must replace eager `Registry.register` calls and eager construction through
@@ -63,17 +65,18 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 ### Slice 0: build and authoritative registry spine — current forward gate
 
-This is the current forward milestone. Its bounded shared-sound and game-event steps are accepted.
-The broader catalogs and lifecycle hooks in this slice remain the first incomplete work.
+This is the current forward milestone. Its bounded shared-sound, game-event, and loot-condition
+steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
+incomplete work.
 
 Source owners:
 
 - Blocks: `ExtraBlocksRegistry`, `DecoBlocks`, `EBlocks`, `DevBlocks`, `EBlockFamilies`.
 - Items: `EItems`, `ToolItems`, `ArmorItems`, `DecoBlockItems`, `EItemGroups`.
-- Other registries: accepted Common `SharedSounds` and `SharedGameEvents`, `EntityRegistry`,
-  `EtherEnchantments`, `RecipesRegistry`, `ScreenHandlersRegistry`,
-  `EffectsRegistry`, `LootConditions`,
-  `EtherParticleTypes`, `TreesRegistry`, and `WorldGenRegistry`.
+- Other registries: accepted Common `SharedSounds`, `SharedGameEvents`, and
+  `SharedLootConditions`, `EntityRegistry`, `EtherEnchantments`, `RecipesRegistry`,
+  `ScreenHandlersRegistry`, `EffectsRegistry`, `EtherParticleTypes`, `TreesRegistry`, and
+  `WorldGenRegistry`.
 - Eager helpers: `RegistrableBlock` and `EBlock`.
 
 Accepted bounded sound foundation:
@@ -94,7 +97,7 @@ Accepted bounded sound foundation:
   immutable archive. No native
   sound-playback E2E was run; later consumer mechanics must prove playback.
 
-Accepted bounded game-event foundation:
+Accepted bounded game-event and loot-condition foundation:
 
 - `SharedGameEvents` is the sole Common deferred declaration owner for
   `etherology:etherology_resonance`. The event's internal ID is `etherology_resonance`, its range
@@ -109,21 +112,36 @@ Accepted bounded game-event foundation:
   range data flow, bootstrap paths, resources, and prohibited registration alternatives across
   Common, both transformed Common JARs, the Fabric development and remapped production JARs, and
   the Forge shadow JAR.
-- `validateForgeGameEventMilestone` combines that current-artifact gate with current probe
-  isolation checks, 62 runner/verifier safety tests, and the immutable v2 server-evidence archive.
-- The fresh repository-owned `etherology-e2e-forge-server-1.20.1-v2` profile ran the exact
-  `:forge:1.20.1:runGameEventServerProbe` Loom-userdev task as a real Java 17 dedicated server. It
-  passed 31 of 31 ordered assertions covering the full loaded-mod inventory, an empty forbidden
-  intersection, sole registry ID and exact event fields, `SERVER_DATA_LOAD` tag binding,
-  `stop(false)`, and the complete stopped lifecycle. The runner additionally required a saved
-  world and process exit code zero.
+- `SharedLootConditions` is the sole Common deferred owner of
+  `etherology:random_chance_with_fortune`. Both loaders bind it to
+  `ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer`, with exact
+  ownership checked across the Common and loader artifact boundaries.
+- The canonical Attrahite loot table remains Fabric-only because its items have not been ported.
+  The probe-owned synthetic table proves the condition and serializer, not Attrahite gameplay or
+  drop parity.
+- `validateForgeRegistryFoundationMilestone` combines the sound, game-event, and loot-condition
+  artifact gates with current probe isolation checks, the 63 runner/verifier safety tests, and the
+  immutable `registry-foundation-server-v4` evidence archive.
+- The fresh repository-owned `etherology-e2e-forge-server-1.20.1-v4` profile ran the exact
+  `:forge:1.20.1:runRegistryFoundationServerProbe` Loom-userdev task on a real Java 17 Forge 47.4.9
+  dedicated server. Its headless `registry-foundation` scenario passed 39 of 39 ordered assertions
+  covering the full loaded-mod inventory, an empty forbidden intersection, the exact sole game
+  event and its two tags, and the exact sole loot-condition type and serializer.
+- The synthetic table returned `[minecraft:gold_ingot, minecraft:stone]` with an empty tool and
+  `[minecraft:diamond, minecraft:gold_ingot, minecraft:stone]` with Fortune I. Its pools include
+  chance `1`, chance `0` plus Fortune multiplier `1`, and the mixed chance `0.99` plus multiplier
+  `0.01` cases.
+- The runner additionally required a saved world, normal `stop(false)`, process exit code zero,
+  and no `ERROR` or `FATAL` log marker.
 - The probe publishes its report only after observing `ServerStoppedEvent`. It then schedules a
   probe-only terminator that joins the actual stopped-event server thread before `System.exit`,
   working around a proven Loom-userdev non-daemon thread leak. The external runner validates the
   report, log, world, lifecycle, and exit result. Production Etherology contains no such exit path.
-- This is a headless registry proof, so it produces no screenshots. It does not satisfy sound
-  playback or the full-catalog placement/save smoke. The earlier Fabric `v20` client evidence also
-  predates this rebuilt game-event artifact and does not claim current-artifact equality.
+- This is a headless registry proof, so it produces no screenshots. It does not satisfy native
+  sound playback, Forge's deferred custom sculk frequency, or the full-catalog placement/save
+  smoke. The immutable v2 game-event archive remains historical evidence; v4 supersedes it as
+  current proof. The earlier Fabric `v20` client evidence predates this registry rebuild and does
+  not claim current-artifact equality.
 
 Implementation:
 
@@ -151,7 +169,8 @@ Remaining full-slice proof:
 - Exact Fabric/Forge registry-ID manifest comparison.
 - Duplicate-ID and premature-supplier-resolution unit tests.
 - Dedicated-server datapack startup with no missing registry or codec errors across the full
-  accepted catalog; the bounded resonance-only server proof does not satisfy this broader check.
+  accepted catalog; the bounded registry-foundation server proof does not satisfy this broader
+  check.
 - `/give`, placement, save, and reload smoke coverage for every ID in the accepted catalog.
 
 This slice blocks broad content migration. The already-started storage mechanic may finish first
@@ -304,9 +323,9 @@ record is the
 
 The bounded `validateForgeChannelNetworkMilestone` has since been accepted with its own fresh
 native evidence; the storage run was not reused as channel proof. The bounded
-`validateForgeSoundRegistryMilestone` and SharedGameEvents registry/server milestone are also
-accepted, so the broader authoritative registry spine is now the first incomplete stage in the
-release dependency graph. The unconditional
+`validateForgeSoundRegistryMilestone` and the SharedGameEvents/SharedLootConditions
+registry-foundation milestone are also accepted, so the broader authoritative registry spine is
+now the first incomplete stage in the release dependency graph. The unconditional
 `validateForgeReleaseReadinessMilestone` remains behind every forward gate and cannot be satisfied
 by class or method stubs or by reusing either bounded archive. The release graph must never remove
 or relax a stage merely to allow `remapJar`.
@@ -702,14 +721,15 @@ Compilation, deterministic bytecode structure, and resource presence still canno
 gameplay evidence. Conversely, native evidence cannot excuse missing deterministic unit and
 integration tests.
 
-The bounded storage, channel-foundation, SharedSounds registry/resource, and SharedGameEvents
-registry/server gates are currently positive. The game-event proof combines exact cross-loader
-artifact inspection with a real Java 17 Forge dedicated server and 31 independently checked
-assertions; it remains narrower than full-catalog placement/save acceptance. The broader
-authoritative registry spine is the next fail-closed milestone. Sound playback and Forge's custom
-sculk frequency remain owned by later consumer-mechanic evidence, and the deferred portions of the
-channel and machine graph remain part of the later full-slice acceptance rather than being inferred
-from the Channel run, static sound gate, or resonance-only server run.
+The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents, and
+SharedLootConditions registry/server gates are currently positive. The v4 registry-foundation
+proof combines exact cross-loader artifact inspection with a real Java 17 Forge 47.4.9 dedicated
+server, 39 independently checked assertions, and 63 Python safety tests; it remains narrower than
+full-catalog placement/save acceptance. The broader authoritative registry spine is the next
+fail-closed milestone. Sound playback and Forge's custom sculk frequency remain owned by later
+consumer-mechanic evidence, and the deferred portions of the channel and machine graph remain part
+of the later full-slice acceptance rather than being inferred from the Channel run, static sound
+gate, or bounded registry-foundation server run.
 
 The final release-readiness task intentionally fails unconditionally until all required slices
 pass, a dedicated server starts cleanly, an isolated Forge client completes the required scenario

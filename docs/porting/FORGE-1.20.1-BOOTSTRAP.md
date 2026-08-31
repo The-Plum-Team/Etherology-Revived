@@ -1,7 +1,8 @@
-# Forge 1.20.1 bootstrap, storage, channel, sound, and game-event status
+# Forge 1.20.1 bootstrap, storage, channel, sound, and registry-foundation status
 
 The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and
-accepted bounded item, storage, channel, sound-registry, and game-event registry/server milestones.
+accepted bounded item, storage, channel, sound-registry, game-event, and loot-condition
+registry/server milestones.
 Its ethereal-storage
 vertical persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
 vanilla sided insertion and native Forge item-handler access, transfers Ether into canonical Glint
@@ -17,13 +18,17 @@ subtitles. It does not prove native playback. The game-event milestone gives
 `etherology:etherology_resonance` one Common deferred owner, preserves internal ID
 `etherology_resonance` and range 16, packages exact vanilla `vibrations` and
 `warden_can_listen` tag membership on both loaders, and adds a real Forge dedicated-server
-registry/tag data-load proof. Channel cases, particles, loot and recipes, the wider machine/network
-graph, most of the authoritative registry spine, and a playable Etherology port remain incomplete.
+registry/tag data-load proof. The loot-condition milestone gives
+`etherology:random_chance_with_fortune` one Common deferred owner and proves its canonical
+serializer with a synthetic server loot table. Channel cases, particles, the remaining loot and
+recipes, the wider machine/network graph, most of the authoritative registry spine, and a playable
+Etherology port remain incomplete.
 The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
 `EtherologyBootstrap` attaches the shared block, item, block-entity, screen-handler, sound-event,
-and game-event registries during `@Mod` construction, before Forge registry events run. It delegates
+game-event, and loot-condition registries during `@Mod` construction, before Forge registry events
+run. It delegates
 handshake idempotence and failure state to `BootstrapLifecycle`. `PlatformRegistrar` supplies the
 loader boundary. The native `ForgePlatformRegistrar` listens for `FMLCommonSetupEvent` and uses
 `enqueueWork` so the handshake runs on Forge's setup work queue instead of its parallel
@@ -71,31 +76,35 @@ client systems have been registered.
   bootstrap paths, Fabric's sole supported frequency hook, prohibited direct alternatives, and
   both packaged vanilla tags across Common, transformed Common, Fabric development/remapped
   production, and Forge shadow artifacts.
-- `verifyGameEventServerProbe` is expected to pass without launching Minecraft. It builds and
+- `validateForgeLootConditionRegistryMilestone` is expected to pass. It requires the game-event
+  milestone and proves that `SharedLootConditions` is the sole deferred owner of
+  `etherology:random_chance_with_fortune`, backed by
+  `RandomChanceWithFortuneConditionSerializer`, across the Common and loader artifact boundaries.
+- `verifyRegistryFoundationServerProbe` is expected to pass without launching Minecraft. It builds and
   tests the server-only probe, validates its Java 17 Loom configuration and exact `main` plus
   probe-mod binding, requires the dev-launch-injector bootstrap, and proves that probe classes do
   not enter the production artifact. The actual launch is owned by
   `scripts/e2e/forge_server.py run`, which invokes
-  `:forge:1.20.1:runGameEventServerProbe` inside the isolated profile.
-- `validateForgeGameEventServerEvidenceArchiveIntegrity` is expected to pass. It runs the 62
-  runner/verifier safety tests and validates the immutable five-file v2 archive independently of
-  the ignored live runtime.
-- `validateForgeGameEventMilestone` is the combined positive gate. It requires the static
-  cross-loader registry/tag proof, current probe isolation checks, and frozen dedicated-server
-  evidence before the broader authoritative registry gate may run.
+  `:forge:1.20.1:runRegistryFoundationServerProbe` inside the isolated profile.
+- `validateForgeRegistryFoundationServerEvidenceArchiveIntegrity` is expected to pass. It runs
+  the 63 runner/verifier safety tests and validates the immutable five-file v4 archive independently
+  of the ignored live runtime.
+- `validateForgeRegistryFoundationMilestone` is the combined positive gate. It requires the
+  sound, game-event, and loot-condition artifact proofs, current probe isolation checks, and frozen
+  dedicated-server evidence before the broader authoritative registry gate may run.
 - `validateForgeChannelCurrentArtifactDiagnostic` is deliberately not an acceptance dependency.
   It now fails because the later sound milestone changed the whole production JAR relative to the
   Channel capture. That expected byte mismatch is not a Channel regression and does not establish
   current equality.
 - `verifyForgePortGateClosed` is expected to pass. It is a diagnostic task, not an artifact gate:
   after requiring every accepted positive gate, it reports the first incomplete forward stage.
-  That stage is now the broader authoritative registry spine; the bounded sound and game-event
-  steps are no longer in its missing-condition list.
+  That stage is now the broader authoritative registry spine; the bounded sound, game-event, and
+  loot-condition steps are no longer in its missing-condition list.
 - `validateForgeReleaseReadinessMilestone` is a permanent final backstop after every bounded
   forward gate. It fails unconditionally until the full gameplay graph and complete packaged
   native Forge client, dedicated-server, persistence, and E2E matrix are implemented and the task
   itself is replaced by concrete acceptance checks. The bounded Storage and Channel runs, static
-  sound gate, and resonance-only dedicated-server proof are not sufficient. Class or method-name
+  sound gate, and registry-foundation dedicated-server proof are not sufficient. Class or method-name
   stubs cannot open this gate.
 - `validateForgePortInputs`, `remapJar`, and every future `publish*` task depend on every accepted
   positive gate plus the remaining authoritative-registry, gameplay, and final-readiness
@@ -236,7 +245,7 @@ Fabric-transform, Forge-transform, remapped Fabric-production, and Forge-shadow 
 native sound-playback E2E was run for this static milestone; each later consumer mechanic must
 prove that it plays the expected event.
 
-## Accepted bounded SharedGameEvents registry and server milestone
+## Accepted bounded registry foundation and server milestone
 
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`. It constructs exactly one game event whose internal ID is
@@ -255,15 +264,30 @@ JAR retain exactly one shared owner and exclude the removed eager `EventsRegistr
 constructor ownership, early supplier resolution, direct Fabric registration outside the supported
 frequency hook, and direct mutation of vanilla frequency storage.
 
-The static artifact proof is paired with a real Java 17 Forge dedicated server in the fresh,
-repository-owned `etherology-e2e-forge-server-1.20.1-v2` profile. The headless Loom-userdev
-`game-event-registry` scenario passed all 31 ordered assertions: dedicated-server distribution,
-required mods, the full sorted loaded-mod inventory, absence of every forbidden mod and an empty
-forbidden intersection, the sole Etherology game-event ID and exact event fields,
-`SERVER_DATA_LOAD` static tag binding exactly once, exact membership in only the two accepted
-vanilla tags, `stop(false)`, and the complete stopped lifecycle. The runner additionally required
-a saved world and process exit code zero. No screenshots are produced or claimed for this
-server-only registry proof.
+`SharedLootConditions` is the sole Common deferred owner of
+`etherology:random_chance_with_fortune`. Both loaders bind that ID to
+`ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer`, with exact ownership
+checked across the Common, transformed Common, Fabric, and Forge production boundaries. The
+canonical Attrahite loot-table resource remains Fabric-only because the items it references have
+not been ported. A probe-owned synthetic table tests the condition without packaging that resource
+for Forge.
+
+These static artifact proofs are paired with a fresh repository-owned Loom-userdev server in the
+`etherology-e2e-forge-server-1.20.1-v4` profile. The headless `registry-foundation` scenario ran
+the exact `:forge:1.20.1:runRegistryFoundationServerProbe` task on a real Java 17 Forge 47.4.9
+dedicated server and passed all 39 ordered assertions. Separately, all 63 Python runner/verifier
+safety tests pass. The run proved the exact sole game event and two tags, the exact sole loot-condition type and
+serializer, and stable state after server data load. The synthetic table's sorted outputs were
+`[minecraft:gold_ingot, minecraft:stone]` with an empty tool and
+`[minecraft:diamond, minecraft:gold_ingot, minecraft:stone]` with Fortune I. Its three pools cover
+chance `1` with multiplier `0`, chance `0` with multiplier `1`, and the mixed chance `0.99` plus
+multiplier `0.01` case.
+
+The runner required a saved world, normal `stop(false)`, exit code zero, and no `ERROR` or `FATAL`
+log marker. No screenshots are produced or claimed for this server-only proof. The synthetic table
+proves the shared condition and serializer; it does not prove Attrahite gameplay or drop parity.
+The immutable v2 game-event-only archive remains historical evidence, but v4 supersedes it as the
+current registry-foundation proof.
 
 The probe observes `ServerStoppedEvent` and atomically publishes its report before scheduling a
 probe-only terminator. That path joins the actual stopped-event server thread before `System.exit`
@@ -271,7 +295,7 @@ and works around a proven non-daemon Loom-userdev thread leak that would otherwi
 alive; it does not enter the production artifact. The external runner bounds and validates the
 process log, server log, report, saved world, lifecycle, crash state, completion-marker order, and
 exit result.
-The earlier Fabric `v20` packaged startup evidence predates this game-event rebuild and therefore
+The earlier Fabric `v20` packaged startup evidence predates this registry rebuild and therefore
 does not claim equality with the current Fabric production JAR.
 
 ## Forward fail-closed broader authoritative registry milestone
@@ -279,8 +303,9 @@ does not claim equality with the current Fabric production JAR.
 The next forward gate remains the rest of the authoritative registry spine. The temporary block,
 item, block-entity, and screen-handler catalogs must converge into one active declaration owner per
 canonical ID without shadowing Fabric classes or resolving suppliers during declaration. Entity,
-enchantment, recipe, effect, remaining game-event consumers, loot, particle, tree,
-world-generation, and lifecycle-hook ownership also remains incomplete. The resonance-only server
+enchantment, recipe, effect, remaining game-event and loot consumers, particle, tree,
+world-generation, and lifecycle-hook ownership also remains incomplete. The bounded
+registry-foundation server
 proof does not satisfy the full registry/catalog placement-and-save smoke. The unfinished portions
 of the Ether graph stay behind that work.
 
@@ -292,9 +317,9 @@ E2E slice.
 
 - The common JAR contains component state/access contracts, the loader handshake,
   `etherology:ether`, the accepted bounded ethereal-storage vertical, and the accepted bounded
-  ethereal-channel foundation. `SharedSounds` and `SharedGameEvents` now own the accepted Common
-  sound and resonance declarations, but the other temporary catalogs have not yet converged into
-  the authoritative registry spine.
+  ethereal-channel foundation. `SharedSounds`, `SharedGameEvents`, and `SharedLootConditions` now
+  own the accepted Common sound, resonance, and Fortune-scaled condition declarations, but the
+  other temporary catalogs have not yet converged into the authoritative registry spine.
 - The canonical initializer remains in the Fabric production source graph. Of 352 canonical main
   Java files, 22 directly import Fabric API, Biolith, Trinkets, or Fabric Shield Lib through 34
   import statements. Transitive ownership work remains beyond that lower bound.
@@ -310,7 +335,7 @@ E2E slice.
 - The client tree has 211 Java files; 64 directly import Fabric, REI/EMI, owo, Biolith, Trinkets, or
   Fabric Shield Lib APIs and still need common-versus-loader ownership decisions.
 
-The next gameplay slice is the broader authoritative registry spine after the accepted SharedSounds
-and SharedGameEvents foundations. A release remains invalid until that gate, the full-catalog
+The next gameplay slice is the broader authoritative registry spine after the accepted SharedSounds,
+SharedGameEvents, and SharedLootConditions foundations. A release remains invalid until that gate, the full-catalog
 dedicated-server placement/save smoke, the deferred channel and sculk-frequency work, every
 subsequent gameplay system, and the full native E2E matrix are ported and accepted.

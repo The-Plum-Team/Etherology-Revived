@@ -14,6 +14,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -31,10 +32,10 @@ import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Exercises the shared game-event registry and tags in a real dedicated Forge server.
+ * Exercises the shared registry foundation in a real dedicated Forge server.
  */
-@Mod(GameEventServerProbe.MOD_ID)
-public final class GameEventServerProbe {
+@Mod(RegistryFoundationServerProbe.MOD_ID)
+public final class RegistryFoundationServerProbe {
 
     /**
      * Identifies the isolated server-only probe mod.
@@ -73,6 +74,7 @@ public final class GameEventServerProbe {
     private final String runtimeKind;
     private final String scenarioId;
 
+    private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
     private String registryEventId = "";
@@ -94,6 +96,8 @@ public final class GameEventServerProbe {
     private boolean serverStartedModsRechecked;
     private boolean serverStartedRegistryRechecked;
     private boolean serverStartedTagsRechecked;
+    private boolean lootConditionCapturedAfterServerDataLoad;
+    private boolean serverStartedLootConditionRechecked;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
     private boolean stoppedServerMatched;
@@ -101,7 +105,7 @@ public final class GameEventServerProbe {
     /**
      * Rejects every non-dedicated distribution before registering lifecycle callbacks.
      */
-    public GameEventServerProbe() {
+    public RegistryFoundationServerProbe() {
         if (FMLEnvironment.dist != Dist.DEDICATED_SERVER) {
             throw new IllegalStateException(
                     "The Etherology server probe requires DEDICATED_SERVER, found "
@@ -150,6 +154,19 @@ public final class GameEventServerProbe {
     }
 
     /**
+     * Evaluates the loaded probe table once server data and the overworld are both available.
+     *
+     * @param event the starting dedicated server after its server-data load
+     */
+    @SubscribeEvent
+    public void onServerStarting(ServerStartingEvent event) {
+        lootConditionCapturedAfterServerDataLoad = tagUpdateCount == 1
+                && lifecycle.equals(List.of("tags_updated"));
+        lootConditionState = LootConditionProbeState.capture(event.getServer());
+        LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
+    }
+
+    /**
      * Rechecks the loaded mods and accepted state before requesting a normal server stop.
      *
      * @param event the ready dedicated server
@@ -184,6 +201,12 @@ public final class GameEventServerProbe {
                 && wardenCanListenContainsEvent
                 && hasExactEtherologyTagMemberships(startedMemberships)
                 && hasExactCapturedEtherologyTagMemberships();
+        LootConditionProbeState startedLootConditionState = LootConditionProbeState.capture(
+                event.getServer()
+        );
+        serverStartedLootConditionRechecked = lootConditionState.sameStateAtServerStarted(
+                startedLootConditionState
+        );
         stopRequestedWithoutRestart = true;
         event.getServer().stop(false);
     }
@@ -307,6 +330,47 @@ public final class GameEventServerProbe {
                 Integer.toString(eventRange));
         addAssertion(
                 assertions,
+                "registry:loot_condition:etherology:random_chance_with_fortune",
+                "present",
+                presentState(lootConditionState.conditionType() != null)
+        );
+        addAssertion(
+                assertions,
+                "registry:loot_condition_etherology_ids_exact",
+                LootConditionProbeState.CONDITION_ID.toString(),
+                String.join(",", lootConditionState.etherologyConditionIds())
+        );
+        addAssertion(
+                assertions,
+                "registry:loot_condition_serializer_class",
+                LootConditionProbeState.EXPECTED_SERIALIZER_CLASS,
+                lootConditionState.serializerClass()
+        );
+        addAssertion(
+                assertions,
+                "loot_table:probe_table_loaded",
+                LootConditionProbeState.PROBE_TABLE_ID.toString(),
+                lootConditionState.probeTableId()
+        );
+        addAssertion(
+                assertions,
+                "loot_table:empty_tool_items_exact",
+                String.join(",", LootConditionProbeState.EXPECTED_EMPTY_TOOL_ITEMS),
+                String.join(",", lootConditionState.emptyToolItems())
+        );
+        addAssertion(
+                assertions,
+                "loot_table:fortune_one_items_exact",
+                String.join(",", LootConditionProbeState.EXPECTED_FORTUNE_ONE_ITEMS),
+                String.join(",", lootConditionState.fortuneOneItems())
+        );
+        addBooleanAssertion(
+                assertions,
+                "loot_condition_captured_after_server_data_load",
+                lootConditionCapturedAfterServerDataLoad
+        );
+        addAssertion(
+                assertions,
                 "tags_update_cause",
                 TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD.name(),
                 updateCause
@@ -367,6 +431,11 @@ public final class GameEventServerProbe {
                 "server_started_tags_rechecked",
                 serverStartedTagsRechecked
         );
+        addBooleanAssertion(
+                assertions,
+                "server_started_loot_condition_rechecked",
+                serverStartedLootConditionRechecked
+        );
         addAssertion(
                 assertions,
                 "server_stop_requested_without_restart",
@@ -382,7 +451,7 @@ public final class GameEventServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 1);
+        report.addProperty("schema", 2);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -396,6 +465,7 @@ public final class GameEventServerProbe {
         report.add("forbidden_mod_ids_loaded", buildStringArray(forbiddenModIdsLoaded));
         report.add("mods", buildMods(etherologyLoaded, probeLoaded));
         report.add("registry", buildRegistry());
+        report.add("loot_condition", buildLootCondition());
         report.add("tags", buildTags());
         report.add("lifecycle", buildLifecycle());
         report.add("assertions", assertions);
@@ -463,6 +533,34 @@ public final class GameEventServerProbe {
                 serverStartedRegistryRechecked
         );
         return registry;
+    }
+
+    private JsonObject buildLootCondition() {
+        JsonObject lootCondition = new JsonObject();
+        lootCondition.addProperty(
+                "registry_id",
+                LootConditionProbeState.LOOT_CONDITION_REGISTRY_ID
+        );
+        lootCondition.addProperty("condition_id", lootConditionState.conditionId());
+        lootCondition.add(
+                "etherology_condition_ids",
+                buildStringArray(lootConditionState.etherologyConditionIds())
+        );
+        lootCondition.addProperty("serializer_class", lootConditionState.serializerClass());
+        lootCondition.addProperty("probe_table_id", lootConditionState.probeTableId());
+        lootCondition.add(
+                "empty_tool_items",
+                buildStringArray(lootConditionState.emptyToolItems())
+        );
+        lootCondition.add(
+                "fortune_one_items",
+                buildStringArray(lootConditionState.fortuneOneItems())
+        );
+        lootCondition.addProperty(
+                "same_state_at_server_started",
+                serverStartedLootConditionRechecked
+        );
+        return lootCondition;
     }
 
     private JsonObject buildTags() {

@@ -8,7 +8,7 @@ version="${version}"
 displayName="Etherology Forge Dedicated-Server Probe"
 authors="The Plum Team"
 description='''
-Server-only black-box verification for Etherology's shared game-event registry and tags.
+Server-only black-box verification for Etherology's shared registry foundation.
 This probe is never a release dependency or publication artifact.
 '''
 

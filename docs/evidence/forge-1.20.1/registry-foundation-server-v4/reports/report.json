@@ -1,0 +1,346 @@
+{
+  "schema": 2,
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v4",
+  "scenario": "registry-foundation",
+  "status": "passed",
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "loader_version": "47.4.9",
+  "java": 17,
+  "distribution": "DEDICATED_SERVER",
+  "runtime_kind": "loom-userdev",
+  "loaded_mod_ids": [
+    "architectury",
+    "etherology",
+    "etherology_e2e_server_probe",
+    "forge",
+    "geckolib",
+    "generated_a788a0c",
+    "minecraft"
+  ],
+  "forbidden_mod_ids_loaded": [],
+  "mods": {
+    "etherology": {
+      "loaded": true
+    },
+    "etherology_e2e_server_probe": {
+      "loaded": true
+    },
+    "etherology_e2e_harness": {
+      "loaded": false
+    },
+    "quickskin": {
+      "loaded": false
+    },
+    "cpm": {
+      "loaded": false
+    },
+    "ears": {
+      "loaded": false
+    },
+    "modmenu": {
+      "loaded": false
+    },
+    "roughlyenoughitems": {
+      "loaded": false
+    },
+    "emi": {
+      "loaded": false
+    }
+  },
+  "registry": {
+    "registry_id": "minecraft:game_event",
+    "event_id": "etherology:etherology_resonance",
+    "etherology_event_ids": [
+      "etherology:etherology_resonance"
+    ],
+    "internal_id": "etherology_resonance",
+    "range": 16,
+    "same_instance_at_server_started": true
+  },
+  "loot_condition": {
+    "registry_id": "minecraft:loot_condition_type",
+    "condition_id": "etherology:random_chance_with_fortune",
+    "etherology_condition_ids": [
+      "etherology:random_chance_with_fortune"
+    ],
+    "serializer_class": "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer",
+    "probe_table_id": "etherology_e2e_server_probe:registry_foundation",
+    "empty_tool_items": [
+      "minecraft:gold_ingot",
+      "minecraft:stone"
+    ],
+    "fortune_one_items": [
+      "minecraft:diamond",
+      "minecraft:gold_ingot",
+      "minecraft:stone"
+    ],
+    "same_state_at_server_started": true
+  },
+  "tags": {
+    "update_cause": "SERVER_DATA_LOAD",
+    "should_update_static_data": true,
+    "update_count": 1,
+    "vibrations": {
+      "id": "minecraft:vibrations",
+      "contains_event": true,
+      "etherology_event_ids": [
+        "etherology:etherology_resonance"
+      ]
+    },
+    "warden_can_listen": {
+      "id": "minecraft:warden_can_listen",
+      "contains_event": true,
+      "etherology_event_ids": [
+        "etherology:etherology_resonance"
+      ]
+    },
+    "etherology_tag_ids": [
+      "minecraft:vibrations",
+      "minecraft:warden_can_listen"
+    ],
+    "same_membership_at_server_started": true
+  },
+  "lifecycle": [
+    "tags_updated",
+    "server_started",
+    "server_stopping",
+    "server_stopped"
+  ],
+  "assertions": [
+    {
+      "name": "distribution_dedicated_server",
+      "passed": true,
+      "expected": "DEDICATED_SERVER",
+      "actual": "DEDICATED_SERVER"
+    },
+    {
+      "name": "runtime_kind_loom_userdev",
+      "passed": true,
+      "expected": "loom-userdev",
+      "actual": "loom-userdev"
+    },
+    {
+      "name": "mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "mod_loaded:etherology_e2e_server_probe",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "mod_absent:etherology_e2e_harness",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:quickskin",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:cpm",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:ears",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:modmenu",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:roughlyenoughitems",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:emi",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mods_forbidden_intersection_empty",
+      "passed": true,
+      "expected": "none",
+      "actual": "none"
+    },
+    {
+      "name": "registry:game_event:etherology:etherology_resonance",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:game_event_etherology_ids_exact",
+      "passed": true,
+      "expected": "etherology:etherology_resonance",
+      "actual": "etherology:etherology_resonance"
+    },
+    {
+      "name": "registry_internal_id",
+      "passed": true,
+      "expected": "etherology_resonance",
+      "actual": "etherology_resonance"
+    },
+    {
+      "name": "registry_range",
+      "passed": true,
+      "expected": "16",
+      "actual": "16"
+    },
+    {
+      "name": "registry:loot_condition:etherology:random_chance_with_fortune",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:loot_condition_etherology_ids_exact",
+      "passed": true,
+      "expected": "etherology:random_chance_with_fortune",
+      "actual": "etherology:random_chance_with_fortune"
+    },
+    {
+      "name": "registry:loot_condition_serializer_class",
+      "passed": true,
+      "expected": "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer",
+      "actual": "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer"
+    },
+    {
+      "name": "loot_table:probe_table_loaded",
+      "passed": true,
+      "expected": "etherology_e2e_server_probe:registry_foundation",
+      "actual": "etherology_e2e_server_probe:registry_foundation"
+    },
+    {
+      "name": "loot_table:empty_tool_items_exact",
+      "passed": true,
+      "expected": "minecraft:gold_ingot,minecraft:stone",
+      "actual": "minecraft:gold_ingot,minecraft:stone"
+    },
+    {
+      "name": "loot_table:fortune_one_items_exact",
+      "passed": true,
+      "expected": "minecraft:diamond,minecraft:gold_ingot,minecraft:stone",
+      "actual": "minecraft:diamond,minecraft:gold_ingot,minecraft:stone"
+    },
+    {
+      "name": "loot_condition_captured_after_server_data_load",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tags_update_cause",
+      "passed": true,
+      "expected": "SERVER_DATA_LOAD",
+      "actual": "SERVER_DATA_LOAD"
+    },
+    {
+      "name": "tags_static_data",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tags_update_count",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "tag:vibrations_contains_resonance",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tag:vibrations_etherology_entries_exact",
+      "passed": true,
+      "expected": "etherology:etherology_resonance",
+      "actual": "etherology:etherology_resonance"
+    },
+    {
+      "name": "tag:warden_can_listen_contains_resonance",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tag:warden_can_listen_etherology_entries_exact",
+      "passed": true,
+      "expected": "etherology:etherology_resonance",
+      "actual": "etherology:etherology_resonance"
+    },
+    {
+      "name": "tags:etherology_tag_ids_exact",
+      "passed": true,
+      "expected": "minecraft:vibrations,minecraft:warden_can_listen",
+      "actual": "minecraft:vibrations,minecraft:warden_can_listen"
+    },
+    {
+      "name": "tags_before_server_started",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_mods_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_registry_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_tags_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_loot_condition_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_stop_requested_without_restart",
+      "passed": true,
+      "expected": "stop(false)",
+      "actual": "stop(false)"
+    },
+    {
+      "name": "server_lifecycle_identity",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "lifecycle",
+      "passed": true,
+      "expected": "tags_updated\u003eserver_started\u003eserver_stopping\u003eserver_stopped",
+      "actual": "tags_updated\u003eserver_started\u003eserver_stopping\u003eserver_stopped"
+    }
+  ]
+}

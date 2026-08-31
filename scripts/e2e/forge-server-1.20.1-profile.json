@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "profile": {
-    "id": "etherology-e2e-forge-server-1.20.1-v2",
-    "runtime_directory": "etherology-e2e-forge-server-1.20.1-v2",
+    "id": "etherology-e2e-forge-server-1.20.1-v4",
+    "runtime_directory": "etherology-e2e-forge-server-1.20.1-v4",
     "game_directory": "game"
   },
   "release": {
@@ -15,13 +15,13 @@
   },
   "launch": {
     "kind": "loom-userdev",
-    "task_path": ":forge:1.20.1:runGameEventServerProbe",
-    "scenario": "game-event-registry",
+    "task_path": ":forge:1.20.1:runRegistryFoundationServerProbe",
+    "scenario": "registry-foundation",
     "maximum_memory_mb": 2048
   },
   "evidence": {
     "directory": "evidence",
-    "scenario_directory": "game-event-registry",
+    "scenario_directory": "registry-foundation",
     "report": "reports/report.json",
     "launcher_result": "reports/launcher-result.json",
     "completion_marker": "reports/done.marker",

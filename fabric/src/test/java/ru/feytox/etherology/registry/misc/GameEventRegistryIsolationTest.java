@@ -91,6 +91,9 @@ final class GameEventRegistryIsolationTest {
         int gameEventAttachment = initializationInvocations.indexOf(
                 SHARED_GAME_EVENTS_OWNER + "#register()V"
         );
+        int lootConditionAttachment = initializationInvocations.indexOf(
+                "ru/feytox/etherology/registry/misc/SharedLootConditions#register()V"
+        );
         int frequencyHook = initializationInvocations.indexOf(
                 "ru/feytox/etherology/FabricGameEventHooks"
                         + "#registerSculkSensorFrequency()V"
@@ -98,7 +101,8 @@ final class GameEventRegistryIsolationTest {
 
         assertTrue(soundAttachment >= 0);
         assertEquals(soundAttachment + 1, gameEventAttachment);
-        assertEquals(gameEventAttachment + 1, frequencyHook);
+        assertEquals(gameEventAttachment + 1, lootConditionAttachment);
+        assertEquals(lootConditionAttachment + 1, frequencyHook);
         assertEquals(1, count(
                 initializationInvocations,
                 SHARED_GAME_EVENTS_OWNER + "#register()V"

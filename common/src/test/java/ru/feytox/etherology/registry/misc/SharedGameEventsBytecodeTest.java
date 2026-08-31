@@ -248,7 +248,7 @@ final class SharedGameEventsBytecodeTest {
     }
 
     @Test
-    void attachesAfterSoundsAndBeforeTheLifecycleHandshake() throws IOException {
+    void attachesAfterSoundsAndBeforeLootConditions() throws IOException {
         List<String> invocations = invocationsByMethod(BOOTSTRAP_CLASS).get(
                 "initialize(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
         );
@@ -258,14 +258,13 @@ final class SharedGameEventsBytecodeTest {
         int gameEventAttachment = invocations.indexOf(
                 SHARED_GAME_EVENTS + "#register()V"
         );
-        int lifecycleHandshake = invocations.indexOf(
-                "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"
-                        + "(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
+        int lootConditionAttachment = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/SharedLootConditions#register()V"
         );
 
         assertTrue(soundAttachment >= 0);
         assertEquals(soundAttachment + 1, gameEventAttachment);
-        assertEquals(gameEventAttachment + 1, lifecycleHandshake);
+        assertEquals(gameEventAttachment + 1, lootConditionAttachment);
         assertEquals(1, count(invocations, SHARED_GAME_EVENTS + "#register()V"));
     }
 

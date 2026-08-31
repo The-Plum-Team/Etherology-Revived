@@ -1,9 +1,9 @@
 # Forge 1.20.1 runtime evidence
 
-This directory contains frozen evidence captured from a real Minecraft Forge
-client on the baseline Mac. The run used a new repository-owned profile under
-`scripts/e2e/.state/`; it did not read, modify, or derive data from an external
-launcher profile.
+This directory contains frozen evidence captured from real Minecraft Forge
+clients and a dedicated server on the baseline Mac. Every run used a new
+repository-owned profile under `scripts/e2e/.state/`; none read, modified, or
+derived data from an external launcher profile.
 
 ## Ethereal Storage (v7)
 
@@ -189,12 +189,108 @@ This accepts only the shared ethereal-channel foundation and its bounded
 network behavior with storage endpoints and native Forge lever support. Channel
 case interaction and registration, channel particles and the client ticker,
 channel loot and recipe data, and the wider machine/network graph remain
-deferred. The bounded SharedSounds registry/resource milestone has since passed,
-but no native sound-playback E2E was run and this directory is not playback
-evidence. The broader authoritative registry spine is the next forward gate.
-The Forge release gate remains closed.
+deferred. The bounded SharedSounds, SharedGameEvents, and SharedLootConditions
+registry foundation has since passed, but no native sound-playback E2E was run
+and this directory is not playback evidence. The broader authoritative registry
+spine is the next forward gate. The Forge release gate remains closed.
 
-## Shared game-event dedicated server (v2)
+## Current registry-foundation dedicated server (v4)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v4`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4`
+- Scenario: `registry-foundation`
+- Tracked profile manifest SHA-256:
+  `c479fd833cae80e0a6446d40e2728d7ecaabd82e4d9657698cfb3a32fdd8bbb5`
+- Tracked profile manifest size: `1192` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: fresh repository-owned Loom-userdev dedicated server
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `2`; archive-manifest schema: `1`
+- Report status: `passed`
+- Assertions: `39` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `085332dc956ea75327d820fc398e122779185c173b6f8002d9962862c9feaea2`
+
+The server loaded the exact sorted mod-ID inventory `architectury`,
+`etherology`, `etherology_e2e_server_probe`, `forge`, `geckolib`,
+`generated_a788a0c`, and `minecraft`. It contained none of the seven forbidden
+client or foreign-mod IDs. The probe found exactly one Etherology game event,
+`etherology:etherology_resonance`, with internal ID
+`etherology_resonance` and range 16. One `SERVER_DATA_LOAD` static tag update
+bound it to exactly `minecraft:vibrations` and
+`minecraft:warden_can_listen`; the registry and tag state remained identical at
+`ServerStartedEvent`.
+
+The probe also found exactly one Etherology loot-condition type,
+`etherology:random_chance_with_fortune`, backed by
+`ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer`.
+The synthetic `etherology_e2e_server_probe:registry_foundation` table returned
+the exact sorted outputs `[minecraft:gold_ingot, minecraft:stone]` for an empty
+tool and `[minecraft:diamond, minecraft:gold_ingot, minecraft:stone]` for
+Fortune I. Its three pools exercise chance `1`, chance `0` plus Fortune
+multiplier `1`, and mixed chance `0.99` plus multiplier `0.01`. The condition,
+serializer, table, and results remained identical at server start.
+
+The run saved the world, requested normal `stop(false)`, traversed
+`tags_updated`, `server_started`, `server_stopping`, and `server_stopped`, and
+exited with code zero. Its copied server log contains no `ERROR` or `FATAL`
+marker. The isolated probe-only terminator handles the known Loom-userdev
+non-daemon thread leak only after the stopped-event server thread ends and the
+report is published; production Etherology contains no such exit path. This is
+a headless registry/data-pack proof, so it produces no screenshots.
+
+Frozen file digests:
+
+- `registry-foundation-server-v4/archive-manifest.json`:
+  `38d7570cbc839c26154c276869d3e537771425c674a9db743b3521cad115b652`
+- `registry-foundation-server-v4/reports/report.json`:
+  `e75c303bdf614c2d9b471b779de6c807ae6502accea213802454576ca2209bfc`
+- `registry-foundation-server-v4/reports/launcher-result.json`:
+  `37666c4a8e91bf8edaa859b54814300af0a7c81876b55aa5092189df97bc49b0`
+- `registry-foundation-server-v4/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `registry-foundation-server-v4/logs/latest.log`:
+  `085332dc956ea75327d820fc398e122779185c173b6f8002d9962862c9feaea2`
+
+Validate the five-file archive without the ignored live runtime:
+
+```bash
+python3 -B scripts/e2e/forge_server_evidence.py \
+  --archive docs/evidence/forge-1.20.1/registry-foundation-server-v4
+```
+
+```text
+Validated archived registry-foundation for etherology-e2e-forge-server-1.20.1-v4: 39 assertions
+Server log SHA-256: 085332dc956ea75327d820fc398e122779185c173b6f8002d9962862c9feaea2
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+`validateForgeRegistryFoundationServerEvidenceArchiveIntegrity` runs the 63
+Python runner/verifier safety tests and validates this immutable archive.
+`validateForgeGameEventRegistryMilestone` and
+`validateForgeLootConditionRegistryMilestone` separately inspect current
+Common, Fabric, and Forge artifacts. `validateForgeRegistryFoundationMilestone`
+requires those current-artifact gates, probe isolation checks, and archive
+integrity. Each proof covers a distinct boundary; this archive proves its
+capture-time observations and payload integrity, not identity with later builds.
+
+The canonical Attrahite resource remains Fabric-only because its items are not
+ported. The synthetic table proves the shared condition and serializer, not
+Attrahite gameplay or drop parity. Native sound playback, Forge's unsupported
+custom sculk frequency, the full authoritative registry spine, and the broader
+gameplay/native E2E matrix remain deferred. The earlier Fabric `v20` client
+evidence predates this registry rebuild.
+
+## Historical shared game-event dedicated server (v2)
+
+This immutable game-event-only archive records the earlier accepted checkpoint.
+It remains historical evidence, but v4 supersedes it as the current registry
+proof. No current acceptance task or verifier treats v2 as the active archive.
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v2`
 - Runtime directory:
@@ -254,7 +350,7 @@ screenshots and does not claim a visual mechanic. Frozen file digests:
 - `game-event-registry-server-v2/logs/latest.log`:
   `89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef24394`
 
-Validate the five-file archive without the ignored live runtime:
+The capture-time verifier recorded:
 
 ```text
 Validated archived game-event-registry for etherology-e2e-forge-server-1.20.1-v2: 31 assertions
@@ -262,13 +358,10 @@ Server log SHA-256: 89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef2
 Archive integrity only: current sources and rebuilt artifacts were not compared.
 ```
 
-Run `python3 -B scripts/e2e/forge_server_evidence.py --archive
-docs/evidence/forge-1.20.1/game-event-registry-server-v2` from the repository
-root to repeat that check. `validateForgeGameEventServerEvidenceArchiveIntegrity`
-and the combined `validateForgeGameEventMilestone` make this immutable record a
-positive gate. `validateForgeGameEventRegistryMilestone` separately inspects
-the current Common, Fabric, and Forge artifacts; the archive itself does not
-claim current-source or rebuilt-artifact identity.
+The v2 files remain frozen for historical inspection. The current verifier is
+intentionally pinned to v4 and must not be used to recertify v2 as current
+proof. The archive itself does not claim current-source or rebuilt-artifact
+identity.
 
 This accepts only the shared resonance declaration, its two listening tags,
 and dedicated-server registry/data-load lifecycle. Fabric's supported custom
@@ -276,4 +369,5 @@ sculk frequency 10 is covered statically, while Forge 47 has no supported
 equivalent and remains deferred. The proof does not cover sound playback, the
 full registry-ID manifest, every catalog entry's placement/save behavior, or
 the remaining gameplay and native E2E matrix. The Forge release gate remains
-closed on the broader authoritative registry spine.
+closed on the broader authoritative registry spine. The v4 section above is
+the superseding current proof.

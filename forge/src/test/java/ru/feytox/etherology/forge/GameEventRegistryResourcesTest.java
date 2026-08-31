@@ -400,12 +400,16 @@ final class GameEventRegistryResourcesTest {
                 "ru/feytox/etherology/registry/misc/SharedSounds#register"
         );
         int gameEventIndex = invocations.indexOf(SHARED_GAME_EVENTS_OWNER + "#register");
+        int lootConditionIndex = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/SharedLootConditions#register"
+        );
         int frequencyIndex = invocations.indexOf(
                 FABRIC_GAME_EVENT_HOOKS_OWNER + "#registerSculkSensorFrequency"
         );
         assertTrue(soundIndex >= 0);
         assertEquals(soundIndex + 1, gameEventIndex);
-        assertEquals(gameEventIndex + 1, frequencyIndex);
+        assertEquals(gameEventIndex + 1, lootConditionIndex);
+        assertEquals(lootConditionIndex + 1, frequencyIndex);
     }
 
     private static void assertArtifactTags(String description, Path artifactPath)

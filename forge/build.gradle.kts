@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.security.MessageDigest
 import java.util.zip.ZipFile
 
 plugins {
@@ -35,6 +36,7 @@ val fabricProject = project(fabricProjectPath)
 evaluationDependsOn(fabricProjectPath)
 val fabricTest = fabricProject.tasks.named("test")
 val fabricJar = fabricProject.tasks.named<Jar>("jar")
+val fabricShadowJar = fabricProject.tasks.named<ShadowJar>("shadowJar")
 val fabricRemapJar = fabricProject.tasks.named<RemapJarTask>("remapJar")
 val forgeJavaRoot = rootProject.file("forge/src/main/java")
 val forgeResourcesRoot = rootProject.file("forge/src/main/resources")
@@ -75,10 +77,18 @@ val sharedSoundRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedSounds.class"
 val sharedGameEventRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedGameEvents.class"
+val sharedLootConditionRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/SharedLootConditions.class"
+val randomChanceWithFortuneConditionClassEntry =
+    "ru/feytox/etherology/util/misc/RandomChanceWithFortuneCondition.class"
+val randomChanceWithFortuneConditionSerializerClassEntry =
+    "ru/feytox/etherology/util/misc/RandomChanceWithFortuneConditionSerializer.class"
 val canonicalFabricSoundRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/EtherSounds.class"
 val canonicalFabricGameEventRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/EventsRegistry.class"
+val canonicalFabricLootConditionRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/LootConditions.class"
 val canonicalFabricInitializerClassEntry =
     "ru/feytox/etherology/Etherology.class"
 val fabricGameEventHooksClassEntry =
@@ -176,6 +186,8 @@ val etherealChannelResources =
 val canonicalGameEventTagFiles = canonicalGameEventTagEntries.associateWith { entry ->
     rootProject.file("src/main/generated/$entry")
 }
+val canonicalAttrahiteLootTable =
+    rootProject.file("src/main/generated/data/etherology/loot_tables/blocks/attrahite.json")
 val soundManifest =
     rootProject.file("src/client/resources/assets/etherology/sounds.json")
 val soundDirectory =
@@ -222,19 +234,20 @@ val canonicalSoundFiles = setOf(
 val forgeChannelEvidenceRoot = rootProject.file("docs/evidence/forge-1.20.1")
 val forgeChannelEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_channel_evidence.py")
-val forgeGameEventServerEvidenceRoot =
+val forgeRegistryFoundationServerEvidenceRoot =
     rootProject.file("docs/evidence/forge-1.20.1")
-val forgeGameEventServerEvidenceArchive = forgeGameEventServerEvidenceRoot.resolve(
-    "game-event-registry-server-v2",
+val forgeRegistryFoundationServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+    "registry-foundation-server-v4",
 )
-val forgeGameEventServerEvidenceVerifier =
+val forgeRegistryFoundationServerEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_server_evidence.py")
-val forgeGameEventServerRunner = rootProject.file("scripts/e2e/forge_server.py")
-val forgeGameEventServerRunnerTest =
+val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
+val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
-val forgeGameEventServerEvidenceTest =
+val forgeRegistryFoundationServerEvidenceTest =
     rootProject.file("scripts/e2e/test_forge_server_evidence.py")
-val forgeGameEventServerProfileManifest =
+val forgeRegistryFoundationServerProfileManifest =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile.json")
 val forgeE2eProfileManifest = rootProject.file("scripts/e2e/forge-1.20.1-profile.json")
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
@@ -1911,26 +1924,233 @@ fun missingForgeGameEventRegistryMilestone(
     return missingConditions
 }
 
-fun missingForgeGameEventServerEvidenceMilestone(): List<String> {
+fun missingForgeLootConditionRegistryMilestone(
+    commonJarFile: File,
+    fabricTransformedCommonJarFile: File,
+    forgeTransformedCommonJarFile: File,
+    fabricDevelopmentJarFile: File,
+    fabricProductionJarFile: File,
+    forgeShadowJarFile: File,
+): List<String> {
     val missingConditions = mutableListOf<String>()
-    if (!forgeGameEventServerEvidenceVerifier.isFile
-        || Files.isSymbolicLink(forgeGameEventServerEvidenceVerifier.toPath())
+    val conditionId = "random_chance_with_fortune"
+    val sharedOwner = "ru/feytox/etherology/registry/misc/SharedLootConditions"
+    val sharedDeferredRegister = "ru/feytox/etherology/registry/SharedDeferredRegister"
+
+    if (!canonicalAttrahiteLootTable.isFile
+        || Files.isSymbolicLink(canonicalAttrahiteLootTable.toPath())
     ) {
-        missingConditions.add("strict Forge game-event server evidence verifier is missing")
+        missingConditions.add("canonical attrahite loot table is missing or linked")
+    }
+
+    fun inspectArtifact(
+        artifact: File,
+        description: String,
+        requireFabricApplication: Boolean,
+        requireAttrahiteLootTable: Boolean,
+    ) {
+        if (!artifact.isFile || Files.isSymbolicLink(artifact.toPath())) {
+            missingConditions.add("$description is missing or linked")
+            return
+        }
+
+        try {
+            ZipFile(artifact).use { zip ->
+                val entryNames = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                val classEntryNames = entryNames.filter { entry -> entry.endsWith(".class") }
+                val exactClassCounts = mapOf(
+                    sharedLootConditionRegistryClassEntry to 1,
+                    randomChanceWithFortuneConditionClassEntry to 1,
+                    randomChanceWithFortuneConditionSerializerClassEntry to 1,
+                    canonicalFabricLootConditionRegistryClassEntry to 0,
+                )
+                exactClassCounts.forEach { (classEntry, expectedCount) ->
+                    val actualCount = entryNames.count(classEntry::equals)
+                    if (actualCount != expectedCount) {
+                        missingConditions.add(
+                            "$description has the wrong $classEntry count: " +
+                                "expected=$expectedCount, actual=$actualCount",
+                        )
+                    }
+                }
+
+                val sharedEntry = zip.getEntry(sharedLootConditionRegistryClassEntry)
+                if (sharedEntry != null) {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(sharedEntry).use { input -> input.readAllBytes() },
+                    )
+                    val requiredConstants = setOf(
+                        conditionId,
+                        sharedDeferredRegister,
+                        "register",
+                        "attach",
+                    )
+                    val missingConstants = requiredConstants - constants
+                    if (missingConstants.isNotEmpty()) {
+                        missingConditions.add(
+                            "$description shared loot-condition owner lost its deferred contract: " +
+                                "missing=${missingConstants.sorted()}",
+                        )
+                    }
+                }
+
+                val conditionRegistrationOwners = mutableSetOf<String>()
+                val sharedSupplierConsumerOwners = mutableSetOf<String>()
+                classEntryNames.forEach { classEntryName ->
+                    val classEntry = requireNotNull(zip.getEntry(classEntryName))
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(classEntry).use { input -> input.readAllBytes() },
+                    )
+                    if (conditionId in constants
+                        && sharedDeferredRegister in constants
+                        && "register" in constants
+                    ) {
+                        conditionRegistrationOwners.add(classEntryName)
+                    }
+                    if (classEntryName != sharedLootConditionRegistryClassEntry
+                        && sharedOwner in constants
+                        && "RANDOM_CHANCE_WITH_FORTUNE" in constants
+                    ) {
+                        sharedSupplierConsumerOwners.add(classEntryName)
+                    }
+                }
+                if (conditionRegistrationOwners != setOf(
+                        sharedLootConditionRegistryClassEntry,
+                    )
+                ) {
+                    missingConditions.add(
+                        "$description loot-condition registration owners changed: " +
+                            conditionRegistrationOwners.sorted(),
+                    )
+                }
+                if (sharedSupplierConsumerOwners != setOf(
+                        randomChanceWithFortuneConditionClassEntry,
+                    )
+                ) {
+                    missingConditions.add(
+                        "$description loot-condition supplier consumers changed: " +
+                            sharedSupplierConsumerOwners.sorted(),
+                    )
+                }
+
+                val bootstrapEntry = zip.getEntry(commonBootstrapClassEntry)
+                if (bootstrapEntry == null) {
+                    missingConditions.add("$description has no loader-neutral bootstrap")
+                } else {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(bootstrapEntry).use { input -> input.readAllBytes() },
+                    )
+                    if (sharedOwner !in constants || "register" !in constants) {
+                        missingConditions.add(
+                            "$description bootstrap does not attach SharedLootConditions",
+                        )
+                    }
+                }
+
+                if (requireFabricApplication) {
+                    val initializerEntry = zip.getEntry(canonicalFabricInitializerClassEntry)
+                    if (initializerEntry == null) {
+                        missingConditions.add("$description has no canonical Fabric initializer")
+                    } else {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(initializerEntry).use { input -> input.readAllBytes() },
+                        )
+                        if (sharedOwner !in constants
+                            || "ru/feytox/etherology/bootstrap/EtherologyBootstrap" in constants
+                        ) {
+                            missingConditions.add(
+                                "$description initializer does not directly attach " +
+                                    "SharedLootConditions",
+                            )
+                        }
+                    }
+                }
+
+                val attrahiteLootTableCount = entryNames.count(
+                    "data/etherology/loot_tables/blocks/attrahite.json"::equals,
+                )
+                val expectedLootTableCount = if (requireAttrahiteLootTable) 1 else 0
+                if (attrahiteLootTableCount != expectedLootTableCount) {
+                    missingConditions.add(
+                        "$description attrahite loot-table count changed: " +
+                            "expected=$expectedLootTableCount, actual=$attrahiteLootTableCount",
+                    )
+                } else if (requireAttrahiteLootTable
+                    && canonicalAttrahiteLootTable.isFile
+                    && !Files.isSymbolicLink(canonicalAttrahiteLootTable.toPath())
+                ) {
+                    val packagedEntry = requireNotNull(
+                        zip.getEntry("data/etherology/loot_tables/blocks/attrahite.json"),
+                    )
+                    val packagedBytes = zip.getInputStream(packagedEntry).use { input ->
+                        input.readAllBytes()
+                    }
+                    if (!packagedBytes.contentEquals(canonicalAttrahiteLootTable.readBytes())) {
+                        missingConditions.add(
+                            "$description attrahite loot table differs from its canonical source",
+                        )
+                    }
+                }
+            }
+        } catch (exception: Exception) {
+            missingConditions.add(
+                "$description could not be inspected for loot-condition ownership: " +
+                    "${exception.javaClass.simpleName}: ${exception.message}",
+            )
+        }
+    }
+
+    inspectArtifact(commonJarFile, "common JAR", false, false)
+    inspectArtifact(
+        fabricTransformedCommonJarFile,
+        "Fabric-transformed common JAR",
+        false,
+        false,
+    )
+    inspectArtifact(
+        forgeTransformedCommonJarFile,
+        "Forge-transformed common JAR",
+        false,
+        false,
+    )
+    inspectArtifact(
+        fabricDevelopmentJarFile,
+        "Fabric development JAR",
+        true,
+        true,
+    )
+    inspectArtifact(
+        fabricProductionJarFile,
+        "Fabric remapped production JAR",
+        true,
+        true,
+    )
+    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", false, false)
+    return missingConditions
+}
+
+fun missingForgeRegistryFoundationServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeRegistryFoundationServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeRegistryFoundationServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge registry-foundation server evidence verifier is missing",
+        )
         return missingConditions
     }
 
-    val archiveDirectories = forgeGameEventServerEvidenceRoot.listFiles()
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
         ?.filter { candidate ->
             candidate.isDirectory
                 && !Files.isSymbolicLink(candidate.toPath())
-                && Regex("game-event-registry-server-v[1-9][0-9]*")
+                && Regex("registry-foundation-server-v[1-9][0-9]*")
                     .matches(candidate.name)
         }
         .orEmpty()
-    if (archiveDirectories != listOf(forgeGameEventServerEvidenceArchive)) {
+    if (archiveDirectories != listOf(forgeRegistryFoundationServerEvidenceArchive)) {
         missingConditions.add(
-            "the exact frozen Forge game-event server-v2 evidence archive is required",
+            "the exact frozen Forge registry-foundation server-v4 evidence archive is required",
         )
         return missingConditions
     }
@@ -1938,9 +2158,9 @@ fun missingForgeGameEventServerEvidenceMilestone(): List<String> {
     val command = listOf(
         "python3",
         "-B",
-        forgeGameEventServerEvidenceVerifier.absolutePath,
+        forgeRegistryFoundationServerEvidenceVerifier.absolutePath,
         "--archive",
-        forgeGameEventServerEvidenceArchive.absolutePath,
+        forgeRegistryFoundationServerEvidenceArchive.absolutePath,
     )
     try {
         val process = ProcessBuilder(command)
@@ -1954,7 +2174,7 @@ fun missingForgeGameEventServerEvidenceMilestone(): List<String> {
         if (exitCode != 0) {
             val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
             missingConditions.add(
-                "strict Forge game-event server evidence verification failed: " +
+                "strict Forge registry-foundation server evidence verification failed: " +
                     detail.take(4_000),
             )
         }
@@ -1963,7 +2183,7 @@ fun missingForgeGameEventServerEvidenceMilestone(): List<String> {
             Thread.currentThread().interrupt()
         }
         missingConditions.add(
-            "strict Forge game-event server evidence verifier could not run: " +
+            "strict Forge registry-foundation server evidence verifier could not run: " +
                 "${exception.javaClass.simpleName}: ${exception.message}",
         )
     }
@@ -1993,6 +2213,7 @@ fun firstIncompleteForgeMilestone(
     forgeClassesDirectory: File,
     fabricTransformedCommonJarFile: File,
     forgeTransformedCommonJarFile: File,
+    fabricDevelopmentJarFile: File,
     fabricProductionJarFile: File,
     forgeShadowJarFile: File,
 ): Pair<String, List<String>> {
@@ -2031,10 +2252,23 @@ fun firstIncompleteForgeMilestone(
         return "game-event registry and tags" to missingGameEventRegistry
     }
 
-    val missingGameEventServerEvidence =
-        missingForgeGameEventServerEvidenceMilestone()
-    if (missingGameEventServerEvidence.isNotEmpty()) {
-        return "game-event dedicated-server evidence" to missingGameEventServerEvidence
+    val missingLootConditionRegistry = missingForgeLootConditionRegistryMilestone(
+        commonJarFile,
+        fabricTransformedCommonJarFile,
+        forgeTransformedCommonJarFile,
+        fabricDevelopmentJarFile,
+        fabricProductionJarFile,
+        forgeShadowJarFile,
+    )
+    if (missingLootConditionRegistry.isNotEmpty()) {
+        return "loot-condition registry" to missingLootConditionRegistry
+    }
+
+    val missingRegistryFoundationServerEvidence =
+        missingForgeRegistryFoundationServerEvidenceMilestone()
+    if (missingRegistryFoundationServerEvidence.isNotEmpty()) {
+        return "registry-foundation dedicated-server evidence" to
+            missingRegistryFoundationServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -2282,6 +2516,7 @@ val validateForgeChannelNetworkMilestone = tasks.register("validateForgeChannelN
 val forgeShadowJar = tasks.named<ShadowJar>("shadowJar")
 tasks.named<Test>("test").configure {
     exclude("**/GameEventRegistryResourcesTest.class")
+    exclude("**/LootConditionRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -2346,6 +2581,79 @@ val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
         systemProperty(
             "etherology.gameEvents.forgeShadowJar",
             forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+    }
+}
+
+val lootConditionRegistryTest = tasks.register<Test>("lootConditionRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader loot-condition ownership and resource-isolation tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.LootConditionRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("lootConditionCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("lootConditionFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("lootConditionForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("lootConditionFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("lootConditionFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("lootConditionForgeShadowJar")
+    inputs.file(canonicalAttrahiteLootTable)
+        .withPropertyName("lootConditionCanonicalAttrahiteLootTable")
+    doFirst {
+        systemProperty(
+            "etherology.lootConditions.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.lootConditions.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.lootConditions.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.lootConditions.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.lootConditions.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.lootConditions.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.lootConditions.attrahiteLootTable",
+            canonicalAttrahiteLootTable.absolutePath,
         )
     }
 }
@@ -2448,8 +2756,8 @@ val validateForgeGameEventRegistryMilestone =
         }
     }
 
-val forgeGameEventServerSafetyTest =
-    tasks.register<Exec>("forgeGameEventServerSafetyTest") {
+val forgeRegistryFoundationServerSafetyTest =
+    tasks.register<Exec>("forgeRegistryFoundationServerSafetyTest") {
         group = "verification"
         description =
             "Runs the isolated Forge server runner and archive-verifier safety tests."
@@ -2463,28 +2771,29 @@ val forgeGameEventServerSafetyTest =
             "scripts/e2e/test_forge_server_evidence.py",
         )
         inputs.files(
-            forgeGameEventServerRunner,
-            forgeGameEventServerRunnerTest,
-            forgeGameEventServerEvidenceVerifier,
-            forgeGameEventServerEvidenceTest,
-            forgeGameEventServerProfileManifest,
+            forgeRegistryFoundationServerRunner,
+            forgeRegistryFoundationServerRunnerTest,
+            forgeRegistryFoundationServerEvidenceVerifier,
+            forgeRegistryFoundationServerEvidenceTest,
+            forgeRegistryFoundationServerProfileManifest,
         )
     }
 
-val validateForgeGameEventServerEvidenceArchiveIntegrity =
-    tasks.register("validateForgeGameEventServerEvidenceArchiveIntegrity") {
+val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeRegistryFoundationServerEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge game-event dedicated-server archive."
-        dependsOn(forgeGameEventServerSafetyTest)
-        inputs.file(forgeGameEventServerEvidenceVerifier)
-        inputs.dir(forgeGameEventServerEvidenceArchive)
-            .withPropertyName("forgeGameEventServerEvidenceArchive")
+            "Validates the immutable Forge registry-foundation server-v4 archive."
+        dependsOn(forgeRegistryFoundationServerSafetyTest)
+        inputs.file(forgeRegistryFoundationServerEvidenceVerifier)
+        inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
+            .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
             .optional()
         doLast {
-            val missingConditions = missingForgeGameEventServerEvidenceMilestone()
+            val missingConditions =
+                missingForgeRegistryFoundationServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
-                "Forge $minecraftVersion game-event server evidence is invalid:\n${
+                "Forge $minecraftVersion registry-foundation server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -2493,20 +2802,77 @@ val validateForgeGameEventServerEvidenceArchiveIntegrity =
 
 val validateForgeGameEventMilestone = tasks.register("validateForgeGameEventMilestone") {
     group = "verification"
-    description =
-        "Accepts the shared game event, exact tags, and frozen Forge server proof."
-    dependsOn(
-        validateForgeGameEventRegistryMilestone,
-        validateForgeGameEventServerEvidenceArchiveIntegrity,
-    )
+    description = "Accepts the shared game event and exact cross-loader tags."
+    dependsOn(validateForgeGameEventRegistryMilestone)
 }
+
+val validateForgeLootConditionRegistryMilestone =
+    tasks.register("validateForgeLootConditionRegistryMilestone") {
+        group = "verification"
+        description =
+            "Accepts the sole shared loot-condition owner across every production boundary."
+        dependsOn(
+            validateForgeGameEventMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            lootConditionRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("lootConditionFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("lootConditionForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.file(canonicalAttrahiteLootTable)
+        doLast {
+            val missingConditions = missingForgeLootConditionRegistryMilestone(
+                commonJar.get().archiveFile.get().asFile,
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ),
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ),
+                fabricShadowJar.get().archiveFile.get().asFile,
+                fabricRemapJar.get().archiveFile.get().asFile,
+                forgeShadowJar.get().archiveFile.get().asFile,
+            )
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion shared loot-condition registry milestone is " +
+                    "incomplete:\n${
+                        missingConditions.joinToString("\n") { condition -> " - $condition" }
+                    }"
+            }
+        }
+    }
+
+val validateForgeRegistryFoundationMilestone =
+    tasks.register("validateForgeRegistryFoundationMilestone") {
+        group = "verification"
+        description =
+            "Accepts the shared registry foundation and its frozen Forge server proof."
+        dependsOn(
+            validateForgeLootConditionRegistryMilestone,
+            validateForgeRegistryFoundationServerEvidenceArchiveIntegrity,
+        )
+    }
 
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeGameEventMilestone)
+        dependsOn(validateForgeRegistryFoundationMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -2545,6 +2911,8 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeChannelNetworkMilestone,
         validateForgeSoundRegistryMilestone,
         validateForgeGameEventMilestone,
+        validateForgeLootConditionRegistryMilestone,
+        validateForgeRegistryFoundationMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -2553,25 +2921,27 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeGameEventMilestone)
+    dependsOn(validateForgeLootConditionRegistryMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
     inputs.files(soundManifest, englishLanguageFile)
     inputs.dir(soundDirectory)
     inputs.files(canonicalGameEventTagFiles.values)
+    inputs.file(canonicalAttrahiteLootTable)
     inputs.files(
-        forgeGameEventServerEvidenceVerifier,
-        forgeGameEventServerProfileManifest,
+        forgeRegistryFoundationServerEvidenceVerifier,
+        forgeRegistryFoundationServerProfileManifest,
     )
-    inputs.dir(forgeGameEventServerEvidenceArchive)
-        .withPropertyName("forgeGameEventServerEvidenceArchive")
+    inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
+        .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
         .optional()
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
     inputs.files(commonTransformProductionForge)
         .withPropertyName("forgeTransformedCommonJar")
     inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
     inputs.file(forgeShadowJar.flatMap { it.archiveFile })
     inputs.dir(forgeChannelEvidenceRoot)
         .withPropertyName("forgeChannelEvidenceRoot")
@@ -2589,6 +2959,7 @@ tasks.register("verifyForgePortGateClosed") {
                 commonTransformProductionForge.get(),
                 "Forge common production transform",
             ),
+            fabricShadowJar.get().archiveFile.get().asFile,
             fabricRemapJar.get().archiveFile.get().asFile,
             forgeShadowJar.get().archiveFile.get().asFile,
         )
@@ -2691,9 +3062,9 @@ if (minecraftVersion == "1.20.1") {
 
     extensions.configure<LoomGradleExtensionAPI>("loom") {
         val inheritedServerRun = runConfigs.named("server")
-        runConfigs.create("gameEventServerProbe") {
+        runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 game-event server probe")
+            displayName.set("Etherology Forge 1.20.1 registry-foundation server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -2723,7 +3094,7 @@ if (minecraftVersion == "1.20.1") {
         }
     }
 
-    val serverProbeRunTask = tasks.named<JavaExec>("runGameEventServerProbe") {
+    val serverProbeRunTask = tasks.named<JavaExec>("runRegistryFoundationServerProbe") {
         dependsOn(tasks.named("classes"), serverProbe.classesTaskName)
         javaLauncher.set(
             javaToolchains.launcherFor {
@@ -2774,8 +3145,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v2",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v2",
+                "id" to "etherology-e2e-forge-server-1.20.1-v4",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v4",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -2794,15 +3165,15 @@ if (minecraftVersion == "1.20.1") {
             }
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
-                "task_path" to ":forge:1.20.1:runGameEventServerProbe",
-                "scenario" to "game-event-registry",
+                "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
+                "scenario" to "registry-foundation",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "game-event-registry",
+                "scenario_directory" to "registry-foundation",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -2850,7 +3221,7 @@ if (minecraftVersion == "1.20.1") {
             doLast {
                 val loomExtension = project.extensions.getByType<LoomGradleExtensionAPI>()
                 val runConfiguration = loomExtension.runConfigs
-                    .getByName("gameEventServerProbe")
+                    .getByName("registryFoundationServerProbe")
                 check(runConfiguration.runtimeEnvironment.get() == "server") {
                     "The dedicated-server probe does not inherit the server runtime"
                 }
@@ -2946,7 +3317,9 @@ if (minecraftVersion == "1.20.1") {
                     "The dedicated-server probe mod does not own only its probe source set"
                 }
                 loomExtension.runConfigs
-                    .filter { configuration -> configuration.name != "gameEventServerProbe" }
+                    .filter { configuration ->
+                        configuration.name != "registryFoundationServerProbe"
+                    }
                     .forEach { configuration ->
                         check("etherology_e2e_server_probe" !in configuration.mods.names) {
                             "The probe mod leaked into run configuration ${configuration.name}"
@@ -2967,7 +3340,8 @@ if (minecraftVersion == "1.20.1") {
                 val probeEntries = probeZip.entries().asSequence().map { it.name }.toSet()
                 val probeClassEntries = probeEntries.filter { it.endsWith(".class") }.toSet()
                 check(probeClassEntries == setOf(
-                    "dev/theplumteam/etherology/e2e/server/GameEventServerProbe.class",
+                    "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeModInventory.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeReportWriter.class",
@@ -2983,18 +3357,71 @@ if (minecraftVersion == "1.20.1") {
                     val constants = readClassUtf8Constants(
                         probeZip.getInputStream(classEntry).use { input -> input.readAllBytes() },
                     )
+                    val allowedProductionConstants = setOf(
+                        "ru.feytox.etherology.util.misc." +
+                            "RandomChanceWithFortuneConditionSerializer",
+                    )
                     check(constants.none { constant ->
-                        constant.startsWith("net/minecraft/client/")
+                        (constant.startsWith("net/minecraft/client/")
                             || constant.startsWith("ru/feytox/etherology/")
-                            || constant.startsWith("ru.feytox.etherology.")
+                            || constant.startsWith("ru.feytox.etherology."))
+                            && constant !in allowedProductionConstants
                     }) {
                         "Dedicated-server probe class $classEntryName links client or production code"
                     }
                 }
 
+                val lootConditionEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/" +
+                            "LootConditionProbeState.class",
+                    ),
+                )
+                val lootConditionConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(lootConditionEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredLootConditionConstants = setOf(
+                    "minecraft:loot_condition_type",
+                    "random_chance_with_fortune",
+                    "ru.feytox.etherology.util.misc." +
+                        "RandomChanceWithFortuneConditionSerializer",
+                    "registry_foundation",
+                    "minecraft:stone",
+                    "minecraft:diamond",
+                    "minecraft:gold_ingot",
+                )
+                check(requiredLootConditionConstants.all(lootConditionConstants::contains)) {
+                    "The dedicated-server probe lost its loot-condition contract: " +
+                        (requiredLootConditionConstants - lootConditionConstants).sorted()
+                }
+
+                val lootTableEntryPath =
+                    "data/etherology_e2e_server_probe/loot_tables/registry_foundation.json"
+                val lootTableEntry = requireNotNull(probeZip.getEntry(lootTableEntryPath)) {
+                    "The dedicated-server probe JAR has no $lootTableEntryPath"
+                }
+                val lootTableDigest = MessageDigest.getInstance("SHA-256")
+                    .digest(
+                        probeZip.getInputStream(lootTableEntry).use { input ->
+                            input.readAllBytes()
+                        },
+                    )
+                    .joinToString("") { byte ->
+                        (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+                    }
+                check(
+                    lootTableDigest ==
+                        "45fb3b70ac59949a2c9e2a2b4d2e775b24ff8c21ada187f80027aed95f2975e0",
+                ) {
+                    "The dedicated-server probe loot table contract changed: $lootTableDigest"
+                }
+
                 val probeEntry = requireNotNull(
                     probeZip.getEntry(
-                        "dev/theplumteam/etherology/e2e/server/GameEventServerProbe.class",
+                        "dev/theplumteam/etherology/e2e/server/" +
+                            "RegistryFoundationServerProbe.class",
                     ),
                 )
                 val probeConstants = readClassUtf8Constants(
@@ -3010,6 +3437,7 @@ if (minecraftVersion == "1.20.1") {
                     "shouldUpdateStaticData",
                     "getIds",
                     "streamTagsAndEntries",
+                    "net/minecraftforge/event/server/ServerStartingEvent",
                     "net/minecraftforge/event/server/ServerStartedEvent",
                     "net/minecraftforge/event/server/ServerStoppingEvent",
                     "net/minecraftforge/event/server/ServerStoppedEvent",
@@ -3020,10 +3448,21 @@ if (minecraftVersion == "1.20.1") {
                     "loaded_mod_ids",
                     "forbidden_mod_ids_loaded",
                     "mods_forbidden_intersection_empty",
+                    "loot_condition",
+                    "registry:loot_condition:etherology:random_chance_with_fortune",
+                    "registry:loot_condition_etherology_ids_exact",
+                    "registry:loot_condition_serializer_class",
+                    "loot_table:probe_table_loaded",
+                    "loot_table:empty_tool_items_exact",
+                    "loot_table:fortune_one_items_exact",
+                    "loot_condition_captured_after_server_data_load",
+                    "server_started_loot_condition_rechecked",
                     "getMods",
                     "getModId",
                     "loom-userdev",
+                    "[EtherologyServerProbe] registry_foundation_checked",
                     "[EtherologyServerProbe] report_published",
+                    "dev/theplumteam/etherology/e2e/server/LootConditionProbeState",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
                     "currentThread",
@@ -3109,31 +3548,33 @@ if (minecraftVersion == "1.20.1") {
             ZipFile(productionFile).use { productionZip ->
                 check(productionZip.entries().asSequence().none { entry ->
                     entry.name.startsWith("dev/theplumteam/etherology/e2e/server/")
+                        || entry.name.startsWith("data/etherology_e2e_server_probe/")
                 }) {
-                    "The Forge production artifact contains dedicated-server probe classes"
+                    "The Forge production artifact contains dedicated-server probe content"
                 }
             }
         }
     }
 
-    val verifyGameEventServerProbe = tasks.register("verifyGameEventServerProbe") {
-        group = "verification"
-        description =
-            "Builds and validates the Forge 1.20.1 game-event dedicated-server probe."
-        dependsOn(
-            forgeGameEventServerSafetyTest,
-            serverProbeTestTask,
-            validateServerProbeProfile,
-            validateServerProbeRunConfiguration,
-            verifyServerProbeArtifact,
-            verifyServerProbeIsolation,
-        )
-    }
-    validateForgeGameEventMilestone.configure {
-        dependsOn(verifyGameEventServerProbe)
+    val verifyRegistryFoundationServerProbe =
+        tasks.register("verifyRegistryFoundationServerProbe") {
+            group = "verification"
+            description =
+                "Builds and validates the Forge 1.20.1 registry-foundation server probe."
+            dependsOn(
+                forgeRegistryFoundationServerSafetyTest,
+                serverProbeTestTask,
+                validateServerProbeProfile,
+                validateServerProbeRunConfiguration,
+                verifyServerProbeArtifact,
+                verifyServerProbeIsolation,
+            )
+        }
+    validateForgeRegistryFoundationMilestone.configure {
+        dependsOn(verifyRegistryFoundationServerProbe)
     }
     serverProbeRunTask.configure {
-        dependsOn(verifyGameEventServerProbe)
+        dependsOn(verifyRegistryFoundationServerProbe)
     }
 
     val e2eHarness = sourceSets.create("e2eHarness") {

@@ -60,7 +60,7 @@ def valid_report() -> dict[str, object]:
         )
     ]
     return {
-        "schema": 1,
+        "schema": 2,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -97,6 +97,23 @@ def valid_report() -> dict[str, object]:
             "etherology_event_ids": ["etherology:etherology_resonance"],
             "same_instance_at_server_started": True,
         },
+        "loot_condition": {
+            "registry_id": "minecraft:loot_condition_type",
+            "condition_id": "etherology:random_chance_with_fortune",
+            "etherology_condition_ids": ["etherology:random_chance_with_fortune"],
+            "serializer_class": (
+                "ru.feytox.etherology.util.misc."
+                "RandomChanceWithFortuneConditionSerializer"
+            ),
+            "probe_table_id": "etherology_e2e_server_probe:registry_foundation",
+            "empty_tool_items": ["minecraft:gold_ingot", "minecraft:stone"],
+            "fortune_one_items": [
+                "minecraft:diamond",
+                "minecraft:gold_ingot",
+                "minecraft:stone",
+            ],
+            "same_state_at_server_started": True,
+        },
         "tags": {
             "update_cause": "SERVER_DATA_LOAD",
             "should_update_static_data": True,
@@ -125,6 +142,7 @@ def valid_report() -> dict[str, object]:
 def valid_server_log() -> bytes:
     lines = [
         "[Server thread/INFO] [EtherologyServerProbe] tags_updated",
+        "[Server thread/INFO] [EtherologyServerProbe] registry_foundation_checked",
         "[Server thread/INFO] Done (1.234s)! For help, type help",
         "[Server thread/INFO] [EtherologyServerProbe] server_started",
         "[Server thread/INFO] [EtherologyServerProbe] server_stopping",
@@ -144,7 +162,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v2",
+            "etherology-e2e-forge-server-1.20.1-v4",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -437,7 +455,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(31, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(39, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -457,6 +475,7 @@ class ProbeReportTests(unittest.TestCase):
 
     def test_report_rejects_every_major_contract_drift(self) -> None:
         mutations = {
+            "boolean schema": lambda report: report.__setitem__("schema", True),
             "failed status": lambda report: report.__setitem__("status", "failed"),
             "client distribution": lambda report: report.__setitem__(
                 "distribution", "CLIENT"
@@ -485,6 +504,9 @@ class ProbeReportTests(unittest.TestCase):
                 "internal_id", "wrong"
             ),
             "wrong range": lambda report: report["registry"].__setitem__("range", 15),
+            "integer loot identity": lambda report: report["loot_condition"].__setitem__(
+                "same_state_at_server_started", 1
+            ),
             "wrong update cause": lambda report: report["tags"].__setitem__(
                 "update_cause", "OTHER"
             ),
@@ -497,6 +519,9 @@ class ProbeReportTests(unittest.TestCase):
             "wrong lifecycle": lambda report: report["lifecycle"].reverse(),
             "false assertion": lambda report: report["assertions"][0].__setitem__(
                 "passed", False
+            ),
+            "integer assertion status": lambda report: report["assertions"][0].__setitem__(
+                "passed", 1
             ),
             "mismatched assertion actual": lambda report: report["assertions"][
                 0
@@ -543,9 +568,12 @@ class LifecycleEvidenceTests(unittest.TestCase):
         base = valid_server_log().decode("utf-8")
         mutations = {
             "fatal": base + "[FATAL] failure\n",
+            "error level": base + "[main/ERROR] failure\n",
             "missing save": base.replace("Saving worlds\n", ""),
             "duplicate lifecycle": base
             + "[Server thread/INFO] [EtherologyServerProbe] server_started\n",
+            "unexpected lifecycle": base
+            + "[Server thread/INFO] [EtherologyServerProbe] unexpected_phase\n",
             "failed userdev exit": base.replace(
                 "loom_userdev_exit_scheduled status=0 "
                 "server_thread_join_timeout_ms=30000",

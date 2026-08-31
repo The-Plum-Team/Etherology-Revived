@@ -43,6 +43,7 @@ public class Etherology {
 
         SharedSounds.register();
         SharedGameEvents.register();
+        SharedLootConditions.register();
         FabricGameEventHooks.registerSculkSensorFrequency();
         ExtraBlocksRegistry.registerAll();
         RegistriesRegistry.registerAll();
@@ -61,7 +62,6 @@ public class Etherology {
         LootTablesModifyRegistry.registerAll();
         TradeOffersModificationRegistry.registerAll();
         EntityRegistry.registerServerSide();
-        LootConditions.registerAll();
         DispenserBehaviors.registerAll();
         LensModifier.registerAll();
         EffectsRegistry.registerAll();

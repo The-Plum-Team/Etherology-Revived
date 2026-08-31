@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded Forge 1.20.1 dedicated-server probe in isolated state."""
+"""Run the bounded Forge 1.20.1 registry-foundation probe in isolated state."""
 
 from __future__ import annotations
 
@@ -27,9 +27,9 @@ PROFILE_MANIFEST_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v2"
-SCENARIO_ID = "game-event-registry"
-TASK_PATH = ":forge:1.20.1:runGameEventServerProbe"
+PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v4"
+SCENARIO_ID = "registry-foundation"
+TASK_PATH = ":forge:1.20.1:runRegistryFoundationServerProbe"
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -63,6 +63,13 @@ EXPECTED_ASSERTION_NAMES = (
     "registry:game_event_etherology_ids_exact",
     "registry_internal_id",
     "registry_range",
+    "registry:loot_condition:etherology:random_chance_with_fortune",
+    "registry:loot_condition_etherology_ids_exact",
+    "registry:loot_condition_serializer_class",
+    "loot_table:probe_table_loaded",
+    "loot_table:empty_tool_items_exact",
+    "loot_table:fortune_one_items_exact",
+    "loot_condition_captured_after_server_data_load",
     "tags_update_cause",
     "tags_static_data",
     "tags_update_count",
@@ -75,6 +82,7 @@ EXPECTED_ASSERTION_NAMES = (
     "server_started_mods_rechecked",
     "server_started_registry_rechecked",
     "server_started_tags_rechecked",
+    "server_started_loot_condition_rechecked",
     "server_stop_requested_without_restart",
     "server_lifecycle_identity",
     "lifecycle",
@@ -89,6 +97,13 @@ EXPECTED_ASSERTION_VALUES = (
     "etherology:etherology_resonance",
     "etherology_resonance",
     "16",
+    "present",
+    "etherology:random_chance_with_fortune",
+    "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer",
+    "etherology_e2e_server_probe:registry_foundation",
+    "minecraft:gold_ingot,minecraft:stone",
+    "minecraft:diamond,minecraft:gold_ingot,minecraft:stone",
+    "true",
     "SERVER_DATA_LOAD",
     "true",
     "1",
@@ -97,6 +112,7 @@ EXPECTED_ASSERTION_VALUES = (
     "true",
     "etherology:etherology_resonance",
     "minecraft:vibrations,minecraft:warden_can_listen",
+    "true",
     "true",
     "true",
     "true",
@@ -111,9 +127,16 @@ EXPECTED_LIFECYCLE = (
     "server_stopping",
     "server_stopped",
 )
+PROBE_LOG_PHASES = (
+    "tags_updated",
+    "registry_foundation_checked",
+    "server_started",
+    "server_stopping",
+    "server_stopped",
+    "report_published",
+)
 SERVER_LOG_TOKENS = tuple(
-    f"[EtherologyServerProbe] {event}"
-    for event in (*EXPECTED_LIFECYCLE, "report_published")
+    f"[EtherologyServerProbe] {phase}" for phase in PROBE_LOG_PHASES
 ) + (
     "[EtherologyServerProbe] loom_userdev_exit_scheduled "
     "status=0 server_thread_join_timeout_ms=30000",
@@ -128,6 +151,8 @@ FATAL_SERVER_LOG_MARKERS = (
     "Uncaught exception in thread",
     "dev.theplumteam.etherology.e2e.forge.ForgeE2eHarness",
     "[FATAL]",
+    "/ERROR]",
+    "/FATAL]",
 )
 SERVER_PROPERTIES_CONTENT = (
     "allow-flight=false\n"
@@ -141,7 +166,7 @@ SERVER_PROPERTIES_CONTENT = (
     "gamemode=creative\n"
     "generate-structures=false\n"
     "level-name=world\n"
-    "level-type=minecraft:flat\n"
+    "level-type=minecraft:normal\n"
     "max-players=1\n"
     "motd=Etherology dedicated-server E2E\n"
     "online-mode=false\n"
@@ -239,6 +264,22 @@ def safe_leaf_name(raw_value: object, field_name: str) -> str:
     return raw_value
 
 
+def exact_json_value(actual: object, expected: object) -> bool:
+    """Compares JSON values without treating booleans as integers."""
+    if type(actual) is not type(expected):
+        return False
+    if isinstance(expected, dict):
+        return set(actual) == set(expected) and all(
+            exact_json_value(actual[key], expected[key]) for key in expected
+        )
+    if isinstance(expected, list):
+        return len(actual) == len(expected) and all(
+            exact_json_value(actual_value, expected_value)
+            for actual_value, expected_value in zip(actual, expected, strict=True)
+        )
+    return actual == expected
+
+
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
     try:
@@ -260,48 +301,48 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "profile_directories",
         "required_mod_ids",
         "forbidden_mod_ids",
-    } or manifest.get("schema") != 1:
+    } or type(manifest.get("schema")) is not int or manifest.get("schema") != 1:
         raise E2EError("Unsupported Forge dedicated-server profile schema")
 
     profile = require_object(manifest, "profile")
-    if profile != {
+    if not exact_json_value(profile, {
         "id": PROFILE_ID,
         "runtime_directory": PROFILE_ID,
         "game_directory": "game",
-    }:
+    }):
         raise E2EError("The dedicated-server profile identity or directory changed")
     for name, value in profile.items():
         safe_leaf_name(value, f"profile.{name}")
 
     release = require_object(manifest, "release")
-    if release != {
+    if not exact_json_value(release, {
         "matrix": "release/release-matrix.json",
         "artifact_node": "forge-1.20.1",
         "minecraft": "1.20.1",
         "loader": "forge",
         "loader_version": "47.4.9",
         "java": 17,
-    }:
+    }):
         raise E2EError("The profile must use the exact Forge 1.20.1 release lane")
 
     launch = require_object(manifest, "launch")
-    if launch != {
+    if not exact_json_value(launch, {
         "kind": "loom-userdev",
         "task_path": TASK_PATH,
         "scenario": SCENARIO_ID,
         "maximum_memory_mb": 2048,
-    }:
+    }):
         raise E2EError("The dedicated-server launch contract changed")
 
     evidence = require_object(manifest, "evidence")
-    if evidence != {
+    if not exact_json_value(evidence, {
         "directory": "evidence",
         "scenario_directory": SCENARIO_ID,
         "report": "reports/report.json",
         "launcher_result": "reports/launcher-result.json",
         "completion_marker": "reports/done.marker",
         "server_log": "logs/latest.log",
-    }:
+    }):
         raise E2EError("The dedicated-server evidence contract changed")
 
     directories = require_list(manifest, "profile_directories")
@@ -537,8 +578,9 @@ def verify_profile_marker(
     marker_path = profile_marker_path(configuration, target_root)
     if marker_path.is_symlink() or not marker_path.is_file():
         raise E2EError(f"Refusing to adopt unmarked server runtime: {target_root}")
-    if load_json_object(marker_path, "server profile marker") != profile_descriptor(
-        configuration
+    if not exact_json_value(
+        load_json_object(marker_path, "server profile marker"),
+        profile_descriptor(configuration),
     ):
         raise E2EError(f"Server profile marker does not match: {marker_path}")
 
@@ -790,16 +832,16 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
     except OSError as exception:
         raise E2EError(f"Cannot read Forge build configuration: {exception}") from exception
     required_fragments = (
-        "runGameEventServerProbe",
+        "runRegistryFoundationServerProbe",
         "etherology.serverProbe.profileId",
         "etherology.serverProbe.scenario",
         "etherology.serverProbe.evidenceRoot",
         "serverProbeJavaVersion = javaVersion",
-        'tasks.named<JavaExec>("runGameEventServerProbe")',
+        'tasks.named<JavaExec>("runRegistryFoundationServerProbe")',
         "javaLauncher.set(",
         "languageVersion.set(JavaLanguageVersion.of(serverProbeJavaVersion))",
         "serverProbeRunTask.configure",
-        "dependsOn(verifyGameEventServerProbe)",
+        "dependsOn(verifyRegistryFoundationServerProbe)",
         PROFILE_ID,
         SCENARIO_ID,
     )
@@ -869,6 +911,7 @@ def validate_probe_report(
         "forbidden_mod_ids_loaded",
         "mods",
         "registry",
+        "loot_condition",
         "tags",
         "lifecycle",
         "assertions",
@@ -876,7 +919,7 @@ def validate_probe_report(
     if set(report) != expected_fields:
         raise E2EError("The server probe report field inventory changed")
     expected_scalars = {
-        "schema": 1,
+        "schema": 2,
         "profile_id": PROFILE_ID,
         "scenario": SCENARIO_ID,
         "status": "passed",
@@ -888,7 +931,7 @@ def validate_probe_report(
         "runtime_kind": "loom-userdev",
     }
     for name, expected in expected_scalars.items():
-        if report.get(name) != expected:
+        if not exact_json_value(report.get(name), expected):
             raise E2EError(f"The server probe report {name} value changed")
     loaded_mod_ids = report.get("loaded_mod_ids")
     if (
@@ -903,24 +946,42 @@ def validate_probe_report(
         or set(FORBIDDEN_MOD_IDS).intersection(loaded_mod_ids)
     ):
         raise E2EError("The full loaded mod id inventory is invalid")
-    if report.get("forbidden_mod_ids_loaded") != []:
+    if not exact_json_value(report.get("forbidden_mod_ids_loaded"), []):
         raise E2EError("The loaded forbidden mod intersection is not empty")
     expected_mods = {
         **{mod_id: {"loaded": True} for mod_id in REQUIRED_MOD_IDS},
         **{mod_id: {"loaded": False} for mod_id in FORBIDDEN_MOD_IDS},
     }
-    if report.get("mods") != expected_mods:
+    if not exact_json_value(report.get("mods"), expected_mods):
         raise E2EError("The server probe mod subset changed")
-    if report.get("registry") != {
+    if not exact_json_value(report.get("registry"), {
         "registry_id": "minecraft:game_event",
         "event_id": "etherology:etherology_resonance",
         "internal_id": "etherology_resonance",
         "range": 16,
         "etherology_event_ids": ["etherology:etherology_resonance"],
         "same_instance_at_server_started": True,
-    }:
+    }):
         raise E2EError("The server probe registry result changed")
-    if report.get("tags") != {
+    if not exact_json_value(report.get("loot_condition"), {
+        "registry_id": "minecraft:loot_condition_type",
+        "condition_id": "etherology:random_chance_with_fortune",
+        "etherology_condition_ids": ["etherology:random_chance_with_fortune"],
+        "serializer_class": (
+            "ru.feytox.etherology.util.misc."
+            "RandomChanceWithFortuneConditionSerializer"
+        ),
+        "probe_table_id": "etherology_e2e_server_probe:registry_foundation",
+        "empty_tool_items": ["minecraft:gold_ingot", "minecraft:stone"],
+        "fortune_one_items": [
+            "minecraft:diamond",
+            "minecraft:gold_ingot",
+            "minecraft:stone",
+        ],
+        "same_state_at_server_started": True,
+    }):
+        raise E2EError("The server probe loot-condition result changed")
+    if not exact_json_value(report.get("tags"), {
         "update_cause": "SERVER_DATA_LOAD",
         "should_update_static_data": True,
         "update_count": 1,
@@ -939,9 +1000,9 @@ def validate_probe_report(
             "minecraft:warden_can_listen",
         ],
         "same_membership_at_server_started": True,
-    }:
+    }):
         raise E2EError("The server probe tag result changed")
-    if report.get("lifecycle") != list(EXPECTED_LIFECYCLE):
+    if not exact_json_value(report.get("lifecycle"), list(EXPECTED_LIFECYCLE)):
         raise E2EError("The server probe lifecycle changed")
     assertions = report.get("assertions")
     if not isinstance(assertions, list) or len(assertions) != len(
@@ -959,12 +1020,12 @@ def validate_probe_report(
             "actual",
         }:
             raise E2EError(f"Server probe assertion {index} has invalid fields")
-        if assertion != {
+        if not exact_json_value(assertion, {
             "name": name,
             "passed": True,
             "expected": value,
             "actual": value,
-        }:
+        }):
             raise E2EError(f"Server probe assertion failed or changed: {name}")
     report_mod_ids = set(require_object(report, "mods"))
     required_mod_ids = set(require_list(configuration.manifest, "required_mod_ids"))
@@ -992,6 +1053,13 @@ def validate_server_log(path: Path) -> bytes:
     )
     if fatal_marker is not None:
         raise E2EError(f"Dedicated-server latest log contains fatal marker: {fatal_marker}")
+    phases = re.findall(r"\[EtherologyServerProbe\] ([a-z_]+)", text)
+    expected_phases = [*PROBE_LOG_PHASES, "loom_userdev_exit_scheduled"]
+    if phases != expected_phases:
+        raise E2EError(
+            "Dedicated-server probe lifecycle changed: "
+            f"expected={expected_phases}, actual={phases}"
+        )
     positions: list[int] = []
     for token in SERVER_LOG_TOKENS:
         if text.count(token) != 1:

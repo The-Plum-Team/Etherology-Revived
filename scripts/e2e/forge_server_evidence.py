@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate live or archived Forge dedicated-server game-event evidence."""
+"""Validate live or archived Forge dedicated-server registry-foundation evidence."""
 
 from __future__ import annotations
 
@@ -20,20 +20,20 @@ PROFILE_MANIFEST_RELATIVE_PATH = Path(
     "scripts/e2e/forge-server-1.20.1-profile.json"
 )
 PROFILE_MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
-PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v2"
-SCENARIO_ID = "game-event-registry"
-TASK_PATH = ":forge:1.20.1:runGameEventServerProbe"
+PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v4"
+SCENARIO_ID = "registry-foundation"
+TASK_PATH = ":forge:1.20.1:runRegistryFoundationServerProbe"
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 PROFILE_MANAGER = "scripts/e2e/forge_server.py"
 RUNTIME_RELATIVE_PATH = (
     Path("scripts/e2e/.state/runtimes") / PROFILE_ID
 )
 ARCHIVE_RELATIVE_PATH = Path(
-    "docs/evidence/forge-1.20.1/game-event-registry-server-v2"
+    "docs/evidence/forge-1.20.1/registry-foundation-server-v4"
 )
 DEFAULT_RUNTIME_ROOT = RUNTIMES_ROOT / PROFILE_ID
 DEFAULT_ARCHIVE_ROOT = REPOSITORY_ROOT / ARCHIVE_RELATIVE_PATH
-ARCHIVE_DIRECTORY_NAME = "game-event-registry-server-v2"
+ARCHIVE_DIRECTORY_NAME = "registry-foundation-server-v4"
 ARCHIVE_MANIFEST_NAME = "archive-manifest.json"
 ARCHIVE_KIND = "etherology-forge-dedicated-server-e2e-evidence"
 ARCHIVE_VERIFICATION_SCOPE = (
@@ -65,6 +65,7 @@ REPORT_FIELDS = {
     "forbidden_mod_ids_loaded",
     "mods",
     "registry",
+    "loot_condition",
     "tags",
     "lifecycle",
     "assertions",
@@ -100,6 +101,22 @@ EXPECTED_REGISTRY = {
     "range": 16,
     "etherology_event_ids": ["etherology:etherology_resonance"],
     "same_instance_at_server_started": True,
+}
+EXPECTED_LOOT_CONDITION = {
+    "registry_id": "minecraft:loot_condition_type",
+    "condition_id": "etherology:random_chance_with_fortune",
+    "etherology_condition_ids": ["etherology:random_chance_with_fortune"],
+    "serializer_class": (
+        "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer"
+    ),
+    "probe_table_id": "etherology_e2e_server_probe:registry_foundation",
+    "empty_tool_items": ["minecraft:gold_ingot", "minecraft:stone"],
+    "fortune_one_items": [
+        "minecraft:diamond",
+        "minecraft:gold_ingot",
+        "minecraft:stone",
+    ],
+    "same_state_at_server_started": True,
 }
 EXPECTED_TAGS = {
     "update_cause": "SERVER_DATA_LOAD",
@@ -150,6 +167,31 @@ EXPECTED_ASSERTIONS = (
     ),
     ("registry_internal_id", "etherology_resonance"),
     ("registry_range", "16"),
+    (
+        "registry:loot_condition:etherology:random_chance_with_fortune",
+        "present",
+    ),
+    (
+        "registry:loot_condition_etherology_ids_exact",
+        "etherology:random_chance_with_fortune",
+    ),
+    (
+        "registry:loot_condition_serializer_class",
+        "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer",
+    ),
+    (
+        "loot_table:probe_table_loaded",
+        "etherology_e2e_server_probe:registry_foundation",
+    ),
+    (
+        "loot_table:empty_tool_items_exact",
+        "minecraft:gold_ingot,minecraft:stone",
+    ),
+    (
+        "loot_table:fortune_one_items_exact",
+        "minecraft:diamond,minecraft:gold_ingot,minecraft:stone",
+    ),
+    ("loot_condition_captured_after_server_data_load", "true"),
     ("tags_update_cause", "SERVER_DATA_LOAD"),
     ("tags_static_data", "true"),
     ("tags_update_count", "1"),
@@ -171,6 +213,7 @@ EXPECTED_ASSERTIONS = (
     ("server_started_mods_rechecked", "true"),
     ("server_started_registry_rechecked", "true"),
     ("server_started_tags_rechecked", "true"),
+    ("server_started_loot_condition_rechecked", "true"),
     ("server_stop_requested_without_restart", "stop(false)"),
     ("server_lifecycle_identity", "true"),
     (
@@ -180,6 +223,7 @@ EXPECTED_ASSERTIONS = (
 )
 PROBE_LOG_PHASES = (
     "tags_updated",
+    "registry_foundation_checked",
     "server_started",
     "server_stopping",
     "server_stopped",
@@ -198,6 +242,8 @@ NORMAL_SERVER_LOG_MARKERS = (
 )
 FATAL_LOG_MARKERS = (
     "[FATAL]",
+    "/ERROR]",
+    "/FATAL]",
     "Mixin apply failed",
     "MixinTransformerError",
     "InvalidMixinException",
@@ -566,7 +612,7 @@ def validate_report(report: dict[str, object]) -> None:
     """Validates exact registry, tag, mod, lifecycle, and assertion evidence."""
     if set(report) != REPORT_FIELDS:
         raise EvidenceError("The Forge server report field inventory changed")
-    if type(report.get("schema")) is not int or report.get("schema") != 1:
+    if type(report.get("schema")) is not int or report.get("schema") != 2:
         raise EvidenceError("The Forge server report schema is invalid")
     if (
         report.get("profile_id") != PROFILE_ID
@@ -624,6 +670,15 @@ def validate_report(report: dict[str, object]) -> None:
         or not exact_json_value(registry, EXPECTED_REGISTRY)
     ):
         raise EvidenceError("The Forge server registry evidence is invalid")
+
+    loot_condition = report.get("loot_condition")
+    if (
+        not isinstance(loot_condition, dict)
+        or set(loot_condition) != set(EXPECTED_LOOT_CONDITION)
+        or loot_condition.get("same_state_at_server_started") is not True
+        or not exact_json_value(loot_condition, EXPECTED_LOOT_CONDITION)
+    ):
+        raise EvidenceError("The Forge server loot-condition evidence is invalid")
 
     tags = report.get("tags")
     if not isinstance(tags, dict) or set(tags) != set(EXPECTED_TAGS):
@@ -841,13 +896,13 @@ def validate_publication_order(scenario_root: Path) -> None:
     launcher = scenario_root / "reports" / "launcher-result.json"
     done = scenario_root / "reports" / "done.marker"
     log = scenario_root / "logs" / "latest.log"
-    if log.stat().st_mtime_ns < report.stat().st_mtime_ns:
+    if log.stat().st_mtime_ns <= report.stat().st_mtime_ns:
         raise EvidenceError("The Forge server copied log predates the report")
-    if launcher.stat().st_mtime_ns < log.stat().st_mtime_ns:
+    if launcher.stat().st_mtime_ns <= log.stat().st_mtime_ns:
         raise EvidenceError(
             "The Forge server launcher result predates report or copied log"
         )
-    if done.stat().st_mtime_ns < launcher.stat().st_mtime_ns:
+    if done.stat().st_mtime_ns <= launcher.stat().st_mtime_ns:
         raise EvidenceError(
             "The Forge server completion marker was not published last"
         )
@@ -1001,10 +1056,10 @@ def validate_live_runtime(
 
 
 def validate_archive_root_identity(archive_root: Path) -> None:
-    """Requires the immutable server-v2 evidence directory identity."""
+    """Requires the immutable registry-foundation server-v4 directory identity."""
     if archive_root.name != ARCHIVE_DIRECTORY_NAME:
         raise EvidenceError(
-            "The Forge server archive directory does not identify server profile v2"
+            "The Forge server archive directory does not identify registry-foundation profile v4"
         )
 
 
@@ -1262,7 +1317,7 @@ def parse_arguments() -> argparse.Namespace:
     """Parses one mutually exclusive live or archive verification mode."""
     parser = argparse.ArgumentParser(
         description=(
-            "Validate Forge 1.20.1 dedicated-server game-event evidence."
+            "Validate Forge 1.20.1 dedicated-server registry-foundation evidence."
         )
     )
     mode = parser.add_mutually_exclusive_group(required=True)

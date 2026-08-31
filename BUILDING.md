@@ -92,7 +92,14 @@ remains Fabric-only because the full block and item set is not ported; this synt
 proves the condition and serializer, not Attrahite
 gameplay or drop parity. No screenshots or native sound-playback evidence are claimed.
 
-The packaged Fabric artifact after the metal-block rebuild was exercised by the
+The current Fabric packaged-client proof is the consumed
+`etherology-e2e-fabric-1.20.1-v24` Forest Lantern profile. It passed all 68
+assertions and produced seven unedited 1920x1080 captures spanning the empty,
+all-stage, cumulative-facing, and reopened fixtures. The strict archive and
+`:fabric:1.20.1:validateFabricForestLanternV24Milestone` both pass. Any later
+Fabric lifecycle action requires a fresh v25-or-newer identity.
+
+The historical packaged Fabric artifact after the metal-block rebuild was exercised by the
 dedicated `metal-block-registry` scenario in the fresh repository-owned
 `etherology-e2e-fabric-1.20.1-v23` profile. Its schema-2 report passed all 25
 ordered assertions. The harness captured the exact empty three-pedestal fixture,
@@ -123,8 +130,9 @@ or player placement, mining or drops, tool-tier enforcement, beacon activation,
 recipes, creative tabs, restart persistence, multiplayer, or release readiness.
 
 The consumed v23 profile and runtime are immutable. Read-only profile and
-archive validation remain safe, but any next lifecycle action or native launch
-requires every active literal to advance to a fresh unused v24-or-newer profile.
+archive validation remain safe. The later v24 identity is also consumed, so any
+next lifecycle action or native launch requires every active literal to advance
+to a fresh unused v25-or-newer profile.
 The v22 Phase 0 archive remains the immutable historical packaged-startup proof:
 it passed 42 of 42 assertions, ran for 235 ticks, and captured two native
 1920x1080 screenshots with changed-pixel ratio `0.9796228780864198`, but its
@@ -133,7 +141,7 @@ four-machine fixture did not show or interact with the metal blocks. Fabric
 validation does not compare or cryptographically bind later sources or rebuilt
 artifacts.
 
-The current cumulative server proof is the fresh repository-owned
+The historical metal-block server proof is the fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v13` `metal-block-registry` run. Its
 schema-8 report passed 188 of 188 ordered assertions on a real Java 17 Forge
 47.4.9 dedicated server. It resolved the three exact shared blocks and three
@@ -163,6 +171,20 @@ evidence. The consumed v12 diagnostic profile is not accepted evidence.
 The immutable v13 archive proves capture-time Loom-userdev observations and
 payload integrity only; it does not compare or cryptographically bind later
 sources or rebuilt JARs. Current static artifact checks are a separate boundary.
+
+The current cumulative Forge server proof is the consumed
+`etherology-e2e-forge-server-1.20.1-v16` Forest Lantern run. Its schema-10
+report passed 266 of 266 assertions on Java 17 and Forge 47.4.9 and is frozen in
+`forest-lantern-server-v16`. The separate consumed Forge packaged-client v13
+run passed 69 of 69 assertions in 575 ticks, captured seven unedited 1920x1080
+framebuffers, and persisted the exact twenty-state fixture through a full
+disconnect/reopen. Its archive is `forest-lantern-v13`. The prior Forge server
+v15 oracle and Forge client v12 harness diagnostic are consumed but unaccepted
+and must never be relaunched. Any later Forge client run requires v14 or newer.
+
+The current positive gate is
+`:forge:1.20.1:validateForgeForestLanternMilestone`; it combines the current
+static/artifact contract with both accepted Forge Forest Lantern archives.
 The release artifact remains deliberately blocked on the rest of the
 authoritative registry spine and the remaining gameplay and native-readiness
 work.
@@ -198,8 +220,9 @@ bash ./gradlew --no-daemon --no-parallel \
   :fabric:1.20.1:build \
   :fabric:1.20.1:buildE2eHarness \
   :fabric:1.20.1:verifyE2eHarnessIsolation \
-  :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
-  :fabric:1.20.1:validateFabricMetalBlockRegistryEvidenceArchiveIntegrity \
+  :fabric:1.20.1:fabricForestLanternEvidenceSafetyTest \
+  :fabric:1.20.1:validateFabricForestLanternEvidenceArchiveIntegrity \
+  :fabric:1.20.1:validateFabricForestLanternV24Milestone \
   validateSupportCatalog
 ```
 
@@ -207,26 +230,27 @@ Compile and test every accepted bounded Forge milestone without claiming a relea
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:validateForgeMetalBlockRegistryMilestone \
-  :forge:1.20.1:validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity \
+  :forge:1.20.1:validateForgeForestLanternMilestone \
+  :forge:1.20.1:validateForgeForestLanternServerEvidenceArchiveIntegrity \
+  :forge:1.20.1:validateForgeForestLanternClientEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeChannelEvidenceArchiveIntegrity \
   :forge:1.20.1:verifyE2eUnderTestIsolation \
   :forge:1.20.1:verifyForgePortGateClosed
 ```
 
-The combined positive metal-block task includes the accepted sound,
+The combined positive Forest Lantern task includes the accepted sound,
 game-event, loot-condition, registry-foundation, Ether-source, enchantment,
-and particle tasks; static registry/resource/probe checks; every frozen
-predecessor archive; and the current v13 metal-block archive. It exercises
+particle, material-item, metal-block, and food-item tasks; static
+registry/resource/probe checks; every frozen predecessor archive; and the
+current v16 server plus v13 client Forest Lantern archives. It exercises
 Common, Fabric, and Forge tests, both transformed Common artifacts, the Fabric
 development and remapped production JARs, and the Forge shadow JAR. It proves
 the inherited exact 14 material-item declarations and the three exact block
 plus three exact block-item declarations, sole ownership, lazy supplier
 lifecycle, loader bootstrap paths, absence of the former eager fields, and
-exact packaged resources. Native v13 adds only the bounded server registry,
-property/tag/NBT, direct world-placement-through-reload, and save/stop proof;
-it does not infer player, mining, beacon, recipe, creative-tab, or client
-behavior from that state.
+exact packaged resources. Native Forest Lantern evidence adds the bounded
+server mechanic/reload/save proof and packaged-client rendering/reopen proof;
+it does not infer the remaining registry spine or full release readiness.
 
 `verifyRegistryFoundationServerProbe` builds and validates the isolated server-only probe, its Java 17 Loom
 run configuration, and its separation from production artifacts. It deliberately does not launch
@@ -254,28 +278,22 @@ python3 -B scripts/e2e/fabric_metal_block_evidence.py \
   --no-daemon --console=plain
 ```
 
-The active v23 profile is consumed. Before `provision`, `stage`, `check`,
-`start`, live validation, or another manifest creation, advance every active
-profile/runtime/snapshot/test/verifier/archive literal to a fresh unused v24 or
-newer identity.
+The v23 profile is consumed historical evidence, and the later accepted v24
+Forest Lantern profile is consumed as well. Before `provision`, `stage`,
+`check`, `start`, live validation, or another manifest creation, advance every
+active profile/runtime/snapshot/test/verifier/archive literal to a fresh unused
+v25-or-newer identity.
 
-## Forge dedicated-server metal-block-registry proof
+## Historical Forge dedicated-server metal-block-registry proof
 
 The native metal-block-registry proof is a one-shot run in a new
 repository-owned profile. `provision` refuses every existing target rather than
 adopting, deleting, or resetting it. The accepted v13 runtime is immutable. The
-commands below record the accepted v13 workflow; `validate` and both verifier
-commands remain safe, but do not invoke `provision`, `check`, or `run` again
-until every profile, contract, directory, and verifier literal has been
-advanced to a fresh version.
+commands below are historical provenance except for archive-only validation.
+The mutable generic runner now targets the consumed v16 Forest Lantern profile,
+so do not invoke `provision`, `check`, or `run` from this v13 record.
 
 ```shell
-python3 -B scripts/e2e/forge_server.py validate
-python3 -B scripts/e2e/forge_server.py provision
-python3 -B scripts/e2e/forge_server.py check
-python3 -B scripts/e2e/forge_server.py run
-python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v13
 python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
   --archive docs/evidence/forge-1.20.1/metal-block-registry-server-v13
 ```

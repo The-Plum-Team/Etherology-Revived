@@ -66,10 +66,19 @@ Forge registration was correct; the probe queried the deprecated `RenderLayers`
 map and observed solid instead of using `BakedModel#getRenderTypes`, which
 returns the exact cutout render type. v12 has no accepted archive and must not
 be relaunched. Its snapshot and repository-owned runtime remain historical.
-The active v13 profile is fresh and unprovisioned; its 3,668-byte manifest has
+The v13 profile then passed the corrected native scenario and is permanently
+consumed. Its 3,668-byte manifest has
 SHA-256
 `0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6`.
-No v13 native result or archive is claimed yet.
+The run passed all 69 assertions in 575 client ticks and wrote seven unedited
+1920x1080 framebuffers after 120 stable renders each; the minimum consecutive
+transition ratio was `0.008954`. The production and harness JAR SHA-256 values
+are `45a628ddbe67dd90c0d713fa0788caebb17bff071689e2e05b45dbbaed4c8732`
+and `2082b006646371e9339467bb59daa80d7d0c62d1102864ba56fa9b668c00dde9`.
+The accepted archive is
+`docs/evidence/forge-1.20.1/forest-lantern-v13`; its strict verifier and
+integrated milestone pass. Any later Forge client run requires a fresh
+v14-or-newer identity.
 
 ## Packaged-client evidence lifecycle
 
@@ -223,8 +232,11 @@ the production and harness JAR SHA-256 values are
 `982f16bf04a99c416efd25406df167e3539faede5f8f1024f0269221916725a1`
 and
 `38bfa390cb0e9a7409f2dce23a938cc96ce97a3ad9c201a5ab418c36e3e9e52a`.
-The strict archive verifier and Fabric milestone gate pass. Forge
-packaged-client Forest Lantern evidence is the next incomplete milestone.
+The strict archive verifier and Fabric milestone gate pass. The accepted Forge
+companion is the consumed v13 profile described above: 69 of 69 assertions and
+seven unedited 1920x1080 captures. Both Forest Lantern client lanes and the
+Forge v16 dedicated-server proof pass; the broader authoritative registry spine
+is the next incomplete milestone.
 
 The v6 `ether-source-reload`, v7 `enchantment-registry`, v10
 `particle-registry`, v11 `material-item-registry`, and v13
@@ -240,22 +252,22 @@ source bytes nor a packaged Forge JAR. Frozen archives prove capture-time
 integrity; current-source or rebuilt-artifact identity still requires a new
 isolated native run.
 
-The strict current verifier is:
+The strict current dedicated-server verifier is:
 
 ```bash
-python3 -B scripts/e2e/forge_server_food_item_evidence_v14.py \
-  --archive docs/evidence/forge-1.20.1/food-item-registry-server-v14
+python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
+  --archive docs/evidence/forge-1.20.1/forest-lantern-server-v16
 ```
 
-All 87 Python runner and verifier safety tests pass. Separately, the executable
+The v16 Forest Lantern runner and verifier safety suites pass. Separately, the executable
 `:forge:1.20.1:serverProbeSafetyInterlockTest` task passes 20 non-Minecraft
 Gradle interlock fixture cases and is wired into
-`forgeFoodItemRegistryServerSafetyTest`. These are distinct suites, not one
-107-test count. The integrated positive and forward-gate check is:
+`forgeForestLanternServerSafetyTest`. The integrated positive and forward-gate
+check is:
 
 ```bash
 ./gradlew --no-daemon --no-parallel --console=plain \
-  :forge:1.20.1:validateForgeFoodItemRegistryMilestone \
+  :forge:1.20.1:validateForgeForestLanternMilestone \
   :forge:1.20.1:verifyForgePortGateClosed
 ```
 

@@ -336,11 +336,15 @@ The Forge lane is a separate repository-owned profile described by
 `forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
-an external launcher profile. The current runtime contract is the fresh isolated
+an external launcher profile. The current runtime contract is the consumed isolated
 `etherology-e2e-forge-1.20.1-v13` profile. Its exact ordered scenarios are
 `ethereal-storage`, `ethereal-channel`, and `forest-lantern`; selection defaults
-to storage. v13 is reserved for the next Forest Lantern capture and has not been
-provisioned, staged, checked, or launched. The v12 identity is permanently
+to storage. v13 passed the native Forest Lantern capture with 69 of 69 assertions,
+seven unedited 1920x1080 framebuffers, and a minimum transition ratio of
+`0.008954`; its accepted archive is
+`docs/evidence/forge-1.20.1/forest-lantern-v13`. The v13 identity is permanently
+consumed and must not be provisioned, staged, checked, or launched again. The
+v12 identity is also permanently
 consumed by its one native Forest Lantern diagnostic: the report reached the
 prepared scenario with 69 assertions, but only 12 passed and 57 cascaded from
 one harness false negative before any screenshot. Production Forge registration
@@ -353,8 +357,9 @@ The launcher-created runtime marker also records the tracked profile manifest's
 repository path, exact byte size, and SHA-256. Every readiness and launch action
 recomputes that descriptor and rejects a mismatched marker.
 
-Validate the tracked contract, provision the isolated launcher, build the two
-local artifacts, stage them, and run the fail-closed readiness check:
+The following is the recorded one-shot v13 workflow, not an instruction to run
+it again. A future capture must first advance every profile, runtime, snapshot,
+test, verifier, and archive literal to a fresh v14-or-newer identity:
 
 ```bash
 python3 -B scripts/e2e/forge_client.py validate
@@ -376,7 +381,7 @@ python3 -B scripts/e2e/forge_client.py status
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. It is never removed
 and blocks another provision, stage, check, or start for v13, including after an
-early launch failure. v12 already has that durable marker and must never be
+early launch failure. v12 and v13 both have durable markers and must never be
 relaunched. `status` remains available; `stop` and `stop-all-owned`
 are abort-only recovery commands, not part of successful capture publication.
 
@@ -421,9 +426,10 @@ python3 -B scripts/e2e/forge_channel_evidence.py --scenario ethereal-channel
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
 ```
 
-After the harness stops itself, validate the live capture, copy only the report,
-completion marker, and seven PNGs while preserving modification times, seal
-them against that stopped owned capture, then validate the frozen archive:
+The accepted v13 publication validated the stopped live capture, copied only
+the report, completion marker, and seven PNGs while preserving modification
+times, sealed them against that stopped owned capture, and validated the frozen
+archive. These commands are provenance and must not be replayed against v13:
 
 ```bash
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
@@ -550,7 +556,8 @@ python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
 The exact archive directory and launch-attempt marker now block another
 provision, check, or run. The v15 historical safety task, v16 active safety
 task, strict archive verifier, and integrated Gradle archive gate all pass.
-Forge packaged-client Forest Lantern evidence is the next incomplete milestone.
+The Forge packaged-client Forest Lantern archive also passes. The broader
+authoritative registry spine is the next incomplete milestone.
 
 ## Historical Forge 1.20.1 dedicated-server metal-block-registry probe (v13)
 
@@ -668,7 +675,7 @@ was captured in the separate fresh v13 runtime.
 
 The immutable v11 predecessor passed all 163 schema-7 assertions for the exact
 14 `SharedMaterialItems` IDs, vanilla runtime classes, maximum counts, and
-in-process `ItemStack` NBT round trips through a real reload. The current v13
+in-process `ItemStack` NBT round trips through a real reload. The current v16
 record re-proves those assertions cumulatively. Validate the frozen v11 archive
 only with its pinned verifier:
 
@@ -693,10 +700,10 @@ The immutable v10 predecessor passed all 138 schema-6 assertions for the exact
 22 `SharedParticleTypes` IDs, eight payload families, concrete types, spawn
 flags, codecs, factories, command/packet/codec round trips, and seal metadata.
 It used the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v13
+`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v16
 re-proves all of its assertions cumulatively. Its five-file archive remains
 frozen at `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not
-be recaptured with the current v13 runner.
+be recaptured with the current v16 runner.
 
 Validate only the completed historical runtime or immutable archive with the
 pinned verifier:
@@ -762,12 +769,12 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
-and forbidden mod-ID inventories. The mutable runner has advanced to v13, so v6
+and forbidden mod-ID inventories. The mutable runner has advanced to v16, so v6
 must be inspected only through its immutable snapshot and verifier. It must
 never be provisioned, reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
-runner lifecycle shown above. Those mutable runner commands now target v13 and
+runner lifecycle shown above. Those mutable runner commands now target v16 and
 must not be used as instructions to recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
@@ -834,7 +841,7 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to v13. They cannot recapture v4, and v4 must not be provisioned,
+advanced to v16. They cannot recapture v4, and v4 must not be provisioned,
 reused, cleaned, or replaced. Only its immutable archive verifier remains an
 active instruction:
 
@@ -904,22 +911,26 @@ Attrahite gameplay or drop parity. This bounded run also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
-47 has no supported equivalent and remains deferred. The current Fabric `v23`
-archive adds a bounded visual proof for the three exact metal-block IDs: exact
+47 has no supported equivalent and remains deferred. The historical Fabric
+`v23` archive adds a bounded visual proof for the three exact metal-block IDs: exact
 server placement and client mirroring, fixed-camera rendering, two native
 1920x1080 screenshots after 120 stable renders each, forced save, and normal
 shutdown. It does not prove player placement, mining, drops, beacons, recipes,
 creative tabs, persistence across restart, multiplayer, or release readiness.
-The Fabric `v22` Phase 0 archive remains the historical packaged-startup proof;
+The consumed Fabric v24 Forest Lantern archive is the current packaged-client
+proof; its 68 assertions and seven native captures include save/reopen
+persistence. The Fabric `v22` Phase 0 archive remains the historical packaged-startup proof;
 its four-machine screenshots do not show the metal blocks. The immutable Fabric
 `v21` and `v20` archives likewise remain historical. The immutable v2
 game-event-only archive remains historical evidence;
 v4 superseded it as the registry-foundation proof, and the historical v4
 verifier intentionally does not accept v2 as its active archive. The v6
 Ether-source reload and v7 enchantment-registry archives remain immutable
-historical evidence; v10 is the historical particle-registry predecessor, and
-v11 is the historical material-item predecessor, and v13 is the current
-cumulative metal-block-registry proof.
+historical evidence; v10 is the historical particle-registry predecessor, v11
+is the historical material-item predecessor, v13 is the historical
+metal-block-registry proof, v14 is the historical food-item proof, and v16 is
+the current cumulative Forest Lantern dedicated-server proof. Forge client v13
+is the separately accepted packaged-client Forest Lantern proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:

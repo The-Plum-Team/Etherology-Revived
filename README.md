@@ -13,8 +13,8 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 
 | Minecraft | Loader | Status |
 | --- | --- | --- |
-| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and four real-client E2E slices pass, including the dedicated metal-block visual proof; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item/metal-block/food-item registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and five real-client E2E slices pass, including the dedicated metal-block and Forest Lantern visual proofs; broader parity is pending |
+| 1.20.1 | Forge | Active port; bounded Storage, Channel, and Forest Lantern client E2E plus the shared registry/reload foundation and cumulative Forest Lantern dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -29,9 +29,12 @@ spine. Its bounded shared-sound, game-event, loot-condition, enchantment,
 particle, behavior-free material-item, and Ether-source reload-listener steps
 are complete. The three behavior-free metal blocks and their placeable block
 items are complete as another bounded step. The plain
-`etherology:forest_lantern_crumb` food item is complete as the next bounded
-step; its six recipe/advancement resources remain deferred with the unported
-`forest_lantern` block.
+`etherology:forest_lantern_crumb` food item and the paired
+`etherology:forest_lantern` block/item mechanic are also accepted bounded
+steps. The original crumb recipes/advancements, age-gated loot, state/shape and
+growth behavior, Forge cutout rendering, four-facing placement, and save/reopen
+persistence are present and verified. Natural immature attachment remains
+coupled to the deferred peach-log/Golden-Forest graph.
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`, whose internal ID is
 `etherology_resonance` and whose range is 16. Both loaders package exact
@@ -96,12 +99,11 @@ remainder. Its exact English name is `Mushroom Crumb` and its Russian name is
 `Грибной мякиш`. The packaged model and texture have SHA-256
 `6ba61590386580a2f70526313d501eec44cd88ff9d86cd1d13d9092b41a42fbe`
 and `44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65`
-respectively. The three original recipes and their three advancements depend on
-`etherology:forest_lantern`; packaging them before that block is ported would
-create invalid data, so they are deliberately deferred rather than weakened or
-rewritten.
+respectively. Its three original recipes and three advancements were deferred
+at the v14 food-only checkpoint; the later accepted Forest Lantern slice now
+packages and verifies all six without changing their ingredients.
 
-The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
+The historical food-only Java 17 Forge 47.4.9 dedicated-server proof used the
 fresh repository-owned `etherology-e2e-forge-server-1.20.1-v14` profile and
 the `food-item-registry` scenario. Its tracked 1192-byte profile manifest has
 SHA-256
@@ -129,8 +131,8 @@ completion-marker SHA-256
 `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`,
 and server-log SHA-256
 `e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`.
-All 82 current Python runner and verifier safety tests pass. Separately,
-`:forge:1.20.1:serverProbeSafetyInterlockTest` passes 15 non-Minecraft Gradle
+All 87 pinned v14 Python runner and verifier safety tests pass. Separately,
+`:forge:1.20.1:serverProbeSafetyInterlockTest` passes 20 non-Minecraft Gradle
 interlock fixture cases and is wired into `forgeFoodItemRegistryServerSafetyTest`.
 A sealed archive now
 durably consumes its profile: provisioning and environment checks reject it
@@ -141,20 +143,51 @@ provenance authentication; same-account adversarial or concurrent filesystem
 mutation and TOCTOU are outside the bounded threat model.
 The strict archive verifier is
 `python3 -B scripts/e2e/forge_server_food_item_evidence_v14.py --archive docs/evidence/forge-1.20.1/food-item-registry-server-v14`.
-The integrated positive and forward-gate tasks are
-`:forge:1.20.1:validateForgeFoodItemRegistryMilestone` and
-`:forge:1.20.1:verifyForgePortGateClosed`.
+The accepted predecessor task is
+`:forge:1.20.1:validateForgeFoodItemRegistryMilestone`.
 
 The v6 Ether-source, v7 enchantment, v10 particle, v11 material-item, and v13
-metal-block archives remain immutable historical evidence; all of their
-accepted states are re-proved by this cumulative v14 run. The v12 profile was
+metal-block and v14 food-item archives remain immutable historical evidence;
+all of their accepted states are re-proved by the cumulative v16 run. The v12 profile was
 consumed by a failed diagnostic launch and was never accepted or archived.
-This bounded proof did not launch a second JVM or prove restart persistence,
-multiplayer, the six deferred recipe/advancement resources, creative-tab
-interaction, client rendering/gameplay, the full authoritative registry, or
-release readiness. The
+At its checkpoint this bounded proof did not launch a second JVM or prove
+restart persistence, multiplayer, the then-deferred recipe/advancement
+resources, creative-tab interaction, client rendering/gameplay, the full
+authoritative registry, or release readiness. The
 inherited particle, enchantment, sound, sculk-frequency, Attrahite-drop, block
 interaction, and combat caveats also remain.
+
+The current cumulative dedicated-server proof is the fresh, consumed
+`etherology-e2e-forge-server-1.20.1-v16` Forest Lantern profile. Its schema-10
+report passed 266 of 266 assertions on Java 17 and Forge 47.4.9, including the
+entire prior registry/reload contract, all twenty Forest Lantern age/facing
+states, exact shapes and properties, support and removal, shears/mining behavior,
+seeded jumps and drops, loot, recipes/advancements, reload stability, save, and
+normal shutdown. Its immutable archive is
+[`forest-lantern-server-v16`](docs/evidence/forge-1.20.1/forest-lantern-server-v16).
+The prior v15 identity is consumed without an accepted archive because its
+prepared oracle incorrectly expected `opaque=false`; v16 corrected only that
+oracle.
+
+The consumed Forge packaged-client v13 profile separately passed 69 of 69
+assertions in 575 ticks and wrote seven unedited 1920x1080 native framebuffers.
+It proves the effective cutout layer, baked models, complete twenty-state
+fixture, real four-facing `BlockItem` placement, forced save, full
+disconnect/reopen, and exact persistence. Its production and harness JAR
+SHA-256 values are
+`45a628ddbe67dd90c0d713fa0788caebb17bff071689e2e05b45dbbaed4c8732`
+and `2082b006646371e9339467bb59daa80d7d0c62d1102864ba56fa9b668c00dde9`;
+the archive is
+[`forest-lantern-v13`](docs/evidence/forge-1.20.1/forest-lantern-v13).
+The Fabric companion v24 passed 68 of 68 assertions with the same seven-frame
+progression. Forge client v12 remains an unaccepted, consumed harness-diagnostic
+identity. Any later Fabric client run requires v25 or newer; any later Forge
+client run requires v14 or newer.
+
+The active positive and diagnostic tasks are
+`:forge:1.20.1:validateForgeForestLanternMilestone` and
+`:forge:1.20.1:verifyForgePortGateClosed`. The latter reports the broader
+authoritative registry spine as the first incomplete forward stage.
 
 The historical registry foundation has both exact cross-loader artifact gates and a real
 Java 17 Forge 47.4.9 dedicated-server run in the fresh repository-owned
@@ -173,11 +206,12 @@ block and item set has not been ported. The synthetic table proves the shared co
 serializer, not Attrahite gameplay or drop parity. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
 archive superseded it as the registry-foundation proof and is now retained
-alongside the current v14 cumulative food-item proof, historical v13
+alongside the current v16 cumulative Forest Lantern proof, historical v14
+food-item proof, historical v13
 metal-block proof, v11 material-item proof, and historical v10 particle-registry, v7
 enchantment-registry, and v6 Ether-source reload proofs.
 Native sound playback and Forge's custom sculk frequency remain deferred. The
-fresh repository-owned Fabric `etherology-e2e-fabric-1.20.1-v23` profile ran a
+historical repository-owned Fabric `etherology-e2e-fabric-1.20.1-v23` profile ran a
 dedicated `metal-block-registry` visual scenario against the packaged artifact.
 All 25 ordered assertions passed. From one fixed first-person camera, the run
 captured the three empty display pedestals and then the exact client mirror of
@@ -200,15 +234,16 @@ rendering, native captures, and save publication. Direct server-side fixture
 placement does not prove `BlockItem` inventory or player placement, mining or
 drops, tool-tier enforcement, beacon activation, recipes, creative tabs,
 restart persistence, multiplayer, or release readiness. The consumed v23
-profile and runtime are immutable; any next client lifecycle action requires a
-fresh v24-or-newer profile. The Fabric `v22` Phase 0 smoke, `v21` material-item
+profile and runtime are immutable. The later accepted v24 Forest Lantern
+profile is also consumed; any next client lifecycle action requires a fresh
+v25-or-newer profile. The Fabric `v22` Phase 0 smoke, `v21` material-item
 smoke, and `v20` SharedSounds smoke remain immutable historical evidence. In
 particular, v22 passed 42 of 42 assertions and captured the existing
 four-machine fixture, but its screenshots did not show the three metal blocks.
 
 Frozen archives preserve capture-time observations, artifact identity, and
-payload integrity; neither the Fabric v23 archive nor the Forge v14 archive
-compares or cryptographically binds later sources or rebuilt JARs. Current
+payload integrity; none of the Fabric v24, Forge v16 server, or Forge v13 client
+archives compare or cryptographically bind later sources or rebuilt JARs. Current
 static artifact gates are a separate proof boundary. Every later rebuilt JAR
 needs another fresh isolated profile before it can claim equivalent runtime
 evidence.

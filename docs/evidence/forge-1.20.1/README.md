@@ -61,10 +61,76 @@ publication ordering, exact report contract, profile provenance, and server
 log. This headless proof intentionally contains no screenshots. It does not
 claim natural immature attachment while the Golden Forest graph is deferred,
 a second JVM, multiplayer, client rendering, creative-tab interaction, the
-full authoritative registry, or release readiness. Packaged-client evidence is
-the next Forest Lantern gate.
+full authoritative registry, or release readiness. The accepted v13 packaged
+client below supplies the separate rendering and restart-persistence boundary.
 
-## Forest Lantern packaged-client rollover (v12 to v13)
+## Forest Lantern packaged client (v13)
+
+- Profile: `etherology-e2e-forge-1.20.1-v13`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v13`
+- Scenario: `forest-lantern`
+- Tracked profile manifest: `3668` bytes, SHA-256
+  `0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6`
+- Minecraft: `1.20.1`; Forge: `47.4.9`; runtime Java: `17`
+- Report status: `passed`; assertions: `69` passed, `0` failed
+- Client ticks: `575`
+- Captures: seven unedited composed Minecraft framebuffers at `1920x1080`
+- Minimum consecutive-capture transition ratio: `0.008954`
+- Production JAR: `1293659` bytes, SHA-256
+  `45a628ddbe67dd90c0d713fa0788caebb17bff071689e2e05b45dbbaed4c8732`
+- Harness JAR: `164691` bytes, SHA-256
+  `2082b006646371e9339467bb59daa80d7d0c62d1102864ba56fa9b668c00dde9`
+
+The real integrated-world run proves the exact block/item mapping, all twenty
+age/facing states and raw IDs, thirteen hash-locked render resources, baked
+models, Forge's effective cutout render type, luminance 8, unsupported
+placement rejection, and four real direction-correct mature `BlockItem`
+placements. It captured the empty supports, all sixteen forced immature states,
+each cumulative mature facing, and the reopened final fixture after 120 stable
+renders per frame. A forced save, full disconnect, server restart, and reopen
+preserved the complete server/client matrix exactly.
+
+Visual inspection confirms that the seven fixed-camera images progress from
+empty supports through the transparent luminous growth models and the four
+cumulative mature placements. The reopened fixture matches the final state;
+there are no missing-texture magenta surfaces or opaque-geometry regressions.
+
+Frozen file digests:
+
+- `forest-lantern-v13/archive-manifest.json`:
+  `552e712a809855b6c29d90dee096ef409e466618b514db7480fc71aebf5c33c9`
+- `forest-lantern-v13/reports/report.json`:
+  `d14aad2770b2a8746823ccf23f6935a0ba8f3cc3ab72b226455bfeb58ea47cb1`
+- `forest-lantern-v13/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `forest-lantern-v13/screenshots/forest-lantern-empty.png`:
+  `2e420a5e622c0579461cbc279d3b8008dea8c00c308f46d59ee9836aa8b698ee`
+- `forest-lantern-v13/screenshots/forest-lantern-stages.png`:
+  `45f242714e0de081af95afe4c08e83caa28d8d8a3dc54d89d60a2838a5ca0969`
+- `forest-lantern-v13/screenshots/forest-lantern-facing-north.png`:
+  `023416f983f0e26bde8002a548124ef034743e3b3c52d2b04c303f51fe5781b4`
+- `forest-lantern-v13/screenshots/forest-lantern-facing-east.png`:
+  `b85f70c6bc5ebd7673823c881cd0504f77fcf5e096f6e23a6dfe7ee8afd638a9`
+- `forest-lantern-v13/screenshots/forest-lantern-facing-south.png`:
+  `f8dfab6e9c5054b7907d4456425ef92e66a1e9b2a57ba616fe3e96bc7dfb89df`
+- `forest-lantern-v13/screenshots/forest-lantern-facing-west.png`:
+  `604bc8c61d019bb6228667297a183432b89ee35ff2160692b5fffe12b1f4b9ce`
+- `forest-lantern-v13/screenshots/forest-lantern-reopened.png`:
+  `e548476369065744fa850c4a49f18d02afbeefab82064c6795930accec736989`
+
+Run the archive-only verifier from the repository root:
+
+```bash
+python3 -B scripts/e2e/forge_forest_lantern_evidence.py \
+  --archive docs/evidence/forge-1.20.1/forest-lantern-v13
+```
+
+It reports `69 assertions`, seven screenshots, and the minimum transition ratio
+above. The v13 profile and runtime are consumed and must never be relaunched;
+any later Forge packaged-client run requires a new v14-or-newer identity.
+
+### Failed v12 diagnostic
 
 The repository-owned `etherology-e2e-forge-1.20.1-v12` profile is permanently
 consumed by its native Forest Lantern diagnostic. Its report recorded 69
@@ -76,11 +142,8 @@ archive was accepted. Its tracked 3,668-byte profile snapshot has SHA-256
 `c23a2a905e40c721cda1d45086064667aacd568489a319eef4ce30e153a2a8d7`,
 and neither that snapshot nor its repository-owned runtime may be reused.
 
-The next packaged-client attempt is bound to the fresh, unprovisioned
-`etherology-e2e-forge-1.20.1-v13` profile. Its tracked 3,668-byte manifest has
-SHA-256
-`0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6`.
-No v13 native result or evidence archive is claimed yet.
+The corrected query was exercised only with the distinct v13 identity above;
+v12 was not retried.
 
 ## Ethereal Storage (v7)
 
@@ -278,7 +341,7 @@ bounded registry/reload/native-consumption contract have now passed as well. The
 broader authoritative registry spine is the next forward gate. The Forge
 release gate remains closed.
 
-## Current food-item-registry dedicated server (v14)
+## Historical food-item-registry dedicated server (v14)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v14`
 - Runtime directory:
@@ -308,9 +371,10 @@ effects, or recipe remainder. The packaged model SHA-256 is
 the packaged texture SHA-256 is
 `44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65`.
 The exact translations are `Mushroom Crumb` in English and `Грибной мякиш` in
-Russian. The three original recipes and their three advancements reference the
-still-unported `etherology:forest_lantern`, so they remain deliberately absent from
-the Forge slice instead of loading invalid data or substituting another input.
+Russian. At this v14 checkpoint, the three original recipes and their three
+advancements referenced the then-unported `etherology:forest_lantern`, so they
+were deliberately absent instead of loading invalid data or substituting
+another input. The later accepted Forest Lantern slice packages all six.
 
 The native server created two real `ServerPlayerEntity` instances,
 `EtherFoodStart` and `EtherFoodReload`. It captured the exact registry ID,
@@ -349,7 +413,7 @@ Server log SHA-256: e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d5
 Archive integrity only: current sources and rebuilt artifacts were not compared.
 ```
 
-The current food-item runner/verifier safety suite contains 87 passing tests:
+The pinned v14 food-item runner/verifier safety suite contains 87 passing tests:
 
 ```bash
 python3 -B -m unittest \
@@ -386,11 +450,11 @@ accidental-misuse interlocks, not provenance authentication; same-account
 adversarial or concurrent filesystem mutation and TOCTOU are outside the
 bounded threat model.
 
-This headless evidence creates no screenshots and supplies no client visual
-proof. It does not prove a second JVM or restart persistence, multiplayer, the
-six deferred recipe/advancement resources, creative-tab interaction, client
-rendering/gameplay, the complete authoritative registry, a complete port, or
-release readiness. Its immutable archive proves capture-time Loom-userdev
+This v14 headless evidence creates no screenshots and supplies no client visual
+proof. At that checkpoint it did not prove a second JVM or restart persistence,
+multiplayer, the then-deferred recipe/advancement resources, creative-tab
+interaction, client rendering/gameplay, the complete authoritative registry, a
+complete port, or release readiness. Its immutable archive proves capture-time Loom-userdev
 observations and payload integrity only; it does not compare or
 cryptographically bind later sources or rebuilt JARs. Current static artifact
 checks are a separate proof boundary.
@@ -865,9 +929,9 @@ integrity, not identity with later sources or rebuilt artifacts.
 This bounded record does not prove furnace or machine consumption, the wider
 Ether network, the full authoritative registry, native sound playback, Forge
 custom sculk-frequency behavior, Attrahite drops, or release readiness. It is
-retained as immutable historical proof; the cumulative v7 enchantment-registry
-section remains its successor, and the cumulative v10 particle-registry section
-is the current dedicated-server proof.
+retained as immutable historical proof; the cumulative v7, v10, v11, v13, and
+v14 sections remain successors, and the v16 Forest Lantern section is the
+current cumulative dedicated-server proof.
 
 ## Historical registry-foundation dedicated server (v4)
 
@@ -969,7 +1033,7 @@ immutable historical archive.
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v14 food-item archive is the current
+registry-foundation proof. The v16 Forest Lantern archive is the current
 cumulative dedicated-server proof. No current acceptance task or verifier
 treats v2 as the active archive.
 
@@ -1055,4 +1119,5 @@ the superseding registry-foundation proof; v6 is the historical Ether-source
 reload proof, v7 is the historical enchantment-registry proof, and v10 is the
 historical particle-registry proof. The v11 material-item archive is the
 older material-item predecessor, v13 is the immediate historical metal-block
-predecessor, and v14 is the current cumulative food-item-registry proof.
+predecessor, v14 is the historical food-item proof, and v16 is the current
+cumulative Forest Lantern proof.

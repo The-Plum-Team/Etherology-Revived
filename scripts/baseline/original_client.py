@@ -105,6 +105,9 @@ STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
 JAVA_OVERRIDE_ENVIRONMENT_VARIABLE = "ETHERLOGY_ORIGINAL_JAVA_21"
 SCENARIO_PROPERTY_NAME = "etherology.original.e2e.scenario"
+OFFLINE_ACCESS_TOKEN = "offline-etherology-original-baseline"
+OFFLINE_CLIENT_ID = "etherology-original-baseline-client"
+OFFLINE_XUID = "0"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
 MAXIMUM_DOWNLOAD_SIZE = 128 * 1024 * 1024
 MAXIMUM_NESTED_JAR_SIZE = 64 * 1024 * 1024
@@ -3667,6 +3670,21 @@ def offline_uuid(username: str) -> str:
     return str(uuid.UUID(bytes=digest, version=3))
 
 
+def resolve_offline_launcher_placeholders(command: list[str]) -> list[str]:
+    """Resolves the two modern auth fields omitted by launcher-lib 8.0."""
+
+    replacements = {
+        "${clientid}": OFFLINE_CLIENT_ID,
+        "${auth_xuid}": OFFLINE_XUID,
+    }
+    for placeholder in replacements:
+        if command.count(placeholder) != 1:
+            raise BaselineError(
+                f"Generated command does not contain exactly one {placeholder} argument"
+            )
+    return [replacements.get(argument, argument) for argument in command]
+
+
 def generate_launch_command(
     configuration: Configuration,
     java_path: Path,
@@ -3690,7 +3708,7 @@ def generate_launch_command(
     options = {
         "username": username,
         "uuid": offline_uuid(username),
-        "token": "offline-etherology-original-baseline",
+        "token": OFFLINE_ACCESS_TOKEN,
         "executablePath": str(java_path),
         "defaultExecutablePath": str(java_path),
         "gameDirectory": str(game_directory(configuration, root)),
@@ -3706,9 +3724,16 @@ def generate_launch_command(
             raise BaselineError(
                 "Verified launcher command module has no command function"
             )
-        return command_function(
-            version_id(configuration), str(launcher_directory(configuration, root)), options
+        command = command_function(
+            version_id(configuration),
+            str(launcher_directory(configuration, root)),
+            options,
         )
+        if not isinstance(command, list) or not all(
+            isinstance(argument, str) for argument in command
+        ):
+            raise BaselineError("Verified launcher returned an invalid command")
+        return resolve_offline_launcher_placeholders(command)
     except Exception as exception:
         raise BaselineError(
             f"Cannot generate the owned Fabric launch command: {exception}"
@@ -3751,7 +3776,9 @@ def verify_launch_command(
         "--version": version_id(configuration),
         "--username": username,
         "--uuid": offline_uuid(username),
-        "--accessToken": "offline-etherology-original-baseline",
+        "--accessToken": OFFLINE_ACCESS_TOKEN,
+        "--clientId": OFFLINE_CLIENT_ID,
+        "--xuid": OFFLINE_XUID,
         "--width": str(resolution["width"]),
         "--height": str(resolution["height"]),
     }
@@ -3776,11 +3803,10 @@ def verify_launch_command(
         "--patch-module",
         "--module-path",
         "--class-path",
-        "-p",
-        "-jar",
     )
     if any(
         value.startswith(forbidden_prefixes)
+        or value in ("-p", "-jar")
         or value.startswith("@")
         or "${" in value
         for value in command

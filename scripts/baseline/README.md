@@ -171,10 +171,13 @@ process is required.
 
 The first `provision` attempt on 2026-08-31 failed closed before publication
 because Fabric Meta returned newly timestamped bytes instead of the captured
-response. The controller removed its staging directory, and no owned runtime
-was created. The response is now the tracked input described above. `stage`,
-`check`, and `run` have not executed, so no native game launch or new screenshot
-has been proven. `minecraft-launcher-lib==8.0`, Requests `2.34.2`, urllib3 `2.7.0`,
+response. A second failed closed when macOS rejected a Requests proxy lookup in
+a forked multithreaded Python child. Both staging directories were removed and
+no runtime was published. After tracking the response and changing the killable
+worker to a clean spawned interpreter, `provision`, `stage`, and `check` all
+passed for the new owned profile. `run` has not executed, so no native game
+launch or new screenshot has yet been proven. `minecraft-launcher-lib==8.0`,
+Requests `2.34.2`, urllib3 `2.7.0`,
 certifi `2026.6.17`, idna `3.18`, and charset-normalizer `3.4.9` must be available
 in the invoking Python environment even for `validate`. Before any launcher or
 HTTP package code is imported, the controller validates each exact wheel
@@ -185,6 +188,11 @@ optional-module exclusion. It rejects extra executable package files and
 redirects bytecode lookup to an absent repository-owned cache prefix with
 bytecode writes disabled. The controller does not install Python packages or
 write a shared package cache.
+
+Launcher-lib 8.0 leaves Mojang's `${clientid}` and `${auth_xuid}` arguments
+unresolved for this version JSON. Command generation requires exactly one of
+each and replaces them with fixed offline literals before the complete argv is
+validated or sealed.
 
 ## `phase0-smoke` contract
 

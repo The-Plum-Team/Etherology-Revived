@@ -581,7 +581,11 @@ def write_launch_attempt_fixture(configuration: object, root: Path) -> Path:
         "--uuid",
         client.offline_uuid("EtherologyE2E"),
         "--accessToken",
-        "offline-etherology-original-baseline",
+        client.OFFLINE_ACCESS_TOKEN,
+        "--clientId",
+        client.OFFLINE_CLIENT_ID,
+        "--xuid",
+        client.OFFLINE_XUID,
         "--width",
         "960",
         "--height",
@@ -1647,6 +1651,11 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
             started = time.monotonic()
             with (
                 mock.patch.object(
+                    client.multiprocessing,
+                    "get_context",
+                    wraps=client.multiprocessing.get_context,
+                ) as get_context,
+                mock.patch.object(
                     client, "PROVISION_INSTALL_TIMEOUT_SECONDS", 0.05
                 ),
                 mock.patch.object(client, "PROCESS_STOP_TIMEOUT_SECONDS", 0.25),
@@ -1658,6 +1667,7 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(client.BaselineError, "one-hour worker"):
                     client.install_minecraft_in_owned_worker(configuration, root)
+            get_context.assert_called_once_with("spawn")
             self.assertLess(time.monotonic() - started, 3)
 
     def test_minecraft_installation_worker_propagates_failure(self) -> None:
@@ -2048,7 +2058,11 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                 "--uuid",
                 client.offline_uuid("EtherologyE2E"),
                 "--accessToken",
-                "offline-etherology-original-baseline",
+                client.OFFLINE_ACCESS_TOKEN,
+                "--clientId",
+                client.OFFLINE_CLIENT_ID,
+                "--xuid",
+                client.OFFLINE_XUID,
                 "--width",
                 "960",
                 "--height",
@@ -2056,6 +2070,37 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
             ]
         )
         return command, java, root
+
+    def test_launcher_auth_placeholders_are_resolved_to_exact_offline_values(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            java = temporary_root / "jdk" / "bin" / "java"
+            root = temporary_root / "runtime"
+            generated = [
+                str(java),
+                "${clientid}",
+                "${auth_xuid}",
+            ]
+            launcher_command = mock.Mock()
+            launcher_command.get_minecraft_command.return_value = generated
+            with mock.patch.object(
+                client,
+                "load_verified_launcher_module",
+                return_value=launcher_command,
+            ):
+                command = client.generate_launch_command(
+                    configuration,
+                    java,
+                    root,
+                    "phase0-smoke",
+                )
+            self.assertEqual(
+                command,
+                [str(java), client.OFFLINE_CLIENT_ID, client.OFFLINE_XUID],
+            )
 
     def test_launch_command_is_contained_and_scenario_exact(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

@@ -140,12 +140,15 @@ inventories. It also rejects unpinned optional HTTP implementations before any
 launcher package code executes.
 
 The first `provision` attempt on 2026-08-31 failed closed on Fabric Meta's new
-request timestamps, removed its staging directory, and published no runtime.
-The captured response is now tracked as described above. No successful
-provision, stage, check, native launch, new screenshot, or completed
-`phase0-smoke` report exists yet. Consequently this milestone proves the
-capture machinery is buildable and fail-closed; it does not establish any new
-original mechanic behaviour or port acceptance claim.
+request timestamps. A second failed closed when macOS rejected Requests proxy
+discovery after a multithreaded-process fork. Both staging directories were
+removed and neither attempt published a runtime. With the response tracked and
+the killable worker changed to a clean spawned interpreter, `provision`,
+`stage`, and `check` then passed for the new owned profile. Launcher-lib's two
+unresolved modern auth placeholders are now replaced with exact offline values
+before the argv gate. No native launch, new screenshot, or completed
+`phase0-smoke` report exists yet, so no new original mechanic behaviour or port
+acceptance claim has been established.
 
 ## Historical static gallery overview
 

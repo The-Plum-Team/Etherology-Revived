@@ -35,6 +35,8 @@ final class SharedParticleTypesBytecodeTest {
             "ru/feytox/etherology/particle/effects/misc/FeyParticleType";
     private static final String EFFECTS =
             "ru/feytox/etherology/particle/effects/";
+    private static final String ITEM_EFFECT_CLASS =
+            "/" + EFFECTS + "ItemParticleEffect.class";
     private static final String REGISTRY_SUPPLIER_DESCRIPTOR =
             "Ldev/architectury/registry/registries/RegistrySupplier;";
 
@@ -313,6 +315,31 @@ final class SharedParticleTypesBytecodeTest {
                     entry.getKey()
             );
         }
+    }
+
+    @Test
+    void itemCommandParserConsumesNamespacedIdentifiersDirectly() throws IOException {
+        List<String> invocations = invocationsByMethod(ITEM_EFFECT_CLASS).get(
+                "read(Lnet/minecraft/particle/ParticleType;"
+                        + "Lcom/mojang/brigadier/StringReader;)"
+                        + "Lru/feytox/etherology/particle/effects/ItemParticleEffect;"
+        );
+        assertEquals(
+                1,
+                countNamed(
+                        invocations,
+                        "net/minecraft/util/Identifier",
+                        "fromCommandInput"
+                )
+        );
+        assertEquals(
+                0,
+                countNamed(invocations, "com/mojang/brigadier/StringReader", "readString")
+        );
+        assertEquals(
+                0,
+                countNamed(invocations, "net/minecraft/util/Identifier", "tryParse")
+        );
     }
 
     private static void assertReadsParticleTypeRegistryKey() throws IOException {

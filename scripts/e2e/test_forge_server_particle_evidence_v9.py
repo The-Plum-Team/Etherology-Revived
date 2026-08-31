@@ -17,8 +17,8 @@ SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
-import forge_server_contract_v8 as contract_v8
-import forge_server_particle_evidence_v8 as evidence
+import forge_server_contract_v9 as contract_v9
+import forge_server_particle_evidence_v9 as evidence
 
 
 @dataclass(frozen=True)
@@ -68,7 +68,7 @@ def valid_report() -> dict[str, object]:
             "vanilla" if mod_id == "minecraft" else f"mod:{mod_id}"
             for mod_id in loaded_mod_ids
         ]
-        + [contract_v8.RELOAD_PACK_ENABLED_NAME]
+        + [contract_v9.RELOAD_PACK_ENABLED_NAME]
     )
     return {
         "schema": 6,
@@ -103,15 +103,15 @@ def valid_report() -> dict[str, object]:
             "stable_after_reload": True,
         },
         "enchantments": {
-            "registry_id": contract_v8.ENCHANTMENT_REGISTRY_ID,
-            "non_treasure_tag_id": contract_v8.NON_TREASURE_TAG_ID,
-            "etherology_enchantment_ids": list(contract_v8.ENCHANTMENT_IDS),
-            "peal": copy.deepcopy(contract_v8.ENCHANTMENTS["peal"]),
+            "registry_id": contract_v9.ENCHANTMENT_REGISTRY_ID,
+            "non_treasure_tag_id": contract_v9.NON_TREASURE_TAG_ID,
+            "etherology_enchantment_ids": list(contract_v9.ENCHANTMENT_IDS),
+            "peal": copy.deepcopy(contract_v9.ENCHANTMENTS["peal"]),
             "reflection": copy.deepcopy(
-                contract_v8.ENCHANTMENTS["reflection"]
+                contract_v9.ENCHANTMENTS["reflection"]
             ),
             "non_treasure_etherology_enchantment_ids": list(
-                contract_v8.ENCHANTMENT_IDS
+                contract_v9.ENCHANTMENT_IDS
             ),
             "same_state_at_server_started": True,
             "registry_stable_after_reload": True,
@@ -119,17 +119,17 @@ def valid_report() -> dict[str, object]:
             "tag_stable_after_reload": True,
         },
         "particles": {
-            "registry_id": contract_v8.PARTICLE_REGISTRY_ID,
+            "registry_id": contract_v9.PARTICLE_REGISTRY_ID,
             "capture_error": "",
-            "etherology_particle_ids": list(contract_v8.PARTICLE_IDS),
+            "etherology_particle_ids": list(contract_v9.PARTICLE_IDS),
             "payload_families": list(
-                contract_v8.PARTICLE_PAYLOAD_FAMILIES
+                contract_v9.PARTICLE_PAYLOAD_FAMILIES
             ),
-            "entries": copy.deepcopy(contract_v8.PARTICLES),
+            "entries": copy.deepcopy(contract_v9.PARTICLES),
             "seal_types": {
-                "order": list(contract_v8.SEAL_TYPE_ORDER),
+                "order": list(contract_v9.SEAL_TYPE_ORDER),
                 "codec_round_trips_exact": True,
-                "entries": copy.deepcopy(contract_v8.SEAL_TYPES),
+                "entries": copy.deepcopy(contract_v9.SEAL_TYPES),
             },
             "same_state_at_server_started": True,
             "registry_stable_after_reload": True,
@@ -158,33 +158,33 @@ def valid_report() -> dict[str, object]:
             "probe_table_instance_replaced_after_reload": True,
         },
         "ether_sources": {
-            "listener_class": contract_v8.ETHER_SOURCE_LISTENER_CLASS,
+            "listener_class": contract_v9.ETHER_SOURCE_LISTENER_CLASS,
             "resource_directory": "ether_sources",
             "initial": {
                 "capture_error": "",
                 "entries": copy.deepcopy(
-                    contract_v8.INITIAL_ETHER_SOURCE_ENTRIES
+                    contract_v9.INITIAL_ETHER_SOURCE_ENTRIES
                 ),
             },
             "server_started": {
                 "capture_error": "",
                 "entries": copy.deepcopy(
-                    contract_v8.INITIAL_ETHER_SOURCE_ENTRIES
+                    contract_v9.INITIAL_ETHER_SOURCE_ENTRIES
                 ),
             },
             "reloaded": {
                 "capture_error": "",
                 "entries": copy.deepcopy(
-                    contract_v8.RELOADED_ETHER_SOURCE_ENTRIES
+                    contract_v9.RELOADED_ETHER_SOURCE_ENTRIES
                 ),
             },
             "same_at_server_started": True,
             "changed_after_reload": True,
         },
         "reload": {
-            "pack_directory": contract_v8.RELOAD_PACK_DIRECTORY,
-            "pack_resources": list(contract_v8.RELOAD_PACK_RESOURCES),
-            "enabled_pack_name": contract_v8.RELOAD_PACK_ENABLED_NAME,
+            "pack_directory": contract_v9.RELOAD_PACK_DIRECTORY,
+            "pack_resources": list(contract_v9.RELOAD_PACK_RESOURCES),
+            "enabled_pack_name": contract_v9.RELOAD_PACK_ENABLED_NAME,
             "enabled_data_pack_names": enabled_data_pack_names,
             "enabled_data_packs_exact": True,
             "command": "reload",
@@ -228,7 +228,7 @@ def valid_report() -> dict[str, object]:
             "same_membership_at_server_started": True,
             "stable_after_reload": True,
         },
-        "lifecycle": list(contract_v8.EXPECTED_LIFECYCLE),
+        "lifecycle": list(contract_v9.EXPECTED_LIFECYCLE),
         "assertions": assertions,
     }
 
@@ -261,7 +261,7 @@ def build_fixture(root: Path) -> Fixture:
     profile = root / "repository" / evidence.PROFILE_MANIFEST_RELATIVE_PATH
     profile.parent.mkdir(parents=True, exist_ok=True)
     profile_snapshot = (
-        evidence.REPOSITORY_ROOT / contract_v8.PROFILE_SNAPSHOT_RELATIVE_PATH
+        evidence.REPOSITORY_ROOT / contract_v9.PROFILE_SNAPSHOT_RELATIVE_PATH
     )
     profile.write_bytes(profile_snapshot.read_bytes())
     profile_record = evidence.ProfileRecord(
@@ -378,27 +378,27 @@ def reseal_archive_log_and_launcher(archive: Path) -> None:
 
 
 class ContractOwnershipTests(unittest.TestCase):
-    def test_v8_archive_contract_does_not_import_the_mutable_runner(self) -> None:
+    def test_v9_archive_contract_does_not_import_the_mutable_runner(self) -> None:
         evidence_source = Path(evidence.__file__).read_text(encoding="utf-8")
-        contract_source = Path(contract_v8.__file__).read_text(encoding="utf-8")
+        contract_source = Path(contract_v9.__file__).read_text(encoding="utf-8")
 
         self.assertIn(
-            "import forge_server_contract_v8 as contract_v8",
+            "import forge_server_contract_v9 as contract_v9",
             evidence_source,
         )
         self.assertNotRegex(evidence_source, r"(?m)^import forge_server$")
         self.assertNotRegex(contract_source, r"(?m)^import forge_server$")
-        self.assertEqual(138, len(contract_v8.EXPECTED_ASSERTION_NAMES))
-        self.assertEqual(138, len(contract_v8.EXPECTED_ASSERTION_VALUES))
+        self.assertEqual(138, len(contract_v9.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(138, len(contract_v9.EXPECTED_ASSERTION_VALUES))
         snapshot = (
-            evidence.REPOSITORY_ROOT / contract_v8.PROFILE_SNAPSHOT_RELATIVE_PATH
+            evidence.REPOSITORY_ROOT / contract_v9.PROFILE_SNAPSHOT_RELATIVE_PATH
         )
         self.assertEqual(
-            contract_v8.PROFILE_MANIFEST_SIZE,
+            contract_v9.PROFILE_MANIFEST_SIZE,
             snapshot.stat().st_size,
         )
         self.assertEqual(
-            contract_v8.PROFILE_MANIFEST_SHA256,
+            contract_v9.PROFILE_MANIFEST_SHA256,
             evidence.sha256_file(snapshot),
         )
 
@@ -491,7 +491,7 @@ class LiveEvidenceTests(unittest.TestCase):
                     ),
                 )
 
-                with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+                with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                     evidence.validate_live_runtime(
                         fixture.runtime,
                         fixture.profile,
@@ -615,7 +615,7 @@ class LiveEvidenceTests(unittest.TestCase):
                     lambda report: mutation(report["particles"]),
                 )
 
-                with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+                with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                     evidence.validate_live_runtime(
                         fixture.runtime,
                         fixture.profile,
@@ -705,7 +705,7 @@ class LiveEvidenceTests(unittest.TestCase):
                     lambda report: mutation(report["enchantments"]),
                 )
 
-                with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+                with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                     evidence.validate_live_runtime(
                         fixture.runtime,
                         fixture.profile,
@@ -744,7 +744,7 @@ class LiveEvidenceTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(
                     evidence.EvidenceError,
-                    "v8 contract",
+                    "v9 contract",
                 ):
                     evidence.validate_live_runtime(
                         fixture.runtime,
@@ -836,7 +836,7 @@ class LiveEvidenceTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(
                     evidence.EvidenceError,
-                    "v8 contract",
+                    "v9 contract",
                 ):
                     evidence.validate_live_runtime(
                         fixture.runtime,
@@ -850,7 +850,7 @@ class LiveEvidenceTests(unittest.TestCase):
             (
                 "pack resources",
                 "pack_resources",
-                list(reversed(contract_v8.RELOAD_PACK_RESOURCES)),
+                list(reversed(contract_v9.RELOAD_PACK_RESOURCES)),
             ),
             ("enabled pack name", "enabled_pack_name", "file/foreign"),
             (
@@ -926,7 +926,7 @@ class LiveEvidenceTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(
                     evidence.EvidenceError,
-                    "v8 contract",
+                    "v9 contract",
                 ):
                     evidence.validate_live_runtime(
                         fixture.runtime,
@@ -1004,7 +1004,7 @@ class LiveEvidenceTests(unittest.TestCase):
                 report_path = fixture.scenario / "reports" / "report.json"
                 mutate_json(report_path, lambda report: mutation(report["tags"]))
 
-                with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+                with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                     evidence.validate_live_runtime(
                         fixture.runtime,
                         fixture.profile,
@@ -1083,7 +1083,7 @@ class LiveEvidenceTests(unittest.TestCase):
                     ),
                 )
 
-                with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+                with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                     evidence.validate_live_runtime(
                         fixture.runtime,
                         fixture.profile,
@@ -1143,7 +1143,7 @@ class LiveEvidenceTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(
                     evidence.EvidenceError,
-                    "v8 contract",
+                    "v9 contract",
                 ):
                     evidence.validate_live_runtime(
                         fixture.runtime,
@@ -1162,7 +1162,7 @@ class LiveEvidenceTests(unittest.TestCase):
                 ),
             )
 
-            with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+            with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                 evidence.validate_live_runtime(
                     fixture.runtime,
                     fixture.profile,
@@ -1205,7 +1205,7 @@ class LiveEvidenceTests(unittest.TestCase):
                 report_path,
                 lambda report: report["lifecycle"].reverse(),
             )
-            with self.assertRaisesRegex(evidence.EvidenceError, "v8 contract"):
+            with self.assertRaisesRegex(evidence.EvidenceError, "v9 contract"):
                 evidence.validate_live_runtime(
                     fixture.runtime,
                     fixture.profile,
@@ -1507,7 +1507,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
                         expected_archive_root=archive,
                     )
 
-    def test_resealed_v8_reload_report_tampering_is_rejected(self) -> None:
+    def test_resealed_v9_reload_report_tampering_is_rejected(self) -> None:
         cases = (
             (
                 "schema downgrade",
@@ -1593,7 +1593,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
                 "enabled pack missing",
                 lambda report: report["reload"][
                     "enabled_data_pack_names"
-                ].remove(contract_v8.RELOAD_PACK_ENABLED_NAME),
+                ].remove(contract_v9.RELOAD_PACK_ENABLED_NAME),
             ),
             (
                 "enabled pack equality false",
@@ -1634,14 +1634,14 @@ class ArchiveEvidenceTests(unittest.TestCase):
 
                 with self.assertRaisesRegex(
                     evidence.EvidenceError,
-                    "v8 contract",
+                    "v9 contract",
                 ):
                     evidence.validate_archived_evidence(
                         archive,
                         expected_archive_root=archive,
                     )
 
-    def test_resealed_v8_reload_log_tampering_is_rejected(self) -> None:
+    def test_resealed_v9_reload_log_tampering_is_rejected(self) -> None:
         cases = (
             (
                 "reload phase reordered",
@@ -1764,7 +1764,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
                         expected_archive_root=archive,
                     )
 
-    def test_archive_requires_exact_destination_and_particle_registry_v8_name(
+    def test_archive_requires_exact_destination_and_particle_registry_v9_name(
         self,
     ) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1786,7 +1786,7 @@ class ArchiveEvidenceTests(unittest.TestCase):
             shutil.copytree(archive, wrong_name, copy_function=shutil.copy2)
             with self.assertRaisesRegex(
                 evidence.EvidenceError,
-                "repository path|particle-registry profile v8",
+                "repository path|particle-registry profile v9",
             ):
                 evidence.validate_archived_evidence(
                     wrong_name,

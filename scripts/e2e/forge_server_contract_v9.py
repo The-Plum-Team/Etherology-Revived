@@ -1,20 +1,20 @@
-"""Freeze the Forge 1.20.1 particle-registry report contract for profile v8."""
+"""Freeze the Forge 1.20.1 particle-registry report contract for profile v9."""
 
 from __future__ import annotations
 
 import re
 
 
-PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v8"
+PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v9"
 SCENARIO_ID = "particle-registry"
 TASK_PATH = ":forge:1.20.1:runRegistryFoundationServerProbe"
 PROFILE_MANIFEST_RELATIVE_PATH = "scripts/e2e/forge-server-1.20.1-profile.json"
 PROFILE_SNAPSHOT_RELATIVE_PATH = (
-    "scripts/e2e/forge-server-1.20.1-profile-v8.json"
+    "scripts/e2e/forge-server-1.20.1-profile-v9.json"
 )
 PROFILE_MANIFEST_SIZE = 1188
 PROFILE_MANIFEST_SHA256 = (
-    "20dbb0dcdce93f92b42c2565628172f64a25cd684063cd9d0f6721eb904ad995"
+    "1f9b78c42f7efe98df7f95bbf89451a2bafa0216a546b74576a863df46d37b92"
 )
 REQUIRED_MOD_IDS = (
     "etherology",
@@ -479,8 +479,8 @@ ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = frozenset(
 )
 
 
-class V8ContractError(RuntimeError):
-    """Reports an exact profile-v8 report contract violation."""
+class V9ContractError(RuntimeError):
+    """Reports an exact profile-v9 report contract violation."""
 
 
 def exact_json_value(actual: object, expected: object) -> bool:
@@ -504,7 +504,7 @@ def validate_probe_report(
     required_mod_ids: object,
     forbidden_mod_ids: object,
 ) -> None:
-    """Validates the exact profile-v8 report and its profile mod alignment."""
+    """Validates the exact profile-v9 report and its profile mod alignment."""
     expected_fields = {
         "schema",
         "profile_id",
@@ -530,7 +530,7 @@ def validate_probe_report(
         "assertions",
     }
     if set(report) != expected_fields:
-        raise V8ContractError("The server probe report field inventory changed")
+        raise V9ContractError("The server probe report field inventory changed")
     expected_scalars = {
         "schema": 6,
         "profile_id": PROFILE_ID,
@@ -545,7 +545,7 @@ def validate_probe_report(
     }
     for name, expected in expected_scalars.items():
         if not exact_json_value(report.get(name), expected):
-            raise V8ContractError(
+            raise V9ContractError(
                 f"The server probe report {name} value changed"
             )
 
@@ -574,15 +574,15 @@ def validate_probe_report(
         or not set(REQUIRED_MOD_IDS).issubset(loaded_mod_ids)
         or set(FORBIDDEN_MOD_IDS).intersection(loaded_mod_ids)
     ):
-        raise V8ContractError("The full loaded mod id inventory is invalid")
+        raise V9ContractError("The full loaded mod id inventory is invalid")
     if not exact_json_value(report.get("forbidden_mod_ids_loaded"), []):
-        raise V8ContractError("The loaded forbidden mod intersection is not empty")
+        raise V9ContractError("The loaded forbidden mod intersection is not empty")
     expected_mods = {
         **{mod_id: {"loaded": True} for mod_id in REQUIRED_MOD_IDS},
         **{mod_id: {"loaded": False} for mod_id in FORBIDDEN_MOD_IDS},
     }
     if not exact_json_value(report.get("mods"), expected_mods):
-        raise V8ContractError("The server probe mod subset changed")
+        raise V9ContractError("The server probe mod subset changed")
     if not exact_json_value(report.get("registry"), {
         "registry_id": "minecraft:game_event",
         "event_id": "etherology:etherology_resonance",
@@ -592,7 +592,7 @@ def validate_probe_report(
         "same_instance_at_server_started": True,
         "stable_after_reload": True,
     }):
-        raise V8ContractError("The server probe registry result changed")
+        raise V9ContractError("The server probe registry result changed")
     if not exact_json_value(report.get("enchantments"), {
         "registry_id": ENCHANTMENT_REGISTRY_ID,
         "non_treasure_tag_id": NON_TREASURE_TAG_ID,
@@ -605,7 +605,7 @@ def validate_probe_report(
         "properties_stable_after_reload": True,
         "tag_stable_after_reload": True,
     }):
-        raise V8ContractError("The server probe enchantment result changed")
+        raise V9ContractError("The server probe enchantment result changed")
     if not exact_json_value(report.get("particles"), {
         "registry_id": PARTICLE_REGISTRY_ID,
         "capture_error": "",
@@ -622,7 +622,7 @@ def validate_probe_report(
         "type_contract_stable_after_reload": True,
         "wire_contract_stable_after_reload": True,
     }):
-        raise V8ContractError("The server probe particle result changed")
+        raise V9ContractError("The server probe particle result changed")
     if not exact_json_value(report.get("loot_condition"), {
         "registry_id": "minecraft:loot_condition_type",
         "condition_id": "etherology:random_chance_with_fortune",
@@ -642,7 +642,7 @@ def validate_probe_report(
         "registry_and_behavior_stable_after_reload": True,
         "probe_table_instance_replaced_after_reload": True,
     }):
-        raise V8ContractError("The server probe loot-condition result changed")
+        raise V9ContractError("The server probe loot-condition result changed")
 
     expected_initial_capture = {
         "capture_error": "",
@@ -660,7 +660,7 @@ def validate_probe_report(
         "same_at_server_started": True,
         "changed_after_reload": True,
     }):
-        raise V8ContractError("The server probe Ether-source result changed")
+        raise V9ContractError("The server probe Ether-source result changed")
 
     reload = report.get("reload")
     if not isinstance(reload, dict) or set(reload) != {
@@ -687,7 +687,7 @@ def validate_probe_report(
         "particle_wire_contract_stable",
         "stop_requested_after_completion",
     }:
-        raise V8ContractError("The server probe reload result changed")
+        raise V9ContractError("The server probe reload result changed")
     enabled_data_pack_names = reload.get("enabled_data_pack_names")
     expected_enabled_data_pack_names = sorted(
         [
@@ -704,7 +704,7 @@ def validate_probe_report(
         )
         or enabled_data_pack_names != expected_enabled_data_pack_names
     ):
-        raise V8ContractError(
+        raise V9ContractError(
             "The server probe enabled data-pack inventory changed"
         )
     expected_reload = {
@@ -732,7 +732,7 @@ def validate_probe_report(
         "stop_requested_after_completion": True,
     }
     if not exact_json_value(reload, expected_reload):
-        raise V8ContractError("The server probe reload result changed")
+        raise V9ContractError("The server probe reload result changed")
 
     if not exact_json_value(report.get("tags"), {
         "update_cause": "SERVER_DATA_LOAD",
@@ -757,15 +757,15 @@ def validate_probe_report(
         "same_membership_at_server_started": True,
         "stable_after_reload": True,
     }):
-        raise V8ContractError("The server probe tag result changed")
+        raise V9ContractError("The server probe tag result changed")
     if not exact_json_value(report.get("lifecycle"), list(EXPECTED_LIFECYCLE)):
-        raise V8ContractError("The server probe lifecycle changed")
+        raise V9ContractError("The server probe lifecycle changed")
 
     assertions = report.get("assertions")
     if not isinstance(assertions, list) or len(assertions) != len(
         EXPECTED_ASSERTION_NAMES
     ):
-        raise V8ContractError("The server probe assertion inventory changed")
+        raise V9ContractError("The server probe assertion inventory changed")
     for index, (name, value) in enumerate(
         zip(EXPECTED_ASSERTION_NAMES, EXPECTED_ASSERTION_VALUES, strict=True)
     ):
@@ -776,7 +776,7 @@ def validate_probe_report(
             "expected",
             "actual",
         }:
-            raise V8ContractError(
+            raise V9ContractError(
                 f"Server probe assertion {index} has invalid fields"
             )
         if not exact_json_value(assertion, {
@@ -785,7 +785,7 @@ def validate_probe_report(
             "expected": value,
             "actual": value,
         }):
-            raise V8ContractError(
+            raise V9ContractError(
                 f"Server probe assertion failed or changed: {name}"
             )
 
@@ -793,6 +793,6 @@ def validate_probe_report(
         required_mod_ids != list(REQUIRED_MOD_IDS)
         or forbidden_mod_ids != list(FORBIDDEN_MOD_IDS)
     ):
-        raise V8ContractError(
+        raise V9ContractError(
             "The report mod subset differs from the tracked profile"
         )

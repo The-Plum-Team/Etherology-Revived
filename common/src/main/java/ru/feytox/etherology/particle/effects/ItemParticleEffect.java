@@ -46,8 +46,8 @@ public class ItemParticleEffect extends FeyParticleEffect<ItemParticleEffect> {
     @Override
     public ItemParticleEffect read(ParticleType<ItemParticleEffect> type, StringReader reader) throws CommandSyntaxException {
         reader.expect(' ');
-        Identifier itemId = Identifier.tryParse(reader.readString());
-        if (itemId == null || !Registries.ITEM.containsId(itemId)) {
+        Identifier itemId = Identifier.fromCommandInput(reader);
+        if (!Registries.ITEM.containsId(itemId)) {
             throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownArgument().createWithContext(reader);
         }
         reader.expect(' ');

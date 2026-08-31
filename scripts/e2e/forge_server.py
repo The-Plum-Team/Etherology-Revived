@@ -18,7 +18,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
-import forge_server_contract_v8 as contract_v8
+import forge_server_contract_v9 as contract_v9
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -33,9 +33,9 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v8.PROFILE_ID
-SCENARIO_ID = contract_v8.SCENARIO_ID
-TASK_PATH = contract_v8.TASK_PATH
+PROFILE_ID = contract_v9.PROFILE_ID
+SCENARIO_ID = contract_v9.SCENARIO_ID
+TASK_PATH = contract_v9.TASK_PATH
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -46,35 +46,35 @@ PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 MAXIMUM_SERVER_LOG_SIZE = 48 * 1024 * 1024
 COMPLETION_MARKER_CONTENT = b"complete\n"
-REQUIRED_MOD_IDS = contract_v8.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v8.FORBIDDEN_MOD_IDS
-RELOAD_PACK_DIRECTORY = contract_v8.RELOAD_PACK_DIRECTORY
-RELOAD_PACK_ENABLED_NAME = contract_v8.RELOAD_PACK_ENABLED_NAME
-RELOAD_PACK_RESOURCES = contract_v8.RELOAD_PACK_RESOURCES
-ETHER_SOURCE_LISTENER_CLASS = contract_v8.ETHER_SOURCE_LISTENER_CLASS
-ENCHANTMENT_REGISTRY_ID = contract_v8.ENCHANTMENT_REGISTRY_ID
-NON_TREASURE_TAG_ID = contract_v8.NON_TREASURE_TAG_ID
-ENCHANTMENT_IDS = contract_v8.ENCHANTMENT_IDS
-ENCHANTMENTS = contract_v8.ENCHANTMENTS
-PARTICLE_REGISTRY_ID = contract_v8.PARTICLE_REGISTRY_ID
-FEY_PARTICLE_TYPE_CLASS = contract_v8.FEY_PARTICLE_TYPE_CLASS
-PARTICLE_IDS = contract_v8.PARTICLE_IDS
-PARTICLE_PAYLOAD_FAMILIES = contract_v8.PARTICLE_PAYLOAD_FAMILIES
-PARTICLES = contract_v8.PARTICLES
-SEAL_TYPE_ORDER = contract_v8.SEAL_TYPE_ORDER
-SEAL_TYPES = contract_v8.SEAL_TYPES
-INITIAL_ETHER_SOURCE_ENTRIES = contract_v8.INITIAL_ETHER_SOURCE_ENTRIES
-RELOADED_ETHER_SOURCE_ENTRIES = contract_v8.RELOADED_ETHER_SOURCE_ENTRIES
-canonical_ether_source_entries = contract_v8.canonical_ether_source_entries
-EXPECTED_LIFECYCLE = contract_v8.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v8.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v8.EXPECTED_ASSERTION_VALUES
-PROBE_LOG_PHASES = contract_v8.PROBE_LOG_PHASES
-SERVER_LOG_TOKENS = contract_v8.SERVER_LOG_TOKENS
-CLIENT_LOG_MARKERS = contract_v8.CLIENT_LOG_MARKERS
-CLIENT_CLASS_PATTERN = contract_v8.CLIENT_CLASS_PATTERN
+REQUIRED_MOD_IDS = contract_v9.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v9.FORBIDDEN_MOD_IDS
+RELOAD_PACK_DIRECTORY = contract_v9.RELOAD_PACK_DIRECTORY
+RELOAD_PACK_ENABLED_NAME = contract_v9.RELOAD_PACK_ENABLED_NAME
+RELOAD_PACK_RESOURCES = contract_v9.RELOAD_PACK_RESOURCES
+ETHER_SOURCE_LISTENER_CLASS = contract_v9.ETHER_SOURCE_LISTENER_CLASS
+ENCHANTMENT_REGISTRY_ID = contract_v9.ENCHANTMENT_REGISTRY_ID
+NON_TREASURE_TAG_ID = contract_v9.NON_TREASURE_TAG_ID
+ENCHANTMENT_IDS = contract_v9.ENCHANTMENT_IDS
+ENCHANTMENTS = contract_v9.ENCHANTMENTS
+PARTICLE_REGISTRY_ID = contract_v9.PARTICLE_REGISTRY_ID
+FEY_PARTICLE_TYPE_CLASS = contract_v9.FEY_PARTICLE_TYPE_CLASS
+PARTICLE_IDS = contract_v9.PARTICLE_IDS
+PARTICLE_PAYLOAD_FAMILIES = contract_v9.PARTICLE_PAYLOAD_FAMILIES
+PARTICLES = contract_v9.PARTICLES
+SEAL_TYPE_ORDER = contract_v9.SEAL_TYPE_ORDER
+SEAL_TYPES = contract_v9.SEAL_TYPES
+INITIAL_ETHER_SOURCE_ENTRIES = contract_v9.INITIAL_ETHER_SOURCE_ENTRIES
+RELOADED_ETHER_SOURCE_ENTRIES = contract_v9.RELOADED_ETHER_SOURCE_ENTRIES
+canonical_ether_source_entries = contract_v9.canonical_ether_source_entries
+EXPECTED_LIFECYCLE = contract_v9.EXPECTED_LIFECYCLE
+EXPECTED_ASSERTION_NAMES = contract_v9.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v9.EXPECTED_ASSERTION_VALUES
+PROBE_LOG_PHASES = contract_v9.PROBE_LOG_PHASES
+SERVER_LOG_TOKENS = contract_v9.SERVER_LOG_TOKENS
+CLIENT_LOG_MARKERS = contract_v9.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v9.CLIENT_CLASS_PATTERN
 ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
-    contract_v8.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+    contract_v9.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
 )
 FATAL_SERVER_LOG_MARKERS = (
     "A mod crashed on startup!",
@@ -328,12 +328,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v8.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v9.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v8.PROFILE_MANIFEST_SHA256
+        != contract_v9.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v8 contract"
+            "The dedicated-server profile bytes differ from the immutable v9 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -863,16 +863,16 @@ def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v8 contract."""
+    """Validates a probe report through the immutable profile-v9 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v8.validate_probe_report(
+        contract_v9.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v8.V8ContractError as exception:
+    except contract_v9.V9ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 

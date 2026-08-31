@@ -343,15 +343,15 @@ val forgeServerProfileSnapshotV7 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v7.json")
 val forgeParticleRegistryServerEvidenceArchive =
     forgeRegistryFoundationServerEvidenceRoot.resolve(
-        "particle-registry-server-v8",
+        "particle-registry-server-v9",
     )
 val forgeParticleRegistryServerEvidenceVerifier =
-    rootProject.file("scripts/e2e/forge_server_particle_evidence_v8.py")
+    rootProject.file("scripts/e2e/forge_server_particle_evidence_v9.py")
 val forgeParticleRegistryServerEvidenceTest =
-    rootProject.file("scripts/e2e/test_forge_server_particle_evidence_v8.py")
-val forgeServerContractV8 = rootProject.file("scripts/e2e/forge_server_contract_v8.py")
-val forgeServerProfileSnapshotV8 =
-    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v8.json")
+    rootProject.file("scripts/e2e/test_forge_server_particle_evidence_v9.py")
+val forgeServerContractV9 = rootProject.file("scripts/e2e/forge_server_contract_v9.py")
+val forgeServerProfileSnapshotV9 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v9.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -2915,7 +2915,7 @@ fun missingForgeParticleRegistryServerEvidenceMilestone(): List<String> {
         .orEmpty()
     if (archiveDirectories != listOf(forgeParticleRegistryServerEvidenceArchive)) {
         missingConditions.add(
-            "the exact frozen Forge particle-registry server-v8 evidence archive is required",
+            "the exact frozen Forge particle-registry server-v9 evidence archive is required",
         )
         return missingConditions
     }
@@ -3876,7 +3876,7 @@ val forgeParticleRegistryServerSafetyTest =
     tasks.register<Exec>("forgeParticleRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge particle-registry runner and v8 verifier safety tests."
+            "Runs the active Forge particle-registry runner and v9 verifier safety tests."
         workingDir(rootProject.projectDir)
         commandLine(
             "python3",
@@ -3884,11 +3884,11 @@ val forgeParticleRegistryServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_particle_evidence_v8.py",
+            "scripts/e2e/test_forge_server_particle_evidence_v9.py",
         )
         inputs.files(
-            forgeServerContractV8,
-            forgeServerProfileSnapshotV8,
+            forgeServerContractV9,
+            forgeServerProfileSnapshotV9,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
             forgeParticleRegistryServerEvidenceVerifier,
@@ -3981,11 +3981,11 @@ val validateForgeParticleRegistryServerEvidenceArchiveIntegrity =
     tasks.register("validateForgeParticleRegistryServerEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge particle-registry server-v8 archive."
+            "Validates the immutable Forge particle-registry server-v9 archive."
         dependsOn(forgeParticleRegistryServerSafetyTest)
         inputs.files(
-            forgeServerContractV8,
-            forgeServerProfileSnapshotV8,
+            forgeServerContractV9,
+            forgeServerProfileSnapshotV9,
             forgeParticleRegistryServerEvidenceVerifier,
         )
         if (forgeParticleRegistryServerEvidenceArchive.exists()) {
@@ -4481,8 +4481,8 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV7,
         forgeServerProfileSnapshotV7,
         forgeEnchantmentRegistryServerEvidenceVerifier,
-        forgeServerContractV8,
-        forgeServerProfileSnapshotV8,
+        forgeServerContractV9,
+        forgeServerProfileSnapshotV9,
         forgeParticleRegistryServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
@@ -4707,8 +4707,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v8",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v8",
+                "id" to "etherology-e2e-forge-server-1.20.1-v9",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v9",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"

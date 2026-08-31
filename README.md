@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, and the shared game-event/loot-condition registry foundation with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -25,8 +25,8 @@ client, native-loader, and E2E parity gates pass. See
 the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.md),
 and the bounded [Forge 1.20.1 runtime evidence](docs/evidence/forge-1.20.1/README.md).
 The next Forge forward gate is the remainder of the authoritative registry
-spine. Its bounded shared-sound, game-event, and loot-condition steps are
-complete.
+spine. Its bounded shared-sound, game-event, loot-condition, and Ether-source
+reload-listener steps are complete.
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`, whose internal ID is
 `etherology_resonance` and whose range is 16. Both loaders package exact
@@ -38,7 +38,34 @@ sole Common deferred owner of
 `etherology:random_chance_with_fortune`, backed by the canonical
 `RandomChanceWithFortuneConditionSerializer` on both loaders.
 
-The registry foundation has both exact cross-loader artifact gates and a real
+Common is now the sole implementation and resource owner for the
+`EtherSourceLoader` server-data listener and its default `ether_sources` data.
+The accepted Java 17 Forge 47.4.9 dedicated-server run used the fresh
+repository-owned `etherology-e2e-forge-server-1.20.1-v6` profile and a real
+`reload` command. Report schema 4 passed all 72 ordered assertions: the initial
+map contained exactly 23 entries, including corrected
+`etherology:primoshard_rella = 4` and `minecraft:redstone = 2`, while the
+enabled probe pack produced exactly 24 entries with
+`minecraft:redstone = 9.5` and added `minecraft:diamond = 13`. The game-event
+registry and tags remained stable. The loot-condition registry and evaluated
+behavior also remained stable even though Minecraft correctly replaced the
+probe `LootTable` instance during reload. The server saved the world, stopped
+normally, exited with code zero, and logged no `ERROR` or `FATAL` marker.
+Because this was a headless dedicated-server scenario, it produced no
+screenshots. The immutable archive is
+[`ether-source-reload-server-v6`](docs/evidence/forge-1.20.1/ether-source-reload-server-v6),
+with profile-manifest SHA-256
+`2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`,
+server-log SHA-256
+`0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
+and archive-manifest SHA-256
+`6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
+
+This bounded proof does not establish furnace or machine consumption, the
+wider Ether network, the full authoritative registry, native sound playback,
+Forge custom sculk-frequency behavior, Attrahite drops, or release readiness.
+
+The historical registry foundation has both exact cross-loader artifact gates and a real
 Java 17 Forge 47.4.9 dedicated-server run in the fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v4` Loom-userdev profile. The headless
 `registry-foundation` run passed 39 of 39 assertions. Separately, all 63 Python
@@ -54,7 +81,8 @@ The canonical Attrahite loot-table resource remains Fabric-only because its
 items have not been ported. The synthetic table proves the shared condition and
 serializer, not Attrahite gameplay or drop parity. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
-archive supersedes it as the current registry proof. Native sound playback and Forge's custom sculk frequency remain
+archive superseded it as the registry-foundation proof and is now retained
+alongside the current v6 Ether-source reload proof. Native sound playback and Forge's custom sculk frequency remain
 deferred. The earlier Fabric `v20` packaged client evidence predates this
 registry rebuild and does not claim equality with the current Fabric artifact.
 Frozen archives preserve capture-time observations and payload integrity; the

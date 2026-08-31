@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 record LootConditionProbeState(
-        LootConditionType conditionType,
-        LootTable probeTable,
+        Object conditionTypeIdentity,
+        Object probeTableIdentity,
         String conditionId,
         List<String> etherologyConditionIds,
         String serializerClass,
@@ -120,16 +120,29 @@ record LootConditionProbeState(
     }
 
     boolean sameStateAtServerStarted(LootConditionProbeState startedState) {
-        return conditionType != null
-                && conditionType == startedState.conditionType
-                && probeTable != null
-                && probeTable == startedState.probeTable
-                && conditionId.equals(startedState.conditionId)
-                && etherologyConditionIds.equals(startedState.etherologyConditionIds)
-                && serializerClass.equals(startedState.serializerClass)
-                && probeTableId.equals(startedState.probeTableId)
-                && emptyToolItems.equals(startedState.emptyToolItems)
-                && fortuneOneItems.equals(startedState.fortuneOneItems);
+        return hasSameRegistryAndBehavior(startedState)
+                && probeTableIdentity == startedState.probeTableIdentity;
+    }
+
+    boolean hasSameRegistryAndBehavior(LootConditionProbeState reloadedState) {
+        return conditionTypeIdentity != null
+                && conditionTypeIdentity == reloadedState.conditionTypeIdentity
+                && probeTableIdentity != null
+                && reloadedState.probeTableIdentity != null
+                && conditionId.equals(reloadedState.conditionId)
+                && etherologyConditionIds.equals(reloadedState.etherologyConditionIds)
+                && serializerClass.equals(reloadedState.serializerClass)
+                && probeTableId.equals(reloadedState.probeTableId)
+                && emptyToolItems.equals(reloadedState.emptyToolItems)
+                && fortuneOneItems.equals(reloadedState.fortuneOneItems);
+    }
+
+    boolean hasReplacedProbeTableInstanceAfterReload(
+            LootConditionProbeState reloadedState
+    ) {
+        return probeTableIdentity != null
+                && reloadedState.probeTableIdentity != null
+                && probeTableIdentity != reloadedState.probeTableIdentity;
     }
 
     private static List<String> generateLootItemIds(

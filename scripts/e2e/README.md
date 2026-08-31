@@ -335,7 +335,89 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Forge 1.20.1 dedicated-server registry-foundation probe
+## Forge 1.20.1 dedicated-server Ether-source reload probe
+
+The current server-only harness proves the Common-owned Ether-source listener
+and default data in a separate repository-owned profile. It never loads the
+Forge client harness and never consults, adopts, resets, or deletes an external
+Minecraft profile. Its exact one-shot runtime is:
+
+```text
+scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
+  game/
+  evidence/ether-source-reload/
+```
+
+The tracked profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
+`:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
+and forbidden mod-ID inventories. `provision` succeeds only for a brand-new
+target; a later recapture must bump the profile ID rather than reuse, clean, or
+replace `v6`.
+
+Build and validate the isolated probe without launching Minecraft. Only a new
+profile revision may then be provisioned and run:
+
+```bash
+./gradlew --no-daemon --no-parallel \
+  :forge:1.20.1:verifyRegistryFoundationServerProbe --console=plain
+python3 -B scripts/e2e/forge_server.py validate
+python3 -B scripts/e2e/forge_server.py provision
+python3 -B scripts/e2e/forge_server.py check
+python3 -B scripts/e2e/forge_server.py run
+```
+
+The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
+dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
+and server logs independently, contains the process group, rejects crash and
+client markers, requires a saved world and normal shutdown, and publishes
+`done.marker` only after the report, copied server log, and launcher result
+pass. External game profiles consulted: zero.
+
+`EtherSourceLoader` and the default `ether_sources` resources have one Common
+implementation/resource owner. The accepted fresh v6 run issued the real
+`reload` command and its schema-4 report passed all 72 ordered assertions. The
+initial map contained exactly 23 entries, including corrected
+`etherology:primoshard_rella = 4` and `minecraft:redstone = 2`. The enabled
+probe pack overrode redstone and added diamond, producing exactly 24 entries
+with `minecraft:redstone = 9.5` and `minecraft:diamond = 13`. The sole game
+event and exact listening-tag membership remained stable. The sole loot
+condition and its evaluated behavior also remained stable while the probe
+`LootTable` instance was replaced as expected during reload. The server saved
+the world, completed normal `stop(false)`, exited with code zero, and its copied
+log contains no `ERROR` or `FATAL` marker.
+
+The probe records the reload lifecycle before requesting the normal server
+stop. After `ServerStoppedEvent` and atomic report publication, a probe-only
+terminator joins the stopped-event server thread before `System.exit` to handle
+the proven Loom-userdev non-daemon thread leak. This path is absent from the
+production mod. The scenario is headless, so it neither creates nor requires
+screenshots.
+
+Validate the completed live runtime or the immutable five-file archive with
+the v6 verifier:
+
+```bash
+python3 -B scripts/e2e/forge_server_reload_evidence_v6.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6
+python3 -B scripts/e2e/forge_server_reload_evidence_v6.py \
+  --archive docs/evidence/forge-1.20.1/ether-source-reload-server-v6
+```
+
+The archive records profile-manifest SHA-256
+`2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`,
+server-log SHA-256
+`0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
+and archive-manifest SHA-256
+`6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
+`validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity` owns this
+archive check, and `validateForgeEtherSourceReloadMilestone` combines it with
+the exact current Common/Fabric/Forge artifact and listener-ownership gates.
+
+This bounded run does not prove furnace or machine consumption, the wider
+Ether network, the full authoritative registry, native sound playback, Forge
+custom sculk-frequency behavior, Attrahite drops, or release readiness.
+
+## Historical Forge 1.20.1 dedicated-server registry-foundation probe (v4)
 
 The accepted game-event and loot-condition foundation has a separate server-only harness and a separate
 repository-owned profile. It never loads the Forge client harness and never
@@ -442,8 +524,9 @@ playback, or Forge custom sculk-frequency behavior. Fabric's supported
 47 has no supported equivalent and remains deferred. The earlier Fabric `v20`
 client evidence predates the registry rebuild and does not claim current
 equality. The immutable v2 game-event-only archive remains historical evidence;
-v4 supersedes it as current proof, and the current verifier intentionally does
-not accept v2 as its active archive.
+v4 superseded it as the registry-foundation proof, and the historical v4
+verifier intentionally does not accept v2 as its active archive. The v6
+Ether-source reload archive is the current dedicated-server proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
@@ -453,5 +536,6 @@ python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_evidence.py \
   scripts/e2e/test_forge_channel_evidence.py \
   scripts/e2e/test_forge_server.py \
-  scripts/e2e/test_forge_server_evidence.py
+  scripts/e2e/test_forge_server_evidence.py \
+  scripts/e2e/test_forge_server_reload_evidence_v6.py
 ```

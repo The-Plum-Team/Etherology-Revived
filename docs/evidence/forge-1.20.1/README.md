@@ -194,7 +194,95 @@ registry foundation has since passed, but no native sound-playback E2E was run
 and this directory is not playback evidence. The broader authoritative registry
 spine is the next forward gate. The Forge release gate remains closed.
 
-## Current registry-foundation dedicated server (v4)
+## Current Ether-source reload dedicated server (v6)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v6`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6`
+- Scenario: `ether-source-reload`
+- Tracked profile manifest SHA-256:
+  `2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`
+- Tracked profile manifest size: `1192` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: fresh repository-owned Loom-userdev dedicated server
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `4`; archive-manifest schema: `1`
+- Report status: `passed`
+- Assertions: `72` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`
+
+Common is the sole implementation and resource owner of
+`ru.feytox.etherology.data.ethersource.EtherSourceLoader` and the default
+`ether_sources` data. The initial server-data load produced exactly 23 entries.
+That map included the corrected `etherology:primoshard_rella = 4`, excluded the
+legacy misspelling, and assigned `minecraft:redstone = 2`. The run then wrote
+and enabled its isolated probe data pack and executed the real `reload` command.
+The completed reload produced exactly 24 entries: the pack overrode
+`minecraft:redstone` to `9.5`, added `minecraft:diamond = 13`, and retained the
+corrected `etherology:primoshard_rella = 4` entry.
+
+Across reload, the sole `etherology:etherology_resonance` game event and its
+exact `minecraft:vibrations` and `minecraft:warden_can_listen` tag membership
+remained stable. The sole
+`etherology:random_chance_with_fortune` condition registry entry, serializer,
+and evaluated empty-tool/Fortune-I behavior also remained stable. Minecraft
+correctly replaced the probe `LootTable` instance during the reload; the report
+asserts that replacement independently instead of treating object identity as
+behavioral stability.
+
+The exact lifecycle was `tags_updated_initial`, `server_started`,
+`reload_requested`, `tags_updated_reload`, `reload_command_returned`,
+`stop_requested`, `server_stopping`, and `server_stopped`. The run saved the
+world, completed normal `stop(false)`, and exited with code zero. Its copied
+server log contains no `ERROR` or `FATAL` marker. The isolated probe-only
+terminator handles the known Loom-userdev non-daemon thread leak only after the
+stopped-event server thread ends and the report is published; production
+Etherology contains no such exit path. This is a headless dedicated-server
+proof, so it produces no screenshots.
+
+Frozen file digests:
+
+- `ether-source-reload-server-v6/archive-manifest.json`:
+  `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`
+- `ether-source-reload-server-v6/reports/report.json`:
+  `bfdf0a50b8bc1629e3001acb7d3c28a2ed6f61a14d585ab7374c8f85c02e5987`
+- `ether-source-reload-server-v6/reports/launcher-result.json`:
+  `7986e97798def000a1397e010a2b63b0ad5dbc131d1ee93699ed98574ee0bd78`
+- `ether-source-reload-server-v6/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `ether-source-reload-server-v6/logs/latest.log`:
+  `0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`
+
+Validate the five-file archive without the ignored live runtime:
+
+```bash
+python3 -B scripts/e2e/forge_server_reload_evidence_v6.py \
+  --archive docs/evidence/forge-1.20.1/ether-source-reload-server-v6
+```
+
+```text
+Validated archived ether-source-reload for etherology-e2e-forge-server-1.20.1-v6: 72 assertions
+Server log SHA-256: 0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+`validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity` validates this
+immutable archive and its v6 runner/verifier contract.
+`validateForgeEtherSourceReloadMilestone` combines that proof with the exact
+current Common, Fabric, and Forge listener, default-resource, and artifact
+checks. The archive itself proves capture-time observations and payload
+integrity, not identity with later sources or rebuilt artifacts.
+
+This bounded record does not prove furnace or machine consumption, the wider
+Ether network, the full authoritative registry, native sound playback, Forge
+custom sculk-frequency behavior, Attrahite drops, or release readiness.
+
+## Historical registry-foundation dedicated server (v4)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v4`
 - Runtime directory:
@@ -289,8 +377,10 @@ evidence predates this registry rebuild.
 ## Historical shared game-event dedicated server (v2)
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
-It remains historical evidence, but v4 supersedes it as the current registry
-proof. No current acceptance task or verifier treats v2 as the active archive.
+It remains historical evidence, and v4 superseded it as the
+registry-foundation proof. The v6 Ether-source reload archive is the current
+dedicated-server proof. No current acceptance task or verifier treats v2 as
+the active archive.
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v2`
 - Runtime directory:
@@ -358,10 +448,10 @@ Server log SHA-256: 89988125b90a78c9f996487c345d1efc70302340c1e08cb449b8a826aef2
 Archive integrity only: current sources and rebuilt artifacts were not compared.
 ```
 
-The v2 files remain frozen for historical inspection. The current verifier is
-intentionally pinned to v4 and must not be used to recertify v2 as current
-proof. The archive itself does not claim current-source or rebuilt-artifact
-identity.
+The v2 files remain frozen for historical inspection. The historical
+registry-foundation verifier is intentionally pinned to v4 and must not be
+used to recertify v2 as current proof. The archive itself does not claim
+current-source or rebuilt-artifact identity.
 
 This accepts only the shared resonance declaration, its two listening tags,
 and dedicated-server registry/data-load lifecycle. Fabric's supported custom
@@ -370,4 +460,5 @@ equivalent and remains deferred. The proof does not cover sound playback, the
 full registry-ID manifest, every catalog entry's placement/save behavior, or
 the remaining gameplay and native E2E matrix. The Forge release gate remains
 closed on the broader authoritative registry spine. The v4 section above is
-the superseding current proof.
+the superseding registry-foundation proof; the v6 section is the current
+dedicated-server proof.

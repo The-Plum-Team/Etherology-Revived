@@ -118,5 +118,41 @@ This evidence accepts only the shared channel foundation, its bounded network
 behavior with storage endpoints, and native Forge lever support. Channel case
 interaction and registration, particles and the client ticker, channel loot
 and recipe data, and the wider machine/network graph remain deferred. The next
-forward gate is the authoritative registry spine, beginning with sounds; Forge
-release readiness remains closed.
+forward gate is the remainder of the authoritative registry spine; Forge release
+readiness remains closed.
+
+## Forge 1.20.1 Ether-source reload record
+
+The fresh repository-owned
+`etherology-e2e-forge-server-1.20.1-v6` profile completed the bounded
+`ether-source-reload` scenario on a real Java 17 Forge 47.4.9 dedicated server.
+Its schema-4 report passed all 72 assertions. Common is the sole implementation
+and resource owner for the Ether-source server-data listener and its default
+data. The initial map contained exactly 23 entries, including corrected
+`etherology:primoshard_rella = 4` and `minecraft:redstone = 2`. The probe then
+issued the real `reload` command with an isolated override/addition pack. The
+reloaded map contained exactly 24 entries with `minecraft:redstone = 9.5` and
+added `minecraft:diamond = 13`.
+
+The game-event registry and exact listening tags remained stable across the
+reload. The loot-condition registry and evaluated behavior also remained
+stable while Minecraft correctly replaced the probe `LootTable` instance. The
+world was saved, the server stopped normally, and the launcher exited with code
+zero; the copied server log contains no `ERROR` or `FATAL` marker. This is a
+headless dedicated-server data proof, so there are no screenshots to add to the
+visual gallery.
+
+The complete assertion inventory is stored in
+[`report.json`](../../../../evidence/forge-1.20.1/ether-source-reload-server-v6/reports/report.json).
+The immutable archive binds profile-manifest SHA-256
+`2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`,
+server-log SHA-256
+`0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
+and archive-manifest SHA-256
+`6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
+
+This record accepts only Common listener/default-data ownership and the bounded
+reload behavior above. It does not prove Ethereal Furnace or other machine
+consumption, the wider Ether network, the full authoritative registry, native
+sound playback, Forge custom sculk frequency, Attrahite drops, or release
+readiness.

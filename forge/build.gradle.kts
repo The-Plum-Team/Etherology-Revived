@@ -46,9 +46,12 @@ val canonicalGameEventTagEntries = setOf(
     "data/minecraft/tags/game_events/vibrations.json",
     "data/minecraft/tags/game_events/warden_can_listen.json",
 )
-val acceptedForgeDataEntries = setOf(
+val commonEtherSourceDataEntry = "etherology/ether_sources/default.json"
+val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalGameEventTagEntries.map { entry -> entry.removePrefix("data/") }
+val acceptedForgeArtifactDataEntries =
+    acceptedForgeDirectDataEntries + commonEtherSourceDataEntry
 val commonBootstrapClassEntry =
     "ru/feytox/etherology/bootstrap/EtherologyBootstrap.class"
 val platformRegistrarClassEntry =
@@ -83,6 +86,14 @@ val randomChanceWithFortuneConditionClassEntry =
     "ru/feytox/etherology/util/misc/RandomChanceWithFortuneCondition.class"
 val randomChanceWithFortuneConditionSerializerClassEntry =
     "ru/feytox/etherology/util/misc/RandomChanceWithFortuneConditionSerializer.class"
+val resourceReloadersClassEntry =
+    "ru/feytox/etherology/registry/misc/ResourceReloaders.class"
+val etherSourceLoaderClassEntry =
+    "ru/feytox/etherology/data/ethersource/EtherSourceLoader.class"
+val etherSourcesClassEntry =
+    "ru/feytox/etherology/data/ethersource/EtherSources.class"
+val etherSourcesDeserializerClassEntry =
+    "ru/feytox/etherology/data/ethersource/EtherSourcesDeserializer.class"
 val canonicalFabricSoundRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/EtherSounds.class"
 val canonicalFabricGameEventRegistryClassEntry =
@@ -188,6 +199,49 @@ val canonicalGameEventTagFiles = canonicalGameEventTagEntries.associateWith { en
 }
 val canonicalAttrahiteLootTable =
     rootProject.file("src/main/generated/data/etherology/loot_tables/blocks/attrahite.json")
+val canonicalEtherSourceDefault = rootProject.file(
+    "common/src/main/resources/data/etherology/ether_sources/default.json",
+)
+val legacyFabricEtherSourceOwners = listOf(
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/registry/misc/ResourceReloaders.java",
+    ),
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/data/ethersource/EtherSourceLoader.java",
+    ),
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/data/ethersource/EtherSources.java",
+    ),
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/data/ethersource/EtherSourcesDeserializer.java",
+    ),
+    rootProject.file("src/main/resources/data/etherology/ether_sources/default.json"),
+)
+val expectedEtherSourceValues = linkedMapOf(
+    "etherology:primoshard_keta" to 4,
+    "etherology:primoshard_rella" to 4,
+    "etherology:primoshard_clos" to 4,
+    "etherology:primoshard_via" to 4,
+    "minecraft:redstone" to 2,
+    "minecraft:glowstone_dust" to 1,
+    "minecraft:lapis_lazuli" to 1,
+    "minecraft:quartz" to 1,
+    "minecraft:ender_pearl" to 4,
+    "minecraft:ender_eye" to 6,
+    "minecraft:blaze_powder" to 2,
+    "minecraft:ancient_debris" to 4,
+    "minecraft:chorus_fruit" to 2,
+    "minecraft:experience_bottle" to 8,
+    "minecraft:echo_shard" to 12,
+    "minecraft:sculk" to 12,
+    "minecraft:crying_obsidian" to 6,
+    "minecraft:magma_cream" to 2,
+    "minecraft:heart_of_the_sea" to 12,
+    "minecraft:gunpowder" to 1,
+    "minecraft:prismarine_crystals" to 1,
+    "minecraft:ghast_tear" to 4,
+    "minecraft:honeycomb" to 1,
+)
 val soundManifest =
     rootProject.file("src/client/resources/assets/etherology/sounds.json")
 val soundDirectory =
@@ -238,17 +292,32 @@ val forgeRegistryFoundationServerEvidenceRoot =
     rootProject.file("docs/evidence/forge-1.20.1")
 val forgeRegistryFoundationServerEvidenceArchive =
     forgeRegistryFoundationServerEvidenceRoot.resolve(
-    "registry-foundation-server-v4",
-)
+        "registry-foundation-server-v4",
+    )
 val forgeRegistryFoundationServerEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_server_evidence.py")
+val forgeRegistryFoundationServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_evidence.py")
+val forgeEtherSourceReloadServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "ether-source-reload-server-v6",
+    )
+val forgeEtherSourceReloadServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_reload_evidence_v6.py")
+val forgeEtherSourceReloadServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_reload_evidence_v6.py")
+val forgeServerContractV6 = rootProject.file("scripts/e2e/forge_server_contract_v6.py")
+val forgeServerProfileSnapshotV6 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v6.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
-val forgeRegistryFoundationServerEvidenceTest =
-    rootProject.file("scripts/e2e/test_forge_server_evidence.py")
 val forgeRegistryFoundationServerProfileManifest =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile.json")
+val forgeRegistryFoundationServerProbeSource = rootProject.file(
+    "e2e-harness/forge-server/1.20.1/src/main/java/" +
+        "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.java",
+)
 val forgeE2eProfileManifest = rootProject.file("scripts/e2e/forge-1.20.1-profile.json")
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
@@ -428,9 +497,9 @@ val validateForgeAcceptedDataSet = tasks.register("validateForgeAcceptedDataSet"
         } else {
             emptySet()
         }
-        check(packagedDataEntries == acceptedForgeDataEntries) {
+        check(packagedDataEntries == acceptedForgeDirectDataEntries) {
             "Forge $minecraftVersion packaged an unaccepted server-data set.\n" +
-                "Expected: ${acceptedForgeDataEntries.sorted()}\n" +
+                "Expected: ${acceptedForgeDirectDataEntries.sorted()}\n" +
                 "Actual: ${packagedDataEntries.sorted()}"
         }
     }
@@ -2129,6 +2198,235 @@ fun missingForgeLootConditionRegistryMilestone(
     return missingConditions
 }
 
+fun missingForgeEtherSourceReloadMilestone(
+    commonJarFile: File,
+    fabricTransformedCommonJarFile: File,
+    forgeTransformedCommonJarFile: File,
+    fabricDevelopmentJarFile: File,
+    fabricProductionJarFile: File,
+    forgeShadowJarFile: File,
+): List<String> {
+    val missingConditions = mutableListOf<String>()
+    val resourceEntry = "data/$commonEtherSourceDataEntry"
+    val resourceReloadersOwner =
+        "ru/feytox/etherology/registry/misc/ResourceReloaders"
+    val reloadListenerRegistry = "dev/architectury/registry/ReloadListenerRegistry"
+
+    if (!canonicalEtherSourceDefault.isFile
+        || Files.isSymbolicLink(canonicalEtherSourceDefault.toPath())
+    ) {
+        missingConditions.add("canonical Ether-source default is missing or linked")
+    } else {
+        try {
+            val parsed = JsonSlurper().parse(canonicalEtherSourceDefault)
+            if (parsed !is Map<*, *>) {
+                missingConditions.add("canonical Ether-source default is not a JSON object")
+            } else {
+                val actualEntries = parsed.entries.map { entry ->
+                    entry.key.toString() to entry.value
+                }
+                val expectedEntries = expectedEtherSourceValues.entries.map { entry ->
+                    entry.key to entry.value
+                }
+                if (actualEntries != expectedEntries) {
+                    missingConditions.add(
+                        "canonical Ether-source entries changed: " +
+                            "expected=$expectedEntries, actual=$actualEntries",
+                    )
+                }
+                if ("etherology:primoshard_rela" in parsed
+                    || "etherology:primoshard_rella" !in parsed
+                ) {
+                    missingConditions.add(
+                        "canonical Ether-source primoshard spelling is not exact",
+                    )
+                }
+            }
+        } catch (exception: Exception) {
+            missingConditions.add(
+                "canonical Ether-source default could not be parsed: " +
+                    "${exception.javaClass.simpleName}: ${exception.message}",
+            )
+        }
+    }
+
+    legacyFabricEtherSourceOwners.forEach { legacyOwner ->
+        if (legacyOwner.exists() || Files.isSymbolicLink(legacyOwner.toPath())) {
+            missingConditions.add(
+                "legacy Fabric Ether-source owner still exists: " +
+                    legacyOwner.relativeTo(rootProject.projectDir).invariantSeparatorsPath,
+            )
+        }
+    }
+
+    fun inspectArtifact(
+        artifact: File,
+        description: String,
+        requireFabricApplication: Boolean,
+    ) {
+        if (!artifact.isFile || Files.isSymbolicLink(artifact.toPath())) {
+            missingConditions.add("$description is missing or linked")
+            return
+        }
+
+        try {
+            ZipFile(artifact).use { zip ->
+                val entryNames = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                val classEntryNames = entryNames.filter { entry -> entry.endsWith(".class") }
+                listOf(
+                    resourceReloadersClassEntry,
+                    etherSourceLoaderClassEntry,
+                    etherSourcesClassEntry,
+                    etherSourcesDeserializerClassEntry,
+                ).forEach { classEntry ->
+                    val actualCount = entryNames.count(classEntry::equals)
+                    if (actualCount != 1) {
+                        missingConditions.add(
+                            "$description has the wrong $classEntry count: " +
+                                "expected=1, actual=$actualCount",
+                        )
+                    }
+                }
+
+                val resourceCount = entryNames.count(resourceEntry::equals)
+                if (resourceCount != 1) {
+                    missingConditions.add(
+                        "$description has the wrong $resourceEntry count: " +
+                            "expected=1, actual=$resourceCount",
+                    )
+                } else if (canonicalEtherSourceDefault.isFile
+                    && !Files.isSymbolicLink(canonicalEtherSourceDefault.toPath())
+                ) {
+                    val packagedBytes = zip.getInputStream(
+                        requireNotNull(zip.getEntry(resourceEntry)),
+                    ).use { input -> input.readAllBytes() }
+                    if (!packagedBytes.contentEquals(canonicalEtherSourceDefault.readBytes())) {
+                        missingConditions.add(
+                            "$description Ether-source default differs from its Common source",
+                        )
+                    }
+                }
+
+                val listenerOwnerEntry = zip.getEntry(resourceReloadersClassEntry)
+                if (listenerOwnerEntry != null) {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(listenerOwnerEntry).use { input ->
+                            input.readAllBytes()
+                        },
+                    )
+                    val requiredConstants = setOf(
+                        "etherology",
+                        "ether_sources",
+                        reloadListenerRegistry,
+                        "register",
+                        "registerServerData",
+                    )
+                    val missingConstants = requiredConstants - constants
+                    val hasServerDataField = "SERVER_DATA" in constants
+                        || "field_14190" in constants
+                    if (missingConstants.isNotEmpty() || !hasServerDataField) {
+                        missingConditions.add(
+                            "$description listener owner lost its exact contract: " +
+                                "missing=${missingConstants.sorted()}, " +
+                                "serverDataField=$hasServerDataField",
+                        )
+                    }
+                }
+
+                val loaderEntry = zip.getEntry(etherSourceLoaderClassEntry)
+                if (loaderEntry != null) {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(loaderEntry).use { input -> input.readAllBytes() },
+                    )
+                    if ("ether_sources" !in constants) {
+                        missingConditions.add(
+                            "$description Ether-source loader lost its exact directory",
+                        )
+                    }
+                }
+
+                val registrationOwners = classEntryNames.filter { classEntryName ->
+                    val classEntry = requireNotNull(zip.getEntry(classEntryName))
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(classEntry).use { input -> input.readAllBytes() },
+                    )
+                    reloadListenerRegistry in constants && "register" in constants
+                }.toSet()
+                if (registrationOwners != setOf(resourceReloadersClassEntry)) {
+                    missingConditions.add(
+                        "$description reload-listener registration owners changed: " +
+                            registrationOwners.sorted(),
+                    )
+                }
+
+                val bootstrapEntry = zip.getEntry(commonBootstrapClassEntry)
+                if (bootstrapEntry == null) {
+                    missingConditions.add("$description has no loader-neutral bootstrap")
+                } else {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(bootstrapEntry).use { input -> input.readAllBytes() },
+                    )
+                    val requiredBootstrapConstants = setOf(
+                        resourceReloadersOwner,
+                        "registerServerData",
+                        "ru/feytox/etherology/registry/misc/SharedLootConditions",
+                        "ru/feytox/etherology/bootstrap/BootstrapLifecycle",
+                    )
+                    val missingBootstrapConstants = requiredBootstrapConstants - constants
+                    if (missingBootstrapConstants.isNotEmpty()) {
+                        missingConditions.add(
+                            "$description bootstrap lost its Ether-source attachment contract: " +
+                                missingBootstrapConstants.sorted(),
+                        )
+                    }
+                }
+
+                if (requireFabricApplication) {
+                    val initializerEntry = zip.getEntry(canonicalFabricInitializerClassEntry)
+                    if (initializerEntry == null) {
+                        missingConditions.add("$description has no canonical Fabric initializer")
+                    } else {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(initializerEntry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                        if (resourceReloadersOwner !in constants
+                            || "registerServerData" !in constants
+                            || "ru/feytox/etherology/bootstrap/EtherologyBootstrap" in constants
+                        ) {
+                            missingConditions.add(
+                                "$description initializer lost its direct Ether-source attachment",
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (exception: Exception) {
+            missingConditions.add(
+                "$description could not be inspected for Ether-source ownership: " +
+                    "${exception.javaClass.simpleName}: ${exception.message}",
+            )
+        }
+    }
+
+    inspectArtifact(commonJarFile, "common JAR", false)
+    inspectArtifact(
+        fabricTransformedCommonJarFile,
+        "Fabric-transformed common JAR",
+        false,
+    )
+    inspectArtifact(
+        forgeTransformedCommonJarFile,
+        "Forge-transformed common JAR",
+        false,
+    )
+    inspectArtifact(fabricDevelopmentJarFile, "Fabric development JAR", true)
+    inspectArtifact(fabricProductionJarFile, "Fabric remapped production JAR", true)
+    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", false)
+    return missingConditions
+}
+
 fun missingForgeRegistryFoundationServerEvidenceMilestone(): List<String> {
     val missingConditions = mutableListOf<String>()
     if (!forgeRegistryFoundationServerEvidenceVerifier.isFile
@@ -2190,11 +2488,72 @@ fun missingForgeRegistryFoundationServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeEtherSourceReloadServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeEtherSourceReloadServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeEtherSourceReloadServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge Ether-source reload server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("ether-source-reload-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeEtherSourceReloadServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge Ether-source reload server-v6 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeEtherSourceReloadServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeEtherSourceReloadServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Ether-source reload server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Ether-source reload server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, enchantment, recipe, screen, effect, loot, particle, tree, and " +
         "world-generation registries are not loader-neutral",
-    "creative tabs, fuel, reload, lifecycle, trade, brewing, wood, sculk-frequency, and " +
+    "creative tabs, fuel, lifecycle, trade, brewing, wood, sculk-frequency, and " +
         "command hooks are not accepted on both loaders",
     "the exact Fabric/Forge registry manifest and dedicated-server placement/save smoke are " +
         "not accepted",
@@ -2269,6 +2628,18 @@ fun firstIncompleteForgeMilestone(
     if (missingRegistryFoundationServerEvidence.isNotEmpty()) {
         return "registry-foundation dedicated-server evidence" to
             missingRegistryFoundationServerEvidence
+    }
+
+    val missingEtherSourceReload = missingForgeEtherSourceReloadMilestone(
+        commonJarFile,
+        fabricTransformedCommonJarFile,
+        forgeTransformedCommonJarFile,
+        fabricDevelopmentJarFile,
+        fabricProductionJarFile,
+        forgeShadowJarFile,
+    )
+    if (missingEtherSourceReload.isNotEmpty()) {
+        return "Ether-source server-data reload" to missingEtherSourceReload
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -2517,6 +2888,7 @@ val forgeShadowJar = tasks.named<ShadowJar>("shadowJar")
 tasks.named<Test>("test").configure {
     exclude("**/GameEventRegistryResourcesTest.class")
     exclude("**/LootConditionRegistryResourcesTest.class")
+    exclude("**/EtherSourceReloadResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -2658,6 +3030,86 @@ val lootConditionRegistryTest = tasks.register<Test>("lootConditionRegistryTest"
     }
 }
 
+val etherSourceReloadTest = tasks.register<Test>("etherSourceReloadTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader Ether-source listener and default-data isolation tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.EtherSourceReloadResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("etherSourceCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("etherSourceFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("etherSourceForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("etherSourceFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("etherSourceFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("etherSourceForgeShadowJar")
+    inputs.file(canonicalEtherSourceDefault)
+        .withPropertyName("etherSourceCanonicalDefault")
+    inputs.files(legacyFabricEtherSourceOwners)
+        .withPropertyName("legacyFabricEtherSourceOwners")
+        .optional()
+    doFirst {
+        systemProperty(
+            "etherology.etherSources.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.defaultResource",
+            canonicalEtherSourceDefault.absolutePath,
+        )
+        systemProperty(
+            "etherology.etherSources.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
 val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
     group = "verification"
     description =
@@ -2760,7 +3212,26 @@ val forgeRegistryFoundationServerSafetyTest =
     tasks.register<Exec>("forgeRegistryFoundationServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the isolated Forge server runner and archive-verifier safety tests."
+            "Runs the historical Forge registry-foundation archive-verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_evidence.py",
+        )
+        inputs.files(
+            forgeRegistryFoundationServerEvidenceVerifier,
+            forgeRegistryFoundationServerEvidenceTest,
+        )
+    }
+
+val forgeEtherSourceReloadServerSafetyTest =
+    tasks.register<Exec>("forgeEtherSourceReloadServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the Forge Ether-source reload runner and v6 verifier safety tests."
         workingDir(rootProject.projectDir)
         commandLine(
             "python3",
@@ -2768,14 +3239,20 @@ val forgeRegistryFoundationServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_evidence.py",
+            "scripts/e2e/test_forge_server_reload_evidence_v6.py",
         )
         inputs.files(
+            forgeServerContractV6,
+            forgeServerProfileSnapshotV6,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
-            forgeRegistryFoundationServerEvidenceVerifier,
-            forgeRegistryFoundationServerEvidenceTest,
+            forgeEtherSourceReloadServerEvidenceVerifier,
+            forgeEtherSourceReloadServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
+            forgeRegistryFoundationServerProbeSource,
+            rootProject.file("release/release-matrix.json"),
+            rootProject.file("gradle.properties"),
+            project.buildFile,
         )
     }
 
@@ -2794,6 +3271,30 @@ val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
                 missingForgeRegistryFoundationServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion registry-foundation server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Ether-source reload server-v6 archive."
+        dependsOn(forgeEtherSourceReloadServerSafetyTest)
+        inputs.files(
+            forgeServerContractV6,
+            forgeServerProfileSnapshotV6,
+            forgeEtherSourceReloadServerEvidenceVerifier,
+        )
+        inputs.dir(forgeEtherSourceReloadServerEvidenceArchive)
+            .withPropertyName("forgeEtherSourceReloadServerEvidenceArchive")
+            .optional()
+        doLast {
+            val missingConditions = missingForgeEtherSourceReloadServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Ether-source reload server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -2867,12 +3368,75 @@ val validateForgeRegistryFoundationMilestone =
         )
     }
 
+val validateForgeEtherSourceReloadStaticMilestone =
+    tasks.register("validateForgeEtherSourceReloadStaticMilestone") {
+        group = "verification"
+        description =
+            "Accepts the sole Common Ether-source listener and exact default server data statically."
+        dependsOn(
+            validateForgeRegistryFoundationMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            etherSourceReloadTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("etherSourceFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("etherSourceForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.file(canonicalEtherSourceDefault)
+        inputs.files(legacyFabricEtherSourceOwners)
+            .withPropertyName("legacyFabricEtherSourceOwners")
+            .optional()
+        doLast {
+            val missingConditions = missingForgeEtherSourceReloadMilestone(
+                commonJar.get().archiveFile.get().asFile,
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ),
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ),
+                fabricShadowJar.get().archiveFile.get().asFile,
+                fabricRemapJar.get().archiveFile.get().asFile,
+                forgeShadowJar.get().archiveFile.get().asFile,
+            )
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Ether-source reload milestone is incomplete:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeEtherSourceReloadMilestone =
+    tasks.register("validateForgeEtherSourceReloadMilestone") {
+        group = "verification"
+        description =
+            "Accepts static Ether-source ownership and its frozen native reload proof."
+        dependsOn(
+            validateForgeEtherSourceReloadStaticMilestone,
+            validateForgeEtherSourceReloadServerEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeRegistryFoundationMilestone)
+        dependsOn(validateForgeEtherSourceReloadMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -2913,6 +3477,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeGameEventMilestone,
         validateForgeLootConditionRegistryMilestone,
         validateForgeRegistryFoundationMilestone,
+        validateForgeEtherSourceReloadMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -2921,7 +3486,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeLootConditionRegistryMilestone)
+    dependsOn(validateForgeEtherSourceReloadMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -2929,12 +3494,22 @@ tasks.register("verifyForgePortGateClosed") {
     inputs.dir(soundDirectory)
     inputs.files(canonicalGameEventTagFiles.values)
     inputs.file(canonicalAttrahiteLootTable)
+    inputs.file(canonicalEtherSourceDefault)
+    inputs.files(legacyFabricEtherSourceOwners)
+        .withPropertyName("legacyFabricEtherSourceOwners")
+        .optional()
     inputs.files(
         forgeRegistryFoundationServerEvidenceVerifier,
         forgeRegistryFoundationServerProfileManifest,
+        forgeServerContractV6,
+        forgeServerProfileSnapshotV6,
+        forgeEtherSourceReloadServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
+        .optional()
+    inputs.dir(forgeEtherSourceReloadServerEvidenceArchive)
+        .withPropertyName("forgeEtherSourceReloadServerEvidenceArchive")
         .optional()
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -3064,7 +3639,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 registry-foundation server probe")
+            displayName.set("Etherology Forge 1.20.1 Ether-source reload server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -3145,8 +3720,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v4",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v4",
+                "id" to "etherology-e2e-forge-server-1.20.1-v6",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v6",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -3166,14 +3741,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "registry-foundation",
+                "scenario" to "ether-source-reload",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "registry-foundation",
+                "scenario_directory" to "ether-source-reload",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -3340,7 +3915,10 @@ if (minecraftVersion == "1.20.1") {
                 val probeEntries = probeZip.entries().asSequence().map { it.name }.toSet()
                 val probeClassEntries = probeEntries.filter { it.endsWith(".class") }.toSet()
                 check(probeClassEntries == setOf(
+                    "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter\$WrittenPack.class",
+                    "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter.class",
                     "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeModInventory.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator.class",
@@ -3358,6 +3936,7 @@ if (minecraftVersion == "1.20.1") {
                         probeZip.getInputStream(classEntry).use { input -> input.readAllBytes() },
                     )
                     val allowedProductionConstants = setOf(
+                        "ru.feytox.etherology.data.ethersource.EtherSourceLoader",
                         "ru.feytox.etherology.util.misc." +
                             "RandomChanceWithFortuneConditionSerializer",
                     )
@@ -3418,6 +3997,67 @@ if (minecraftVersion == "1.20.1") {
                     "The dedicated-server probe loot table contract changed: $lootTableDigest"
                 }
 
+                val etherSourceStateEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
+                    ),
+                )
+                val etherSourceStateConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(etherSourceStateEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredEtherSourceStateConstants = setOf(
+                    "ru.feytox.etherology.data.ethersource.EtherSourceLoader",
+                    "INSTANCE",
+                    "getEtherItems",
+                    "ether_sources",
+                    "etherology:primoshard_rella",
+                    "minecraft:redstone",
+                    "minecraft:diamond",
+                )
+                check(
+                    requiredEtherSourceStateConstants.all(
+                        etherSourceStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its Ether-source reflection contract: " +
+                        (requiredEtherSourceStateConstants - etherSourceStateConstants).sorted()
+                }
+
+                val reloadResourceDigests = mapOf(
+                    "probe-inputs/ether-source-reload-pack/pack.mcmeta" to
+                        "0ba7dc05c7ce2955fab716f5c4a2a1ca9cde1da6ed0a06b0f06b937c11b69e00",
+                    "probe-inputs/ether-source-reload-pack/data/etherology/" +
+                        "ether_sources/default.json" to
+                        "643ddd08f18b708ae161370759930475f35189ec75329b2b1b1f38620ba08e74",
+                    "probe-inputs/ether-source-reload-pack/data/etherology/" +
+                        "ether_sources/probe_addition.json" to
+                        "ab897fa539e427e652ee9f59a4fe01d5668a4935bee5e5a7fdb25a93174c95e4",
+                )
+                val actualReloadResourceEntries = probeEntries.filter { entryName ->
+                    entryName.startsWith("probe-inputs/") && !entryName.endsWith("/")
+                }.toSet()
+                check(actualReloadResourceEntries == reloadResourceDigests.keys) {
+                    "The server probe reload-resource inventory changed: " +
+                        actualReloadResourceEntries.sorted()
+                }
+                reloadResourceDigests.forEach { (entryName, expectedDigest) ->
+                    val reloadResourceEntry = requireNotNull(probeZip.getEntry(entryName))
+                    val actualDigest = MessageDigest.getInstance("SHA-256")
+                        .digest(
+                            probeZip.getInputStream(reloadResourceEntry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                        .joinToString("") { byte ->
+                            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+                        }
+                    check(actualDigest == expectedDigest) {
+                        "The server probe reload resource $entryName changed: $actualDigest"
+                    }
+                }
+
                 val probeEntry = requireNotNull(
                     probeZip.getEntry(
                         "dev/theplumteam/etherology/e2e/server/" +
@@ -3457,12 +4097,38 @@ if (minecraftVersion == "1.20.1") {
                     "loot_table:fortune_one_items_exact",
                     "loot_condition_captured_after_server_data_load",
                     "server_started_loot_condition_rechecked",
+                    "ether_sources",
+                    "reload",
+                    "ether_source_initial_entries_exact",
+                    "ether_source_reloaded_entries_exact",
+                    "ether_source_reloaded_legacy_rela_absent",
+                    "reload_pack_enabled",
+                    "enabled_data_pack_names",
+                    "enabled_data_packs_exact",
+                    "registry_stable_after_reload",
+                    "tags_stable_after_reload",
+                    "loot_condition_registry_and_behavior_stable_after_reload",
+                    "loot_table_instance_replaced_after_reload",
+                    "server_stop_requested_after_reload",
+                    "etherology:primoshard_rela",
+                    "getCommandManager",
+                    "getCommandSource",
+                    "executeWithPrefix",
+                    "getDataPackManager",
+                    "getEnabledNames",
+                    "file/etherology-e2e-ether-source-reload",
                     "getMods",
                     "getModId",
                     "loom-userdev",
                     "[EtherologyServerProbe] registry_foundation_checked",
+                    "[EtherologyServerProbe] reload_requested",
+                    "[EtherologyServerProbe] tags_updated_reload",
+                    "[EtherologyServerProbe] reload_command_returned",
+                    "[EtherologyServerProbe] stop_requested",
                     "[EtherologyServerProbe] report_published",
+                    "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState",
+                    "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
                     "currentThread",
@@ -3549,6 +4215,7 @@ if (minecraftVersion == "1.20.1") {
                 check(productionZip.entries().asSequence().none { entry ->
                     entry.name.startsWith("dev/theplumteam/etherology/e2e/server/")
                         || entry.name.startsWith("data/etherology_e2e_server_probe/")
+                        || entry.name.startsWith("probe-inputs/")
                 }) {
                     "The Forge production artifact contains dedicated-server probe content"
                 }
@@ -3560,9 +4227,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 registry-foundation server probe."
+                "Builds and validates the Forge 1.20.1 Ether-source reload server probe."
             dependsOn(
-                forgeRegistryFoundationServerSafetyTest,
+                validateForgeEtherSourceReloadStaticMilestone,
+                forgeEtherSourceReloadServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,
@@ -3570,9 +4238,6 @@ if (minecraftVersion == "1.20.1") {
                 verifyServerProbeIsolation,
             )
         }
-    validateForgeRegistryFoundationMilestone.configure {
-        dependsOn(verifyRegistryFoundationServerProbe)
-    }
     serverProbeRunTask.configure {
         dependsOn(verifyRegistryFoundationServerProbe)
     }
@@ -3790,9 +4455,9 @@ if (minecraftVersion == "1.20.1") {
                     .filter { entry -> entry.startsWith("data/") && !entry.endsWith("/") }
                     .map { entry -> entry.removePrefix("data/") }
                     .toSet()
-                check(packagedDataEntries == acceptedForgeDataEntries) {
+                check(packagedDataEntries == acceptedForgeArtifactDataEntries) {
                     "Forge production-under-test JAR packaged an unaccepted server-data set.\n" +
-                        "Expected: ${acceptedForgeDataEntries.sorted()}\n" +
+                        "Expected: ${acceptedForgeArtifactDataEntries.sorted()}\n" +
                         "Actual: ${packagedDataEntries.sorted()}"
                 }
             }

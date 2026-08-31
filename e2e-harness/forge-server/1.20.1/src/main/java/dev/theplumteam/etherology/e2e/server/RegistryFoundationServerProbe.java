@@ -60,8 +60,12 @@ public final class RegistryFoundationServerProbe {
             "minecraft:warden_can_listen"
     );
     private static final List<String> EXPECTED_LIFECYCLE = List.of(
-            "tags_updated",
+            "tags_updated_initial",
             "server_started",
+            "reload_requested",
+            "tags_updated_reload",
+            "reload_command_returned",
+            "stop_requested",
             "server_stopping",
             "server_stopped"
     );
@@ -74,13 +78,25 @@ public final class RegistryFoundationServerProbe {
     private final String runtimeKind;
     private final String scenarioId;
 
+    private EtherSourceProbeState initialEtherSourceState =
+            EtherSourceProbeState.failed("not captured");
+    private EtherSourceProbeState reloadedEtherSourceState =
+            EtherSourceProbeState.failed("not captured");
+    private EtherSourceProbeState serverStartedEtherSourceState =
+            EtherSourceProbeState.failed("not captured");
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
+    private String reloadFailure = "not requested";
+    private String reloadPackDirectory = "";
+    private List<String> reloadPackResourcePaths = List.of();
+    private List<String> enabledDataPackNamesAfterReload = List.of();
     private String registryEventId = "";
     private String internalEventId = "";
     private String updateCause = "";
+    private String reloadUpdateCause = "";
     private int eventRange = -1;
+    private int reloadCommandResult = -1;
     private int tagUpdateCount;
     private List<String> registryEtherologyEventIds = List.of();
     private List<String> loadedModIds = List.of();
@@ -93,11 +109,23 @@ public final class RegistryFoundationServerProbe {
     private List<String> wardenCanListenEtherologyEventIds = List.of();
     private List<String> etherologyTagIds = List.of();
     private boolean tagsBeforeServerStarted;
+    private boolean etherSourceCapturedAfterServerDataLoad;
     private boolean serverStartedModsRechecked;
     private boolean serverStartedRegistryRechecked;
     private boolean serverStartedTagsRechecked;
+    private boolean serverStartedEtherSourcesRechecked;
     private boolean lootConditionCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
+    private boolean reloadRequested;
+    private boolean reloadTagsObserved;
+    private boolean reloadCompleted;
+    private boolean enabledDataPacksExact;
+    private boolean reloadShouldUpdateStaticData;
+    private boolean registryStableAfterReload;
+    private boolean tagsStableAfterReload;
+    private boolean lootConditionStableAfterReload;
+    private boolean lootTableInstanceReplacedAfterReload;
+    private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
     private boolean stoppedServerMatched;
@@ -141,16 +169,53 @@ public final class RegistryFoundationServerProbe {
     @SubscribeEvent
     public void onTagsUpdated(TagsUpdatedEvent event) {
         tagUpdateCount++;
-        lifecycle.add("tags_updated");
-        updateCause = event.getUpdateCause().name();
-        shouldUpdateStaticData = event.shouldUpdateStaticData();
-        taggedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
-        captureRegistryState(taggedEvent);
-        registryEtherologyEventIds = collectRegistryEtherologyEventIds();
-        vibrationsContainsEvent = isInTag(taggedEvent, GameEventTags.VIBRATIONS);
-        wardenCanListenContainsEvent = isInTag(taggedEvent, GameEventTags.WARDEN_CAN_LISTEN);
-        captureEtherologyTagMemberships();
-        LOGGER.info("[EtherologyServerProbe] tags_updated");
+        if (tagUpdateCount == 1 && startedServer == null) {
+            lifecycle.add("tags_updated_initial");
+            updateCause = event.getUpdateCause().name();
+            shouldUpdateStaticData = event.shouldUpdateStaticData();
+            taggedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
+            captureRegistryState(taggedEvent);
+            registryEtherologyEventIds = collectRegistryEtherologyEventIds();
+            vibrationsContainsEvent = isInTag(taggedEvent, GameEventTags.VIBRATIONS);
+            wardenCanListenContainsEvent = isInTag(
+                    taggedEvent,
+                    GameEventTags.WARDEN_CAN_LISTEN
+            );
+            captureEtherologyTagMemberships();
+            initialEtherSourceState = EtherSourceProbeState.capture();
+            LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
+            return;
+        }
+
+        lifecycle.add("tags_updated_reload");
+        reloadUpdateCause = event.getUpdateCause().name();
+        reloadShouldUpdateStaticData = event.shouldUpdateStaticData();
+        reloadedEtherSourceState = EtherSourceProbeState.capture();
+        reloadTagsObserved = tagUpdateCount == 2 && startedServer != null && reloadRequested;
+        GameEvent reloadedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
+        registryStableAfterReload = reloadTagsObserved
+                && reloadedEvent != null
+                && reloadedEvent == taggedEvent
+                && EVENT_ID.equals(Registries.GAME_EVENT.getId(reloadedEvent))
+                && INTERNAL_EVENT_ID.equals(reloadedEvent.getId())
+                && reloadedEvent.getRange() == EVENT_RANGE
+                && collectRegistryEtherologyEventIds().equals(registryEtherologyEventIds);
+        tagsStableAfterReload = reloadTagsObserved
+                && isInTag(reloadedEvent, GameEventTags.VIBRATIONS)
+                && isInTag(reloadedEvent, GameEventTags.WARDEN_CAN_LISTEN)
+                && hasExactEtherologyTagMemberships(collectEtherologyTagMemberships());
+        LootConditionProbeState reloadedLootConditionState = startedServer == null
+                ? LootConditionProbeState.missing()
+                : LootConditionProbeState.capture(startedServer);
+        lootConditionStableAfterReload = reloadTagsObserved
+                && lootConditionState.hasSameRegistryAndBehavior(
+                        reloadedLootConditionState
+                );
+        lootTableInstanceReplacedAfterReload = reloadTagsObserved
+                && lootConditionState.hasReplacedProbeTableInstanceAfterReload(
+                        reloadedLootConditionState
+                );
+        LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
     /**
@@ -161,13 +226,15 @@ public final class RegistryFoundationServerProbe {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         lootConditionCapturedAfterServerDataLoad = tagUpdateCount == 1
-                && lifecycle.equals(List.of("tags_updated"));
+                && lifecycle.equals(List.of("tags_updated_initial"));
+        etherSourceCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialEtherSourceState.hasExactInitialEntries();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
 
     /**
-     * Rechecks the loaded mods and accepted state before requesting a normal server stop.
+     * Rechecks initial state, installs a fresh datapack, and invokes the real reload command.
      *
      * @param event the ready dedicated server
      */
@@ -176,7 +243,10 @@ public final class RegistryFoundationServerProbe {
         lifecycle.add("server_started");
         LOGGER.info("[EtherologyServerProbe] server_started");
         startedServer = event.getServer();
-        tagsBeforeServerStarted = lifecycle.equals(List.of("tags_updated", "server_started"));
+        tagsBeforeServerStarted = lifecycle.equals(List.of(
+                "tags_updated_initial",
+                "server_started"
+        ));
         serverStartedLoadedModIds = collectLoadedModIds();
         serverStartedModsRechecked = serverStartedLoadedModIds.contains("etherology")
                 && serverStartedLoadedModIds.contains(MOD_ID)
@@ -207,7 +277,42 @@ public final class RegistryFoundationServerProbe {
         serverStartedLootConditionRechecked = lootConditionState.sameStateAtServerStarted(
                 startedLootConditionState
         );
+        serverStartedEtherSourceState = EtherSourceProbeState.capture();
+        serverStartedEtherSourcesRechecked = initialEtherSourceState.hasExactInitialEntries()
+                && initialEtherSourceState.sameEntries(serverStartedEtherSourceState);
+
+        try {
+            ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
+                    event.getServer()
+            );
+            reloadPackDirectory = writtenPack.directoryName();
+            reloadPackResourcePaths = writtenPack.resourcePaths();
+            reloadFailure = "";
+            reloadRequested = true;
+            lifecycle.add("reload_requested");
+            LOGGER.info("[EtherologyServerProbe] reload_requested");
+            reloadCommandResult = event.getServer().getCommandManager().executeWithPrefix(
+                    event.getServer().getCommandSource(),
+                    "reload"
+            );
+            enabledDataPackNamesAfterReload = event.getServer().getDataPackManager()
+                    .getEnabledNames()
+                    .stream()
+                    .sorted()
+                    .toList();
+            enabledDataPacksExact = enabledDataPackNamesAfterReload.equals(
+                    expectedEnabledDataPackNames()
+            );
+            reloadCompleted = reloadTagsObserved && tagUpdateCount == 2;
+            lifecycle.add("reload_command_returned");
+            LOGGER.info("[EtherologyServerProbe] reload_command_returned");
+        } catch (IOException | RuntimeException exception) {
+            reloadFailure = exception.getClass().getName();
+        }
+        lifecycle.add("stop_requested");
+        stopRequestedAfterReload = reloadCompleted;
         stopRequestedWithoutRestart = true;
+        LOGGER.info("[EtherologyServerProbe] stop_requested");
         event.getServer().stop(false);
     }
 
@@ -332,7 +437,7 @@ public final class RegistryFoundationServerProbe {
                 assertions,
                 "registry:loot_condition:etherology:random_chance_with_fortune",
                 "present",
-                presentState(lootConditionState.conditionType() != null)
+                presentState(lootConditionState.conditionTypeIdentity() != null)
         );
         addAssertion(
                 assertions,
@@ -371,6 +476,183 @@ public final class RegistryFoundationServerProbe {
         );
         addAssertion(
                 assertions,
+                "ether_source_listener_class",
+                EtherSourceProbeState.LOADER_CLASS_NAME,
+                EtherSourceProbeState.LOADER_CLASS_NAME
+        );
+        addAssertion(
+                assertions,
+                "ether_source_resource_directory",
+                EtherSourceProbeState.RESOURCE_DIRECTORY,
+                EtherSourceProbeState.RESOURCE_DIRECTORY
+        );
+        addAssertion(
+                assertions,
+                "ether_source_initial_capture_error",
+                "none",
+                errorState(initialEtherSourceState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "ether_source_initial_entry_count",
+                "23",
+                Integer.toString(initialEtherSourceState.entries().size())
+        );
+        addAssertion(
+                assertions,
+                "ether_source_initial_entries_exact",
+                EtherSourceProbeState.canonicalEntries(
+                        EtherSourceProbeState.EXPECTED_INITIAL_ENTRIES
+                ),
+                initialEtherSourceState.canonicalEntries()
+        );
+        addAssertion(
+                assertions,
+                "ether_source_initial_rella_value",
+                "4.0",
+                initialEtherSourceState.value("etherology:primoshard_rella")
+        );
+        addAssertion(
+                assertions,
+                "ether_source_initial_legacy_rela_absent",
+                "absent",
+                initialEtherSourceState.value("etherology:primoshard_rela")
+        );
+        addAssertion(
+                assertions,
+                "ether_source_initial_redstone_value",
+                "2.0",
+                initialEtherSourceState.value("minecraft:redstone")
+        );
+        addBooleanAssertion(
+                assertions,
+                "ether_source_captured_after_server_data_load",
+                etherSourceCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_ether_sources_rechecked",
+                serverStartedEtherSourcesRechecked
+        );
+        addAssertion(
+                assertions,
+                "reload_pack_directory",
+                ReloadDataPackWriter.PACK_DIRECTORY_NAME,
+                reloadPackDirectory
+        );
+        addAssertion(
+                assertions,
+                "reload_pack_resources_exact",
+                String.join(",", ReloadDataPackWriter.RESOURCE_PATHS),
+                String.join(",", reloadPackResourcePaths)
+        );
+        addAssertion(
+                assertions,
+                "reload_pack_enabled",
+                ReloadDataPackWriter.ENABLED_PACK_NAME,
+                enabledDataPackNamesAfterReload.stream()
+                        .filter(ReloadDataPackWriter.ENABLED_PACK_NAME::equals)
+                        .count() == 1
+                        ? ReloadDataPackWriter.ENABLED_PACK_NAME
+                        : String.join(",", enabledDataPackNamesAfterReload)
+        );
+        addBooleanAssertion(
+                assertions,
+                "enabled_data_packs_exact",
+                enabledDataPacksExact
+        );
+        addAssertion(assertions, "reload_failure", "none", errorState(reloadFailure));
+        addAssertion(assertions, "reload_command", "reload", reloadRequested ? "reload" : "none");
+        addAssertion(
+                assertions,
+                "reload_command_result",
+                "0",
+                Integer.toString(reloadCommandResult)
+        );
+        addBooleanAssertion(assertions, "reload_completed", reloadCompleted);
+        addAssertion(
+                assertions,
+                "reload_update_cause",
+                TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD.name(),
+                reloadUpdateCause
+        );
+        addBooleanAssertion(
+                assertions,
+                "reload_static_data",
+                reloadShouldUpdateStaticData
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_capture_error",
+                "none",
+                errorState(reloadedEtherSourceState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_entry_count",
+                "24",
+                Integer.toString(reloadedEtherSourceState.entries().size())
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_entries_exact",
+                EtherSourceProbeState.canonicalEntries(
+                        EtherSourceProbeState.EXPECTED_RELOADED_ENTRIES
+                ),
+                reloadedEtherSourceState.canonicalEntries()
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_redstone_value",
+                "9.5",
+                reloadedEtherSourceState.value("minecraft:redstone")
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_diamond_value",
+                "13.0",
+                reloadedEtherSourceState.value("minecraft:diamond")
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_rella_value",
+                "4.0",
+                reloadedEtherSourceState.value("etherology:primoshard_rella")
+        );
+        addAssertion(
+                assertions,
+                "ether_source_reloaded_legacy_rela_absent",
+                "absent",
+                reloadedEtherSourceState.value("etherology:primoshard_rela")
+        );
+        addBooleanAssertion(
+                assertions,
+                "ether_source_map_changed_after_reload",
+                !initialEtherSourceState.sameEntries(reloadedEtherSourceState)
+        );
+        addBooleanAssertion(
+                assertions,
+                "registry_stable_after_reload",
+                registryStableAfterReload
+        );
+        addBooleanAssertion(assertions, "tags_stable_after_reload", tagsStableAfterReload);
+        addBooleanAssertion(
+                assertions,
+                "loot_condition_registry_and_behavior_stable_after_reload",
+                lootConditionStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "loot_table_instance_replaced_after_reload",
+                lootTableInstanceReplacedAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_stop_requested_after_reload",
+                stopRequestedAfterReload
+        );
+        addAssertion(
+                assertions,
                 "tags_update_cause",
                 TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD.name(),
                 updateCause
@@ -384,7 +666,7 @@ public final class RegistryFoundationServerProbe {
         addAssertion(
                 assertions,
                 "tags_update_count",
-                "1",
+                "2",
                 Integer.toString(tagUpdateCount)
         );
         addBooleanAssertion(
@@ -451,7 +733,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 2);
+        report.addProperty("schema", 4);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -466,6 +748,8 @@ public final class RegistryFoundationServerProbe {
         report.add("mods", buildMods(etherologyLoaded, probeLoaded));
         report.add("registry", buildRegistry());
         report.add("loot_condition", buildLootCondition());
+        report.add("ether_sources", buildEtherSources());
+        report.add("reload", buildReload());
         report.add("tags", buildTags());
         report.add("lifecycle", buildLifecycle());
         report.add("assertions", assertions);
@@ -532,6 +816,7 @@ public final class RegistryFoundationServerProbe {
                 "same_instance_at_server_started",
                 serverStartedRegistryRechecked
         );
+        registry.addProperty("stable_after_reload", registryStableAfterReload);
         return registry;
     }
 
@@ -560,7 +845,69 @@ public final class RegistryFoundationServerProbe {
                 "same_state_at_server_started",
                 serverStartedLootConditionRechecked
         );
+        lootCondition.addProperty(
+                "registry_and_behavior_stable_after_reload",
+                lootConditionStableAfterReload
+        );
+        lootCondition.addProperty(
+                "probe_table_instance_replaced_after_reload",
+                lootTableInstanceReplacedAfterReload
+        );
         return lootCondition;
+    }
+
+    private JsonObject buildEtherSources() {
+        JsonObject etherSources = new JsonObject();
+        etherSources.addProperty("listener_class", EtherSourceProbeState.LOADER_CLASS_NAME);
+        etherSources.addProperty(
+                "resource_directory",
+                EtherSourceProbeState.RESOURCE_DIRECTORY
+        );
+        etherSources.add("initial", buildEtherSourceCapture(initialEtherSourceState));
+        etherSources.add(
+                "server_started",
+                buildEtherSourceCapture(serverStartedEtherSourceState)
+        );
+        etherSources.add("reloaded", buildEtherSourceCapture(reloadedEtherSourceState));
+        etherSources.addProperty(
+                "same_at_server_started",
+                serverStartedEtherSourcesRechecked
+        );
+        etherSources.addProperty(
+                "changed_after_reload",
+                !initialEtherSourceState.sameEntries(reloadedEtherSourceState)
+        );
+        return etherSources;
+    }
+
+    private JsonObject buildReload() {
+        JsonObject reload = new JsonObject();
+        reload.addProperty("pack_directory", reloadPackDirectory);
+        reload.add("pack_resources", buildStringArray(reloadPackResourcePaths));
+        reload.addProperty("enabled_pack_name", ReloadDataPackWriter.ENABLED_PACK_NAME);
+        reload.add(
+                "enabled_data_pack_names",
+                buildStringArray(enabledDataPackNamesAfterReload)
+        );
+        reload.addProperty("enabled_data_packs_exact", enabledDataPacksExact);
+        reload.addProperty("command", reloadRequested ? "reload" : "");
+        reload.addProperty("command_result", reloadCommandResult);
+        reload.addProperty("failure", reloadFailure);
+        reload.addProperty("completed", reloadCompleted);
+        reload.addProperty("update_cause", reloadUpdateCause);
+        reload.addProperty("should_update_static_data", reloadShouldUpdateStaticData);
+        reload.addProperty("registry_stable", registryStableAfterReload);
+        reload.addProperty("tags_stable", tagsStableAfterReload);
+        reload.addProperty(
+                "loot_condition_registry_and_behavior_stable",
+                lootConditionStableAfterReload
+        );
+        reload.addProperty(
+                "loot_table_instance_replaced",
+                lootTableInstanceReplacedAfterReload
+        );
+        reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
+        return reload;
     }
 
     private JsonObject buildTags() {
@@ -568,6 +915,8 @@ public final class RegistryFoundationServerProbe {
         tags.addProperty("update_cause", updateCause);
         tags.addProperty("should_update_static_data", shouldUpdateStaticData);
         tags.addProperty("update_count", tagUpdateCount);
+        tags.addProperty("reload_update_cause", reloadUpdateCause);
+        tags.addProperty("reload_should_update_static_data", reloadShouldUpdateStaticData);
         tags.add(
                 "vibrations",
                 buildTag(
@@ -591,6 +940,7 @@ public final class RegistryFoundationServerProbe {
                 "same_membership_at_server_started",
                 serverStartedTagsRechecked
         );
+        tags.addProperty("stable_after_reload", tagsStableAfterReload);
         return tags;
     }
 
@@ -616,6 +966,15 @@ public final class RegistryFoundationServerProbe {
         etherologyEventIds.forEach(etherologyEventIdsArray::add);
         tag.add("etherology_event_ids", etherologyEventIdsArray);
         return tag;
+    }
+
+    private static JsonObject buildEtherSourceCapture(EtherSourceProbeState state) {
+        JsonObject capture = new JsonObject();
+        capture.addProperty("capture_error", state.captureError());
+        JsonObject entries = new JsonObject();
+        state.entries().forEach(entries::addProperty);
+        capture.add("entries", entries);
+        return capture;
     }
 
     private static Map<String, List<String>> collectEtherologyTagMemberships() {
@@ -648,6 +1007,16 @@ public final class RegistryFoundationServerProbe {
                 .map(modInfo -> modInfo.getModId())
                 .toList();
         return ServerProbeModInventory.sortedUniqueIds(observedModIds);
+    }
+
+    private List<String> expectedEnabledDataPackNames() {
+        List<String> expectedNames = new ArrayList<>();
+        serverStartedLoadedModIds.forEach(modId -> expectedNames.add(
+                "minecraft".equals(modId) ? "vanilla" : "mod:" + modId
+        ));
+        expectedNames.add(ReloadDataPackWriter.ENABLED_PACK_NAME);
+        expectedNames.sort(String::compareTo);
+        return List.copyOf(expectedNames);
     }
 
     private static boolean hasExactEtherologyTagMemberships(
@@ -684,6 +1053,10 @@ public final class RegistryFoundationServerProbe {
 
     private static String presentState(boolean present) {
         return present ? "present" : "missing";
+    }
+
+    private static String errorState(String error) {
+        return error.isEmpty() ? "none" : error;
     }
 
     private static void addBooleanAssertion(

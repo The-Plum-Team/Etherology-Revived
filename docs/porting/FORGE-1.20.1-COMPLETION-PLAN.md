@@ -8,7 +8,8 @@ runtime evidence before the release gate advances.
 
 The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation,
 bounded SharedSounds registry/resource milestone, and bounded SharedGameEvents/SharedLootConditions
-registry/server foundation are accepted, not the finished port.
+registry/server foundation, plus the bounded Common Ether-source reload path, are accepted, not the
+finished port.
 Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
 lifecycle, synchronized Gecko animation, and
 packaged save/restart/reopen proof. The channel foundation now has directed fifth-tick transfer,
@@ -17,7 +18,8 @@ packaged save/restart proof. SharedSounds closes the exact Common sound declarat
 resource inventory, but does not claim native playback. SharedGameEvents closes the sole deferred
 resonance declaration and both vanilla listening tags. SharedLootConditions closes the sole
 deferred `random_chance_with_fortune` declaration and serializer. One real Forge dedicated-server
-registry-foundation proof covers both registries. The broader authoritative registry spine is
+registry-foundation proof covers both registries. A separate real reload proof covers the
+Common-owned Ether-source listener and default data. The broader authoritative registry spine is
 still the first incomplete forward milestone. Broad content migration must follow the ownership
 and dependency order below.
 
@@ -52,6 +54,12 @@ while Fabric attaches the same owners from its canonical initializer. The legacy
 migration, converge the remaining catalogs on one active
 declaration owner for every registry ID and attach that declaration once per loader.
 
+The Ether-source data path follows the same one-owner rule outside a registry:
+`EtherSourceLoader`, its deserializer and state holder, `ResourceReloaders`, and
+the default `ether_sources` resource are Common-owned. Fabric and Forge may
+install that idempotent listener, but neither may copy its implementation or
+shadow its default data.
+
 The convergence must replace eager `Registry.register` calls and eager construction through
 `RegistrableBlock` and `EBlock` with Architectury `DeferredRegister` and `RegistrySupplier`.
 Suppliers must not be dereferenced while declarations are still being constructed. This is
@@ -65,8 +73,8 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 ### Slice 0: build and authoritative registry spine — current forward gate
 
-This is the current forward milestone. Its bounded shared-sound, game-event, and loot-condition
-steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
+This is the current forward milestone. Its bounded shared-sound, game-event, loot-condition, and
+Ether-source reload steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
 incomplete work.
 
 Source owners:
@@ -139,9 +147,32 @@ Accepted bounded game-event and loot-condition foundation:
   report, log, world, lifecycle, and exit result. Production Etherology contains no such exit path.
 - This is a headless registry proof, so it produces no screenshots. It does not satisfy native
   sound playback, Forge's deferred custom sculk frequency, or the full-catalog placement/save
-  smoke. The immutable v2 game-event archive remains historical evidence; v4 supersedes it as
-  current proof. The earlier Fabric `v20` client evidence predates this registry rebuild and does
+  smoke. The immutable v2 game-event archive remains historical evidence; v4 superseded it as the
+  registry-foundation proof. The earlier Fabric `v20` client evidence predates this registry rebuild and does
   not claim current-artifact equality.
+
+Accepted bounded Ether-source reload foundation:
+
+- Common is the sole implementation/resource owner of `EtherSourceLoader`, its deserializer and
+  state, `ResourceReloaders`, and the default `ether_sources` data. Both loaders install that same
+  idempotent listener.
+- `validateForgeEtherSourceReloadMilestone` combines exact Common/Fabric/Forge ownership and
+  packaged-resource checks with the immutable v6 dedicated-server archive.
+- The fresh repository-owned `etherology-e2e-forge-server-1.20.1-v6` profile ran a real `reload`
+  on Java 17 and Forge 47.4.9. Its schema-4 report passed 72 of 72 assertions: exactly 23 initial
+  entries with corrected `etherology:primoshard_rella = 4` and `minecraft:redstone = 2`, then
+  exactly 24 entries with `minecraft:redstone = 9.5` and added `minecraft:diamond = 13`.
+- The game-event registry and tags stayed stable. The loot-condition registry and evaluated
+  behavior stayed stable while the probe `LootTable` instance was replaced. The world saved, the
+  server stopped normally, the process exited zero, and the log contained no `ERROR` or `FATAL`
+  marker. This headless proof has no screenshots.
+- The archive at `docs/evidence/forge-1.20.1/ether-source-reload-server-v6` binds profile-manifest
+  SHA-256 `2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0`,
+  server-log SHA-256 `0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f`,
+  and archive-manifest SHA-256
+  `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
+- It does not prove furnace or machine consumption, the wider Ether network, the full registry,
+  native sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness.
 
 Implementation:
 
@@ -373,7 +404,7 @@ Implementation:
 
 - Keep Ether as Etherology's own unit and transfer semantics. Forge Energy is not a compatible
   replacement.
-- Use the shared reload listener for Ether source data.
+- Retain the accepted Common-owned reload listener and default Ether-source data.
 - Use the tracking-recipient packet boundary for particles and Gecko animations.
 - Register every machine block entity, menu, particle, renderer, and codec through the shared
   catalogs and Forge client events.
@@ -387,6 +418,10 @@ effects.
 
 Accepted bounded proof:
 
+- One Common listener/default-data owner, exact 23-entry startup data, and exact 24-entry result
+  after a real Forge `reload` override/addition, frozen by the schema-4, 72-assertion v6
+  dedicated-server record. Registry and tags remain stable; loot-condition registry and evaluated
+  behavior remain stable while the probe loot-table instance is replaced.
 - Shared Ether storage/pipe contracts, exact `ethereal_channel` block and block-entity IDs, storage
   endpoints, persistent direction and Ether state, and NBT reconstruction.
 - Redstone-gated retention followed by exact one-Ether transfer on the fifth-tick cadence, with no
@@ -409,6 +444,7 @@ isolated native run can establish current equality.
 
 Remaining full-slice proof:
 
+- Furnace and other machine consumption of the accepted Ether-source values.
 - Fixed-tick storage to channel to fork to socket/furnace flows.
 - Direction, redstone gate, cross-evaporation, generator stall/restart, and glint fill/drain.
 - Ether conservation across chunk unload/reload.
@@ -721,11 +757,14 @@ Compilation, deterministic bytecode structure, and resource presence still canno
 gameplay evidence. Conversely, native evidence cannot excuse missing deterministic unit and
 integration tests.
 
-The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents, and
-SharedLootConditions registry/server gates are currently positive. The v4 registry-foundation
-proof combines exact cross-loader artifact inspection with a real Java 17 Forge 47.4.9 dedicated
-server, 39 independently checked assertions, and 63 Python safety tests; it remains narrower than
-full-catalog placement/save acceptance. The broader authoritative registry spine is the next
+The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents,
+SharedLootConditions, and Ether-source reload gates are currently positive. The historical v4
+registry-foundation proof combines exact cross-loader artifact inspection with a real Java 17
+Forge 47.4.9 dedicated server, 39 independently checked assertions, and 63 Python safety tests.
+The current v6 reload proof adds schema-4, 72-of-72 native assertions for exact Common-owned
+startup/reloaded Ether-source maps, stable registry/tags/loot behavior, save, normal stop, zero
+exit, and a clean server log. Both remain narrower than full-catalog placement/save acceptance.
+The broader authoritative registry spine is the next
 fail-closed milestone. Sound playback and Forge's custom sculk frequency remain owned by later
 consumer-mechanic evidence, and the deferred portions of the channel and machine graph remain part
 of the later full-slice acceptance rather than being inferred from the Channel run, static sound

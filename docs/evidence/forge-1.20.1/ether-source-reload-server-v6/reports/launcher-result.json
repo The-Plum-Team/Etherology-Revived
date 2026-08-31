@@ -1,0 +1,18 @@
+{
+  "exit_code": 0,
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v6",
+  "profile_manifest": {
+    "relative_path": "scripts/e2e/forge-server-1.20.1-profile.json",
+    "sha256": "2e6b937169d7bf8d765d181de93837371fb32940b31a480f5fde9620d96d21f0",
+    "size": 1192
+  },
+  "scenario": "ether-source-reload",
+  "schema": 1,
+  "server_log": {
+    "relative_path": "logs/latest.log",
+    "sha256": "0be91a9c231e12d00066a2924ba755820da0a8be9f3ef654bb243a375ee5628f",
+    "size": 17883
+  },
+  "task_path": ":forge:1.20.1:runRegistryFoundationServerProbe",
+  "timed_out": false
+}

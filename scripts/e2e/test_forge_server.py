@@ -27,6 +27,7 @@ def temporary_repository():
             "release/release-matrix.json",
             "gradle.properties",
             "forge/build.gradle.kts",
+            forge_server.PROBE_SOURCE_RELATIVE_PATH.as_posix(),
             "scripts/e2e/forge-server-1.20.1-profile.json",
             "gradlew",
         ):
@@ -59,8 +60,24 @@ def valid_report() -> dict[str, object]:
             strict=True,
         )
     ]
+    loaded_mod_ids = [
+        "architectury",
+        "etherology",
+        "etherology_e2e_server_probe",
+        "forge",
+        "geckolib",
+        "generated_1234567",
+        "minecraft",
+    ]
+    enabled_data_pack_names = sorted(
+        [
+            "vanilla" if mod_id == "minecraft" else f"mod:{mod_id}"
+            for mod_id in loaded_mod_ids
+        ]
+        + [forge_server.RELOAD_PACK_ENABLED_NAME]
+    )
     return {
-        "schema": 2,
+        "schema": 4,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -70,14 +87,7 @@ def valid_report() -> dict[str, object]:
         "java": 17,
         "distribution": "DEDICATED_SERVER",
         "runtime_kind": "loom-userdev",
-        "loaded_mod_ids": [
-            "architectury",
-            "etherology",
-            "etherology_e2e_server_probe",
-            "forge",
-            "geckolib",
-            "minecraft",
-        ],
+        "loaded_mod_ids": loaded_mod_ids,
         "forbidden_mod_ids_loaded": [],
         "mods": {
             **{
@@ -96,6 +106,7 @@ def valid_report() -> dict[str, object]:
             "range": 16,
             "etherology_event_ids": ["etherology:etherology_resonance"],
             "same_instance_at_server_started": True,
+            "stable_after_reload": True,
         },
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
@@ -113,11 +124,51 @@ def valid_report() -> dict[str, object]:
                 "minecraft:stone",
             ],
             "same_state_at_server_started": True,
+            "registry_and_behavior_stable_after_reload": True,
+            "probe_table_instance_replaced_after_reload": True,
+        },
+        "ether_sources": {
+            "listener_class": forge_server.ETHER_SOURCE_LISTENER_CLASS,
+            "resource_directory": "ether_sources",
+            "initial": {
+                "capture_error": "",
+                "entries": copy.deepcopy(forge_server.INITIAL_ETHER_SOURCE_ENTRIES),
+            },
+            "server_started": {
+                "capture_error": "",
+                "entries": copy.deepcopy(forge_server.INITIAL_ETHER_SOURCE_ENTRIES),
+            },
+            "reloaded": {
+                "capture_error": "",
+                "entries": copy.deepcopy(forge_server.RELOADED_ETHER_SOURCE_ENTRIES),
+            },
+            "same_at_server_started": True,
+            "changed_after_reload": True,
+        },
+        "reload": {
+            "pack_directory": forge_server.RELOAD_PACK_DIRECTORY,
+            "pack_resources": list(forge_server.RELOAD_PACK_RESOURCES),
+            "enabled_pack_name": forge_server.RELOAD_PACK_ENABLED_NAME,
+            "enabled_data_pack_names": enabled_data_pack_names,
+            "enabled_data_packs_exact": True,
+            "command": "reload",
+            "command_result": 0,
+            "failure": "",
+            "completed": True,
+            "update_cause": "SERVER_DATA_LOAD",
+            "should_update_static_data": True,
+            "registry_stable": True,
+            "tags_stable": True,
+            "loot_condition_registry_and_behavior_stable": True,
+            "loot_table_instance_replaced": True,
+            "stop_requested_after_completion": True,
         },
         "tags": {
             "update_cause": "SERVER_DATA_LOAD",
             "should_update_static_data": True,
-            "update_count": 1,
+            "update_count": 2,
+            "reload_update_cause": "SERVER_DATA_LOAD",
+            "reload_should_update_static_data": True,
             "vibrations": {
                 "id": "minecraft:vibrations",
                 "contains_event": True,
@@ -133,6 +184,7 @@ def valid_report() -> dict[str, object]:
                 "minecraft:warden_can_listen",
             ],
             "same_membership_at_server_started": True,
+            "stable_after_reload": True,
         },
         "lifecycle": list(forge_server.EXPECTED_LIFECYCLE),
         "assertions": assertions,
@@ -141,10 +193,14 @@ def valid_report() -> dict[str, object]:
 
 def valid_server_log() -> bytes:
     lines = [
-        "[Server thread/INFO] [EtherologyServerProbe] tags_updated",
+        "[Server thread/INFO] [EtherologyServerProbe] tags_updated_initial",
         "[Server thread/INFO] [EtherologyServerProbe] registry_foundation_checked",
         "[Server thread/INFO] Done (1.234s)! For help, type help",
         "[Server thread/INFO] [EtherologyServerProbe] server_started",
+        "[Server thread/INFO] [EtherologyServerProbe] reload_requested",
+        "[Server thread/INFO] [EtherologyServerProbe] tags_updated_reload",
+        "[Server thread/INFO] [EtherologyServerProbe] reload_command_returned",
+        "[Server thread/INFO] [EtherologyServerProbe] stop_requested",
         "[Server thread/INFO] [EtherologyServerProbe] server_stopping",
         "[Server thread/INFO] Stopping server",
         "[Server thread/INFO] Saving worlds",
@@ -162,7 +218,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v4",
+            "etherology-e2e-forge-server-1.20.1-v6",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -239,6 +295,19 @@ class ConfigurationTests(unittest.TestCase):
 
             with self.assertRaisesRegex(forge_server.E2EError, "incomplete"):
                 forge_server.verify_gradle_probe_definition(configuration)
+
+    def test_probe_source_lifecycle_drift_is_rejected(self) -> None:
+        with temporary_repository() as (root, manifest_path):
+            source_path = root / forge_server.PROBE_SOURCE_RELATIVE_PATH
+            content = source_path.read_text(encoding="utf-8")
+            source_path.write_text(
+                content.replace('            "reload_command_returned",\n', ""),
+                encoding="utf-8",
+            )
+            configuration = load_temporary_configuration(root, manifest_path)
+
+            with self.assertRaisesRegex(forge_server.E2EError, "contracts differ"):
+                forge_server.verify_probe_source_lifecycle(configuration)
 
 
 class RuntimeIsolationTests(unittest.TestCase):
@@ -439,6 +508,29 @@ class ProbeReportTests(unittest.TestCase):
     def test_exact_probe_report_is_accepted(self) -> None:
         forge_server.validate_probe_report(valid_report(), self.configuration)
 
+    def test_generated_mod_suffix_and_enabled_pack_inventory_stay_bound(self) -> None:
+        report = valid_report()
+        generated_mod_index = report["loaded_mod_ids"].index(
+            "generated_1234567"
+        )
+        report["loaded_mod_ids"][generated_mod_index] = "generated_a"
+        generated_pack_index = report["reload"][
+            "enabled_data_pack_names"
+        ].index("mod:generated_1234567")
+        report["reload"]["enabled_data_pack_names"][
+            generated_pack_index
+        ] = "mod:generated_a"
+        forge_server.validate_probe_report(report, self.configuration)
+
+        report["reload"]["enabled_data_pack_names"][
+            generated_pack_index
+        ] = "mod:generated_1234567"
+        with self.assertRaisesRegex(
+            forge_server.E2EError,
+            "enabled data-pack inventory",
+        ):
+            forge_server.validate_probe_report(report, self.configuration)
+
     def test_forbidden_mod_assertions_are_complete_and_profile_ordered(self) -> None:
         expected_prefix = (
             "distribution_dedicated_server",
@@ -455,13 +547,17 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(39, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(72, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
             + ("absent",) * 7
             + ("none",),
             forge_server.EXPECTED_ASSERTION_VALUES[:12],
+        )
+        self.assertEqual(
+            ">".join(forge_server.EXPECTED_LIFECYCLE),
+            forge_server.EXPECTED_ASSERTION_VALUES[-1],
         )
 
     def test_each_forbidden_mod_requires_an_explicit_false_result(self) -> None:
@@ -496,6 +592,12 @@ class ProbeReportTests(unittest.TestCase):
             "duplicate loaded id": lambda report: report["loaded_mod_ids"].append(
                 "minecraft"
             ),
+            "missing generated mod id": lambda report: report[
+                "loaded_mod_ids"
+            ].remove("generated_1234567"),
+            "unexpected loaded mod id": lambda report: report[
+                "loaded_mod_ids"
+            ].append("othermod"),
             "missing forbidden proof": lambda report: report["mods"].pop("emi"),
             "wrong registry id": lambda report: report["registry"].__setitem__(
                 "event_id", "etherology:wrong"
@@ -507,11 +609,35 @@ class ProbeReportTests(unittest.TestCase):
             "integer loot identity": lambda report: report["loot_condition"].__setitem__(
                 "same_state_at_server_started", 1
             ),
+            "wrong initial Ether source": lambda report: report["ether_sources"][
+                "initial"
+            ]["entries"].__setitem__("minecraft:redstone", 3.0),
+            "legacy Ether source typo": lambda report: report["ether_sources"][
+                "reloaded"
+            ]["entries"].__setitem__("etherology:primoshard_rela", 4.0),
+            "reload command missing": lambda report: report["reload"].__setitem__(
+                "command", ""
+            ),
+            "wrong enabled pack name": lambda report: report[
+                "reload"
+            ].__setitem__("enabled_pack_name", "file/foreign"),
+            "enabled pack missing": lambda report: report["reload"][
+                "enabled_data_pack_names"
+            ].remove(forge_server.RELOAD_PACK_ENABLED_NAME),
+            "enabled packs unsorted": lambda report: report["reload"][
+                "enabled_data_pack_names"
+            ].reverse(),
+            "enabled packs exact false": lambda report: report[
+                "reload"
+            ].__setitem__("enabled_data_packs_exact", False),
+            "reload instability": lambda report: report["reload"].__setitem__(
+                "registry_stable", False
+            ),
             "wrong update cause": lambda report: report["tags"].__setitem__(
                 "update_cause", "OTHER"
             ),
-            "second tag update": lambda report: report["tags"].__setitem__(
-                "update_count", 2
+            "missing reload tag update": lambda report: report["tags"].__setitem__(
+                "update_count", 1
             ),
             "missing vibration": lambda report: report["tags"][
                 "vibrations"
@@ -569,6 +695,7 @@ class LifecycleEvidenceTests(unittest.TestCase):
         mutations = {
             "fatal": base + "[FATAL] failure\n",
             "error level": base + "[main/ERROR] failure\n",
+            "reload failure": base + "Failed to execute reload\n",
             "missing save": base.replace("Saving worlds\n", ""),
             "duplicate lifecycle": base
             + "[Server thread/INFO] [EtherologyServerProbe] server_started\n",
@@ -581,11 +708,11 @@ class LifecycleEvidenceTests(unittest.TestCase):
                 "server_thread_join_timeout_ms=30000",
             ),
             "reordered lifecycle": base.replace(
-                "[EtherologyServerProbe] tags_updated",
+                "[EtherologyServerProbe] tags_updated_initial",
                 "[EtherologyServerProbe] temporary",
             ).replace(
                 "[EtherologyServerProbe] server_started",
-                "[EtherologyServerProbe] tags_updated",
+                "[EtherologyServerProbe] tags_updated_initial",
             ).replace(
                 "[EtherologyServerProbe] temporary",
                 "[EtherologyServerProbe] server_started",

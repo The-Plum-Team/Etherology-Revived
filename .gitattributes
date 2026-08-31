@@ -10,3 +10,4 @@
 # Preserve the raw Forge server evidence log byte-for-byte.
 /docs/evidence/forge-1.20.1/game-event-registry-server-v2/logs/latest.log -whitespace
 /docs/evidence/forge-1.20.1/registry-foundation-server-v4/logs/latest.log -whitespace
+/docs/evidence/forge-1.20.1/ether-source-reload-server-v6/logs/latest.log -whitespace

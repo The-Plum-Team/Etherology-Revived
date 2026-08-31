@@ -13,7 +13,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 
 | Minecraft | Loader | Status |
 | --- | --- | --- |
-| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
+| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and four real-client E2E slices pass, including the dedicated metal-block visual proof; broader parity is pending |
 | 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item/metal-block registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
@@ -143,25 +143,38 @@ archive superseded it as the registry-foundation proof and is now retained
 alongside the current v13 cumulative metal-block proof, historical v11
 material-item proof, and historical v10 particle-registry, v7
 enchantment-registry, and v6 Ether-source reload proofs.
-Native sound playback and Forge's custom sculk frequency remain
-deferred. The fresh repository-owned Fabric
-`etherology-e2e-fabric-1.20.1-v22` profile ran the packaged artifact after the
-metal-block rebuild. Its Phase 0 smoke passed 42 of 42 assertions in 235 client
-ticks, captured two native 1920x1080 screenshots with a
-`0.9796228780864198` changed-pixel ratio, and is frozen in
-[`phase0-smoke-v22`](docs/evidence/fabric-1.20.1/phase0-smoke-v22). The production
-JAR SHA-256 is
-`5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`.
-This bounded client run proves capture-time packaged-artifact startup and
-rendering, integrated-world entry, the existing four-machine fixture mirror,
-save, and normal shutdown. The fixture and screenshots do not show or directly
-interact with the three metal blocks. They do not prove material or food
-gameplay, mining or drops, beacon behavior, recipes, creative-tab behavior, or
-any other unexercised consumer mechanic. The Fabric `v21` material-item and
-`v20` SharedSounds archives are immutable historical evidence.
+Native sound playback and Forge's custom sculk frequency remain deferred. The
+fresh repository-owned Fabric `etherology-e2e-fabric-1.20.1-v23` profile ran a
+dedicated `metal-block-registry` visual scenario against the packaged artifact.
+All 25 ordered assertions passed. From one fixed first-person camera, the run
+captured the three empty display pedestals and then the exact client mirror of
+server-side placement of `azel_block`, `ethril_block`, and `ebony_block`. Each
+unedited native 1920x1080 framebuffer followed 120 consecutive stable renders;
+the before/after changed-pixel ratio is `0.087510`. The world force-saved and the
+client shut down normally. The immutable archive is
+[`metal-block-registry-v23`](docs/evidence/fabric-1.20.1/metal-block-registry-v23).
+Its production-JAR SHA-256 is
+`5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`,
+its harness-JAR SHA-256 is
+`0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111`,
+and its archive-manifest SHA-256 is
+`69717273eac7b543378aa1a804573e27805e33b771601abba7c49923a5a42f44`.
+
+This bounded client run proves the three exact block IDs and default-state
+network IDs, nine render resources, packaged-root provenance, integrated-world
+and chunk readiness, exact before/after server-client fixture states, stable
+rendering, native captures, and save publication. Direct server-side fixture
+placement does not prove `BlockItem` inventory or player placement, mining or
+drops, tool-tier enforcement, beacon activation, recipes, creative tabs,
+restart persistence, multiplayer, or release readiness. The consumed v23
+profile and runtime are immutable; any next client lifecycle action requires a
+fresh v24-or-newer profile. The Fabric `v22` Phase 0 smoke, `v21` material-item
+smoke, and `v20` SharedSounds smoke remain immutable historical evidence. In
+particular, v22 passed 42 of 42 assertions and captured the existing
+four-machine fixture, but its screenshots did not show the three metal blocks.
 
 Frozen archives preserve capture-time observations, artifact identity, and
-payload integrity; neither the Fabric v22 archive nor the Forge v13 archive
+payload integrity; neither the Fabric v23 archive nor the Forge v13 archive
 compares or cryptographically binds later sources or rebuilt JARs. Current
 static artifact gates are a separate proof boundary. Every later rebuilt JAR
 needs another fresh isolated profile before it can claim equivalent runtime

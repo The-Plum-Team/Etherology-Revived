@@ -5,6 +5,112 @@ the baseline Mac. Every run uses a new repository-owned profile under
 `scripts/e2e/.state/`; no external launcher profile is read, modified, or used as
 a source.
 
+## Current metal-block-registry visual proof (v23)
+
+The fresh repository-owned `etherology-e2e-fabric-1.20.1-v23` profile ran the
+dedicated `metal-block-registry` scenario against the packaged Fabric artifact.
+In one integrated Survival world, the harness first captured three empty
+polished-andesite pedestals, placed `etherology:azel_block`,
+`etherology:ethril_block`, and `etherology:ebony_block` directly on the server
+thread, waited for the exact client mirror, and captured the populated fixture
+from the same fixed first-person camera. Each capture followed 120 consecutive
+render-ready, fixture-exact frames. Both PNGs are unedited native composed
+Minecraft framebuffers at `1920x1080`; their changed-pixel ratio is `0.087510`.
+
+- Profile: `etherology-e2e-fabric-1.20.1-v23`
+- Profile manifest SHA-256:
+  `36e7ccb7556aaaf0edb01b066de6d5263f3dde3545ac016e84cf07f795403f84`
+- Profile manifest size: `6993` bytes
+- Production JAR SHA-256:
+  `5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`
+- Harness JAR SHA-256:
+  `0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111`
+- Report status: `passed`
+- Assertions: `25` passed, `0` failed
+- Client ticks: `1680`
+- Stable completed renders: `120` before and `120` after placement
+- Screenshot pair: native composed Minecraft framebuffers, `1920x1080`
+- Changed-pixel ratio: `0.087510`
+
+The exact ordered assertion inventory is:
+
+1. `fabric_mod_loaded:etherology`
+2. `registry:block:etherology:azel_block`
+3. `registry:block:etherology:ethril_block`
+4. `registry:block:etherology:ebony_block`
+5. `default_state_network_ids`
+6. `client_render_resources`
+7. `packaged_root_jar:etherology`
+8. `packaged_root_jar:etherology_e2e_harness`
+9. `integrated_world_joined`
+10. `server_arena_chunk_loaded`
+11. `before_fixture_exact`
+12. `before_capture_render_ready`
+13. `before_capture_camera_exact`
+14. `before_consecutive_stable_renders`
+15. `before_framebuffer_dimensions`
+16. `native_screenshot_written:before`
+17. `server_fixture_ids_exact`
+18. `after_capture_client_fixture_ids_exact`
+19. `after_capture_render_ready`
+20. `after_capture_camera_exact`
+21. `after_consecutive_stable_renders`
+22. `after_framebuffer_dimensions`
+23. `native_screenshot_written:after`
+24. `forced_world_save`
+25. `isolated_save_directory_present`
+
+Frozen file digests:
+
+- `metal-block-registry-v23/archive-manifest.json`:
+  `69717273eac7b543378aa1a804573e27805e33b771601abba7c49923a5a42f44`
+- `metal-block-registry-v23/reports/report.json`:
+  `938f0f73c1104d82d9ede1dd3852ee31871f9b9479017811957102209ff54e73`
+- `metal-block-registry-v23/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `metal-block-registry-v23/screenshots/metal-block-registry-before.png`:
+  `445d1482e8ead2b81aaecbd970c9eb9bd557b77666cd0b29fdee98b76d46eadb`
+- `metal-block-registry-v23/screenshots/metal-block-registry-after.png`:
+  `053679247db8215e604f294efd3817349b08767b68e4ae3efb9ffbb2ca0dcdb4`
+
+The live runtime and immutable archive passed the dedicated verifier:
+
+```text
+Validated Fabric metal-block-registry (etherology-e2e-fabric-1.20.1-v23): 25 assertions, 2 screenshots, changed-pixel ratio 0.087510
+Production SHA-256: 5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd
+Harness SHA-256: 0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111
+```
+
+The following commands record the completed one-shot publication shape. Do not
+rerun manifest creation because the verifier refuses to replace the existing
+manifest. Archive-only validation remains safe:
+
+```bash
+python3 -B scripts/e2e/fabric_metal_block_evidence.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/metal-block-registry-v23 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
+python3 -B scripts/e2e/fabric_metal_block_evidence.py \
+  --archive docs/evidence/fabric-1.20.1/metal-block-registry-v23
+```
+
+The run proves the three exact block registry IDs and non-negative default-state
+network IDs, the nine exact client render resources, packaged-root provenance,
+integrated-world and chunk readiness, exact server/client fixture states, the
+fixed camera and framebuffer contract, native screenshot publication, forced
+save, and isolated save directory. It visually records only direct server-side
+placement on display pedestals. It does not prove `BlockItem` inventory or
+player placement, mining or drops, tool-tier enforcement, beacon activation,
+recipe execution, creative-tab placement, restart persistence, multiplayer, or
+release readiness. The archive seals capture-time payload and artifact identity;
+it does not compare current sources or later rebuilt JARs.
+
+The tracked v23 profile and runtime are consumed and immutable.
+`python3 -B scripts/e2e/client.py validate` and the archive-only command above
+remain read-only, but no lifecycle action or native launch may use v23 again.
+Any next run requires every active profile, runtime, snapshot, test, verifier,
+and archive literal to advance to a fresh unused v24-or-newer identity first.
+
 ## Phase 0 smoke
 
 - Profile: `etherology-e2e-fabric-1.20.1-v12`
@@ -155,7 +261,7 @@ deterministic verifier:
 Validated ether-network: 46 assertions, 2 screenshots, changed-pixel ratio 0.432843
 ```
 
-## Current packaged-artifact Phase 0 smoke (v22)
+## Historical packaged-artifact Phase 0 smoke (v22)
 
 The accepted metal-block checkpoint changed the packaged Fabric JAR, so the
 baseline scenario ran in another new repository-owned profile. It reached the
@@ -209,19 +315,18 @@ Harness SHA-256: b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953e
 Validated archived phase0-smoke (etherology-e2e-fabric-1.20.1-v22): 42 assertions, 2 screenshots, changed-pixel ratio 0.979623
 ```
 
-The active profile configuration and immutable archive can be checked without
-consulting an external launcher profile or mutating the consumed runtime:
+The immutable archive can be checked without consulting an external launcher
+profile or mutating the consumed runtime:
 
 ```bash
-python3 -B scripts/e2e/client.py validate
 python3 -B scripts/e2e/evidence.py --archive docs/evidence/fabric-1.20.1/phase0-smoke-v22
 ```
 
 The archive manifest seals the capture-time profile, artifact, report, and
 screenshot identities and payload integrity. Archive-only validation does not
 compare or cryptographically bind current or later sources and rebuilt JARs.
-Any later rebuild requires a fresh v23-or-newer profile for equivalent native
-runtime evidence.
+The later v23 run used a fresh profile for its separate metal-block visual
+contract; it did not alter or reuse this historical v22 runtime.
 
 ## Historical shared material-item smoke (v21)
 

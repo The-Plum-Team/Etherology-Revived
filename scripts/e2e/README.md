@@ -5,7 +5,7 @@ copies, registers, inspects, or launches an existing game profile. Its only
 game directory is below the ignored repository path:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v22/game/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23/game/
 ```
 
 The parent runtime must contain the exact provenance marker written by this
@@ -13,14 +13,15 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
-The tracked v22 profile names the consumed repository-owned runtime whose one
-accepted capture is now sealed. The v20, v21, and v22 profiles, runtimes, and
-archives are immutable. `client.py validate` and archive-only validation are
-safe because they do not mutate or launch the runtime. Do not rerun `provision`,
-`stage`, `start`, live capture, or archive-manifest creation while any active
-literal still names v22. Before another lifecycle action or native launch,
-advance the profile ID, runtime directory, snapshots, tests, and archive target
-to a new unused v23-or-newer version.
+The tracked v23 profile names the consumed repository-owned runtime whose one
+accepted `metal-block-registry` capture is now sealed. The v20, v21, v22, and
+v23 profiles, runtimes, and archives are immutable. `client.py validate` and
+archive-only validation are safe because they do not mutate or launch the
+runtime. Do not rerun `provision`, `stage`, `start`, live capture, or
+archive-manifest creation while any active literal still names v23. Before
+another lifecycle action or native launch, advance the profile ID, runtime
+directory, snapshots, tests, verifier, and archive target to a new unused
+v24-or-newer version.
 
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
@@ -46,8 +47,8 @@ python3 -B scripts/e2e/client.py validate
 ```
 
 The remaining preparation and lifecycle commands in this document describe the
-next-profile workflow. They must not run until every pinned v22 literal has been
-advanced to one fresh v23-or-newer profile.
+next-profile workflow. They must not run until every pinned v23 literal has been
+advanced to one fresh v24-or-newer profile.
 
 ## Prepare a future profile without launching
 
@@ -124,21 +125,26 @@ python3 -B scripts/e2e/client.py check --scenario phase0-smoke
 python3 -B scripts/e2e/client.py start --scenario phase0-smoke
 ```
 
-The implemented scenarios are `phase0-smoke`, `storage-utilities`, and
-`ether-network`. The storage scenario creates a fresh integrated world and
+The implemented scenarios are `phase0-smoke`, `storage-utilities`,
+`ether-network`, and `metal-block-registry`. The storage scenario creates a
+fresh integrated world and
 exercises crate, shelf, spill-barrel, and tuning-fork interactions and
 persistence. The ether scenario creates a separate fresh world and exercises a
 Spinner, directional channels, Ethereal Storage, a redstone gate, and a
-Levitator force/retention path. An explicit empty, whitespace-padded, or unknown
-value aborts harness initialization before any client callbacks are registered;
-it is never silently normalized or replaced with another scenario.
+Levitator force/retention path. The metal-block scenario captures the empty
+three-pedestal fixture, places the exact azel, ethril, and ebony blocks directly
+on the integrated-server thread, waits for the exact client mirror and 120
+consecutive stable renders, then captures the populated fixture from the same
+camera. An explicit empty, whitespace-padded, or unknown value aborts harness
+initialization before any client callbacks are registered; it is never silently
+normalized or replaced with another scenario.
 The stable Fabric entrypoint remains
 `dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness`, so the isolated profile
 identity and staged-artifact contract do not change.
 
 ## Future-profile client lifecycle
 
-Only after `check` succeeds for the fresh v23-or-newer profile:
+Only after `check` succeeds for the fresh v24-or-newer profile:
 
 ```bash
 python3 -B scripts/e2e/client.py start --scenario phase0-smoke
@@ -172,7 +178,7 @@ Minecraft's `ScreenshotRecorder` writes the native captures directly into the
 fail-closed scenario evidence tree created by `provision`:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v22/evidence/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23/evidence/
   <scenario>/
     reports/
     screenshots/
@@ -189,37 +195,80 @@ The tests are pure temporary-directory/configuration checks. They do not
 download dependencies, create a game runtime, or launch a process:
 
 ```bash
-python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py
+python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
+  scripts/e2e/test_fabric_metal_block_evidence.py
+./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
+  --no-daemon --console=plain
 ```
 
-For a future v23-or-newer capture, after the selected scenario shuts down,
-validate its frozen report, artifacts, screenshots, world, and logs before
-copying evidence into `docs/evidence`:
+## Accepted Fabric metal-block-registry evidence (v23)
+
+The consumed v23 runtime passed the dedicated verifier with 25 exact ordered
+assertions, two unedited native 1920x1080 screenshots, 120 consecutive stable
+renders before placement and 120 after placement, and a changed-pixel ratio of
+`0.087510`. The assertions cover the loaded production mod; the three exact
+block IDs and non-negative default-state network IDs; nine exact render
+resources; both packaged root JARs; integrated-world and chunk readiness; the
+exact empty server/client fixture; before render, camera, stability,
+framebuffer, and screenshot state; exact placed server IDs and client mirror;
+the corresponding after-capture state; forced save; and the isolated save
+directory. The exact ordered assertion names and frozen payload digests are in
+[`docs/evidence/fabric-1.20.1/README.md`](../../docs/evidence/fabric-1.20.1/README.md).
+
+The production-JAR SHA-256 is
+`5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`,
+the harness-JAR SHA-256 is
+`0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111`,
+and the archive-manifest SHA-256 is
+`69717273eac7b543378aa1a804573e27805e33b771601abba7c49923a5a42f44`.
+
+The following command records the completed one-shot publication. Do not rerun
+it: the copied four-file payload and existing manifest are immutable, and the
+verifier refuses replacement.
 
 ```bash
-python3 -B scripts/e2e/evidence.py --scenario phase0-smoke
+python3 -B scripts/e2e/fabric_metal_block_evidence.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/metal-block-registry-v23 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
 ```
 
-The following v22 command records the already-completed one-time publication
-shape. Do not rerun it. For the next capture, first advance every path and
-profile literal to v23 or newer, copy only the accepted Phase 0 report,
-completion marker, and two report-named screenshots, then seal that archive
-once from the exact tracked profile and exact owned runtime:
+Archive-only validation is repeatable and does not read current source, build
+outputs, or live runtime state:
+
+```bash
+python3 -B scripts/e2e/fabric_metal_block_evidence.py \
+  --archive docs/evidence/fabric-1.20.1/metal-block-registry-v23
+./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
+  --no-daemon --console=plain
+./gradlew :fabric:1.20.1:validateFabricMetalBlockRegistryEvidenceArchiveIntegrity \
+  --no-daemon --console=plain
+```
+
+Manifest creation rejects a different repository destination, runtime, profile,
+archive inventory, payload byte, artifact lock, report contract, or publication
+order, and it never replaces an existing manifest. This visual fixture proves
+direct server-side placement and exact client rendering only. It does not prove
+`BlockItem` inventory or player placement, mining or drops, tool-tier
+enforcement, beacon activation, recipe execution, creative tabs, restart
+persistence, multiplayer, or release readiness.
+
+The active v23 identity is consumed. A future capture must first advance every
+active profile, runtime, snapshot, test, verifier, and archive literal to a
+fresh unused v24-or-newer identity.
+
+### Historical Phase 0 archive (v22)
+
+The v22 command below records its already-completed one-time publication shape
+and must not be rerun. Its archive-only validation remains safe. That historical
+smoke passed 42 assertions and captured the four-machine fixture; it did not
+show or interact with the three metal blocks.
 
 ```bash
 python3 -B scripts/e2e/evidence.py \
   --create-archive-manifest docs/evidence/fabric-1.20.1/phase0-smoke-v22 \
   --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v22 \
   --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
-```
-
-Manifest creation rejects a different repository destination, runtime, profile,
-archive inventory, payload byte, artifact lock, report contract, or publication
-order, and it never replaces an existing manifest. After publication, validate
-the self-contained archive without reading current source, build outputs, or
-live runtime state:
-
-```bash
 python3 -B scripts/e2e/evidence.py \
   --archive docs/evidence/fabric-1.20.1/phase0-smoke-v22
 ```
@@ -698,14 +747,15 @@ Attrahite gameplay or drop parity. This bounded run also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
-47 has no supported equivalent and remains deferred. The Fabric `v22` Phase 0
-archive proves capture-time startup and rendering of the packaged artifact
-after the metal-block rebuild, integrated-world entry, the existing
-four-machine fixture mirror, save, and normal shutdown. Its two screenshots do
-not show or directly interact with the three metal blocks, and its 42 baseline
-assertions do not prove food, mining, drops, beacons, recipes, creative-tab
-behavior, or other unexercised gameplay. The immutable Fabric `v21` and `v20`
-archives remain historical. The immutable v2
+47 has no supported equivalent and remains deferred. The current Fabric `v23`
+archive adds a bounded visual proof for the three exact metal-block IDs: exact
+server placement and client mirroring, fixed-camera rendering, two native
+1920x1080 screenshots after 120 stable renders each, forced save, and normal
+shutdown. It does not prove player placement, mining, drops, beacons, recipes,
+creative tabs, persistence across restart, multiplayer, or release readiness.
+The Fabric `v22` Phase 0 archive remains the historical packaged-startup proof;
+its four-machine screenshots do not show the metal blocks. The immutable Fabric
+`v21` and `v20` archives likewise remain historical. The immutable v2
 game-event-only archive remains historical evidence;
 v4 superseded it as the registry-foundation proof, and the historical v4
 verifier intentionally does not accept v2 as its active archive. The v6

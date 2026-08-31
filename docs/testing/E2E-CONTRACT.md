@@ -118,6 +118,7 @@ id must match one of those two values without whitespace normalization.
 | `combat-equipment` | Two-handed suppression, knockback, shield reflection, and armor attributes |
 | `persistence` | Player, item, chunk, machine, and research data survive save/restart |
 | `multiplayer-sync` | Two clients observe identical seals, machines, casts, equipment, and player state |
+| `metal-block-registry` | Exact azel, ethril, and ebony block IDs; nine packaged render resources; direct server-thread placement and integrated-client mirroring at three fixed positions; fixed first-person camera; empty-display and placed-block native 1920×1080 captures after 120 consecutive exact render-ready frames each; forced save and normal shutdown. This bounded visual contract does not prove player placement, creative-tab interaction, mining, drops, beacon behavior, recipes, restart persistence, or multiplayer. |
 
 ## Loader-specific bounded scenarios
 

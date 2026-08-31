@@ -3,6 +3,7 @@ import dev.architectury.plugin.ArchitectPluginExtension
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.api.fabricapi.FabricApiExtension
 import net.fabricmc.loom.task.RemapJarTask
+import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.Sync
 import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
@@ -370,6 +371,70 @@ tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
 }
 
 if (minecraftVersion == "1.20.1") {
+    val fabricMetalBlockEvidenceArchive = rootProject.file(
+        "docs/evidence/fabric-1.20.1/metal-block-registry-v23",
+    )
+    val fabricMetalBlockEvidenceVerifier =
+        rootProject.file("scripts/e2e/fabric_metal_block_evidence.py")
+    val fabricMetalBlockEvidenceTest =
+        rootProject.file("scripts/e2e/test_fabric_metal_block_evidence.py")
+    val fabricClientRunner = rootProject.file("scripts/e2e/client.py")
+    val fabricEvidenceLibrary = rootProject.file("scripts/e2e/evidence.py")
+    val fabricEvidenceTestLibrary = rootProject.file("scripts/e2e/test_evidence.py")
+    val fabricActiveProfile = rootProject.file("scripts/e2e/fabric-1.20.1-profile.json")
+    val fabricProfileSnapshotV23 =
+        rootProject.file("scripts/e2e/fabric-1.20.1-profile-v23.json")
+
+    val fabricMetalBlockRegistryEvidenceSafetyTest =
+        tasks.register<Exec>("fabricMetalBlockRegistryEvidenceSafetyTest") {
+            group = "verification"
+            description =
+                "Runs the Fabric metal-block-registry v23 verifier safety tests."
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_fabric_metal_block_evidence.py",
+            )
+            inputs.files(
+                fabricMetalBlockEvidenceVerifier,
+                fabricMetalBlockEvidenceTest,
+                fabricClientRunner,
+                fabricEvidenceLibrary,
+                fabricEvidenceTestLibrary,
+                fabricActiveProfile,
+                fabricProfileSnapshotV23,
+            )
+            inputs.dir(fabricMetalBlockEvidenceArchive)
+                .withPropertyName("fabricMetalBlockEvidenceArchiveSafetyFixture")
+                .optional()
+        }
+
+    tasks.register<Exec>("validateFabricMetalBlockRegistryEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Fabric metal-block-registry v23 archive."
+        dependsOn(fabricMetalBlockRegistryEvidenceSafetyTest)
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            fabricMetalBlockEvidenceVerifier.absolutePath,
+            "--archive",
+            fabricMetalBlockEvidenceArchive.absolutePath,
+        )
+        inputs.files(
+            fabricMetalBlockEvidenceVerifier,
+            fabricClientRunner,
+            fabricEvidenceLibrary,
+        )
+        inputs.dir(fabricMetalBlockEvidenceArchive)
+            .withPropertyName("fabricMetalBlockEvidenceArchive")
+            .optional()
+    }
+
     val e2eHarness = sourceSets.create("e2eHarness") {
         java.setSrcDirs(
             listOf(rootProject.file("e2e-harness/fabric/1.20.1/src/main/java")),

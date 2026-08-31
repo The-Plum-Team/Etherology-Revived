@@ -19,8 +19,9 @@ Fabric lane currently compiles the ported canonical implementation under the roo
 common sources. This is an explicit transition state while loader-neutral code is
 moved into `common` by complete vertical slices.
 
-Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 E2E run
-in a real macOS client and integrated world. Forge has a native JavaFML entry point,
+Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 and
+dedicated metal-block-registry E2E runs in real macOS clients and integrated
+worlds. Forge has a native JavaFML entry point,
 metadata, accepted bounded Ethereal Storage and Ethereal Channel verticals, and accepted
 shared-sound, game-event, loot-condition, Ether-source reload, enchantment-registry,
 particle-registry, behavior-free material-item, and behavior-free metal-block milestones. Storage and Channel have separate
@@ -91,37 +92,46 @@ remains Fabric-only because the full block and item set is not ported; this synt
 proves the condition and serializer, not Attrahite
 gameplay or drop parity. No screenshots or native sound-playback evidence are claimed.
 
-The packaged Fabric artifact after the metal-block rebuild was exercised in the
-fresh repository-owned `etherology-e2e-fabric-1.20.1-v22` profile. Its packaged
-Phase 0 smoke passed 42 of 42 ordered assertions, ran for 235 client ticks,
-captured two native 1920x1080 screenshots with a
-`0.9796228780864198` changed-pixel ratio, entered and saved an integrated world,
-and shut down normally. The immutable archive is `phase0-smoke-v22`; its
-profile-manifest SHA-256 is
-`289eb0c29066990f7ad967b4f141d08bd7823c0cb79bded85faa37907bd1328f`,
+The packaged Fabric artifact after the metal-block rebuild was exercised by the
+dedicated `metal-block-registry` scenario in the fresh repository-owned
+`etherology-e2e-fabric-1.20.1-v23` profile. Its schema-2 report passed all 25
+ordered assertions. The harness captured the exact empty three-pedestal fixture,
+placed `azel_block`, `ethril_block`, and `ebony_block` directly on the integrated
+server thread, observed the exact client mirror, and captured the populated
+fixture from the same fixed camera. Each unedited native 1920x1080 framebuffer
+followed 120 consecutive stable renders, and the changed-pixel ratio was
+`0.087510`. The world force-saved and the client shut down normally.
+
+The immutable archive is `metal-block-registry-v23`; its profile-manifest
+SHA-256 is
+`36e7ccb7556aaaf0edb01b066de6d5263f3dde3545ac016e84cf07f795403f84`,
 its production-JAR SHA-256 is
 `5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`,
 and its harness-JAR SHA-256 is
-`b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef`.
+`0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111`.
 The report SHA-256 is
-`a6a682db2ad60a5bb59df05a57cad101278def12989dc9cd092df85dc6b484bd`,
+`938f0f73c1104d82d9ede1dd3852ee31871f9b9479017811957102209ff54e73`,
 and the archive-manifest SHA-256 is
-`1f0384073101cd9b6794b6322b941a2fbbfc59bd6210382202bea1b16df3df38`.
+`69717273eac7b543378aa1a804573e27805e33b771601abba7c49923a5a42f44`.
 
-This bounded client smoke proves capture-time packaged-artifact startup and
-rendering, integrated-world entry, the existing four-machine fixture mirror,
-save, and normal shutdown. The world fixture is composed of machines; neither
-native screenshot shows or directly interacts with the three metal blocks. The
-run does not prove the material items or food, mining/drop behavior, beacon
-activation, recipes, creative-tab behavior, or other unexercised gameplay.
-Those exact current declarations and resources remain the responsibility of
-the static artifact gates until their own mechanic-level E2E scenarios exist.
-Fabric `v21` and `v20` are immutable historical archives.
+This bounded visual proof covers the three exact block registry/default-state
+network IDs, nine render resources, packaged-root provenance, integrated-world
+and chunk readiness, exact before/after server-client fixture states, stable
+rendering, native captures, forced save, and isolated save directory. It uses
+direct server-side fixture placement, so it does not prove `BlockItem` inventory
+or player placement, mining or drops, tool-tier enforcement, beacon activation,
+recipes, creative tabs, restart persistence, multiplayer, or release readiness.
 
-The v22 archive seals its capture-time profile, artifact, report, and screenshot
-identity. Archive-only validation does not compare or cryptographically bind
-later sources or rebuilt artifacts; another rebuild requires a fresh v23-or-newer
-profile before equivalent native evidence can be claimed.
+The consumed v23 profile and runtime are immutable. Read-only profile and
+archive validation remain safe, but any next lifecycle action or native launch
+requires every active literal to advance to a fresh unused v24-or-newer profile.
+The v22 Phase 0 archive remains the immutable historical packaged-startup proof:
+it passed 42 of 42 assertions, ran for 235 ticks, and captured two native
+1920x1080 screenshots with changed-pixel ratio `0.9796228780864198`, but its
+four-machine fixture did not show or interact with the metal blocks. Fabric
+`v21` and `v20` likewise remain immutable historical archives. Archive-only
+validation does not compare or cryptographically bind later sources or rebuilt
+artifacts.
 
 The current cumulative server proof is the fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v13` `metal-block-registry` run. Its
@@ -188,6 +198,8 @@ bash ./gradlew --no-daemon --no-parallel \
   :fabric:1.20.1:build \
   :fabric:1.20.1:buildE2eHarness \
   :fabric:1.20.1:verifyE2eHarnessIsolation \
+  :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
+  :fabric:1.20.1:validateFabricMetalBlockRegistryEvidenceArchiveIntegrity \
   validateSupportCatalog
 ```
 
@@ -221,6 +233,31 @@ run configuration, and its separation from production artifacts. It deliberately
 Minecraft. The under-test isolation task verifies the two explicit client-test artifacts; neither
 is the blocked release artifact. The final task is diagnostic only: it reports the broader
 authoritative registry spine as the first incomplete forward milestone.
+
+## Fabric metal-block-registry visual proof
+
+The accepted v23 publication was one-shot. The first command below records the
+completed sealing shape and must not be rerun; the second and the Gradle task are
+repeatable archive-only checks that do not consult live runtime state or current
+build outputs:
+
+```shell
+python3 -B scripts/e2e/fabric_metal_block_evidence.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/metal-block-registry-v23 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
+python3 -B scripts/e2e/fabric_metal_block_evidence.py \
+  --archive docs/evidence/fabric-1.20.1/metal-block-registry-v23
+./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
+  --no-daemon --console=plain
+./gradlew :fabric:1.20.1:validateFabricMetalBlockRegistryEvidenceArchiveIntegrity \
+  --no-daemon --console=plain
+```
+
+The active v23 profile is consumed. Before `provision`, `stage`, `check`,
+`start`, live validation, or another manifest creation, advance every active
+profile/runtime/snapshot/test/verifier/archive literal to a fresh unused v24 or
+newer identity.
 
 ## Forge dedicated-server metal-block-registry proof
 

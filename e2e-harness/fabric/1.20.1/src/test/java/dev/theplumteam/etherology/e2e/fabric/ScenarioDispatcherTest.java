@@ -41,6 +41,14 @@ final class ScenarioDispatcherTest {
     }
 
     @Test
+    void exactMetalBlockRegistryIdIsAccepted() {
+        assertEquals(
+                MetalBlockRegistryScenario.SCENARIO_ID,
+                ScenarioDispatcher.resolveScenarioId(MetalBlockRegistryScenario.SCENARIO_ID)
+        );
+    }
+
+    @Test
     void blankPropertyFailsClosed() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
@@ -51,6 +59,7 @@ final class ScenarioDispatcherTest {
         assertTrue(exception.getMessage().contains(PhaseZeroScenario.SCENARIO_ID));
         assertTrue(exception.getMessage().contains(StorageUtilitiesScenario.SCENARIO_ID));
         assertTrue(exception.getMessage().contains(EtherNetworkScenario.SCENARIO_ID));
+        assertTrue(exception.getMessage().contains(MetalBlockRegistryScenario.SCENARIO_ID));
     }
 
     @Test
@@ -65,5 +74,6 @@ final class ScenarioDispatcherTest {
         assertTrue(exception.getMessage().contains(PhaseZeroScenario.SCENARIO_ID));
         assertTrue(exception.getMessage().contains(StorageUtilitiesScenario.SCENARIO_ID));
         assertTrue(exception.getMessage().contains(EtherNetworkScenario.SCENARIO_ID));
+        assertTrue(exception.getMessage().contains(MetalBlockRegistryScenario.SCENARIO_ID));
     }
 }

@@ -42,6 +42,9 @@ CURRENT_PHASE_ZERO_FIXTURE = (
     / "fabric-1.20.1"
     / "phase0-smoke-v22"
 )
+HISTORICAL_PHASE_ZERO_V22_PROFILE = (
+    SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v22.json"
+)
 
 
 def png_chunk(chunk_type: bytes, content: bytes) -> bytes:
@@ -253,7 +256,7 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
         active_archive_root = self.archive_root.with_name("phase0-smoke-v22")
         self.archive_root.rename(active_archive_root)
         self.archive_root = active_archive_root
-        configuration = client.load_configuration()
+        configuration = client.load_configuration(HISTORICAL_PHASE_ZERO_V22_PROFILE)
         linked_state_error = client.E2EError(
             "E2E state root must not be a symlink"
         )
@@ -331,8 +334,10 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             / "fabric-1.20.1-profile.json"
         )
         profile_manifest.parent.mkdir(parents=True)
-        shutil.copy2(SCRIPT_DIRECTORY / profile_manifest.name, profile_manifest)
-        active_configuration = client.load_configuration()
+        shutil.copy2(HISTORICAL_PHASE_ZERO_V22_PROFILE, profile_manifest)
+        active_configuration = client.load_configuration(
+            HISTORICAL_PHASE_ZERO_V22_PROFILE
+        )
         configuration = client.ResolvedConfiguration(
             manifest=active_configuration.manifest,
             properties=active_configuration.properties,

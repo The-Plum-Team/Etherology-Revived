@@ -177,15 +177,18 @@ Accepted bounded game-event and loot-condition foundation:
 - This is a headless registry proof, so it produces no screenshots. It does not satisfy native
   sound playback, Forge's deferred custom sculk frequency, or the full-catalog placement/save
   smoke. The immutable v2 game-event archive remains historical evidence; v4 superseded it as the
-  registry-foundation proof. The repository-owned Fabric `v22` Phase 0 smoke exercised the
-  packaged client artifact after the metal-block rebuild and passed 42 of 42 baseline assertions
-  with two native 1920x1080 screenshots. It proves capture-time startup and rendering,
-  integrated-world entry, the existing four-machine fixture mirror, save, and shutdown. It does
-  not show or directly interact with the three metal blocks and does not prove material or food
-  gameplay, mining, drops, beacon behavior, recipes, creative-tab behavior, or other unexercised
-  consumers. Current cross-loader declarations remain a separate static artifact proof. The
-  immutable Fabric `v21` and `v20` archives are historical. The v22 archive binds capture-time
-  profile, artifact, report, and screenshot identities, not later sources or rebuilt JARs.
+  registry-foundation proof. The repository-owned Fabric `v23` profile exercised the packaged
+  client artifact with a dedicated metal-block visual scenario. Its 25 ordered assertions passed;
+  two native 1920x1080 captures recorded the exact empty and populated fixtures after 120 stable
+  renders each, with changed-pixel ratio `0.087510`. This proves exact client mirroring and
+  rendering of direct server-side azel, ethril, and ebony placement, not player placement, mining,
+  drops, beacons, recipes, creative tabs, restart persistence, multiplayer, or release readiness.
+  The consumed v23 identity is immutable and any next run requires v24 or newer. The Fabric `v22`
+  Phase 0 archive remains the historical packaged-startup proof; its four-machine screenshots did
+  not show the metal blocks. The immutable Fabric `v21` and `v20` archives likewise remain
+  historical. These archives bind capture-time profile, artifact, report, and screenshot
+  identities, not later sources or rebuilt JARs. Current cross-loader declarations remain a
+  separate static artifact proof.
 
 Accepted bounded Ether-source reload foundation:
 

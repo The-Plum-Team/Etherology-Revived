@@ -370,17 +370,21 @@ and works around a proven non-daemon Loom-userdev thread leak that would otherwi
 alive; it does not enter the production artifact. The external runner bounds and validates the
 process log, server log, report, saved world, lifecycle, crash state, completion-marker order, and
 exit result.
-The fresh repository-owned Fabric `v22` Phase 0 smoke ran the packaged
-production JAR after the metal-block rebuild and passed 42 of 42 baseline
-assertions with two native 1920x1080 screenshots. It proves capture-time
-packaged-artifact startup and rendering, integrated-world entry, the existing
-four-machine fixture mirror, save, and shutdown. The fixture screenshots do not
-show or directly interact with the three metal blocks, and the run does not
-prove material or food gameplay, mining, drops, beacon behavior, recipes,
-creative-tab behavior, or other unexercised consumers. Fabric `v21` and `v20`
-remain immutable historical archives. The v22 archive seals capture-time
-artifact and payload identity but does not bind later sources or rebuilt JARs;
-current static artifact gates remain a separate proof boundary.
+The fresh repository-owned Fabric `v23` profile ran the dedicated
+`metal-block-registry` visual scenario against the packaged production JAR. It
+passed all 25 ordered assertions and captured the exact empty and populated
+three-pedestal fixtures in two native 1920x1080 framebuffers after 120 stable
+renders each; the changed-pixel ratio was `0.087510`. The exact client mirror of
+direct server-side azel, ethril, and ebony placement proves bounded rendering,
+not player placement, mining, drops, beacons, recipes, creative tabs, restart
+persistence, multiplayer, or release readiness. The consumed v23 profile is
+immutable and any next run requires v24 or newer. The Fabric `v22` Phase 0
+archive remains the historical packaged-startup proof: it passed 42 of 42
+baseline assertions, but its four-machine screenshots did not show or interact
+with the metal blocks. Fabric `v21` and `v20` likewise remain immutable
+historical archives. These archives seal capture-time artifact and payload
+identity but do not bind later sources or rebuilt JARs; current static artifact
+gates remain a separate proof boundary.
 
 ## Accepted bounded Ether-source reload milestone
 

@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "kind": "etherology-fabric-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "metal-block-registry",
+  "profile": {
+    "id": "etherology-e2e-fabric-1.20.1-v23",
+    "manifest_path": "scripts/e2e/fabric-1.20.1-profile.json",
+    "manifest_size": 6993,
+    "manifest_sha256": "36e7ccb7556aaaf0edb01b066de6d5263f3dde3545ac016e84cf07f795403f84"
+  },
+  "runtime": {
+    "artifact_node": "fabric-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 17,
+    "capture_kind": "composed-minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788201893253260639,
+      "reports/done.marker": 1788201893253499390,
+      "screenshots/metal-block-registry-before.png": 1788201879040322187,
+      "screenshots/metal-block-registry-after.png": 1788201893130352477
+    }
+  },
+  "capture_metadata": {
+    "path": "artifact-lock.json",
+    "size": 1119,
+    "sha256": "b066eb578e85e862ef1d209455bd4de09d1bb9ab86a66cbc7c05dd16e90aaaa8"
+  },
+  "assertion_count": 25,
+  "screenshot_count": 2,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-under-test.jar",
+      "size": 2882952,
+      "sha256": "5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 166353,
+      "sha256": "0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 10143,
+      "sha256": "938f0f73c1104d82d9ede1dd3852ee31871f9b9479017811957102209ff54e73"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/metal-block-registry-before.png": {
+      "size": 264708,
+      "sha256": "445d1482e8ead2b81aaecbd970c9eb9bd557b77666cd0b29fdee98b76d46eadb"
+    },
+    "screenshots/metal-block-registry-after.png": {
+      "size": 265756,
+      "sha256": "053679247db8215e604f294efd3817349b08767b68e4ae3efb9ffbb2ca0dcdb4"
+    }
+  }
+}

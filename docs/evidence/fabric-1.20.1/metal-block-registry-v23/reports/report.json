@@ -1,0 +1,280 @@
+{
+  "schema": 2,
+  "scenario": "metal-block-registry",
+  "lane": "fabric-1.20.1",
+  "role": "host",
+  "status": "passed",
+  "client_ticks": 1680,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "registry:block:etherology:azel_block",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:ethril_block",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:ebony_block",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "default_state_network_ids",
+      "passed": true,
+      "expected": "three non-negative raw IDs",
+      "actual": "etherology:azel_block\u003d24136;etherology:ethril_block\u003d24137;etherology:ebony_block\u003d24138"
+    },
+    {
+      "name": "client_render_resources",
+      "passed": true,
+      "expected": "[etherology:blockstates/azel_block.json, etherology:models/block/azel_block.json, etherology:textures/block/azel_block.png, etherology:blockstates/ethril_block.json, etherology:models/block/ethril_block.json, etherology:textures/block/ethril_block.png, etherology:blockstates/ebony_block.json, etherology:models/block/ebony_block.json, etherology:textures/block/ebony_block.png]",
+      "actual": "[etherology:blockstates/azel_block.json, etherology:models/block/azel_block.json, etherology:textures/block/azel_block.png, etherology:blockstates/ethril_block.json, etherology:models/block/ethril_block.json, etherology:textures/block/ethril_block.png, etherology:blockstates/ebony_block.json, etherology:models/block/ebony_block.json, etherology:textures/block/ebony_block.png]"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_e2e_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "server_arena_chunk_loaded",
+      "passed": true,
+      "expected": "full chunk",
+      "actual": "true"
+    },
+    {
+      "name": "before_fixture_exact",
+      "passed": true,
+      "expected": "server\u003d-2,122,1\u003dminecraft:air;0,122,1\u003dminecraft:air;2,122,1\u003dminecraft:air|client\u003d-2,122,1\u003dminecraft:air;0,122,1\u003dminecraft:air;2,122,1\u003dminecraft:air|pedestals\u003d-2,121,1\u003dminecraft:polished_andesite;0,121,1\u003dminecraft:polished_andesite;2,121,1\u003dminecraft:polished_andesite",
+      "actual": "server\u003d-2,122,1\u003dminecraft:air;0,122,1\u003dminecraft:air;2,122,1\u003dminecraft:air|client\u003d-2,122,1\u003dminecraft:air;0,122,1\u003dminecraft:air;2,122,1\u003dminecraft:air|pedestals\u003d-2,121,1\u003dminecraft:polished_andesite;0,121,1\u003dminecraft:polished_andesite;2,121,1\u003dminecraft:polished_andesite"
+    },
+    {
+      "name": "before_capture_render_ready",
+      "passed": true,
+      "expected": "terrain complete and six fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "before_capture_camera_exact",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-5.5;yaw\u003d0.0;pitch\u003d2.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-5.5;yaw\u003d0.0;pitch\u003d2.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "before_consecutive_stable_renders",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "before_framebuffer_dimensions",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:before",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "264708 bytes, sha256\u003d445d1482e8ead2b81aaecbd970c9eb9bd557b77666cd0b29fdee98b76d46eadb"
+    },
+    {
+      "name": "server_fixture_ids_exact",
+      "passed": true,
+      "expected": "-2,122,1\u003detherology:azel_block;0,122,1\u003detherology:ethril_block;2,122,1\u003detherology:ebony_block",
+      "actual": "-2,122,1\u003detherology:azel_block;0,122,1\u003detherology:ethril_block;2,122,1\u003detherology:ebony_block"
+    },
+    {
+      "name": "after_capture_client_fixture_ids_exact",
+      "passed": true,
+      "expected": "-2,122,1\u003detherology:azel_block;0,122,1\u003detherology:ethril_block;2,122,1\u003detherology:ebony_block",
+      "actual": "-2,122,1\u003detherology:azel_block;0,122,1\u003detherology:ethril_block;2,122,1\u003detherology:ebony_block"
+    },
+    {
+      "name": "after_capture_render_ready",
+      "passed": true,
+      "expected": "terrain complete and six fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "after_capture_camera_exact",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-5.5;yaw\u003d0.0;pitch\u003d2.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-5.5;yaw\u003d0.0;pitch\u003d2.0;on_ground\u003dtrue;tolerance\u003d1.0E-4"
+    },
+    {
+      "name": "after_consecutive_stable_renders",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "after_framebuffer_dimensions",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:after",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "265756 bytes, sha256\u003d053679247db8215e604f294efd3817349b08767b68e4ae3efb9ffbb2ca0dcdb4"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-e2e-metal-block-registry-world",
+      "actual": "etherology-e2e-metal-block-registry-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-e2e-metal-block-registry-world",
+    "display_name": "Etherology E2E Metal Blocks",
+    "seed": 331875631436,
+    "dimension": "minecraft:overworld",
+    "integrated": true
+  },
+  "ready_resources": [
+    "etherology:blockstates/azel_block.json",
+    "etherology:models/block/azel_block.json",
+    "etherology:textures/block/azel_block.png",
+    "etherology:blockstates/ethril_block.json",
+    "etherology:models/block/ethril_block.json",
+    "etherology:textures/block/ethril_block.png",
+    "etherology:blockstates/ebony_block.json",
+    "etherology:models/block/ebony_block.json",
+    "etherology:textures/block/ebony_block.png"
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "etherology-under-test.jar",
+      "size": 2882952,
+      "sha256": "5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd"
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "origin_kind": "PATH",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 166353,
+      "sha256": "0cc892f41399eec903af57c3270f19db027b0e7611e392a0fc817876e373b111"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "empty-display-fixture",
+      "role": "host",
+      "file": "screenshots/metal-block-registry-before.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 264708,
+      "sha256": "445d1482e8ead2b81aaecbd970c9eb9bd557b77666cd0b29fdee98b76d46eadb",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "placed-metal-blocks",
+      "role": "host",
+      "file": "screenshots/metal-block-registry-after.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 265756,
+      "sha256": "053679247db8215e604f294efd3817349b08767b68e4ae3efb9ffbb2ca0dcdb4",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    }
+  ],
+  "metal_blocks": {
+    "registry_ids": [
+      "etherology:azel_block",
+      "etherology:ethril_block",
+      "etherology:ebony_block"
+    ],
+    "display_positions": {
+      "etherology:azel_block": "-2,122,1",
+      "etherology:ethril_block": "0,122,1",
+      "etherology:ebony_block": "2,122,1"
+    },
+    "pedestal_positions": {
+      "etherology:azel_block": "-2,121,1",
+      "etherology:ethril_block": "0,121,1",
+      "etherology:ebony_block": "2,121,1"
+    },
+    "before_server_ids": {
+      "etherology:azel_block": "minecraft:air",
+      "etherology:ethril_block": "minecraft:air",
+      "etherology:ebony_block": "minecraft:air"
+    },
+    "before_client_ids": {
+      "etherology:azel_block": "minecraft:air",
+      "etherology:ethril_block": "minecraft:air",
+      "etherology:ebony_block": "minecraft:air"
+    },
+    "after_server_ids": {
+      "etherology:azel_block": "etherology:azel_block",
+      "etherology:ethril_block": "etherology:ethril_block",
+      "etherology:ebony_block": "etherology:ebony_block"
+    },
+    "after_client_ids": {
+      "etherology:azel_block": "etherology:azel_block",
+      "etherology:ethril_block": "etherology:ethril_block",
+      "etherology:ebony_block": "etherology:ebony_block"
+    },
+    "camera": {
+      "x": 0.5,
+      "y": 121.0,
+      "z": -5.5,
+      "yaw": 0.0,
+      "pitch": 2.0,
+      "first_person": true,
+      "on_ground": true
+    },
+    "required_stable_renders": 120,
+    "before": {
+      "render_ready": true,
+      "camera_exact": true,
+      "stable_renders": 120,
+      "framebuffer": "1920x1080"
+    },
+    "after": {
+      "render_ready": true,
+      "camera_exact": true,
+      "stable_renders": 120,
+      "framebuffer": "1920x1080"
+    }
+  }
+}

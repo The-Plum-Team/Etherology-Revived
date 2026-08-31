@@ -180,7 +180,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = client.load_configuration()
         profile = client.profile_spec(configuration)
 
-        self.assertEqual("etherology-e2e-fabric-1.20.1-v22", profile["id"])
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v23", profile["id"])
         self.assertEqual(profile["id"], profile["runtime_directory"])
         self.assertEqual("fabric-1.20.1", configuration.artifact_lane["artifact_node"])
         self.assertEqual("1.20.1", configuration.runtime_lane["runtime_version"])
@@ -191,23 +191,42 @@ class ConfigurationTests(unittest.TestCase):
         resolution = client.require_object(launch, "resolution")
         self.assertEqual({"width": 960, "height": 540}, resolution)
 
-    def test_active_profile_matches_v22_and_preserves_v20_v21_snapshots(self) -> None:
+    def test_active_profile_matches_v23_and_preserves_v20_through_v22_snapshots(
+        self,
+    ) -> None:
         active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
         v20_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v20.json"
         v21_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v21.json"
         v22_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v22.json"
+        v23_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v23.json"
 
-        self.assertEqual(active_profile.read_bytes(), v22_profile.read_bytes())
-        self.assertNotEqual(active_profile.read_bytes(), v21_profile.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v23_profile.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v22_profile.read_bytes())
+        self.assertNotEqual(v22_profile.read_bytes(), v21_profile.read_bytes())
         self.assertNotEqual(v21_profile.read_bytes(), v20_profile.read_bytes())
-        self.assertEqual(
-            "etherology-e2e-fabric-1.20.1-v20",
-            json.loads(v20_profile.read_text(encoding="utf-8"))["profile"]["id"],
+        snapshots = (
+            (
+                v20_profile,
+                "etherology-e2e-fabric-1.20.1-v20",
+                "77e2319ce711aa6c62de5aba4107f62d29ab96411c3fe2fba557e08e52444a8b",
+            ),
+            (
+                v21_profile,
+                "etherology-e2e-fabric-1.20.1-v21",
+                "d6fa9ac08407128f34473add51c2f75da703c34c73ac985c7af11b024449d722",
+            ),
+            (
+                v22_profile,
+                "etherology-e2e-fabric-1.20.1-v22",
+                "289eb0c29066990f7ad967b4f141d08bd7823c0cb79bded85faa37907bd1328f",
+            ),
         )
-        self.assertEqual(
-            "etherology-e2e-fabric-1.20.1-v21",
-            json.loads(v21_profile.read_text(encoding="utf-8"))["profile"]["id"],
-        )
+        for snapshot, expected_id, expected_sha256 in snapshots:
+            self.assertEqual(
+                expected_id,
+                json.loads(snapshot.read_text(encoding="utf-8"))["profile"]["id"],
+            )
+            self.assertEqual(expected_sha256, client.sha256_file(snapshot))
 
     def test_capture_dimensions_are_independent_from_logical_window_size(self) -> None:
         configuration = client.load_configuration()
@@ -293,6 +312,22 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_evidence_scenarios_match_packaged_contract(self) -> None:
         configuration = client.load_configuration()
+        expected_scenarios = [
+            "phase0-smoke",
+            "progression-oculus",
+            "seals-aspects",
+            "golden-forest",
+            "alchemy",
+            "ether-network",
+            "staff-lenses",
+            "spiritual-energy",
+            "armillary",
+            "storage-utilities",
+            "combat-equipment",
+            "persistence",
+            "multiplayer-sync",
+            "metal-block-registry",
+        ]
         contract = (
             configuration.repository_root / "docs/testing/E2E-CONTRACT.md"
         ).read_text(encoding="utf-8")
@@ -305,7 +340,8 @@ class ConfigurationTests(unittest.TestCase):
             if line.startswith("| `")
         ]
 
-        self.assertEqual(contract_scenarios, client.scenario_ids(configuration))
+        self.assertEqual(expected_scenarios, client.scenario_ids(configuration))
+        self.assertEqual(contract_scenarios, expected_scenarios)
         self.assertEqual(
             {
                 "kind": "composed-minecraft-framebuffer",

@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "reference_id": "published-0.1.7",
+  "scenario": "phase0-smoke",
+  "lane": "fabric-1.21.1-original",
+  "status": "passed",
+  "client_ticks": 476,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "published_resources_loaded",
+      "passed": true,
+      "expected": "[minecraft:texts/splashes.txt, etherology:models/item/oculus.json]",
+      "actual": "present"
+    },
+    {
+      "name": "registry_preflight",
+      "passed": true,
+      "expected": "all phase0 registry entries present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:brewing_cauldron",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:empowerment_table",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:ethereal_storage",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:armillary_sphere",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:brewing_cauldron_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:empowerment_table_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:ethereal_storage_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:armillary_sphere_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "etherology_block_states_have_network_ids",
+      "passed": true,
+      "expected": "every Etherology block state has a non-negative raw id",
+      "actual": "88420 inspected; missing\u003d[]"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_original_baseline_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "native_framebuffer_dimensions",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "completed_world_renders_before_capture",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_render_ready",
+      "passed": true,
+      "expected": "terrain complete and all four fixture positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-7.5;yaw\u003d0.0;pitch\u003d8.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-7.5;yaw\u003d0.0;pitch\u003d8.0;on_ground\u003dtrue"
+    },
+    {
+      "name": "native_screenshot_written",
+      "passed": true,
+      "expected": "one non-empty unedited framebuffer PNG",
+      "actual": "300297 bytes, sha256\u003daa69505119804f49936b6f0549566a25744010c96a0a5ac4f9064f3c4b0cafdb"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "client_world_mirrors_server_fixture",
+      "passed": true,
+      "expected": "all four blocks and exact block entity types mirrored",
+      "actual": "mirrored"
+    },
+    {
+      "name": "client_fixture_block_entity_types_exact",
+      "passed": true,
+      "expected": "[etherology:brewing_cauldron_block_entity, etherology:empowerment_table_block_entity, etherology:ethereal_storage_block_entity, etherology:armillary_sphere_block_entity]",
+      "actual": "[-3, 121, 2\u003detherology:brewing_cauldron_block_entity, 0, 121, 2\u003detherology:empowerment_table_block_entity, 3, 121, 2\u003detherology:ethereal_storage_block_entity, 0, 121, 5\u003detherology:armillary_sphere_block_entity]"
+    },
+    {
+      "name": "server_arena_chunk_loaded",
+      "passed": true,
+      "expected": "full chunk",
+      "actual": "true"
+    },
+    {
+      "name": "server_player_creative",
+      "passed": true,
+      "expected": "creative",
+      "actual": "true"
+    },
+    {
+      "name": "server_fixture_blocks_placed",
+      "passed": true,
+      "expected": "all expected identifiers",
+      "actual": "[-3, 121, 2\u003detherology:brewing_cauldron, 0, 121, 2\u003detherology:empowerment_table, 3, 121, 2\u003detherology:ethereal_storage, 0, 121, 5\u003detherology:armillary_sphere]"
+    },
+    {
+      "name": "server_fixture_block_entities_present",
+      "passed": true,
+      "expected": "four block entities",
+      "actual": "true"
+    },
+    {
+      "name": "server_fixture_block_entity_types_exact",
+      "passed": true,
+      "expected": "[etherology:brewing_cauldron_block_entity, etherology:empowerment_table_block_entity, etherology:ethereal_storage_block_entity, etherology:armillary_sphere_block_entity]",
+      "actual": "[-3, 121, 2\u003detherology:brewing_cauldron_block_entity, 0, 121, 2\u003detherology:empowerment_table_block_entity, 3, 121, 2\u003detherology:ethereal_storage_block_entity, 0, 121, 5\u003detherology:armillary_sphere_block_entity]"
+    },
+    {
+      "name": "live_world_identity",
+      "passed": true,
+      "expected": "Etherology Original 0.1.7 Phase 0;19514442935972151;minecraft:overworld",
+      "actual": "Etherology Original 0.1.7 Phase 0;19514442935972151;minecraft:overworld"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-original-phase0-smoke-world",
+      "actual": "etherology-original-phase0-smoke-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-original-phase0-smoke-world",
+    "display_name": "Etherology Original 0.1.7 Phase 0",
+    "seed": 19514442935972151,
+    "dimension": "minecraft:overworld",
+    "integrated": true
+  },
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    {
+      "mod_id": "etherology_original_baseline_harness",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.0.0.jar",
+      "size": 47349,
+      "sha256": "5554034a7535b9f324d38cb4c2c79721a8c45f507aac6e450f5d807787506d24"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "integrated-world-fixture",
+      "file": "screenshots/phase0-smoke.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 300297,
+      "sha256": "aa69505119804f49936b6f0549566a25744010c96a0a5ac4f9064f3c4b0cafdb",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    }
+  ]
+}

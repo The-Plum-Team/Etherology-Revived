@@ -175,8 +175,10 @@ response. A second failed closed when macOS rejected a Requests proxy lookup in
 a forked multithreaded Python child. Both staging directories were removed and
 no runtime was published. After tracking the response and changing the killable
 worker to a clean spawned interpreter, `provision`, `stage`, and `check` all
-passed for the new owned profile. `run` has not executed, so no native game
-launch or new screenshot has yet been proven. `minecraft-launcher-lib==8.0`,
+passed for the new owned profile. Its one `phase0-smoke` run then passed all 30
+assertions, captured the native 1920x1080 framebuffer after 120 ready renders,
+saved the world, and exited cleanly. The frozen evidence is under
+`docs/evidence/original-1.21.1/phase0-smoke-v1`. `minecraft-launcher-lib==8.0`,
 Requests `2.34.2`, urllib3 `2.7.0`,
 certifi `2026.6.17`, idna `3.18`, and charset-normalizer `3.4.9` must be available
 in the invoking Python environment even for `validate`. Before any launcher or

@@ -24,6 +24,15 @@ and persistence are equivalent on Fabric and Forge.
 This capture records the unconfigured machine and channel presentation. It is
 not evidence of transfer, processing, synchronization, or persistence.
 
+## Native original phase-zero capture
+
+![Ethereal Storage in the original integrated-world fixture](../../../../evidence/original-1.21.1/phase0-smoke-v1/screenshots/phase0-smoke.png)
+
+The 2026-08-31 `published-0.1.7` run proves that the Ethereal Storage at the
+left of the frame and its exact block-entity type were present on the server,
+mirrored on the client, rendered for 120 ready frames, and included in a forced
+world save. Inventory and transfer behavior remain separate acceptance work.
+
 ## Fabric 1.20.1 interaction record
 
 The isolated `etherology-e2e-fabric-1.20.1-v19` client completed the

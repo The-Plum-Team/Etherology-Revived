@@ -1,0 +1,196 @@
+Etherology repository-owned original Fabric 1.21.1 client
+profile_id=etherology-original-fabric-1.21.1-published-0.1.7-v1
+scenario=phase0-smoke
+game_directory=/Users/neb/Documents/github/Etherology Revived/scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v1/game
+java=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home/bin/java
+authentication=deterministic-offline-identity
+
+[17:35:09] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.17.3
+[17:35:09] [main/INFO]: Fabric is preparing JARs on first launch, this may take a few seconds...
+[17:35:09] [main/INFO]: Loading 77 mods:
+	- biolith 3.0.14
+	- cardinal-components 6.1.3
+	   |-- cardinal-components-base 6.1.3
+	   |-- cardinal-components-block 6.1.3
+	   |-- cardinal-components-chunk 6.1.3
+	   |-- cardinal-components-entity 6.1.3
+	   |-- cardinal-components-item 6.1.3
+	   |-- cardinal-components-level 6.1.3
+	   |-- cardinal-components-scoreboard 6.1.3
+	   \-- cardinal-components-world 6.1.3
+	- etherology 1.21-0.1.7
+	   |-- mixinsquared 0.2.0-beta.6
+	   \-- mm 2.3
+	- etherology_original_baseline_harness 1.0.0
+	- fabric-api 0.110.0+1.21.1
+	   |-- fabric-api-base 0.4.42+6573ed8c19
+	   |-- fabric-api-lookup-api-v1 1.6.70+b559734419
+	   |-- fabric-biome-api-v1 13.0.30+be1ed2d719
+	   |-- fabric-block-api-v1 1.0.22+0af3f5a719
+	   |-- fabric-block-view-api-v2 1.0.10+6573ed8c19
+	   |-- fabric-blockrenderlayer-v1 1.1.52+0af3f5a719
+	   |-- fabric-client-tags-api-v1 1.1.15+6573ed8c19
+	   |-- fabric-command-api-v1 1.2.49+f71b366f19
+	   |-- fabric-command-api-v2 2.2.28+6ced4dd919
+	   |-- fabric-commands-v0 0.2.66+df3654b319
+	   |-- fabric-content-registries-v0 8.0.18+b559734419
+	   |-- fabric-convention-tags-v1 2.1.2+7f945d5b19
+	   |-- fabric-convention-tags-v2 2.9.2+e60e56d419
+	   |-- fabric-crash-report-info-v1 0.2.29+0af3f5a719
+	   |-- fabric-data-attachment-api-v1 1.4.0+da19b51a19
+	   |-- fabric-data-generation-api-v1 20.2.24+16c4ae2519
+	   |-- fabric-dimensions-v1 4.0.0+6fc22b9919
+	   |-- fabric-entity-events-v1 1.7.0+2122d82819
+	   |-- fabric-events-interaction-v0 0.7.13+ba9dae0619
+	   |-- fabric-game-rule-api-v1 1.0.53+6ced4dd919
+	   |-- fabric-item-api-v1 11.1.1+d5debaed19
+	   |-- fabric-item-group-api-v1 4.1.6+6823f7cd19
+	   |-- fabric-key-binding-api-v1 1.0.47+0af3f5a719
+	   |-- fabric-keybindings-v0 0.2.45+df3654b319
+	   |-- fabric-lifecycle-events-v1 2.5.0+01d9a51c19
+	   |-- fabric-loot-api-v2 3.0.15+3f89f5a519
+	   |-- fabric-loot-api-v3 1.0.3+3f89f5a519
+	   |-- fabric-message-api-v1 6.0.13+6573ed8c19
+	   |-- fabric-model-loading-api-v1 2.0.0+fe474d6b19
+	   |-- fabric-networking-api-v1 4.3.0+c7469b2119
+	   |-- fabric-object-builder-api-v1 15.2.1+40875a9319
+	   |-- fabric-particles-v1 4.0.2+6573ed8c19
+	   |-- fabric-recipe-api-v1 5.0.13+6508971219
+	   |-- fabric-registry-sync-v0 5.2.0+34f5d91419
+	   |-- fabric-renderer-api-v1 3.4.0+c705a49c19
+	   |-- fabric-renderer-indigo 1.7.0+c705a49c19
+	   |-- fabric-renderer-registries-v1 3.2.68+df3654b319
+	   |-- fabric-rendering-data-attachment-v1 0.3.48+73761d2e19
+	   |-- fabric-rendering-fluids-v1 3.1.6+1daea21519
+	   |-- fabric-rendering-v0 1.1.71+df3654b319
+	   |-- fabric-rendering-v1 5.0.5+df16efd019
+	   |-- fabric-resource-conditions-api-v1 4.3.0+8dc279b119
+	   |-- fabric-resource-loader-v0 1.3.1+5b5275af19
+	   |-- fabric-screen-api-v1 2.0.25+8b68f1c719
+	   |-- fabric-screen-handler-api-v1 1.3.88+b559734419
+	   |-- fabric-sound-api-v1 1.0.23+6573ed8c19
+	   |-- fabric-transfer-api-v1 5.4.2+95bead5f19
+	   \-- fabric-transitive-access-wideners-v1 6.2.0+45b9699719
+	- fabricloader 0.17.3
+	   \-- mixinextras 0.5.0
+	- fabricshieldlib 1.7.2-1.21.1
+	   |-- midnightlib 1.5.8
+	   \-- mm 2.3
+	- geckolib 4.9.2
+	- java 21
+	- minecraft 1.21.1
+	- owo 0.13.0-alpha.15+1.21
+	   |-- blue_endless_jankson 1.2.2
+	   |-- io_wispforest_endec 0.1.5.1
+	   |-- io_wispforest_endec_gson 0.1.3.1
+	   |-- io_wispforest_endec_jankson 0.1.3.1
+	   \-- io_wispforest_endec_netty 0.1.2
+	- trinkets 3.10.0
+[17:35:09] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/Users/neb/Documents/github/Etherology%20Revived/scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v1/launcher/libraries/net/fabricmc/sponge-mixin/0.16.5+mixin.0.8.7/sponge-mixin-0.16.5+mixin.0.8.7.jar Service=Knot/Fabric Env=CLIENT
+[17:35:09] [main/INFO]: Compatibility level set to JAVA_17
+[17:35:09] [main/INFO]: Compatibility level set to JAVA_21
+[17:35:09] [main/WARN]: Reference map 'geckolib.refmap.json' for geckolib.mixins.json could not be read. If this is a development environment you can ignore this message
+[17:35:09] [main/WARN]: Error loading class: xyz/nucleoid/server/translations/impl/language/LanguageReader (java.lang.ClassNotFoundException: xyz/nucleoid/server/translations/impl/language/LanguageReader)
+[17:35:09] [main/WARN]: @Mixin target xyz.nucleoid.server.translations.impl.language.LanguageReader was not found owo.mixins.json:extension.json5.LanguageReaderMixin from mod owo
+[17:35:09] [main/WARN]: Error loading class: xyz/nucleoid/server/translations/impl/language/SystemDelegatedLanguage (java.lang.ClassNotFoundException: xyz/nucleoid/server/translations/impl/language/SystemDelegatedLanguage)
+[17:35:09] [main/WARN]: Error loading class: org/jetbrains/annotations/ApiStatus$Internal (java.lang.ClassNotFoundException: org/jetbrains/annotations/ApiStatus$Internal)
+[17:35:09] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
+[17:35:10] [Datafixer Bootstrap/INFO]: 226 Datafixer optimizations took 178 milliseconds
+[17:35:14] [Render thread/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[17:35:14] [Render thread/INFO]: Setting user: EtherologyE2E
+[17:35:14] [Render thread/INFO]: Biolith for Fabric is initializing...
+[17:35:14] [Download-2/ERROR]: Failed to fetch user properties
+com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
+	at knot/com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:59) ~[authlib-6.0.54.jar:?]
+	at knot/com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:150) ~[authlib-6.0.54.jar:?]
+	at knot/net.minecraft.class_310.method_55608(class_310.java:458) ~[client-intermediary.jar:?]
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+Caused by: com.mojang.authlib.exceptions.MinecraftClientHttpException: Status: 401
+	at knot/com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:100) ~[authlib-6.0.54.jar:?]
+	at knot/com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:57) ~[authlib-6.0.54.jar:?]
+	at knot/com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:121) ~[authlib-6.0.54.jar:?]
+	... 5 more
+[17:35:16] [Render thread/INFO]: Fabric Shield Lib Initialized!
+[17:35:16] [Render thread/INFO]: Definitely not up to no good
+[17:35:16] [Render thread/INFO]: make a man a mod, he'll be enteratined for a few minutes - teach a man to mod, and he'll mald till the end of time
+[17:35:16] [Render thread/INFO]: [Indigo] Registering Indigo renderer!
+[17:35:16] [Render thread/INFO]: Backend library: LWJGL version 3.3.3-snapshot
+[17:35:17] [Render thread/WARN]: Removed resource pack biolith from options because it is no longer compatible
+[17:35:18] [Render thread/INFO]: Reloading ResourceManager: vanilla, fabric, biolith, cardinal-components, cardinal-components-base, cardinal-components-block, cardinal-components-chunk, cardinal-components-entity, cardinal-components-item, cardinal-components-level, cardinal-components-scoreboard, cardinal-components-world, etherology, fabric-api, fabric-api-base, fabric-api-lookup-api-v1, fabric-biome-api-v1, fabric-block-api-v1, fabric-block-view-api-v2, fabric-blockrenderlayer-v1, fabric-client-tags-api-v1, fabric-command-api-v1, fabric-command-api-v2, fabric-commands-v0, fabric-content-registries-v0, fabric-convention-tags-v1, fabric-convention-tags-v2, fabric-crash-report-info-v1, fabric-data-attachment-api-v1, fabric-data-generation-api-v1, fabric-dimensions-v1, fabric-entity-events-v1, fabric-events-interaction-v0, fabric-game-rule-api-v1, fabric-item-api-v1, fabric-item-group-api-v1, fabric-key-binding-api-v1, fabric-keybindings-v0, fabric-lifecycle-events-v1, fabric-loot-api-v2, fabric-loot-api-v3, fabric-message-api-v1, fabric-model-loading-api-v1, fabric-networking-api-v1, fabric-object-builder-api-v1, fabric-particles-v1, fabric-recipe-api-v1, fabric-registry-sync-v0, fabric-renderer-api-v1, fabric-renderer-indigo, fabric-renderer-registries-v1, fabric-rendering-data-attachment-v1, fabric-rendering-fluids-v1, fabric-rendering-v0, fabric-rendering-v1, fabric-resource-conditions-api-v1, fabric-resource-loader-v0, fabric-screen-api-v1, fabric-screen-handler-api-v1, fabric-sound-api-v1, fabric-transfer-api-v1, fabric-transitive-access-wideners-v1, fabricloader, fabricshieldlib, midnightlib, mm, owo, trinkets
+[17:35:18] [Worker-Main-13/INFO]: Found unifont_all_no_pua-15.1.05.hex, loading
+[17:35:18] [Worker-Main-7/INFO]: Found unifont_jp_patch-15.1.05.hex, loading
+[17:35:20] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[17:35:20] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[17:35:21] [Render thread/INFO]: OpenAL initialized on device Altavoces del MacBook Pro
+[17:35:21] [Render thread/INFO]: Sound engine started
+[17:35:21] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/particles.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 256x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 64x64x0 minecraft:textures/atlas/map_decorations.png-atlas
+[17:35:21] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/gui.png-atlas
+[17:35:21] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[17:35:21] [IO-Worker-1/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: offline-etherology-original-baseline
+[17:35:21] [IO-Worker-1/ERROR]: Couldn't connect to realms
+net.minecraft.class_4355: Realms authentication error with message 'java.lang.RuntimeException: Failed to parse into SignedJWT: offline-etherology-original-baseline'
+	at knot/net.minecraft.class_4341.method_20998(class_4341.java:447) ~[client-intermediary.jar:?]
+	at knot/net.minecraft.class_4341.method_21027(class_4341.java:232) ~[client-intermediary.jar:?]
+	at knot/net.minecraft.class_8647.method_52627(class_8647.java:51) ~[client-intermediary.jar:?]
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+[17:35:23] [Render thread/INFO]: Found new data pack etherology, loading it automatically
+[17:35:23] [Render thread/INFO]: Found new data pack fabric, loading it automatically
+[17:35:23] [Render thread/INFO]: Found new data pack fabric-convention-tags-v2, loading it automatically
+[17:35:23] [Render thread/INFO]: Found new data pack fabricshieldlib, loading it automatically
+[17:35:23] [Render thread/INFO]: Found new data pack trinkets, loading it automatically
+[17:35:23] [Render thread/INFO]: Loaded 1437 recipes
+[17:35:23] [Render thread/INFO]: Loaded 1515 advancements
+[17:35:24] [Render thread/INFO]: Applied 222 biome modifications to 64 of 65 new biomes in 49.58 ms
+[17:35:24] [Server thread/INFO]: Starting integrated minecraft server version 1.21.1
+[17:35:24] [Server thread/INFO]: Generating keypair
+[17:35:26] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[17:35:26] [Render thread/INFO]: Preparing spawn area: 2%
+[17:35:26] [Render thread/INFO]: Preparing spawn area: 2%
+[17:35:27] [Render thread/INFO]: Preparing spawn area: 18%
+[17:35:27] [Render thread/INFO]: Preparing spawn area: 51%
+[17:35:28] [Render thread/INFO]: Time elapsed: 1792 ms
+[17:35:28] [Server thread/INFO]: Changing view distance to 12, from 10
+[17:35:28] [Server thread/INFO]: Changing simulation distance to 10, from 0
+[17:35:28] [Server thread/INFO]: EtherologyE2E[local:E:0fc4d9c6] logged in with entity id 20 at (255.5, 63.0, -472.5)
+[17:35:28] [Server thread/INFO]: EtherologyE2E joined the game
+[17:35:28] [Render thread/INFO]: Loaded 2 advancements
+[17:35:45] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Phase 0]'/minecraft:overworld
+[17:35:46] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Phase 0]'/minecraft:the_nether
+[17:35:46] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Phase 0]'/minecraft:the_end
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage (etherology-original-phase0-smoke-world): All chunks are saved
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[17:35:46] [Render thread/INFO]: Original phase0-smoke evidence published with status passed: /Users/neb/Documents/github/Etherology Revived/scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v1/evidence/phase0-smoke/reports
+[17:35:46] [Render thread/INFO]: Stopping!
+[17:35:46] [Server thread/INFO]: EtherologyE2E lost connection: Disconnected
+[17:35:46] [Server thread/INFO]: EtherologyE2E left the game
+[17:35:46] [Server thread/INFO]: Stopping singleplayer server as player logged out
+[17:35:46] [Server thread/INFO]: Stopping server
+[17:35:46] [Server thread/INFO]: Saving players
+[17:35:46] [Server thread/INFO]: Saving worlds
+[17:35:46] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Phase 0]'/minecraft:overworld
+[17:35:46] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Phase 0]'/minecraft:the_nether
+[17:35:46] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Phase 0]'/minecraft:the_end
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage (etherology-original-phase0-smoke-world): All chunks are saved
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[17:35:46] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved

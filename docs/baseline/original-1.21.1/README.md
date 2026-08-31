@@ -40,8 +40,9 @@ client-only capture harness is pinned as a ninth staged root JAR:
 - Exact Etherology dependency: `=1.21-0.1.7`
 
 The harness has built, remapped, and passed pure/artifact tests. The owned
-runtime has not been provisioned, staged, checked, or launched through the new
-controller, so this is not original-client runtime proof.
+runtime subsequently passed provision, stage, check, and its one native
+`phase0-smoke` launch through the new controller. The frozen runtime proof is
+stored under `docs/evidence/original-1.21.1/phase0-smoke-v1`.
 
 The runtime contract also pins the official Minecraft version JSON, asset
 index, client JAR, Fabric loader profile, and each of the eight Fabric library
@@ -146,9 +147,16 @@ removed and neither attempt published a runtime. With the response tracked and
 the killable worker changed to a clean spawned interpreter, `provision`,
 `stage`, and `check` then passed for the new owned profile. Launcher-lib's two
 unresolved modern auth placeholders are now replaced with exact offline values
-before the argv gate. No native launch, new screenshot, or completed
-`phase0-smoke` report exists yet, so no new original mechanic behaviour or port
-acceptance claim has been established.
+before the argv gate. The one native run then passed all 30 ordered assertions,
+captured one unedited 1920x1080 framebuffer after 120 consecutive ready renders,
+force-saved the isolated world, and shut down cleanly. This accepts the bounded
+phase-zero registry, placement, block-entity, rendering, and persistence
+contract; it does not establish interaction behavior for the four fixtures.
+
+![Native original 0.1.7 phase-zero fixture](../../evidence/original-1.21.1/phase0-smoke-v1/screenshots/phase0-smoke.png)
+
+The full archived report and controller verification are documented in
+[`docs/evidence/original-1.21.1`](../../evidence/original-1.21.1/README.md).
 
 ## Historical static gallery overview
 

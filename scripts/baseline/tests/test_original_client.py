@@ -32,6 +32,13 @@ SPECIFICATION.loader.exec_module(client)
 TRACKED_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
 )
+TRACKED_EVIDENCE_ARCHIVE = (
+    BASELINE_DIRECTORY.parents[1]
+    / "docs"
+    / "evidence"
+    / "original-1.21.1"
+    / "phase0-smoke-v1"
+)
 
 
 def fabric_jar_bytes(mod_id: str, nested_mod_id: str | None = None) -> bytes:
@@ -859,6 +866,62 @@ def rewrite_report_and_marker(
 
 
 class TrackedManifestTests(unittest.TestCase):
+    def test_tracked_original_evidence_archive_is_exact(self) -> None:
+        archive_manifest = client.load_json_object(
+            TRACKED_EVIDENCE_ARCHIVE / "archive-manifest.json",
+            "Tracked original-baseline evidence archive manifest",
+        )
+        self.assertEqual(
+            archive_manifest["kind"],
+            "etherology-original-fabric-baseline-evidence",
+        )
+        self.assertEqual(archive_manifest["scenario"], "phase0-smoke")
+        self.assertEqual(archive_manifest["assertion_count"], 30)
+        archived_files = archive_manifest["files"]
+        self.assertEqual(
+            set(archived_files),
+            {
+                "reports/report.json",
+                "reports/done.marker",
+                "screenshots/phase0-smoke.png",
+                "controller/original-client.log",
+                "controller/verification.json",
+            },
+        )
+        for relative_name, pinned in archived_files.items():
+            relative_path = PurePosixPath(relative_name)
+            self.assertFalse(relative_path.is_absolute())
+            self.assertNotIn("..", relative_path.parts)
+            client.verify_exact_file(
+                TRACKED_EVIDENCE_ARCHIVE / Path(*relative_path.parts),
+                pinned["sha256"],
+                pinned["size"],
+                f"Tracked original-baseline archive file {relative_name}",
+            )
+        report = client.load_json_object(
+            TRACKED_EVIDENCE_ARCHIVE / "reports" / "report.json",
+            "Tracked original-baseline scenario report",
+        )
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(report["reference_id"], "published-0.1.7")
+        self.assertEqual(len(report["assertions"]), 30)
+        self.assertTrue(all(value["passed"] is True for value in report["assertions"]))
+        self.assertEqual(
+            client.png_dimensions(
+                TRACKED_EVIDENCE_ARCHIVE / "screenshots" / "phase0-smoke.png"
+            ),
+            (1920, 1080),
+        )
+        verification = client.load_json_object(
+            TRACKED_EVIDENCE_ARCHIVE / "controller" / "verification.json",
+            "Tracked original-baseline controller verification",
+        )
+        self.assertEqual(verification["status"], "passed")
+        self.assertEqual(
+            verification["screenshot"]["sha256"],
+            archived_files["screenshots/phase0-smoke.png"]["sha256"],
+        )
+
     def test_tracked_manifest_and_bundle_validate(self) -> None:
         configuration = client.load_configuration()
         inventory = client.verify_reference_bundle(configuration)

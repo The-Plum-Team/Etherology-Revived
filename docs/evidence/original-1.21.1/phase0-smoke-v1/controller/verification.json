@@ -1,0 +1,42 @@
+{
+  "completion_marker": {
+    "path": "evidence/phase0-smoke/reports/done.marker",
+    "sha256": "c6f91da0c95f297d9bb6d114fa0d19c4f550d4395995b09fe60f926d902bc5e3",
+    "size": 99
+  },
+  "controller_log": {
+    "path": "logs/original-client-20260831T153505Z.log",
+    "sha256": "58713d7d2320ff332b8069de233eff625a6bb20ef60aa8493cd3b83050ed4b48",
+    "size": 16266
+  },
+  "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea",
+  "launch_attempt": {
+    "path": "launch-attempt.json",
+    "sha256": "eb6399fe15ca50495bd8a7e54a65a0d028f0a6a6be7f1974fec02ca9b264cbd6",
+    "size": 871861
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache": {
+      "file_count": 0,
+      "files": [],
+      "path": "assets/skins",
+      "present": false,
+      "total_size": 0
+    }
+  },
+  "profile_id": "etherology-original-fabric-1.21.1-published-0.1.7-v1",
+  "scenario": "phase0-smoke",
+  "scenario_report": {
+    "path": "evidence/phase0-smoke/reports/report.json",
+    "sha256": "108cd7576a0c24ed498193d076f87bb7a3d9db6625b35689eb0e7a8cd43e5c55",
+    "size": 7483
+  },
+  "schema": 1,
+  "screenshot": {
+    "path": "evidence/phase0-smoke/screenshots/phase0-smoke.png",
+    "sha256": "aa69505119804f49936b6f0549566a25744010c96a0a5ac4f9064f3c4b0cafdb",
+    "size": 300297
+  },
+  "status": "passed",
+  "verified_at_unix_ns": 1788190554407387000
+}

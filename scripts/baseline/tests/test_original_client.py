@@ -1663,6 +1663,84 @@ class RuntimeAuthorityTests(unittest.TestCase):
                     )
             self.assertFalse(destination.exists())
 
+    def test_fabric_libraries_use_only_exact_repository_cache_entries(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            root = temporary_root / "runtime"
+            root.mkdir()
+            client.launcher_directory(configuration, root).mkdir()
+            cache_root = client.pinned_fabric_library_cache_root(configuration)
+            libraries = client.require_list(
+                client.require_object(
+                    client.runtime_spec(configuration), "fabric_profile"
+                ),
+                "libraries",
+            )
+            for library in libraries:
+                relative_path = PurePosixPath(str(library["path"]))
+                cache_path = cache_root / Path(*relative_path.parts)
+                cache_path.parent.mkdir(parents=True, exist_ok=True)
+                cache_path.write_bytes(
+                    fixture_library_content(str(library["coordinate"]))
+                )
+
+            with mock.patch.object(client, "download_pinned_file") as download:
+                client.install_pinned_fabric_libraries(configuration, root)
+
+            download.assert_not_called()
+            self.assertEqual(
+                len(client.fabric_library_inventory(configuration, root)),
+                len(libraries),
+            )
+
+    def test_tampered_fabric_library_cache_entry_fails_and_cleans_destination(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            root = temporary_root / "runtime"
+            root.mkdir()
+            launcher = client.launcher_directory(configuration, root)
+            launcher.mkdir()
+            library = client.require_list(
+                client.require_object(
+                    client.runtime_spec(configuration), "fabric_profile"
+                ),
+                "libraries",
+            )[0]
+            relative_path = PurePosixPath(str(library["path"]))
+            cache_path = client.pinned_fabric_library_cache_root(
+                configuration
+            ) / Path(*relative_path.parts)
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_bytes(b"x" * int(library["size"]))
+
+            with self.assertRaisesRegex(client.BaselineError, "SHA-256"):
+                client.install_pinned_fabric_libraries(configuration, root)
+
+            self.assertFalse(
+                (launcher / "libraries" / Path(*relative_path.parts)).exists()
+            )
+
+    def test_linked_fabric_library_cache_root_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            root = temporary_root / "runtime"
+            root.mkdir()
+            client.launcher_directory(configuration, root).mkdir()
+            external = temporary_root / "foreign-cache"
+            external.mkdir()
+            client.pinned_fabric_library_cache_root(configuration).symlink_to(
+                external,
+                target_is_directory=True,
+            )
+
+            with self.assertRaisesRegex(client.BaselineError, "library cache"):
+                client.install_pinned_fabric_libraries(configuration, root)
+
     def test_fabric_library_inventory_rejects_tampering(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)

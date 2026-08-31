@@ -103,6 +103,7 @@ MANIFEST_PATH = (
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
+PINNED_FABRIC_LIBRARY_CACHE_DIRECTORY = "pinned-fabric-libraries"
 JAVA_OVERRIDE_ENVIRONMENT_VARIABLE = "ETHERLOGY_ORIGINAL_JAVA_21"
 SCENARIO_PROPERTY_NAME = "etherology.original.e2e.scenario"
 OFFLINE_ACCESS_TOKEN = "offline-etherology-original-baseline"
@@ -1953,6 +1954,77 @@ def download_pinned_file(
         raise
 
 
+def pinned_fabric_library_cache_root(configuration: Configuration) -> Path:
+    return (
+        configuration.manifest_path.parent
+        / ".state"
+        / PINNED_FABRIC_LIBRARY_CACHE_DIRECTORY
+    )
+
+
+def copy_pinned_cached_file(
+    cache_root: Path,
+    source: Path,
+    destination: Path,
+    expected_sha256: str,
+    expected_sha1: str,
+    expected_size: int,
+    description: str,
+) -> bool:
+    if not cache_root.exists() and not cache_root.is_symlink():
+        return False
+    if cache_root.is_symlink() or not cache_root.is_dir():
+        raise BaselineError(f"Pinned cache root is missing or linked: {cache_root}")
+    ensure_no_symlink_components(cache_root, source, f"{description} cache source")
+    if not source.exists() and not source.is_symlink():
+        return False
+    if source.is_symlink() or not source.is_file():
+        raise BaselineError(f"{description} cache source is missing or linked: {source}")
+    if destination.exists() or destination.is_symlink():
+        raise BaselineError(f"Refusing to replace an existing download: {destination}")
+
+    source_flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        source_descriptor = os.open(source, source_flags)
+    except OSError as exception:
+        raise BaselineError(
+            f"Cannot open {description} cache source: {exception}"
+        ) from exception
+    destination_descriptor: int | None = None
+    try:
+        with os.fdopen(source_descriptor, "rb") as source_handle:
+            source_status = os.fstat(source_handle.fileno())
+            if not stat.S_ISREG(source_status.st_mode):
+                raise BaselineError(f"{description} cache source is not a regular file")
+            if source_status.st_size != expected_size:
+                raise BaselineError(
+                    f"{description} cache source has size {source_status.st_size}, "
+                    f"expected {expected_size}"
+                )
+            destination_descriptor = os.open(
+                destination,
+                os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+                0o600,
+            )
+            with os.fdopen(destination_descriptor, "wb") as destination_handle:
+                destination_descriptor = None
+                copy_response(source_handle, destination_handle, MAXIMUM_DOWNLOAD_SIZE)
+        verify_exact_file(
+            destination,
+            expected_sha256,
+            expected_size,
+            f"Cached {description}",
+        )
+        if sha1_file(destination) != expected_sha1:
+            raise BaselineError(f"Cached {description} failed SHA-1 validation")
+    except Exception:
+        if destination_descriptor is not None:
+            os.close(destination_descriptor)
+        destination.unlink(missing_ok=True)
+        raise
+    return True
+
+
 def pinned_http_distribution_identity() -> str:
     return hashlib.sha256(
         "\n".join(value[4] for value in PINNED_HTTP_DISTRIBUTIONS).encode("ascii")
@@ -2981,6 +3053,12 @@ def install_pinned_fabric_libraries(
     configuration: Configuration, root: Path
 ) -> None:
     launcher_root = launcher_directory(configuration, root)
+    cache_root = pinned_fabric_library_cache_root(configuration)
+    ensure_no_symlink_components(
+        configuration.manifest_path.parent,
+        cache_root,
+        "Pinned Fabric library cache",
+    )
     fabric_profile = require_object(runtime_spec(configuration), "fabric_profile")
     for raw_library in require_list(fabric_profile, "libraries"):
         if not isinstance(raw_library, dict):
@@ -2991,13 +3069,24 @@ def install_pinned_fabric_libraries(
             launcher_root, destination, "Pinned Fabric library destination"
         )
         destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-        download_pinned_file(
-            str(raw_library["url"]),
+        cache_source = cache_root / Path(*relative_path.parts)
+        copied_from_cache = copy_pinned_cached_file(
+            cache_root,
+            cache_source,
             destination,
             str(raw_library["sha256"]),
-            f"Fabric library {raw_library['coordinate']}",
+            str(raw_library["sha1"]),
             int(raw_library["size"]),
+            f"Fabric library {raw_library['coordinate']}",
         )
+        if not copied_from_cache:
+            download_pinned_file(
+                str(raw_library["url"]),
+                destination,
+                str(raw_library["sha256"]),
+                f"Fabric library {raw_library['coordinate']}",
+                int(raw_library["size"]),
+            )
         if sha1_file(destination) != raw_library["sha1"]:
             raise BaselineError(
                 f"Fabric library failed SHA-1 validation: {raw_library['coordinate']}"

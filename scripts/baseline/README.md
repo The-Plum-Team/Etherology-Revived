@@ -125,7 +125,13 @@ python3 -B scripts/baseline/original_client.py run --scenario phase0-smoke
   installs vanilla Minecraft in a killable owned worker with a hard one-hour
   parent deadline, replaces the generated version JSON with the pinned
   no-bundled-runtime projection, copies the validated Fabric response into the
-  owned installer directory, and downloads its eight pinned libraries directly.
+  owned installer directory, and installs its eight pinned libraries. A byte may
+  come from the ignored repository transport cache at
+  `.state/pinned-fabric-libraries` only when its regular-file type, containment,
+  size, SHA-1, and SHA-256 all match the manifest; otherwise a missing cache entry
+  is downloaded from its exact pinned URL. Linked or tampered cache content fails
+  closed. This cache contains no launcher or game profile and does not make any
+  profile an installation source.
   No Fabric installer or Mojang Java runtime executes or remains. Before atomic
   publication, it verifies 63 selected macOS vanilla libraries, eight Fabric
   libraries, the client JAR, all 16 native-classifier JAR selections, every

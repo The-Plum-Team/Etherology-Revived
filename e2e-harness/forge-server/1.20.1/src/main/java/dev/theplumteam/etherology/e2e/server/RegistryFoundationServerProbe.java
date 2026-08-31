@@ -130,10 +130,23 @@ public final class RegistryFoundationServerProbe {
             MetalBlockProbeState.MetalBlockPlacementState.missing();
     private MetalBlockProbeState.MetalBlockPlacementState reloadedMetalBlockPlacement =
             MetalBlockProbeState.MetalBlockPlacementState.missing();
+    private AttrahiteBlockProbeState tagLoadedAttrahiteBlockState =
+            AttrahiteBlockProbeState.missing();
+    private AttrahiteBlockProbeState initialAttrahiteBlockState =
+            AttrahiteBlockProbeState.missing();
+    private AttrahiteBlockProbeState reloadedAttrahiteBlockState =
+            AttrahiteBlockProbeState.missing();
+    private AttrahiteBlockProbeState serverStartedAttrahiteBlockState =
+            AttrahiteBlockProbeState.missing();
+    private AttrahiteBlockProbeState.PlacementState initialAttrahiteBlockPlacement =
+            AttrahiteBlockProbeState.PlacementState.missing();
+    private AttrahiteBlockProbeState.PlacementState reloadedAttrahiteBlockPlacement =
+            AttrahiteBlockProbeState.PlacementState.missing();
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
     private String reloadFailure = "not requested";
+    private String attrahiteWorldSaveFailure = "not requested";
     private String reloadPackDirectory = "";
     private List<String> reloadPackResourcePaths = List.of();
     private List<String> enabledDataPackNamesAfterReload = List.of();
@@ -167,6 +180,8 @@ public final class RegistryFoundationServerProbe {
     private boolean foodItemsCapturedAfterServerDataLoad;
     private boolean forestLanternCapturedAfterServerDataLoad;
     private boolean metalBlocksCapturedAfterServerDataLoad;
+    private boolean attrahiteBlocksCapturedAtInitialTagLoad;
+    private boolean attrahiteBlocksCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
     private boolean serverStartedParticlesRechecked;
@@ -174,6 +189,7 @@ public final class RegistryFoundationServerProbe {
     private boolean serverStartedFoodItemsRechecked;
     private boolean serverStartedForestLanternRechecked;
     private boolean serverStartedMetalBlocksRechecked;
+    private boolean serverStartedAttrahiteBlocksRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
     private boolean reloadCompleted;
@@ -209,6 +225,14 @@ public final class RegistryFoundationServerProbe {
     private boolean metalBlockTagsStableAfterReload;
     private boolean metalBlockStackNbtStableAfterReload;
     private boolean metalBlockPlacementStableAfterReload;
+    private boolean attrahiteBlockRegistryStableAfterReload;
+    private boolean attrahiteBlockPropertiesStableAfterReload;
+    private boolean attrahiteBlockTagsStableAfterReload;
+    private boolean attrahiteBlockStackNbtStableAfterReload;
+    private boolean attrahiteBlockLoadedDataStableAfterReload;
+    private boolean attrahiteBlockLoadedDataFreshAfterReload;
+    private boolean attrahiteBlockPlacementStableAfterReload;
+    private boolean attrahiteWorldSavedAfterPlacement;
     private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
@@ -272,6 +296,9 @@ public final class RegistryFoundationServerProbe {
             initialMaterialItemState = MaterialItemProbeState.capture();
             initialFoodItemState = FoodItemProbeState.capture();
             initialMetalBlockState = MetalBlockProbeState.capture();
+            tagLoadedAttrahiteBlockState = AttrahiteBlockProbeState.captureTagLoaded();
+            attrahiteBlocksCapturedAtInitialTagLoad = tagLoadedAttrahiteBlockState
+                    .hasExactCoreContract();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
         }
@@ -285,6 +312,9 @@ public final class RegistryFoundationServerProbe {
         reloadedMaterialItemState = MaterialItemProbeState.capture();
         reloadedFoodItemState = FoodItemProbeState.capture();
         reloadedMetalBlockState = MetalBlockProbeState.capture();
+        reloadedAttrahiteBlockState = startedServer == null
+                ? AttrahiteBlockProbeState.missing()
+                : AttrahiteBlockProbeState.capture(startedServer);
         reloadedForestLanternState = startedServer == null
                 ? ForestLanternProbeState.missing()
                 : ForestLanternProbeState.capture(startedServer);
@@ -408,6 +438,40 @@ public final class RegistryFoundationServerProbe {
         metalBlockPlacementStableAfterReload = reloadTagsObserved
                 && initialMetalBlockPlacement.samePlacement(reloadedMetalBlockPlacement)
                 && reloadedMetalBlockPlacement.hasExactPlacement();
+        attrahiteBlockRegistryStableAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockState.hasSameRegistry(
+                        reloadedAttrahiteBlockState
+                );
+        attrahiteBlockPropertiesStableAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockState.hasSameProperties(
+                        reloadedAttrahiteBlockState
+                );
+        attrahiteBlockTagsStableAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockState.hasSameTags(
+                        reloadedAttrahiteBlockState
+                );
+        attrahiteBlockStackNbtStableAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockState.hasSameStackNbt(
+                        reloadedAttrahiteBlockState
+                );
+        attrahiteBlockLoadedDataStableAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockState.hasReloadedDataOutcome(
+                        reloadedAttrahiteBlockState
+                );
+        attrahiteBlockLoadedDataFreshAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockState.hasFreshReloadedData(
+                        reloadedAttrahiteBlockState
+                );
+        reloadedAttrahiteBlockPlacement = startedServer == null
+                ? AttrahiteBlockProbeState.PlacementState.missing()
+                : AttrahiteBlockProbeState.capturePlacement(
+                        startedServer.getOverworld()
+                );
+        attrahiteBlockPlacementStableAfterReload = reloadTagsObserved
+                && initialAttrahiteBlockPlacement.samePlacement(
+                        reloadedAttrahiteBlockPlacement
+                )
+                && reloadedAttrahiteBlockPlacement.hasExactPlacement();
         LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
@@ -442,6 +506,16 @@ public final class RegistryFoundationServerProbe {
         metalBlocksCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialMetalBlockState.hasExactRegistry()
                 && initialMetalBlockState.hasExactContract();
+        initialAttrahiteBlockState = AttrahiteBlockProbeState.capture(
+                event.getServer()
+        );
+        attrahiteBlocksCapturedAfterServerDataLoad =
+                lootConditionCapturedAfterServerDataLoad
+                        && attrahiteBlocksCapturedAtInitialTagLoad
+                        && tagLoadedAttrahiteBlockState.sameCoreState(
+                                initialAttrahiteBlockState
+                        )
+                        && initialAttrahiteBlockState.hasExactContract();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
@@ -525,6 +599,24 @@ public final class RegistryFoundationServerProbe {
         initialMetalBlockPlacement = MetalBlockProbeState.placeIn(
                 event.getServer().getOverworld()
         );
+        serverStartedAttrahiteBlockState = AttrahiteBlockProbeState.capture(
+                event.getServer()
+        );
+        serverStartedAttrahiteBlocksRechecked = initialAttrahiteBlockState
+                .sameStateAtServerStarted(serverStartedAttrahiteBlockState);
+        initialAttrahiteBlockPlacement = AttrahiteBlockProbeState.placeIn(
+                event.getServer().getOverworld()
+        );
+        try {
+            attrahiteWorldSavedAfterPlacement = event.getServer().save(
+                    true,
+                    true,
+                    false
+            );
+            attrahiteWorldSaveFailure = "";
+        } catch (RuntimeException exception) {
+            attrahiteWorldSaveFailure = exception.getClass().getName();
+        }
 
         try {
             ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
@@ -1119,6 +1211,224 @@ public final class RegistryFoundationServerProbe {
                 assertions,
                 "metal_block_placement_stable_after_reload",
                 metalBlockPlacementStableAfterReload
+        );
+        AttrahiteBlockProbeState.EXPECTED_BLOCK_IDS.forEach(id -> {
+            AttrahiteBlockProbeState.AttrahiteBlockEntry entry =
+                    initialAttrahiteBlockState.entries().get(id);
+            addAssertion(
+                    assertions,
+                    "registry:block:" + id,
+                    "present",
+                    presentState(entry != null && entry.blockIdentity() != null)
+            );
+            addAssertion(
+                    assertions,
+                    "registry:block_item:" + id,
+                    "present",
+                    presentState(entry != null && entry.itemIdentity() != null)
+            );
+        });
+        addAssertion(
+                assertions,
+                "registry:attrahite_block_ids_exact",
+                String.join(",", AttrahiteBlockProbeState.EXPECTED_BLOCK_IDS),
+                String.join(",", initialAttrahiteBlockState.blockIds())
+        );
+        addAssertion(
+                assertions,
+                "registry:attrahite_block_item_ids_exact",
+                String.join(",", AttrahiteBlockProbeState.EXPECTED_BLOCK_IDS),
+                String.join(",", initialAttrahiteBlockState.blockItemIds())
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_capture_error",
+                "none",
+                errorState(initialAttrahiteBlockState.captureError())
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_runtime_classes_exact",
+                initialAttrahiteBlockState.hasExactRuntimeClasses()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_item_mappings_exact",
+                initialAttrahiteBlockState.hasExactBlockItemMappings()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_properties_exact",
+                AttrahiteBlockProbeState.expectedCanonicalProperties(),
+                initialAttrahiteBlockState.canonicalProperties()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_tags_exact",
+                AttrahiteBlockProbeState.expectedCanonicalTags(),
+                initialAttrahiteBlockState.canonicalTags()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_stack_nbt_round_trips_exact",
+                initialAttrahiteBlockState.hasExactStackNbtRoundTrips()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_save_representations_exact",
+                AttrahiteBlockProbeState.expectedCanonicalSaveRepresentations(),
+                initialAttrahiteBlockState.canonicalSaveRepresentations()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_blocks_captured_at_initial_tag_load",
+                attrahiteBlocksCapturedAtInitialTagLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_blocks_captured_after_server_data_load",
+                attrahiteBlocksCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_attrahite_blocks_rechecked",
+                serverStartedAttrahiteBlocksRechecked
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_placement_positions_exact",
+                AttrahiteBlockProbeState.PlacementState.expectedCanonicalPositions(),
+                initialAttrahiteBlockPlacement.canonicalPositions()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_placed_ids_exact",
+                AttrahiteBlockProbeState.PlacementState
+                        .expectedCanonicalPlacedBlockIds(),
+                initialAttrahiteBlockPlacement.canonicalPlacedBlockIds()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_block_placed_states_exact",
+                AttrahiteBlockProbeState.PlacementState.expectedCanonicalPlacedStates(),
+                initialAttrahiteBlockPlacement.canonicalPlacedStates()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_placement_exact",
+                initialAttrahiteBlockPlacement.hasExactPlacement()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_world_save_failure",
+                "none",
+                errorState(attrahiteWorldSaveFailure)
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_world_saved_after_placement",
+                attrahiteWorldSavedAfterPlacement
+        );
+        addAssertion(
+                assertions,
+                "attrahite_loaded_data_capture_error",
+                "none",
+                errorState(initialAttrahiteBlockState.loadedData().captureError())
+        );
+        addAssertion(
+                assertions,
+                "attrahite_loot_table_ids_exact",
+                String.join(",", AttrahiteBlockProbeState.LoadedData
+                        .EXPECTED_LOOT_TABLE_IDS),
+                String.join(",", initialAttrahiteBlockState.loadedData().lootTableIds())
+        );
+        addAssertion(
+                assertions,
+                "attrahite_standard_loot_exact",
+                AttrahiteBlockProbeState.LoadedData.expectedCanonicalStandardLoot(),
+                initialAttrahiteBlockState.loadedData().canonicalStandardLoot()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_raw_silk_touch_loot_exact",
+                AttrahiteBlockProbeState.LoadedData.EXPECTED_RAW_SILK_TOUCH_LOOT,
+                initialAttrahiteBlockState.loadedData().rawSilkTouchLoot()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_raw_fortune_scaled_loot_exact",
+                AttrahiteBlockProbeState.LoadedData.expectedCanonicalRawFortuneLoot(),
+                initialAttrahiteBlockState.loadedData().canonicalRawFortuneLoot()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_recipe_ids_exact",
+                String.join(",", AttrahiteBlockProbeState.LoadedData.EXPECTED_RECIPE_IDS),
+                String.join(",", initialAttrahiteBlockState.loadedData().recipeIds())
+        );
+        addAssertion(
+                assertions,
+                "attrahite_recipes_exact",
+                AttrahiteBlockProbeState.LoadedData.expectedCanonicalRecipes(),
+                initialAttrahiteBlockState.loadedData().canonicalRecipes()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_recipes_match_and_craft_exact",
+                initialAttrahiteBlockState.loadedData().recipeMatchesAndCraftsExact()
+        );
+        addAssertion(
+                assertions,
+                "attrahite_advancement_ids_exact",
+                String.join(",", AttrahiteBlockProbeState.LoadedData
+                        .EXPECTED_ADVANCEMENT_IDS),
+                String.join(",", initialAttrahiteBlockState.loadedData().advancementIds())
+        );
+        addAssertion(
+                assertions,
+                "attrahite_advancements_exact",
+                AttrahiteBlockProbeState.LoadedData.expectedCanonicalAdvancements(),
+                initialAttrahiteBlockState.loadedData().canonicalAdvancements()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_loaded_data_contract_exact",
+                initialAttrahiteBlockState.loadedData().hasExactContract()
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_registry_stable_after_reload",
+                attrahiteBlockRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_properties_stable_after_reload",
+                attrahiteBlockPropertiesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_tags_stable_after_reload",
+                attrahiteBlockTagsStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_stack_nbt_stable_after_reload",
+                attrahiteBlockStackNbtStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_loaded_data_stable_after_reload",
+                attrahiteBlockLoadedDataStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_loaded_data_fresh_after_reload",
+                attrahiteBlockLoadedDataFreshAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "attrahite_block_placement_stable_after_reload",
+                attrahiteBlockPlacementStableAfterReload
         );
         addAssertion(
                 assertions,
@@ -1908,7 +2218,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 10);
+        report.addProperty("schema", 11);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -1929,6 +2239,7 @@ public final class RegistryFoundationServerProbe {
         report.add("food_consumption", buildFoodConsumption());
         report.add("forest_lantern", buildForestLantern());
         report.add("metal_blocks", buildMetalBlocks());
+        report.add("attrahite_blocks", buildAttrahiteBlocks());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
         report.add("reload", buildReload());
@@ -2566,6 +2877,171 @@ public final class RegistryFoundationServerProbe {
         return metalBlocks;
     }
 
+    private JsonObject buildAttrahiteBlocks() {
+        JsonObject attrahiteBlocks = new JsonObject();
+        attrahiteBlocks.addProperty(
+                "block_registry_id",
+                AttrahiteBlockProbeState.BLOCK_REGISTRY_ID
+        );
+        attrahiteBlocks.addProperty(
+                "item_registry_id",
+                AttrahiteBlockProbeState.ITEM_REGISTRY_ID
+        );
+        attrahiteBlocks.addProperty(
+                "capture_error",
+                initialAttrahiteBlockState.captureError()
+        );
+        attrahiteBlocks.add(
+                "block_ids",
+                buildStringArray(initialAttrahiteBlockState.blockIds())
+        );
+        attrahiteBlocks.add(
+                "block_item_ids",
+                buildStringArray(initialAttrahiteBlockState.blockItemIds())
+        );
+        attrahiteBlocks.addProperty(
+                "properties",
+                initialAttrahiteBlockState.canonicalProperties()
+        );
+        attrahiteBlocks.addProperty(
+                "tags",
+                initialAttrahiteBlockState.canonicalTags()
+        );
+        attrahiteBlocks.addProperty(
+                "save_representations",
+                initialAttrahiteBlockState.canonicalSaveRepresentations()
+        );
+        JsonObject entries = new JsonObject();
+        initialAttrahiteBlockState.entries().forEach((id, entry) ->
+                entries.add(id, buildAttrahiteBlock(entry))
+        );
+        attrahiteBlocks.add("entries", entries);
+
+        JsonObject placement = new JsonObject();
+        placement.addProperty(
+                "capture_error",
+                initialAttrahiteBlockPlacement.captureError()
+        );
+        placement.add(
+                "positions",
+                buildStringMap(initialAttrahiteBlockPlacement.positions())
+        );
+        placement.add(
+                "placed_block_ids",
+                buildStringMap(initialAttrahiteBlockPlacement.placedBlockIds())
+        );
+        placement.add(
+                "placed_states",
+                buildStringMap(initialAttrahiteBlockPlacement.placedStates())
+        );
+        placement.addProperty(
+                "exact",
+                initialAttrahiteBlockPlacement.hasExactPlacement()
+        );
+        placement.addProperty("world_save_failure", attrahiteWorldSaveFailure);
+        placement.addProperty(
+                "world_saved_after_placement",
+                attrahiteWorldSavedAfterPlacement
+        );
+        placement.addProperty(
+                "stable_after_reload",
+                attrahiteBlockPlacementStableAfterReload
+        );
+        attrahiteBlocks.add("placement", placement);
+
+        AttrahiteBlockProbeState.LoadedData loadedDataState =
+                initialAttrahiteBlockState.loadedData();
+        JsonObject loadedData = new JsonObject();
+        loadedData.addProperty("capture_error", loadedDataState.captureError());
+        loadedData.add(
+                "loot_table_ids",
+                buildStringArray(loadedDataState.lootTableIds())
+        );
+        loadedData.add(
+                "standard_loot",
+                buildStringMap(loadedDataState.standardLoot())
+        );
+        loadedData.addProperty(
+                "raw_silk_touch_loot",
+                loadedDataState.rawSilkTouchLoot()
+        );
+        loadedData.add(
+                "raw_fortune_loot",
+                buildStringMap(loadedDataState.rawFortuneLoot())
+        );
+        loadedData.add(
+                "recipe_ids",
+                buildStringArray(loadedDataState.recipeIds())
+        );
+        loadedData.add("recipes", buildStringMap(loadedDataState.recipes()));
+        loadedData.addProperty(
+                "recipes_match_and_craft_exact",
+                loadedDataState.recipeMatchesAndCraftsExact()
+        );
+        loadedData.add(
+                "advancement_ids",
+                buildStringArray(loadedDataState.advancementIds())
+        );
+        loadedData.add(
+                "advancements",
+                buildStringMap(loadedDataState.advancements())
+        );
+        loadedData.addProperty("exact", loadedDataState.hasExactContract());
+        loadedData.addProperty(
+                "stable_after_reload",
+                attrahiteBlockLoadedDataStableAfterReload
+        );
+        loadedData.addProperty(
+                "fresh_instances_after_reload",
+                attrahiteBlockLoadedDataFreshAfterReload
+        );
+        attrahiteBlocks.add("loaded_data", loadedData);
+
+        attrahiteBlocks.addProperty(
+                "captured_at_initial_tag_load",
+                attrahiteBlocksCapturedAtInitialTagLoad
+        );
+        attrahiteBlocks.addProperty(
+                "captured_after_server_data_load",
+                attrahiteBlocksCapturedAfterServerDataLoad
+        );
+        attrahiteBlocks.addProperty(
+                "same_state_at_server_started",
+                serverStartedAttrahiteBlocksRechecked
+        );
+        attrahiteBlocks.addProperty(
+                "registry_stable_after_reload",
+                attrahiteBlockRegistryStableAfterReload
+        );
+        attrahiteBlocks.addProperty(
+                "properties_stable_after_reload",
+                attrahiteBlockPropertiesStableAfterReload
+        );
+        attrahiteBlocks.addProperty(
+                "tags_stable_after_reload",
+                attrahiteBlockTagsStableAfterReload
+        );
+        attrahiteBlocks.addProperty(
+                "stack_nbt_stable_after_reload",
+                attrahiteBlockStackNbtStableAfterReload
+        );
+        attrahiteBlocks.addProperty(
+                "exact",
+                initialAttrahiteBlockState.hasExactContract()
+                        && reloadedAttrahiteBlockState.hasExactContract()
+                        && serverStartedAttrahiteBlocksRechecked
+                        && attrahiteBlockRegistryStableAfterReload
+                        && attrahiteBlockPropertiesStableAfterReload
+                        && attrahiteBlockTagsStableAfterReload
+                        && attrahiteBlockStackNbtStableAfterReload
+                        && attrahiteBlockLoadedDataStableAfterReload
+                        && attrahiteBlockLoadedDataFreshAfterReload
+                        && attrahiteBlockPlacementStableAfterReload
+                        && attrahiteWorldSavedAfterPlacement
+        );
+        return attrahiteBlocks;
+    }
+
     private JsonObject buildLootCondition() {
         JsonObject lootCondition = new JsonObject();
         lootCondition.addProperty(
@@ -2747,6 +3223,34 @@ public final class RegistryFoundationServerProbe {
         reload.addProperty(
                 "metal_block_placement_stable",
                 metalBlockPlacementStableAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_registry_stable",
+                attrahiteBlockRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_properties_stable",
+                attrahiteBlockPropertiesStableAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_tags_stable",
+                attrahiteBlockTagsStableAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_stack_nbt_stable",
+                attrahiteBlockStackNbtStableAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_loaded_data_stable",
+                attrahiteBlockLoadedDataStableAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_loaded_data_fresh",
+                attrahiteBlockLoadedDataFreshAfterReload
+        );
+        reload.addProperty(
+                "attrahite_block_placement_stable",
+                attrahiteBlockPlacementStableAfterReload
         );
         reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
         return reload;
@@ -2955,6 +3459,56 @@ public final class RegistryFoundationServerProbe {
         metalBlock.addProperty("round_trip_exact", entry.roundTripExact());
         metalBlock.addProperty("save_representation", entry.saveRepresentation());
         return metalBlock;
+    }
+
+    private static JsonObject buildAttrahiteBlock(
+            AttrahiteBlockProbeState.AttrahiteBlockEntry entry
+    ) {
+        JsonObject attrahiteBlock = new JsonObject();
+        attrahiteBlock.addProperty("block_id", entry.blockId());
+        attrahiteBlock.addProperty("item_id", entry.itemId());
+        attrahiteBlock.addProperty("block_class", entry.blockClass());
+        attrahiteBlock.addProperty("item_class", entry.itemClass());
+        attrahiteBlock.addProperty("block_item", entry.blockItem());
+        attrahiteBlock.addProperty(
+                "block_item_maps_to_block",
+                entry.blockItemMapsToBlock()
+        );
+        attrahiteBlock.addProperty(
+                "block_as_item_matches",
+                entry.blockAsItemMatches()
+        );
+        attrahiteBlock.addProperty("hardness", entry.hardness());
+        attrahiteBlock.addProperty("blast_resistance", entry.blastResistance());
+        attrahiteBlock.addProperty("map_color_id", entry.mapColorId());
+        attrahiteBlock.addProperty("sound_group", entry.soundGroup());
+        attrahiteBlock.addProperty("tool_required", entry.toolRequired());
+        attrahiteBlock.addProperty("luminance", entry.luminance());
+        attrahiteBlock.addProperty("opaque", entry.opaque());
+        attrahiteBlock.addProperty("full_cube", entry.fullCube());
+        attrahiteBlock.addProperty("transparent", entry.transparent());
+        attrahiteBlock.addProperty("piston_behavior", entry.pistonBehavior());
+        attrahiteBlock.addProperty("state_count", entry.stateCount());
+        attrahiteBlock.addProperty("default_state", entry.defaultState());
+        attrahiteBlock.addProperty("pickaxe_mineable", entry.pickaxeMineable());
+        attrahiteBlock.addProperty("needs_stone_tool", entry.needsStoneTool());
+        attrahiteBlock.addProperty("block_slab", entry.blockSlab());
+        attrahiteBlock.addProperty("item_slab", entry.itemSlab());
+        attrahiteBlock.addProperty("block_stairs", entry.blockStairs());
+        attrahiteBlock.addProperty("item_stairs", entry.itemStairs());
+        attrahiteBlock.addProperty("max_count", entry.maxCount());
+        attrahiteBlock.addProperty("serialized_id", entry.serializedId());
+        attrahiteBlock.addProperty("serialized_count", entry.serializedCount());
+        attrahiteBlock.add(
+                "serialized_keys",
+                buildStringArray(entry.serializedKeys())
+        );
+        attrahiteBlock.addProperty("round_trip_exact", entry.roundTripExact());
+        attrahiteBlock.addProperty(
+                "save_representation",
+                entry.saveRepresentation()
+        );
+        return attrahiteBlock;
     }
 
     private static JsonObject buildSealType(

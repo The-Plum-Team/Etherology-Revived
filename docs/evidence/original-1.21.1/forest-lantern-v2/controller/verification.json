@@ -1,0 +1,42 @@
+{
+  "completion_marker": {
+    "path": "evidence/forest-lantern/reports/done.marker",
+    "sha256": "7b0d48423828ed1506d7e738d3ec58ee47bf66e014a8e0e349a2f39512611492",
+    "size": 101
+  },
+  "controller_log": {
+    "path": "logs/original-client-20260831T204956Z.log",
+    "sha256": "1e59d085f995fd651e6cc3f521de038b474d658b31dfac505138064ab0b226ac",
+    "size": 16301
+  },
+  "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea",
+  "launch_attempt": {
+    "path": "launch-attempt.json",
+    "sha256": "021fabb2e609ce3bd6f899b82974e6291777e649a67722f17f6eb8b3d0a8b4d2",
+    "size": 871865
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache": {
+      "file_count": 0,
+      "files": [],
+      "path": "assets/skins",
+      "present": false,
+      "total_size": 0
+    }
+  },
+  "profile_id": "etherology-original-fabric-1.21.1-published-0.1.7-v2",
+  "scenario": "forest-lantern",
+  "scenario_report": {
+    "path": "evidence/forest-lantern/reports/report.json",
+    "sha256": "e7c3c08b709d12fcc6e2f09a4561380bde7b087b0e4600de537c0ff6d217b56e",
+    "size": 13734
+  },
+  "schema": 1,
+  "screenshot": {
+    "path": "evidence/forest-lantern/screenshots/forest-lantern.png",
+    "sha256": "733aa553bb841c76e471bd9e5f65a3a3c178a095241ed33261f63a1eebf1aa1f",
+    "size": 546421
+  },
+  "status": "passed",
+  "verified_at_unix_ns": 1788209512273903000
+}

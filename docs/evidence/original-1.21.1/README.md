@@ -38,3 +38,36 @@ The client made the normal failed Realms authorization attempt associated with
 its deliberately offline token; this appears in the complete log and did not
 affect the integrated world or any of the 30 accepted assertions. The skin cache
 remained absent.
+
+## `forest-lantern-v2`
+
+The fresh repository-owned profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v2` completed its sole native
+run on 2026-08-31 at 22:51 Europe/Madrid. The controller verified 36 ordered
+assertions, 120 consecutive ready renders, one unedited 1920x1080 framebuffer,
+the forced world save, clean client shutdown, immutable launcher inputs, and
+report-before-marker publication. Provisioning and launch consulted zero
+external game profiles, and the mutable skin cache remained absent.
+
+![Original 0.1.7 Forest Lantern gallery](forest-lantern-v2/screenshots/forest-lantern.png)
+
+The live integrated-world gallery contains all 20 combinations of age `0..4`
+and horizontal facing. The machine record additionally proves the exact block
+and item registries, properties and default state, distinct network state IDs,
+client/server mirrors, shears speed `15.0`, empty immature loot, the one-item
+mature drop, the three crumb cooking recipes, the leather recipe, and a real
+seeded `PlayerEntity.jump()` that broke one mature lantern and dropped exactly
+one lantern. The gallery states were deliberately arranged for comparison; the
+image is not evidence of natural growth or world generation.
+
+- Screenshot SHA-256:
+  `733aa553bb841c76e471bd9e5f65a3a3c178a095241ed33261f63a1eebf1aa1f`
+- [`report.json`](forest-lantern-v2/reports/report.json): exact 36-assertion record
+- [`done.marker`](forest-lantern-v2/reports/done.marker): report-hash-bound final
+  publication marker
+- [`verification.json`](forest-lantern-v2/controller/verification.json):
+  controller verification record
+- [`original-client.log`](forest-lantern-v2/controller/original-client.log):
+  complete native client log
+- [`archive-manifest.json`](forest-lantern-v2/archive-manifest.json): hashes,
+  capture times, controller identity, runtime locks, and artifact provenance

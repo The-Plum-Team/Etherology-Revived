@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "kind": "etherology-original-fabric-baseline-evidence",
+  "verification_scope": "archive-integrity-plus-captured-controller-verification",
+  "reference": {
+    "id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit_binding": "unavailable"
+  },
+  "scenario": "forest-lantern",
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v2",
+    "manifest_path": "scripts/baseline/original-fabric-1.21.1-published-0.1.7-v2.json",
+    "manifest_size": 10276,
+    "manifest_sha256": "0fed21fae4a00522407069e8ee97bda3fa5714245ea4c750d491b507de8e1361"
+  },
+  "runtime": {
+    "minecraft": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 21,
+    "capture_kind": "minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "controller": {
+    "commit": "7db65f337109a9472010fcbb80c14335d97e0ecb",
+    "path": "scripts/baseline/original_client.py",
+    "size": 255764,
+    "sha256": "2af0a1a075f3c0e136c38766e114fde673586b46f6b003c9e8c6988d94ca1740"
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "controller_verification": "controller/verification.json",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788209505455584993,
+      "reports/done.marker": 1788209505455879415,
+      "screenshots/forest-lantern.png": 1788209505335412356,
+      "controller/original-client.log": 1788209506061178551,
+      "controller/verification.json": 1788209513058510397
+    }
+  },
+  "artifacts": {
+    "reference_bundle": {
+      "size": 7838299,
+      "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b"
+    },
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    "harness": {
+      "mod_id": "etherology_original_baseline_harness",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.1.0.jar",
+      "size": 86478,
+      "sha256": "f5b52ccbc3b0048abac75ff5e942d7348d3000a1c9f68e5051478bb712951d7f"
+    }
+  },
+  "runtime_bindings": {
+    "artifact_lock": {
+      "size": 5386,
+      "sha256": "7a51f1477b04b09a61608698fc8fe690586111b8856f4efa6cfeaa828998a1de"
+    },
+    "runtime_lock": {
+      "size": 832421,
+      "sha256": "247ac4f60777a11cd1ef6433593c075f5d366347d0359aadd3f2e556a35dee44"
+    },
+    "launch_attempt": {
+      "size": 871865,
+      "sha256": "021fabb2e609ce3bd6f899b82974e6291777e649a67722f17f6eb8b3d0a8b4d2"
+    },
+    "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea"
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache_present": false,
+    "skin_cache_file_count": 0,
+    "skin_cache_total_size": 0
+  },
+  "assertion_count": 36,
+  "screenshot_count": 1,
+  "files": {
+    "reports/report.json": {
+      "size": 13734,
+      "sha256": "e7c3c08b709d12fcc6e2f09a4561380bde7b087b0e4600de537c0ff6d217b56e"
+    },
+    "reports/done.marker": {
+      "size": 101,
+      "sha256": "7b0d48423828ed1506d7e738d3ec58ee47bf66e014a8e0e349a2f39512611492"
+    },
+    "screenshots/forest-lantern.png": {
+      "size": 546421,
+      "sha256": "733aa553bb841c76e471bd9e5f65a3a3c178a095241ed33261f63a1eebf1aa1f"
+    },
+    "controller/original-client.log": {
+      "size": 16301,
+      "sha256": "1e59d085f995fd651e6cc3f521de038b474d658b31dfac505138064ab0b226ac"
+    },
+    "controller/verification.json": {
+      "size": 1391,
+      "sha256": "1bcec64c028eadeb742a0c185b7316db528097773f3f37b59de7f055b0eeb313"
+    }
+  }
+}

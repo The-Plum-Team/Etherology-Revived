@@ -44,11 +44,25 @@ final class EtherealStorageFoundationResourcesTest {
                 "/data/etherology/loot_tables/blocks/ethereal_storage.json",
                 "\"name\": \"etherology:ethereal_storage\""
         );
+        RuntimeResourceAssertions.assertAbsent(
+                "/data/etherology/recipes/ethereal_storage.json"
+        );
+    }
+
+    @Test
+    void packagesTheCanonicalGeckoStorageAssets() throws IOException {
         RuntimeResourceAssertions.assertTextContains(
-                "/data/etherology/recipes/ethereal_storage.json",
-                "\"item\": \"etherology:ethereal_storage\"",
-                "\"item\": \"etherology:etheroscope\"",
-                "\"item\": \"etherology:glint_shard\""
+                "/assets/etherology/geo/ethereal_storage.geo.json",
+                "\"minecraft:geometry\"",
+                "\"identifier\": \"geometry.unknown\""
+        );
+        RuntimeResourceAssertions.assertTextContains(
+                "/assets/etherology/animations/ethereal_storage.animation.json",
+                "\"animation.ether_storage.open\"",
+                "\"animation.ether_storage.close\""
+        );
+        RuntimeResourceAssertions.assertPng(
+                "/assets/etherology/textures/machines/ethereal_storage.png"
         );
     }
 }

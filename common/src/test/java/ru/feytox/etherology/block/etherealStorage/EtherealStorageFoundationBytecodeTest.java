@@ -90,6 +90,112 @@ final class EtherealStorageFoundationBytecodeTest {
         assertServerGuardPrecedesCall(BLOCK, "onStateReplaced", "spawn");
     }
 
+    @Test
+    void compiledTickerChargesGlintsOnlyFromTheLogicalServerCadence() throws IOException {
+        InvocationInventory tickerLookup = invocations(BLOCK, "lambda$getTicker$0");
+        assertTrue(tickerLookup.hasOwned("serverTick"));
+
+        InvocationInventory serverTick = invocations(BLOCK_ENTITY, "serverTick");
+        assertTrue(serverTick.has("net/minecraft/world/World", "getTime"));
+        assertTrue(serverTick.hasOwned("chargeGlints"));
+        assertTrue(serverTick.hasOwned("updateDisplayStack"));
+        assertTrue(serverTick.hasOwned("markDirty"));
+        assertTrue(loadsIntegerConstant(BLOCK_ENTITY, "serverTick", 5));
+    }
+
+    @Test
+    void compiledStorageArithmeticUsesTheSharedGlintOwnerAndCombinedDrain() throws IOException {
+        InvocationInventory incrementGlints = invocations(BLOCK_ENTITY, "incrementGlints");
+        assertTrue(incrementGlints.has(
+                "ru/feytox/etherology/item/glints/GlintEtherData",
+                "increment"
+        ));
+        assertTrue(hasLoopStep(BLOCK_ENTITY, "incrementGlints", 1));
+
+        InvocationInventory decrementGlints = invocations(BLOCK_ENTITY, "decrementGlints");
+        assertTrue(decrementGlints.has(
+                "ru/feytox/etherology/item/glints/GlintEtherData",
+                "decrement"
+        ));
+        assertTrue(hasLoopStep(BLOCK_ENTITY, "decrementGlints", -1));
+
+        InvocationInventory drainEther = invocations(BLOCK_ENTITY, "drainEther");
+        assertTrue(drainEther.hasOwned("sumGlintEther"));
+        assertTrue(drainEther.hasOwned("drainAvailableEther"));
+        assertEquals(1, drainEther.count("decrementGlints"));
+        assertTrue(invocations(BLOCK_ENTITY, "getTransportableEther").hasOwned("getGlintEther"));
+        assertTrue(containsOpcode(BLOCK_ENTITY, "getTransportableEther", Opcodes.FADD));
+        assertTrue(loadsIntegerConstant(BLOCK_ENTITY, "sumGlintEther", 3));
+    }
+
+    @Test
+    void compiledStorageOwnsOneTriggerableGeckoControllerAndExactAnimations()
+            throws IOException {
+        assertImplements(
+                BLOCK_ENTITY,
+                "software/bernie/geckolib/animatable/GeoBlockEntity"
+        );
+
+        InvocationInventory constructor = invocations(BLOCK_ENTITY, "<init>");
+        assertTrue(constructor.has(
+                "software/bernie/geckolib/util/GeckoLibUtil",
+                "createInstanceCache"
+        ));
+
+        InvocationInventory registration = invocations(BLOCK_ENTITY, "registerControllers");
+        assertEquals(1, registration.count("<init>"));
+        assertEquals(2, registration.count("triggerableAnim"));
+        assertEquals(1, registration.count("add"));
+        assertTrue(loadsString(BLOCK_ENTITY, "registerControllers", "storage_controller"));
+        assertTrue(loadsString(BLOCK_ENTITY, "registerControllers", "open"));
+        assertTrue(loadsString(BLOCK_ENTITY, "registerControllers", "close"));
+
+        InvocationInventory animations = invocations(BLOCK_ENTITY, "<clinit>");
+        assertEquals(2, animations.count("begin"));
+        assertEquals(1, animations.count("thenPlayAndHold"));
+        assertEquals(1, animations.count("thenPlay"));
+        assertTrue(loadsString(
+                BLOCK_ENTITY,
+                "<clinit>",
+                "animation.ether_storage.open"
+        ));
+        assertTrue(loadsString(
+                BLOCK_ENTITY,
+                "<clinit>",
+                "animation.ether_storage.close"
+        ));
+    }
+
+    @Test
+    void compiledFirstAndFinalViewerLifecycleUsesBuiltInGeckoTriggers()
+            throws IOException {
+        InvocationInventory open = invocations(BLOCK_ENTITY, "onOpen");
+        assertEquals(1, open.count("triggerAnim"));
+        assertTrue(open.has("net/minecraft/world/World", "playSound"));
+        assertTrue(loadsString(BLOCK_ENTITY, "onOpen", "storage_controller"));
+        assertTrue(loadsString(BLOCK_ENTITY, "onOpen", "open"));
+        assertTrue(readsField(BLOCK_ENTITY, "onOpen", "open"));
+
+        InvocationInventory close = invocations(BLOCK_ENTITY, "onClose");
+        assertEquals(1, close.count("triggerAnim"));
+        assertTrue(close.has("net/minecraft/world/World", "playSound"));
+        assertTrue(loadsString(BLOCK_ENTITY, "onClose", "storage_controller"));
+        assertTrue(loadsString(BLOCK_ENTITY, "onClose", "close"));
+        assertTrue(readsField(BLOCK_ENTITY, "onClose", "open"));
+        assertTrue(readsField(BLOCK_ENTITY, "onClose", "viewers"));
+    }
+
+    @Test
+    void compiledBlockLeavesVisualOwnershipToTheAnimatedBlockEntityRenderer()
+            throws IOException {
+        assertTrue(readsStaticField(
+                BLOCK,
+                "getRenderType",
+                "net/minecraft/block/BlockRenderType",
+                "ENTITYBLOCK_ANIMATED"
+        ));
+    }
+
     private static InvocationInventory invocations(String classResource, String methodName)
             throws IOException {
         InvocationInventory inventory = new InvocationInventory();
@@ -155,6 +261,156 @@ final class EtherealStorageFoundationBytecodeTest {
             }
         });
         return values.get();
+    }
+
+    private static boolean loadsIntegerConstant(
+            String classResource,
+            String methodName,
+            int expectedValue
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitInsn(int opcode) {
+                if (expectedValue >= -1 && expectedValue <= 5
+                        && opcode == Opcodes.ICONST_0 + expectedValue) {
+                    found.set(true);
+                }
+            }
+
+            @Override
+            public void visitIntInsn(int opcode, int operand) {
+                if (operand == expectedValue) {
+                    found.set(true);
+                }
+            }
+
+            @Override
+            public void visitLdcInsn(Object value) {
+                if (value instanceof Number number && number.intValue() == expectedValue) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static boolean hasLoopStep(
+            String classResource,
+            String methodName,
+            int expectedIncrement
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitIincInsn(int variable, int increment) {
+                if (increment == expectedIncrement) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static boolean containsOpcode(
+            String classResource,
+            String methodName,
+            int expectedOpcode
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitInsn(int opcode) {
+                if (opcode == expectedOpcode) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static boolean loadsString(
+            String classResource,
+            String methodName,
+            String expectedValue
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitLdcInsn(Object value) {
+                if (expectedValue.equals(value)) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static boolean readsField(
+            String classResource,
+            String methodName,
+            String expectedField
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+                if (opcode == Opcodes.GETFIELD && name.equals(expectedField)) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static boolean readsStaticField(
+            String classResource,
+            String methodName,
+            String expectedOwner,
+            String expectedField
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitFieldInsn(int opcode, String owner, String name, String descriptor) {
+                if (opcode == Opcodes.GETSTATIC
+                        && owner.equals(expectedOwner)
+                        && name.equals(expectedField)) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static void assertImplements(String classResource, String expectedInterface)
+            throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        InputStream classStream = EtherealStorageFoundationBytecodeTest.class
+                .getClassLoader()
+                .getResourceAsStream(classResource);
+        assertNotNull(classStream);
+        try (classStream) {
+            ClassReader reader = new ClassReader(classStream);
+            reader.accept(new ClassVisitor(Opcodes.ASM9) {
+                @Override
+                public void visit(
+                        int version,
+                        int access,
+                        String name,
+                        String signature,
+                        String superName,
+                        String[] interfaces
+                ) {
+                    for (String implementedInterface : interfaces) {
+                        if (implementedInterface.equals(expectedInterface)) {
+                            found.set(true);
+                        }
+                    }
+                }
+            }, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        }
+        assertTrue(found.get());
     }
 
     private static void assertServerGuardPrecedesCall(

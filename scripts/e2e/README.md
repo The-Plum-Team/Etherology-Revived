@@ -189,3 +189,65 @@ screenshots, world, and logs before copying evidence into `docs/evidence`:
 ```bash
 python3 -B scripts/e2e/evidence.py --scenario phase0-smoke
 ```
+
+## Forge 1.20.1 packaged client
+
+The Forge lane is a separate repository-owned profile described by
+`forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
+Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
+runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
+an external launcher profile.
+
+Validate the tracked contract, provision the isolated launcher, build the two
+local artifacts, stage them, and run the fail-closed readiness check:
+
+```bash
+python3 -B scripts/e2e/forge_client.py validate
+python3 -B scripts/e2e/forge_client.py provision
+./gradlew :forge:1.20.1:remapE2eUnderTestJar :forge:1.20.1:remapE2eHarnessJar
+python3 -B scripts/e2e/forge_client.py stage
+python3 -B scripts/e2e/forge_client.py check --scenario ethereal-storage
+```
+
+Only `start` launches Minecraft. The lifecycle commands manage processes only
+after matching the Forge version id, isolated game directory, scenario property,
+and BootstrapLauncher command:
+
+```bash
+python3 -B scripts/e2e/forge_client.py start --scenario ethereal-storage
+python3 -B scripts/e2e/forge_client.py status
+python3 -B scripts/e2e/forge_client.py stop
+python3 -B scripts/e2e/forge_client.py stop-all-owned
+```
+
+The Forge scenario writes five 1920x1080 composed-framebuffer captures and one
+atomic report below the Forge runtime's `evidence/ethereal-storage/` directory.
+After the game records a normal shutdown, verify the exact assertion inventory,
+artifact lock and hashes, save/restart evidence, log/crash state, screenshot
+inventory, centered-storage closed-to-open visual change, and its closed-again
+return to baseline without treating clouds or world lighting as fixture motion:
+
+```bash
+python3 -B scripts/e2e/forge_evidence.py --scenario ethereal-storage
+```
+
+After copying the seven accepted payload files (the report, completion marker,
+and five PNGs) into a versioned `docs/evidence/forge-1.20.1/ethereal-storage-vN`
+directory, create its immutable provenance inventory and verify it using only
+tracked archive files:
+
+```bash
+python3 -B scripts/e2e/forge_evidence.py --create-archive-manifest docs/evidence/forge-1.20.1/ethereal-storage-vN
+python3 -B scripts/e2e/forge_evidence.py --archive docs/evidence/forge-1.20.1/ethereal-storage-vN
+```
+
+Archive validation proves internal integrity and capture-time provenance; it
+does not claim that current sources or later rebuilt artifacts still match the
+capture. Establishing that requires a new isolated profile and native run.
+
+The Forge safety tests use temporary directories and mocks only. They do not
+download, provision, build, or launch Minecraft:
+
+```bash
+python3 -B -m unittest scripts/e2e/test_forge_client.py scripts/e2e/test_forge_evidence.py
+```

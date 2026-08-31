@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "profile": {
+    "id": "etherology-e2e-forge-1.20.1-v7",
+    "runtime_directory": "etherology-e2e-forge-1.20.1-v7",
+    "game_directory": "game",
+    "launcher_directory": "launcher"
+  },
+  "release": {
+    "matrix": "release/release-matrix.json",
+    "artifact_node": "forge-1.20.1"
+  },
+  "launch": {
+    "offline_username": "EtherologyForgeE2E",
+    "resolution": {
+      "width": 960,
+      "height": 540
+    },
+    "maximum_memory_mb": 4096
+  },
+  "artifacts": {
+    "lock_file": "forge-artifact-lock.json",
+    "production": {
+      "file_name": "etherology-forge-under-test.jar",
+      "mod_id": "etherology",
+      "version_property": "mod_version",
+      "source": {
+        "kind": "gradle-remap-task",
+        "build_file": "forge/build.gradle.kts",
+        "task_path": ":forge:1.20.1:remapE2eUnderTestJar",
+        "task_name": "remapE2eUnderTestJar"
+      }
+    },
+    "harness": {
+      "file_name": "etherology-forge-e2e-harness.jar",
+      "mod_id": "etherology_e2e_harness",
+      "version_property": "mod_version",
+      "entrypoint": "dev.theplumteam.etherology.e2e.forge.ForgeE2eHarness",
+      "source": {
+        "kind": "gradle-remap-task",
+        "build_file": "forge/build.gradle.kts",
+        "task_path": ":forge:1.20.1:remapE2eHarnessJar",
+        "task_name": "remapE2eHarnessJar"
+      }
+    }
+  },
+  "evidence": {
+    "directory": "evidence",
+    "capture": {
+      "kind": "composed-minecraft-framebuffer",
+      "width": 1920,
+      "height": 1080
+    },
+    "scenarios": [
+      "ethereal-storage"
+    ]
+  },
+  "profile_directories": [
+    "config",
+    "crash-reports",
+    "logs",
+    "mods",
+    "resourcepacks",
+    "saves",
+    "screenshots"
+  ],
+  "options": [
+    "version:3465",
+    "fullscreen:false",
+    "enableVsync:false",
+    "maxFps:60",
+    "graphicsMode:1",
+    "ao:true",
+    "renderClouds:\"true\"",
+    "particles:0",
+    "entityShadows:true",
+    "entityDistanceScaling:1.0",
+    "biomeBlendRadius:2",
+    "mipmapLevels:4",
+    "guiScale:2",
+    "renderDistance:12",
+    "simulationDistance:10",
+    "fov:0.0",
+    "fovEffectScale:1.0",
+    "screenEffectScale:1.0",
+    "darknessEffectScale:1.0",
+    "gamma:0.5",
+    "bobView:false",
+    "hideLightningFlashes:false",
+    "damageTiltStrength:1.0",
+    "glintSpeed:0.5",
+    "glintStrength:0.75",
+    "mainHand:right",
+    "attackIndicator:1",
+    "mouseSensitivity:0.5",
+    "mouseWheelSensitivity:1.0",
+    "rawMouseInput:false",
+    "autoJump:false",
+    "narrator:0",
+    "onboardAccessibility:false",
+    "pauseOnLostFocus:false",
+    "tutorialStep:none",
+    "lang:en_us",
+    "resourcePacks:[]",
+    "incompatibleResourcePacks:[]"
+  ],
+  "dependencies": [
+    {
+      "file_name": "architectury-forge-9.2.14.jar",
+      "mod_id": "architectury",
+      "version_property": "architectury_api_version_1_20_1",
+      "url": "https://maven.architectury.dev/dev/architectury/architectury-forge/9.2.14/architectury-forge-9.2.14.jar",
+      "size": 599211,
+      "sha256": "47d5eca3d83aae1ac1d4a70116727715bd7ef4c077d228fee873065cbca94687"
+    },
+    {
+      "file_name": "geckolib-forge-1.20.1-4.7.4.jar",
+      "mod_id": "geckolib",
+      "version_property": "geckolib_forge_version_1_20_1",
+      "url": "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/software/bernie/geckolib/geckolib-forge-1.20.1/4.7.4/geckolib-forge-1.20.1-4.7.4.jar",
+      "size": 1013210,
+      "sha256": "6ccdc4001520a098f0af16cebcabc2edde655a64ca39f7acd1e4c90e31bc5164"
+    }
+  ],
+  "forbidden_mod_ids": [
+    "quickskin",
+    "cpm",
+    "ears",
+    "modmenu",
+    "roughlyenoughitems",
+    "emi"
+  ]
+}

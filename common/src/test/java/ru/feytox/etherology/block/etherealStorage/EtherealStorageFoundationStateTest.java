@@ -55,4 +55,46 @@ final class EtherealStorageFoundationStateTest {
         viewerCount = EtherealStorageFoundationBlockEntity.decrementViewerCount(viewerCount);
         assertEquals(0, viewerCount);
     }
+
+    @Test
+    void chargesAtMostOneInternalEtherIntoTheFirstAvailableGlint() {
+        assertEquals(1.0f, EtherealStorageFoundationBlockEntity.glintChargeOffer(2.25f));
+        assertEquals(0.5f, EtherealStorageFoundationBlockEntity.glintChargeOffer(0.5f));
+    }
+
+    @Test
+    void combinesPartialInternalAndGlintEtherWhenNeitherCanSatisfyTheDrain() {
+        EtherDrainResult result = EtherealStorageFoundationBlockEntity.drainAvailableEther(
+                0.5f,
+                0.75f,
+                1.0f
+        );
+
+        assertEquals(0.0f, result.storedEther());
+        assertEquals(1.0f, result.removedEther());
+    }
+
+    @Test
+    void preservesPartialInternalEtherWhenGlintsAloneSatisfyTheDrain() {
+        EtherDrainResult result = EtherealStorageFoundationBlockEntity.drainAvailableEther(
+                0.5f,
+                2.0f,
+                1.0f
+        );
+
+        assertEquals(0.5f, result.storedEther());
+        assertEquals(1.0f, result.removedEther());
+    }
+
+    @Test
+    void returnsEverythingAvailableWhenCombinedEtherCannotSatisfyTheDrain() {
+        EtherDrainResult result = EtherealStorageFoundationBlockEntity.drainAvailableEther(
+                0.25f,
+                0.5f,
+                1.0f
+        );
+
+        assertEquals(0.0f, result.storedEther());
+        assertEquals(0.75f, result.removedEther());
+    }
 }

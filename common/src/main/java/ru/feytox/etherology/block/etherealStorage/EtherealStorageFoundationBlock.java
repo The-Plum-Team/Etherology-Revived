@@ -3,29 +3,43 @@ package ru.feytox.etherology.block.etherealStorage;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
+import net.minecraft.block.BlockRenderType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.NamedScreenHandlerFactory;
+import net.minecraft.state.StateManager;
+import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
+import ru.feytox.etherology.registry.block.SharedBlockEntities;
 
 /**
  * Provides the shared ethereal-storage block and its server-owned persistent menu core.
  */
-public final class EtherealStorageFoundationBlock extends Block implements BlockEntityProvider {
+public final class EtherealStorageFoundationBlock extends HorizontalFacingBlock
+        implements BlockEntityProvider {
+
+    static final DirectionProperty FACING = HorizontalFacingBlock.FACING;
 
     /**
      * Creates a static stone-like machine compatible with the existing block model.
      */
     public EtherealStorageFoundationBlock() {
         super(AbstractBlock.Settings.copy(Blocks.STONE).nonOpaque());
+        setDefaultState(getDefaultState().with(FACING, Direction.NORTH));
     }
 
     /**
@@ -38,6 +52,58 @@ public final class EtherealStorageFoundationBlock extends Block implements Block
     @Override
     public BlockEntity createBlockEntity(BlockPos pos, BlockState state) {
         return new EtherealStorageFoundationBlockEntity(pos, state);
+    }
+
+    /**
+     * Leaves visual ownership to the registered Gecko block-entity renderer.
+     *
+     * @param state current storage state
+     * @return the animated block-entity render path
+     */
+    @Override
+    public BlockRenderType getRenderType(BlockState state) {
+        return BlockRenderType.ENTITYBLOCK_ANIMATED;
+    }
+
+    /**
+     * Faces the storage front toward the player after placement.
+     *
+     * @param context placement context containing the player's horizontal facing
+     * @return placed state facing opposite the player
+     */
+    @Nullable
+    @Override
+    public BlockState getPlacementState(ItemPlacementContext context) {
+        return getDefaultState().with(FACING, context.getHorizontalPlayerFacing().getOpposite());
+    }
+
+    /**
+     * Installs the storage's logical-server ticker only for its exact block-entity type.
+     *
+     * @param world world requesting a ticker
+     * @param state current block state
+     * @param type block-entity type being ticked
+     * @param <T> concrete block-entity type
+     * @return the fifth-tick glint charger on the server, otherwise no ticker
+     */
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
+            World world,
+            BlockState state,
+            BlockEntityType<T> type
+    ) {
+        if (world.isClient || type != SharedBlockEntities.ETHEREAL_STORAGE.get()) {
+            return null;
+        }
+
+        return (tickWorld, tickPos, tickState, blockEntity) ->
+                EtherealStorageFoundationBlockEntity.serverTick(
+                        tickWorld,
+                        tickPos,
+                        tickState,
+                        (EtherealStorageFoundationBlockEntity) blockEntity
+                );
     }
 
     /**
@@ -99,5 +165,10 @@ public final class EtherealStorageFoundationBlock extends Block implements Block
             }
             super.onStateReplaced(state, world, pos, newState, moved);
         }
+    }
+
+    @Override
+    protected void appendProperties(StateManager.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
     }
 }

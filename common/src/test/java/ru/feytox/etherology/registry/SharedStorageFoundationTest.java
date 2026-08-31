@@ -21,6 +21,8 @@ final class SharedStorageFoundationTest {
                     + "EtherealStorageFoundationScreenHandler.class";
     private static final String SHARED_SCREEN_HANDLERS =
             "/ru/feytox/etherology/registry/misc/SharedScreenHandlers.class";
+    private static final String GLINT_ETHER_DATA =
+            "/ru/feytox/etherology/item/glints/GlintEtherData.class";
 
     @Test
     void declaresTheBlockAndBlockEntityThroughSharedDeferredRegistries()
@@ -63,7 +65,15 @@ final class SharedStorageFoundationTest {
                 "isClient",
                 "openHandledScreen",
                 "onStateReplaced",
-                "ItemScatterer"
+                "ItemScatterer",
+                "HorizontalFacingBlock",
+                "FACING",
+                "NORTH",
+                "getPlacementState",
+                "getHorizontalPlayerFacing",
+                "getOpposite",
+                "getTicker",
+                "serverTick"
         );
         ClassFileAssertions.assertContains(
                 STORAGE_BLOCK_ENTITY,
@@ -80,7 +90,32 @@ final class SharedStorageFoundationTest {
                 "onOpen",
                 "onClose",
                 "BLOCK_CHEST_OPEN",
-                "BLOCK_CHEST_CLOSE"
+                "BLOCK_CHEST_CLOSE",
+                "GlintEtherData",
+                "getGlintEther",
+                "getTransportableEther",
+                "incrementGlint",
+                "decrementGlint",
+                "chargeGlints",
+                "drainEther",
+                "isInputSide",
+                "getOutputSide",
+                "UP",
+                "DOWN",
+                "GeoBlockEntity",
+                "storage_controller",
+                "animation.ether_storage.open",
+                "animation.ether_storage.close",
+                "thenPlayAndHold",
+                "thenPlay",
+                "createInstanceCache",
+                "registerControllers",
+                "triggerableAnim",
+                "triggerAnim"
+        );
+        ClassFileAssertions.assertContains(
+                STORAGE_BLOCK,
+                "ENTITYBLOCK_ANIMATED"
         );
         ClassFileAssertions.assertContains(
                 STORAGE_SCREEN_HANDLER,
@@ -101,20 +136,26 @@ final class SharedStorageFoundationTest {
                 "EtherealStorageFoundationScreenHandler",
                 "register"
         );
+        ClassFileAssertions.assertContains(
+                GLINT_ETHER_DATA,
+                "ItemDataKey",
+                "stored_ether",
+                "getStoredEther",
+                "increment",
+                "decrement"
+        );
     }
 
     @Test
-    void doesNotClaimDeferredGlintCapabilityOrAnimationParity() throws IOException {
+    void keepsCustomAnimationPacketsOutOfTheSharedGeckoLifecycle() throws IOException {
         ClassFileAssertions.assertDoesNotContain(
                 STORAGE_BLOCK_ENTITY,
                 "EtherGlint",
-                "incrementGlint",
-                "decrementGlint",
                 "ForgeCapabilities",
                 "LazyOptional",
                 "StartBlockAnimS2C",
                 "StopBlockAnimS2C",
-                "registerControllers"
+                "stopClientAnim"
         );
     }
 

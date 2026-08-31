@@ -36,6 +36,13 @@ repositories {
             includeGroupByRegex("net\\.fabricmc(\\..*)?")
         }
     }
+    maven("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/") {
+        name = "GeckoLib"
+        content {
+            includeGroup("software.bernie.geckolib")
+            includeGroup("com.eliotlash.mclib")
+        }
+    }
     mavenCentral()
 }
 
@@ -73,6 +80,11 @@ dependencies {
     )
     "modImplementation"(
         "dev.architectury:architectury:${versionProperty("architectury_api_version")}",
+    )
+    "modImplementation"(
+        "software.bernie.geckolib:geckolib-fabric-$minecraftVersion:${
+            versionProperty("geckolib_version")
+        }",
     )
 
     "testImplementation"("org.junit.jupiter:junit-jupiter:5.13.4")

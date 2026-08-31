@@ -1,10 +1,13 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.architectury.plugin.ArchitectPluginExtension
+import net.fabricmc.loom.task.RemapJarTask
+import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.jvm.tasks.Jar
 
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.nio.charset.StandardCharsets
 import java.util.zip.ZipFile
 
 plugins {
@@ -22,6 +25,10 @@ val commonTest = commonProject.tasks.named("test")
 val forgeJavaRoot = rootProject.file("forge/src/main/java")
 val forgeResourcesRoot = rootProject.file("forge/src/main/resources")
 val forgeMainClasses = layout.buildDirectory.dir("classes/java/main")
+val forgeMainResources = layout.buildDirectory.dir("resources/main")
+val acceptedForgeDataEntries = setOf(
+    "etherology/loot_tables/blocks/ethereal_storage.json",
+)
 val commonBootstrapClassEntry =
     "ru/feytox/etherology/bootstrap/EtherologyBootstrap.class"
 val platformRegistrarClassEntry =
@@ -42,6 +49,8 @@ val etherealStorageFoundationScreenHandlerClassEntry =
     "ru/feytox/etherology/block/etherealStorage/EtherealStorageFoundationScreenHandler.class"
 val etherealStorageInputItemClassEntry =
     "ru/feytox/etherology/item/EtherealStorageInputItem.class"
+val glintEtherDataClassEntry =
+    "ru/feytox/etherology/item/glints/GlintEtherData.class"
 val sharedScreenHandlerRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedScreenHandlers.class"
 val forgeEntrypointClassEntry =
@@ -50,6 +59,10 @@ val forgeClientEventsClassEntry =
     "ru/feytox/etherology/forge/client/ForgeClientEvents.class"
 val etherealStorageFoundationScreenClassEntry =
     "ru/feytox/etherology/forge/client/EtherealStorageFoundationScreen.class"
+val etherealStorageFoundationModelClassEntry =
+    "ru/feytox/etherology/forge/client/EtherealStorageFoundationModel.class"
+val etherealStorageFoundationRendererClassEntry =
+    "ru/feytox/etherology/forge/client/EtherealStorageFoundationRenderer.class"
 val etherealStorageItemHandlerProviderClassEntry =
     "ru/feytox/etherology/forge/block/etherealStorage/EtherealStorageItemHandlerProvider.class"
 val etherStorageContractClassEntry =
@@ -71,6 +84,16 @@ val etherealStorageTexture =
     rootProject.file("src/client/resources/assets/etherology/textures/block/ethereal_storage.png")
 val etherealStorageGuiTexture =
     rootProject.file("src/client/resources/assets/etherology/textures/gui/ethereal_storage.png")
+val etherealStorageGeoModel =
+    rootProject.file("src/client/resources/assets/etherology/geo/ethereal_storage.geo.json")
+val etherealStorageAnimation =
+    rootProject.file(
+        "src/client/resources/assets/etherology/animations/ethereal_storage.animation.json",
+    )
+val etherealStorageMachineTexture =
+    rootProject.file(
+        "src/client/resources/assets/etherology/textures/machines/ethereal_storage.png",
+    )
 val glintShardItemModel =
     rootProject.file("src/client/resources/assets/etherology/models/item/glint_shard.json")
 val glintShardItemTexture =
@@ -113,6 +136,13 @@ repositories {
             includeGroupByRegex("dev\\.architectury(\\..*)?")
         }
     }
+    maven("https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/") {
+        name = "GeckoLib"
+        content {
+            includeGroup("software.bernie.geckolib")
+            includeGroup("com.eliotlash.mclib")
+        }
+    }
     mavenCentral()
 }
 
@@ -129,7 +159,7 @@ sourceSets {
                 ),
             )
             include("assets/**")
-            include("data/**")
+            include("data/etherology/loot_tables/blocks/ethereal_storage.json")
             include("META-INF/**")
             include("pack.mcmeta")
             include("etherology.forge.mixins.json")
@@ -168,11 +198,17 @@ dependencies {
     "modImplementation"(
         "dev.architectury:architectury-forge:${versionProperty("architectury_api_version")}",
     )
+    "modImplementation"(
+        "software.bernie.geckolib:geckolib-forge-$minecraftVersion:${
+            versionProperty("geckolib_forge_version")
+        }",
+    )
 
     "common"(project.files(commonJar))
     "shadowBundle"(project.files(commonProject.tasks.named("transformProductionForge")))
 
     "testImplementation"("org.junit.jupiter:junit-jupiter:5.13.4")
+    "testImplementation"("org.ow2.asm:asm:9.9")
     "testRuntimeOnly"("org.junit.platform:junit-platform-launcher:1.13.4")
 }
 
@@ -208,6 +244,7 @@ val expandedForgeMetadata = mapOf(
     "forge_loader_range" to releaseMetadata["loader_api"].toString(),
     "forge_version_range" to releaseMetadata["loader"].toString(),
     "architectury_version_range" to releaseMetadata["architectury"].toString(),
+    "geckolib_version_range" to "[${versionProperty("geckolib_forge_version")},5)",
     "resource_pack_format" to releaseMetadata["pack_format"].toString(),
 )
 
@@ -215,6 +252,31 @@ tasks.named<ProcessResources>("processResources") {
     inputs.properties(expandedForgeMetadata)
     filesMatching(listOf("META-INF/mods.toml", "pack.mcmeta")) {
         expand(expandedForgeMetadata)
+    }
+}
+
+val validateForgeAcceptedDataSet = tasks.register("validateForgeAcceptedDataSet") {
+    group = "verification"
+    description =
+        "Rejects server data that references gameplay registrations outside the accepted Forge slice."
+    dependsOn(tasks.named("processResources"))
+    inputs.dir(forgeMainResources)
+
+    doLast {
+        val packagedDataDirectory = forgeMainResources.get().asFile.resolve("data")
+        val packagedDataEntries = if (packagedDataDirectory.isDirectory) {
+            packagedDataDirectory.walkTopDown()
+                .filter(File::isFile)
+                .map { file -> file.relativeTo(packagedDataDirectory).invariantSeparatorsPath }
+                .toSet()
+        } else {
+            emptySet()
+        }
+        check(packagedDataEntries == acceptedForgeDataEntries) {
+            "Forge $minecraftVersion packaged an unaccepted server-data set.\n" +
+                "Expected: ${acceptedForgeDataEntries.sorted()}\n" +
+                "Actual: ${packagedDataEntries.sorted()}"
+        }
     }
 }
 
@@ -637,6 +699,27 @@ fun missingForgeStorageParityMilestone(
 ): List<String> {
     val missingConditions = mutableListOf<String>()
     ZipFile(commonJarFile).use { commonZip ->
+        val glintEtherDataEntry = commonZip.getEntry(glintEtherDataClassEntry)
+        if (glintEtherDataEntry == null) {
+            missingConditions.add("common JAR has no authoritative glint Ether data owner")
+        } else {
+            val glintEtherDataConstants = readClassUtf8Constants(
+                commonZip.getInputStream(glintEtherDataEntry).use { input -> input.readAllBytes() },
+            )
+            if ("ru/feytox/etherology/util/misc/ItemDataKey" !in glintEtherDataConstants
+                || "stored_ether" !in glintEtherDataConstants
+                || "getStoredEther" !in glintEtherDataConstants
+                || "increment" !in glintEtherDataConstants
+                || "decrement" !in glintEtherDataConstants
+                || "incrementRemainder" !in glintEtherDataConstants
+                || "removedEther" !in glintEtherDataConstants
+            ) {
+                missingConditions.add(
+                    "shared glint Ether data does not own persisted remainder/removal arithmetic",
+                )
+            }
+        }
+
         val storageBlockEntityEntry =
             commonZip.getEntry(etherealStorageFoundationBlockEntityClassEntry)
         if (storageBlockEntityEntry == null) {
@@ -648,21 +731,124 @@ fun missingForgeStorageParityMilestone(
             if ("getGlintEther" !in blockEntityConstants
                 || "incrementGlint" !in blockEntityConstants
                 || "decrementGlint" !in blockEntityConstants
-                || "stored_ether" !in blockEntityConstants
+                || "ru/feytox/etherology/item/glints/GlintEtherData"
+                !in blockEntityConstants
             ) {
                 missingConditions.add(
                     "storage glints do not persist or transfer their own Ether arithmetic",
                 )
             }
-            if ("StartBlockAnimS2C" !in blockEntityConstants
-                || "StopBlockAnimS2C" !in blockEntityConstants
+            if ("software/bernie/geckolib/animatable/GeoBlockEntity"
+                !in blockEntityConstants
+                || "software/bernie/geckolib/util/GeckoLibUtil" !in blockEntityConstants
+                || "createInstanceCache" !in blockEntityConstants
+                || "storage_controller" !in blockEntityConstants
+                || "open" !in blockEntityConstants
+                || "close" !in blockEntityConstants
+                || "animation.ether_storage.open" !in blockEntityConstants
+                || "animation.ether_storage.close" !in blockEntityConstants
+                || "thenPlayAndHold" !in blockEntityConstants
+                || "thenPlay" !in blockEntityConstants
                 || "registerControllers" !in blockEntityConstants
+                || "triggerableAnim" !in blockEntityConstants
+                || "triggerAnim" !in blockEntityConstants
             ) {
                 missingConditions.add(
                     "storage viewer open/close state has no synchronized Gecko animation lifecycle",
                 )
             }
+            if ("StartBlockAnimS2C" in blockEntityConstants
+                || "StopBlockAnimS2C" in blockEntityConstants
+                || "stopClientAnim" in blockEntityConstants
+            ) {
+                missingConditions.add(
+                    "storage Gecko lifecycle still depends on custom animation packets or stop calls",
+                )
+            }
         }
+
+        val storageBlockEntry = commonZip.getEntry(etherealStorageFoundationBlockClassEntry)
+        if (storageBlockEntry == null) {
+            missingConditions.add("common JAR has no ethereal-storage block render owner")
+        } else {
+            val storageBlockConstants = readClassUtf8Constants(
+                commonZip.getInputStream(storageBlockEntry).use { input -> input.readAllBytes() },
+            )
+            if ("ENTITYBLOCK_ANIMATED" !in storageBlockConstants) {
+                missingConditions.add(
+                    "ethereal storage block does not leave visual ownership to its Geo renderer",
+                )
+            }
+        }
+    }
+
+    val forgeEntrypointConstants = readCompiledClassConstants(
+        forgeClassesDirectory,
+        forgeEntrypointClassEntry,
+    )
+    if (forgeEntrypointConstants == null
+        || "software/bernie/geckolib/GeckoLib" !in forgeEntrypointConstants
+        || "initialize" !in forgeEntrypointConstants
+    ) {
+        missingConditions.add("Forge does not initialize GeckoLib before shared storage bootstrap")
+    }
+
+    val clientEventConstants = readCompiledClassConstants(
+        forgeClassesDirectory,
+        forgeClientEventsClassEntry,
+    )
+    if (clientEventConstants == null
+        || "dev/architectury/registry/client/rendering/BlockEntityRendererRegistry"
+        !in clientEventConstants
+        || "ru/feytox/etherology/forge/client/EtherealStorageFoundationRenderer"
+        !in clientEventConstants
+        || "dev/architectury/registry/client/rendering/RenderTypeRegistry"
+        !in clientEventConstants
+        || "getCutout" !in clientEventConstants
+        || "net/minecraft/client/item/ModelPredicateProviderRegistry" !in clientEventConstants
+        || "ether_percentage" !in clientEventConstants
+        || "ru/feytox/etherology/item/glints/GlintEtherData" !in clientEventConstants
+        || "getStoredEther" !in clientEventConstants
+        || "ru/feytox/etherology/item/EtherealStorageInputItem" !in clientEventConstants
+        || "getMaxEther" !in clientEventConstants
+    ) {
+        missingConditions.add(
+            "Forge client setup does not bind the storage renderer, cutout, and shared glint predicate",
+        )
+    }
+
+    val storageRendererConstants = readCompiledClassConstants(
+        forgeClassesDirectory,
+        etherealStorageFoundationRendererClassEntry,
+    )
+    if (storageRendererConstants == null
+        || "software/bernie/geckolib/renderer/GeoBlockRenderer"
+        !in storageRendererConstants
+        || "ru/feytox/etherology/forge/client/EtherealStorageFoundationModel"
+        !in storageRendererConstants
+    ) {
+        missingConditions.add("Forge has no Gecko block renderer for ethereal storage")
+    }
+
+    val storageModelConstants = readCompiledClassConstants(
+        forgeClassesDirectory,
+        etherealStorageFoundationModelClassEntry,
+    )
+    if (storageModelConstants == null
+        || "software/bernie/geckolib/model/GeoModel" !in storageModelConstants
+        || "geo/ethereal_storage.geo.json" !in storageModelConstants
+        || "textures/machines/ethereal_storage.png" !in storageModelConstants
+        || "animations/ethereal_storage.animation.json" !in storageModelConstants
+    ) {
+        missingConditions.add("Forge storage Geo model does not bind the canonical client assets")
+    }
+
+    listOf(
+        etherealStorageGeoModel,
+        etherealStorageAnimation,
+        etherealStorageMachineTexture,
+    ).filterNot(File::isFile).forEach { missingResource ->
+        missingConditions.add("ethereal storage Gecko resource is missing: ${missingResource.name}")
     }
 
     val capabilityProviderConstants = readCompiledClassConstants(
@@ -871,7 +1057,7 @@ val validateForgeEtherItemMilestone = tasks.register("validateForgeEtherItemMile
 val validateForgeStorageFoundationMilestone = tasks.register("validateForgeStorageFoundationMilestone") {
     group = "verification"
     description = "Checks the loader-neutral ethereal-storage registration foundation."
-    dependsOn(validateForgeEtherItemMilestone, commonJar)
+    dependsOn(validateForgeEtherItemMilestone, validateForgeAcceptedDataSet, commonJar)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.files(
         etherealStorageBlockstate,
@@ -937,6 +1123,11 @@ val validateForgeStorageParityMilestone = tasks.register("validateForgeStoragePa
     )
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
+    inputs.files(
+        etherealStorageGeoModel,
+        etherealStorageAnimation,
+        etherealStorageMachineTexture,
+    )
     doLast {
         val commonJarFile = commonJar.get().archiveFile.get().asFile
         val missingConditions = missingForgeStorageParityMilestone(
@@ -1042,4 +1233,206 @@ tasks.named<net.fabricmc.loom.task.RemapJarTask>("remapJar") {
 
 tasks.matching { task -> task.name.startsWith("publish") }.configureEach {
     dependsOn(validateForgePortInputs)
+}
+
+if (minecraftVersion == "1.20.1") {
+    val e2eHarness = sourceSets.create("e2eHarness") {
+        java.setSrcDirs(
+            listOf(rootProject.file("e2e-harness/forge/1.20.1/src/main/java")),
+        )
+        resources.setSrcDirs(
+            listOf(rootProject.file("e2e-harness/forge/1.20.1/src/main/resources")),
+        )
+        compileClasspath += sourceSets.main.get().compileClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+
+    val e2eHarnessTest = sourceSets.create("e2eHarnessTest") {
+        java.setSrcDirs(
+            listOf(rootProject.file("e2e-harness/forge/1.20.1/src/test/java")),
+        )
+        resources.setSrcDirs(emptyList<String>())
+        compileClasspath += e2eHarness.output + e2eHarness.compileClasspath
+        runtimeClasspath += output + e2eHarness.output + e2eHarness.runtimeClasspath
+    }
+    configurations[e2eHarnessTest.implementationConfigurationName]
+        .extendsFrom(configurations["testImplementation"])
+    configurations[e2eHarnessTest.runtimeOnlyConfigurationName]
+        .extendsFrom(configurations["testRuntimeOnly"])
+
+    val e2eHarnessTestTask = tasks.register<Test>("e2eHarnessTest") {
+        group = "verification"
+        description = "Runs focused unit tests for the Forge 1.20.1 E2E harness."
+        dependsOn(e2eHarness.classesTaskName)
+        testClassesDirs = e2eHarnessTest.output.classesDirs
+        classpath = e2eHarnessTest.runtimeClasspath
+        useJUnitPlatform()
+    }
+
+    val expandedE2eHarnessMetadata = mapOf(
+        "version" to project.version.toString(),
+        "minecraft_version_range" to releaseArtifact["metadata_range"].toString(),
+        "forge_loader_range" to releaseMetadata["loader_api"].toString(),
+        "forge_version_range" to releaseMetadata["loader"].toString(),
+    )
+
+    tasks.named<ProcessResources>(e2eHarness.processResourcesTaskName) {
+        inputs.properties(expandedE2eHarnessMetadata)
+        filesMatching("META-INF/mods.toml") {
+            expand(expandedE2eHarnessMetadata)
+        }
+    }
+
+    val e2eHarnessJar = tasks.register<Jar>("e2eHarnessJar") {
+        group = "e2e"
+        description = "Packages the named Forge 1.20.1 client E2E harness classes."
+        dependsOn(e2eHarness.classesTaskName)
+        from(e2eHarness.output)
+        archiveBaseName.set("Etherology-E2E-Harness-Forge-$minecraftVersion")
+        archiveVersion.set(project.version.toString())
+        archiveClassifier.set("dev")
+        destinationDirectory.set(layout.buildDirectory.dir("e2e-harness/devlibs"))
+    }
+
+    val remapE2eHarnessJar = tasks.register<RemapJarTask>("remapE2eHarnessJar") {
+        group = "e2e"
+        description = "Remaps the separate Forge 1.20.1 client E2E harness for a packaged run."
+        dependsOn(e2eHarnessJar)
+        inputFile.set(e2eHarnessJar.flatMap { it.archiveFile })
+        classpath.from(e2eHarness.compileClasspath)
+        addNestedDependencies.set(false)
+        useMixinAP.set(false)
+        archiveBaseName.set("Etherology-E2E-Harness-Forge-$minecraftVersion")
+        archiveVersion.set(project.version.toString())
+        archiveClassifier.set("")
+        destinationDirectory.set(layout.buildDirectory.dir("e2e-harness/libs"))
+    }
+
+    val remapE2eUnderTestJar = tasks.register<RemapJarTask>("remapE2eUnderTestJar") {
+        group = "e2e"
+        description =
+            "Builds a marked Forge test artifact without opening the fail-closed release lane."
+        dependsOn(tasks.named("shadowJar"), validateForgeAcceptedDataSet)
+        val shadowJar = tasks.named<ShadowJar>("shadowJar")
+        inputFile.set(shadowJar.flatMap { it.archiveFile })
+        addNestedDependencies.set(true)
+        archiveBaseName.set("Etherology-Forge-$minecraftVersion")
+        archiveVersion.set(project.version.toString())
+        archiveClassifier.set("e2e-under-test")
+        destinationDirectory.set(layout.buildDirectory.dir("e2e-under-test/libs"))
+        manifest.attributes[
+            "Etherology-E2E-Only"
+        ] = "true"
+    }
+
+    fun validateE2eHarnessJar(harnessFile: File) {
+        ZipFile(harnessFile).use { harnessZip ->
+            val harnessEntries = harnessZip.entries().asSequence().map { it.name }.toSet()
+            val harnessClassEntries = harnessEntries.filter { it.endsWith(".class") }
+            check(
+                "dev/theplumteam/etherology/e2e/forge/ForgeE2eHarness.class" in
+                    harnessEntries,
+            ) {
+                "Forge E2E harness JAR has no client entrypoint class"
+            }
+            check(harnessClassEntries.all {
+                it.startsWith("dev/theplumteam/etherology/e2e/forge/")
+            }) {
+                "Forge E2E harness JAR contains classes outside its isolated package"
+            }
+            check(harnessEntries.none { it.endsWith(".jar") }) {
+                "Forge E2E harness JAR contains nested dependencies"
+            }
+            harnessClassEntries.forEach { classEntryName ->
+                val classEntry = requireNotNull(harnessZip.getEntry(classEntryName))
+                val classConstants = harnessZip.getInputStream(classEntry).use { input ->
+                    String(input.readAllBytes(), StandardCharsets.ISO_8859_1)
+                }
+                check(!classConstants.contains("ru/feytox/etherology/")) {
+                    "Forge E2E harness class $classEntryName links to production Etherology code"
+                }
+            }
+
+            val metadataEntry = requireNotNull(
+                harnessZip.getEntry("META-INF/mods.toml"),
+            ) {
+                "Forge E2E harness JAR has no META-INF/mods.toml"
+            }
+            val metadataText = harnessZip.getInputStream(metadataEntry)
+                .bufferedReader(StandardCharsets.UTF_8)
+                .use { it.readText() }
+            check(metadataText.contains("modId=\"etherology_e2e_harness\"")) {
+                "Forge E2E harness metadata has the wrong mod id"
+            }
+            check(metadataText.contains("modId=\"etherology\"")) {
+                "Forge E2E harness metadata does not require Etherology"
+            }
+            check(metadataText.contains("versionRange=\"[${project.version}]\"")) {
+                "Forge E2E harness does not require the exact production mod version"
+            }
+        }
+    }
+
+    val verifyE2eHarnessArtifact = tasks.register("verifyE2eHarnessArtifact") {
+        group = "verification"
+        description = "Validates the remapped Forge 1.20.1 client E2E harness artifact."
+        dependsOn(remapE2eHarnessJar)
+        inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+
+        doLast {
+            validateE2eHarnessJar(remapE2eHarnessJar.get().archiveFile.get().asFile)
+        }
+    }
+
+    val verifyE2eUnderTestIsolation = tasks.register("verifyE2eUnderTestIsolation") {
+        group = "verification"
+        description = "Proves that Forge E2E artifacts are marked and isolated from publication."
+        dependsOn(remapE2eUnderTestJar, verifyE2eHarnessArtifact)
+        inputs.file(remapE2eUnderTestJar.flatMap { it.archiveFile })
+        inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+
+        doLast {
+            val productionFile = remapE2eUnderTestJar.get().archiveFile.get().asFile
+            val harnessFile = remapE2eHarnessJar.get().archiveFile.get().asFile
+            check(productionFile != harnessFile) {
+                "The Forge production-under-test and E2E harness resolve to the same artifact"
+            }
+            ZipFile(productionFile).use { productionZip ->
+                val productionEntries = productionZip.entries().asSequence()
+                    .map { it.name }
+                    .toSet()
+                check(productionEntries.none {
+                    it.startsWith("dev/theplumteam/etherology/e2e/")
+                }) {
+                    "Forge production-under-test JAR contains E2E harness classes"
+                }
+                val manifestEntry = requireNotNull(
+                    productionZip.getEntry("META-INF/MANIFEST.MF"),
+                ) {
+                    "Forge production-under-test JAR has no manifest"
+                }
+                val manifestText = productionZip.getInputStream(manifestEntry)
+                    .bufferedReader(StandardCharsets.UTF_8)
+                    .use { it.readText() }
+                check(manifestText.contains("Etherology-E2E-Only: true")) {
+                    "Forge production-under-test JAR is not visibly marked E2E-only"
+                }
+                val packagedDataEntries = productionEntries
+                    .filter { entry -> entry.startsWith("data/") && !entry.endsWith("/") }
+                    .map { entry -> entry.removePrefix("data/") }
+                    .toSet()
+                check(packagedDataEntries == acceptedForgeDataEntries) {
+                    "Forge production-under-test JAR packaged an unaccepted server-data set.\n" +
+                        "Expected: ${acceptedForgeDataEntries.sorted()}\n" +
+                        "Actual: ${packagedDataEntries.sorted()}"
+                }
+            }
+        }
+    }
+
+    tasks.register("buildE2eHarness") {
+        group = "e2e"
+        description = "Builds and validates the separate Forge 1.20.1 packaged E2E harness."
+        dependsOn(e2eHarnessTestTask, verifyE2eHarnessArtifact, verifyE2eUnderTestIsolation)
+    }
 }

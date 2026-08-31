@@ -24,7 +24,12 @@ jobs:
         with:
           python-version: "3.11"
       - name: Test E2E tooling
-        run: python -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py
+        run: >-
+          python -B -m unittest
+          scripts/e2e/test_client.py
+          scripts/e2e/test_evidence.py
+          scripts/e2e/test_forge_client.py
+          scripts/e2e/test_forge_evidence.py
       - name: Validate support catalog
         run: |
           python -B -m unittest scripts/release/test_validate_support_catalog.py
@@ -70,13 +75,17 @@ jobs:
           ./gradlew --no-daemon
           :fabric:1.20.1:buildE2eHarness
           :fabric:1.20.1:verifyE2eHarnessIsolation
-      - name: Validate the accepted Forge storage core and closed release gate
+      - name: Validate Forge storage parity, E2E isolation, and the closed release gate
         run: >-
           ./gradlew --no-daemon
           :forge:1.20.1:test
           :forge:1.20.1:compileJava
+          :forge:1.20.1:e2eHarnessTest
           :forge:1.20.1:validateForgeBootstrapInputs
           :forge:1.20.1:validateForgeEtherItemMilestone
           :forge:1.20.1:validateForgeStorageFoundationMilestone
           :forge:1.20.1:validateForgePersistentStorageMenuCoreMilestone
+          :forge:1.20.1:validateForgeStorageParityMilestone
+          :forge:1.20.1:verifyE2eHarnessArtifact
+          :forge:1.20.1:verifyE2eUnderTestIsolation
           :forge:1.20.1:verifyForgePortGateClosed

@@ -1,0 +1,203 @@
+{
+  "schema": 1,
+  "scenario": "ethereal-storage",
+  "artifact_node": "forge-1.20.1",
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "loader_version": "47.4.9",
+  "java": 17,
+  "passed": true,
+  "client_ticks": 438,
+  "framebuffer_width": 1920,
+  "framebuffer_height": 1080,
+  "assertions": [
+    {
+      "name": "lifecycle",
+      "passed": true,
+      "actual": ""
+    },
+    {
+      "name": "forge_loaded",
+      "passed": true,
+      "actual": "forge"
+    },
+    {
+      "name": "etherology_loaded",
+      "passed": true,
+      "actual": "etherology"
+    },
+    {
+      "name": "chunk_loaded",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, nbtReconstructed\u003dtrue, blockEntityId\u003detherology:ethereal_storage_block_entity, inventorySize\u003d4, capability\u003dCapabilityResult[threeSlotFailureViews\u003d[], glintValidityFailureViews\u003d[], simulatedInsertionFailureViews\u003d[], liveInsertionFailureViews\u003d[], extractionFailureViews\u003d[], displaySlotFailureViews\u003d[]]]"
+    },
+    {
+      "name": "storage_nbt_reconstructed",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, nbtReconstructed\u003dtrue, blockEntityId\u003detherology:ethereal_storage_block_entity, inventorySize\u003d4, capability\u003dCapabilityResult[threeSlotFailureViews\u003d[], glintValidityFailureViews\u003d[], simulatedInsertionFailureViews\u003d[], liveInsertionFailureViews\u003d[], extractionFailureViews\u003d[], displaySlotFailureViews\u003d[]]]"
+    },
+    {
+      "name": "storage_block_entity_id",
+      "passed": true,
+      "actual": "etherology:ethereal_storage_block_entity"
+    },
+    {
+      "name": "inventory_size_four",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, nbtReconstructed\u003dtrue, blockEntityId\u003detherology:ethereal_storage_block_entity, inventorySize\u003d4, capability\u003dCapabilityResult[threeSlotFailureViews\u003d[], glintValidityFailureViews\u003d[], simulatedInsertionFailureViews\u003d[], liveInsertionFailureViews\u003d[], extractionFailureViews\u003d[], displaySlotFailureViews\u003d[]]]"
+    },
+    {
+      "name": "item_handler_all_sides",
+      "passed": true,
+      "actual": "[]"
+    },
+    {
+      "name": "item_handler_glint_valid",
+      "passed": true,
+      "actual": "[]"
+    },
+    {
+      "name": "item_handler_simulated_insert",
+      "passed": true,
+      "actual": "[]"
+    },
+    {
+      "name": "item_handler_live_insert",
+      "passed": true,
+      "actual": "[]"
+    },
+    {
+      "name": "item_handler_extraction_blocked",
+      "passed": true,
+      "actual": "[]"
+    },
+    {
+      "name": "item_handler_display_hidden",
+      "passed": true,
+      "actual": "[]"
+    },
+    {
+      "name": "glint_transfer_preserves_total",
+      "passed": true,
+      "actual": "StorageSnapshot[internalEther\u003d58.0, glintEther\u003d70.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d70.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d58, displayItemId\u003detherology:ether, blockEntityId\u003detherology:ethereal_storage_block_entity]"
+    },
+    {
+      "name": "glint_transfer_moved_ether",
+      "passed": true,
+      "actual": "StorageSnapshot[internalEther\u003d58.0, glintEther\u003d70.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d70.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d58, displayItemId\u003detherology:ether, blockEntityId\u003detherology:ethereal_storage_block_entity]"
+    },
+    {
+      "name": "viewer_open_invoked",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "viewer_close_invoked",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "menu_opened",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "menu_client_type",
+      "passed": true,
+      "actual": "etherology:ethereal_storage_screen_handler"
+    },
+    {
+      "name": "forced_save",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "saved_snapshot",
+      "passed": true,
+      "actual": "StorageSnapshot[internalEther\u003d0.0, glintEther\u003d128.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d128.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d0, displayItemId\u003dminecraft:air, blockEntityId\u003detherology:ethereal_storage_block_entity]"
+    },
+    {
+      "name": "restart_ether_distribution",
+      "passed": true,
+      "actual": "RestartResult[snapshot\u003dStorageSnapshot[internalEther\u003d0.0, glintEther\u003d128.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d128.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d0, displayItemId\u003dminecraft:air, blockEntityId\u003detherology:ethereal_storage_block_entity], etherDistributionRetained\u003dtrue, inputInventoryRetained\u003dtrue, blockEntityTypeRetained\u003dtrue]"
+    },
+    {
+      "name": "restart_input_inventory",
+      "passed": true,
+      "actual": "RestartResult[snapshot\u003dStorageSnapshot[internalEther\u003d0.0, glintEther\u003d128.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d128.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d0, displayItemId\u003dminecraft:air, blockEntityId\u003detherology:ethereal_storage_block_entity], etherDistributionRetained\u003dtrue, inputInventoryRetained\u003dtrue, blockEntityTypeRetained\u003dtrue]"
+    },
+    {
+      "name": "restart_block_entity_type",
+      "passed": true,
+      "actual": "RestartResult[snapshot\u003dStorageSnapshot[internalEther\u003d0.0, glintEther\u003d128.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d128.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d0, displayItemId\u003dminecraft:air, blockEntityId\u003detherology:ethereal_storage_block_entity], etherDistributionRetained\u003dtrue, inputInventoryRetained\u003dtrue, blockEntityTypeRetained\u003dtrue]"
+    },
+    {
+      "name": "menu_reopened",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "reopened_menu_client_type",
+      "passed": true,
+      "actual": "etherology:ethereal_storage_screen_handler"
+    },
+    {
+      "name": "display_slot_tracks_internal_only",
+      "passed": true,
+      "actual": "StorageSnapshot[internalEther\u003d58.0, glintEther\u003d70.0, totalEther\u003d128.0, occupiedInputSlots\u003d1, inputs\u003d[InputSnapshot[empty\u003dfalse, itemId\u003detherology:glint_shard, count\u003d1, storedEther\u003d70.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0], InputSnapshot[empty\u003dtrue, itemId\u003dminecraft:air, count\u003d0, storedEther\u003d0.0]], displayCount\u003d58, displayItemId\u003detherology:ether, blockEntityId\u003detherology:ethereal_storage_block_entity]"
+    },
+    {
+      "name": "closed_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d728007, sha256\u003d6794bbf178f1bbc24d6ee0c95f99efb9df439fd782acea80267fd0bc54a7ce5b, failure\u003d]"
+    },
+    {
+      "name": "open_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d661679, sha256\u003d956cac7e9d584d57630fb4db062cb49c0944fe01215a56953665dff59dc5ac73, failure\u003d]"
+    },
+    {
+      "name": "closed_again_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d588705, sha256\u003d626d41d543ac02e794083a1bf61cdb36677a02ce66254d3d25a99bd0f9e21d8c, failure\u003d]"
+    },
+    {
+      "name": "menu_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d580616, sha256\u003d878a3d8fa8d81fd0d99c9da4132db28b9a720fca42bedf86459ab2a45ba55336, failure\u003d]"
+    },
+    {
+      "name": "reopened_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d282275, sha256\u003d550b1e762ee99e9b162313296e2adbbe16712363c9459fc01ef926f44591b334, failure\u003d]"
+    },
+    {
+      "name": "artifact_etherology",
+      "passed": true,
+      "actual": "ForgeArtifactDigest[modId\u003detherology, passed\u003dtrue, fileName\u003detherology-forge-under-test.jar, size\u003d1189247, sha256\u003dc634d89d61b0ea6ccd8d9e523e6c8928446b8cf7c98d5b80d0691c1847063006, failure\u003d]"
+    },
+    {
+      "name": "artifact_etherology_e2e_harness",
+      "passed": true,
+      "actual": "ForgeArtifactDigest[modId\u003detherology_e2e_harness, passed\u003dtrue, fileName\u003detherology-forge-e2e-harness.jar, size\u003d51140, sha256\u003d4a28be83711c5c68dc1749197f0f1a00ccb7029b89496a408cd3e7913d9e288b, failure\u003d]"
+    }
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "passed": true,
+      "file_name": "etherology-forge-under-test.jar",
+      "size": 1189247,
+      "sha256": "c634d89d61b0ea6ccd8d9e523e6c8928446b8cf7c98d5b80d0691c1847063006",
+      "failure": ""
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "passed": true,
+      "file_name": "etherology-forge-e2e-harness.jar",
+      "size": 51140,
+      "sha256": "4a28be83711c5c68dc1749197f0f1a00ccb7029b89496a408cd3e7913d9e288b",
+      "failure": ""
+    }
+  ]
+}

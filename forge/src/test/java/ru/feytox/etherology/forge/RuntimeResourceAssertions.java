@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 final class RuntimeResourceAssertions {
@@ -40,6 +41,13 @@ final class RuntimeResourceAssertions {
         try (InputStream resource = requiredResource(path)) {
             assertArrayEquals(PNG_SIGNATURE, resource.readNBytes(PNG_SIGNATURE.length));
         }
+    }
+
+    static void assertAbsent(String path) {
+        assertNull(
+                RuntimeResourceAssertions.class.getResource(path),
+                "Forge packaged an unaccepted runtime resource " + path
+        );
     }
 
     private static InputStream requiredResource(String path) {

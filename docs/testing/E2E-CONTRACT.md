@@ -15,8 +15,14 @@ a profile, or treated as an E2E target.
 | `fabric-1.20.1` | 1.20.1 | Fabric Loader 0.17.3 | 17 |
 | `forge-1.20.1` | 1.20.1 | Forge 47.4.9 | 17 |
 
-Both lanes execute the same mechanic contract. Loader-specific setup is allowed;
-loader-specific assertions or omitted mechanics are not.
+Both lanes target the same complete mechanic contract. Loader-specific setup is
+allowed; loader-specific omissions cannot satisfy lane-wide readiness. The
+transitional Forge lane may freeze a named bounded vertical while the rest of
+its mechanic matrix remains explicitly release-blocking.
+
+A bounded scenario may be frozen while a loader port is still incomplete, but it
+accepts only that named vertical. It cannot satisfy the lane-wide scenario matrix
+or remove a later release gate.
 
 The Fabric runtime lock uses Trinkets' remapped Modrinth release JAR. Its Maven
 artifact is valid for Loom development dependencies but is not staged directly in
@@ -58,7 +64,8 @@ report schema, assertions, screenshot names, report-first publication, and
    dedicated server and connect the required clients for multiplayer mechanics.
 6. Drive each scenario from client ticks, server-thread actions, and real readiness
    predicates.
-7. Wait for two completed render callbacks before capturing the framebuffer.
+7. Wait for the scenario-declared number of completed render callbacks, never
+   fewer than two, before capturing the framebuffer.
 8. Assert programmatic state, force-save persistent state, and write the scenario
    report.
 9. Write `done.marker` last, shut down normally, terminate any remaining owned
@@ -84,6 +91,15 @@ report schema, assertions, screenshot names, report-first publication, and
 | `combat-equipment` | Two-handed suppression, knockback, shield reflection, and armor attributes |
 | `persistence` | Player, item, chunk, machine, and research data survive save/restart |
 | `multiplayer-sync` | Two clients observe identical seals, machines, casts, equipment, and player state |
+
+## Loader-specific bounded scenarios
+
+These scenarios record an accepted vertical during a transitional port. They do
+not replace any standard scenario or establish complete loader readiness.
+
+| Scenario | Lane | Required proof |
+|---|---|---|
+| `ethereal-storage` | `forge-1.20.1` | Bounded Ethereal Storage vertical in a fresh integrated world: four-slot block entity and NBT reconstruction; per-Glint Ether transfer with exact-total conservation; Forge item-handler access on the unsided view and all six faces with simulated/live insertion, blocked extraction, and hidden display slot; viewer open/close and synchronized Gecko animation; native menu; closed/open/closed-again plus pre-restart and post-restart menu captures; forced save, full disconnect/restart, exact Ether distribution, ordered input inventory, display state, block-entity type, and menu reopen. This scenario does not satisfy `ether-network`, general `persistence`, multiplayer, or full-loader readiness. |
 
 ## Screenshot contract
 

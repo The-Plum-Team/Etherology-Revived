@@ -276,7 +276,7 @@ class ConfigurationTests(unittest.TestCase):
             configuration.repository_root / "docs/testing/E2E-CONTRACT.md"
         ).read_text(encoding="utf-8")
         scenario_table = contract.split("## Standard scenarios", 1)[1].split(
-            "## Screenshot contract", 1
+            "## Loader-specific bounded scenarios", 1
         )[0]
         contract_scenarios = [
             line.split("`", 2)[1]

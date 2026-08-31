@@ -21,9 +21,11 @@ moved into `common` by complete vertical slices.
 
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 E2E run
 in a real macOS client and integrated world. Forge has a native JavaFML entry point,
-metadata, and an accepted persistent ethereal-storage/menu core. Its release artifact
-remains deliberately blocked first on storage parity, then on the explicitly declared
-ethereal-channel/network milestone and broader gameplay work.
+metadata, and an accepted bounded Ethereal Storage vertical. That vertical now includes
+per-Glint Ether transfer, invalidatable Forge item-handler interoperability, synchronized
+Gecko open/close animation, and a packaged save/restart/reopen E2E run in a fresh isolated
+macOS client. Its release artifact remains deliberately blocked on the explicitly declared
+ethereal-channel/network milestone and then the remaining gameplay and native-readiness work.
 
 ## Requirements
 
@@ -59,20 +61,25 @@ bash ./gradlew --no-daemon --no-parallel \
   validateSupportCatalog
 ```
 
-Compile and unit-test the Forge bootstrap work without claiming a release artifact:
+Compile and test the accepted Forge storage vertical without claiming a release artifact:
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
   :forge:1.20.1:test \
   :forge:1.20.1:compileJava \
-  :forge:1.20.1:validateForgePersistentStorageMenuCoreMilestone \
+  :forge:1.20.1:validateForgeStorageParityMilestone \
+  :forge:1.20.1:verifyE2eUnderTestIsolation \
   :forge:1.20.1:verifyForgePortGateClosed
 ```
 
-The positive persistent-core task depends on both Common and Forge tests and therefore compiles
-both source graphs before it inspects the Common JAR and compiled Forge classes. The final task is
-diagnostic only: it reports the first incomplete forward milestone. It is not a release gate or a
-substitute for the native Forge client/server and packaged E2E proof that has not run yet.
+The positive storage-parity task depends on both Common and Forge tests and therefore compiles
+both source graphs before it inspects the Common JAR, compiled Forge classes, and required Gecko
+resources. The under-test isolation task verifies the two explicitly test-only packaged artifacts;
+neither is the blocked release artifact. The final task is diagnostic only: it reports the
+ethereal channel/network vertical as the first incomplete forward milestone. The completed native
+storage proof is frozen in
+[`docs/evidence/forge-1.20.1/README.md`](docs/evidence/forge-1.20.1/README.md); it is not evidence for
+the unported channel/network or broader gameplay graph.
 
 `buildAllLanes` is intentionally not yet a passing acceptance command: the Forge
 `remapJar` task is fail-closed while that lane is incomplete. See

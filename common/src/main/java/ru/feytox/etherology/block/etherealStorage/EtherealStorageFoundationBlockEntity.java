@@ -19,26 +19,44 @@ import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.World;
 import ru.feytox.etherology.item.EtherealStorageInputItem;
+import ru.feytox.etherology.item.glints.GlintEtherData;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.item.SharedItems;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.List;
 
 /**
- * Persists the bounded Ether buffer and four-slot server-owned storage-menu core.
+ * Persists internal and per-glint Ether while owning the four-slot server storage menu.
  */
 public final class EtherealStorageFoundationBlockEntity extends BlockEntity
-        implements SidedInventory, NamedScreenHandlerFactory {
+        implements SidedInventory, NamedScreenHandlerFactory, GeoBlockEntity {
 
     private static final String STORAGE_ETHER_KEY = "storage_ether";
+    private static final String STORAGE_CONTROLLER = "storage_controller";
+    private static final String OPEN_TRIGGER = "open";
+    private static final String CLOSE_TRIGGER = "close";
     private static final int INPUT_SLOT_COUNT = 3;
     private static final int DISPLAY_SLOT = 3;
     private static final int INVENTORY_SIZE = 4;
     private static final float MAX_ETHER = 64.0f;
+    private static final RawAnimation OPEN_ANIMATION = RawAnimation.begin()
+            .thenPlayAndHold("animation.ether_storage.open");
+    private static final RawAnimation CLOSE_ANIMATION = RawAnimation.begin()
+            .thenPlay("animation.ether_storage.close");
 
     private final DefaultedList<ItemStack> inventory =
             DefaultedList.ofSize(INVENTORY_SIZE, ItemStack.EMPTY);
+    private final AnimatableInstanceCache animationCache =
+            GeckoLibUtil.createInstanceCache(this);
 
     private float storageEther;
     private int viewers;
@@ -55,12 +73,39 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
     }
 
     /**
-     * Returns the persistent internal Ether buffer, excluding deferred per-glint state.
+     * Returns the persistent internal Ether buffer represented by the derived display slot.
      *
      * @return stored Ether units
      */
     public float getStoredEther() {
         return storageEther;
+    }
+
+    /**
+     * Returns the capacity of the internal buffer, excluding the three glints.
+     *
+     * @return 64 internal Ether units
+     */
+    public float getMaxEther() {
+        return MAX_ETHER;
+    }
+
+    /**
+     * Sums the persisted Ether held by input slots zero through two.
+     *
+     * @return Ether units held in the installed glints
+     */
+    public float getGlintEther() {
+        return sumGlintEther(inventory);
+    }
+
+    /**
+     * Returns all Ether available for transport from the internal buffer and glints.
+     *
+     * @return combined internal and per-glint Ether
+     */
+    public float getTransportableEther() {
+        return storageEther + getGlintEther();
     }
 
     /**
@@ -77,6 +122,106 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
         storageEther = clampedValue;
         updateDisplayStack();
         markDirty();
+    }
+
+    /**
+     * Adds Ether to the 64-unit internal buffer and returns the amount that did not fit.
+     *
+     * @param value Ether units offered to the internal buffer
+     * @return Ether units left over after filling the internal buffer
+     */
+    public float increment(float value) {
+        float storedBefore = storageEther;
+        float storedAfter = Math.min(storedBefore + value, MAX_ETHER);
+        setStoredEther(storedAfter);
+        return Math.max(0.0f, storedBefore + value - MAX_ETHER);
+    }
+
+    /**
+     * Removes Ether using the canonical internal/glint selection and reverse-slot drain order.
+     *
+     * @param value maximum Ether units to remove
+     * @return Ether units actually removed
+     */
+    public float decrement(float value) {
+        EtherDrainResult result = drainEther(inventory, storageEther, value);
+        if (result.removedEther() <= 0.0f) {
+            return 0.0f;
+        }
+
+        storageEther = result.storedEther();
+        updateDisplayStack();
+        markDirty();
+        return result.removedEther();
+    }
+
+    /**
+     * Fills installed glints from slot zero through slot two and returns the remainder.
+     *
+     * @param value Ether units offered to the installed glints
+     * @return Ether units that did not fit
+     */
+    public float incrementGlint(float value) {
+        float remainder = incrementGlints(inventory, value);
+        if (remainder < value) {
+            markDirty();
+        }
+        return remainder;
+    }
+
+    /**
+     * Drains installed glints from slot two through slot zero.
+     *
+     * @param value maximum Ether units to remove
+     * @return Ether units actually removed
+     */
+    public float decrementGlint(float value) {
+        float removedEther = decrementGlints(inventory, value);
+        if (removedEther > 0.0f) {
+            markDirty();
+        }
+        return removedEther;
+    }
+
+    /**
+     * Accepts network input only from horizontal faces other than the block's front.
+     *
+     * @param side queried input face
+     * @return whether the face may accept Ether
+     */
+    public boolean isInputSide(Direction side) {
+        return side != Direction.DOWN
+                && side != Direction.UP
+                && side != getCachedState().get(EtherealStorageFoundationBlock.FACING);
+    }
+
+    /**
+     * Exposes the canonical downward Ether output face.
+     *
+     * @return the downward face
+     */
+    public Direction getOutputSide() {
+        return Direction.DOWN;
+    }
+
+    static void serverTick(
+            World world,
+            BlockPos pos,
+            BlockState state,
+            EtherealStorageFoundationBlockEntity storage
+    ) {
+        if (world.getTime() % 5 != 0) {
+            return;
+        }
+
+        float storedAfter = chargeGlints(storage.inventory, storage.storageEther);
+        if (Float.compare(storage.storageEther, storedAfter) == 0) {
+            return;
+        }
+
+        storage.storageEther = storedAfter;
+        storage.updateDisplayStack();
+        storage.markDirty();
     }
 
     int getInputSlotCount() {
@@ -128,6 +273,7 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
                 0.5f,
                 0.9f
         );
+        triggerAnim(STORAGE_CONTROLLER, OPEN_TRIGGER);
         open = true;
     }
 
@@ -151,7 +297,34 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
                 0.5f,
                 0.9f
         );
+        triggerAnim(STORAGE_CONTROLLER, CLOSE_TRIGGER);
         open = false;
+    }
+
+    /**
+     * Registers one synchronized controller whose trigger names match the storage animations.
+     *
+     * @param controllers GeckoLib controller registrar for this block entity
+     */
+    @Override
+    public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+        controllers.add(new AnimationController<>(
+                this,
+                STORAGE_CONTROLLER,
+                0,
+                state -> PlayState.STOP
+        ).triggerableAnim(OPEN_TRIGGER, OPEN_ANIMATION)
+                .triggerableAnim(CLOSE_TRIGGER, CLOSE_ANIMATION));
+    }
+
+    /**
+     * Returns the per-block-entity GeckoLib state cache used by synchronized triggers.
+     *
+     * @return this storage instance's animation cache
+     */
+    @Override
+    public AnimatableInstanceCache getAnimatableInstanceCache() {
+        return animationCache;
     }
 
     /**
@@ -419,5 +592,110 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
 
     static int decrementViewerCount(int viewerCount) {
         return Math.max(0, viewerCount - 1);
+    }
+
+    static float sumGlintEther(List<ItemStack> inventory) {
+        float storedEther = 0.0f;
+        for (int slot = 0; slot < INPUT_SLOT_COUNT; slot++) {
+            ItemStack stack = inventory.get(slot);
+            if (stack.getItem() instanceof EtherealStorageInputItem) {
+                storedEther += GlintEtherData.getStoredEther(stack);
+            }
+        }
+        return storedEther;
+    }
+
+    static float incrementGlints(List<ItemStack> inventory, float value) {
+        float remainder = value;
+        for (int slot = 0; slot < INPUT_SLOT_COUNT; slot++) {
+            ItemStack stack = inventory.get(slot);
+            if (!(stack.getItem() instanceof EtherealStorageInputItem glintItem)) {
+                continue;
+            }
+            if (GlintEtherData.getStoredEther(stack) != glintItem.getMaxEther()) {
+                remainder = GlintEtherData.increment(
+                        stack,
+                        glintItem.getMaxEther(),
+                        remainder
+                );
+            }
+            if (remainder == 0.0f) {
+                break;
+            }
+        }
+        return remainder;
+    }
+
+    static float decrementGlints(List<ItemStack> inventory, float value) {
+        float remaining = value;
+        for (int slot = INPUT_SLOT_COUNT - 1; slot >= 0; slot--) {
+            ItemStack stack = inventory.get(slot);
+            if (!(stack.getItem() instanceof EtherealStorageInputItem)) {
+                continue;
+            }
+            if (GlintEtherData.getStoredEther(stack) > 0.0f) {
+                remaining -= GlintEtherData.decrement(stack, remaining);
+            }
+            if (remaining <= 0.0f) {
+                break;
+            }
+        }
+        return value - remaining;
+    }
+
+    static float chargeGlints(List<ItemStack> inventory, float storageEther) {
+        if (storageEther == 0.0f) {
+            return storageEther;
+        }
+
+        float storedAfterOffer = Math.max(0.0f, storageEther - 1.0f);
+        float offeredEther = glintChargeOffer(storageEther);
+        float remainder = incrementGlints(inventory, offeredEther);
+        return Math.min(MAX_ETHER, storedAfterOffer + remainder);
+    }
+
+    static EtherDrainResult drainEther(
+            List<ItemStack> inventory,
+            float storageEther,
+            float value
+    ) {
+        EtherDrainResult plannedDrain = drainAvailableEther(
+                storageEther,
+                sumGlintEther(inventory),
+                value
+        );
+        float removedInternal = storageEther - plannedDrain.storedEther();
+        float requestedGlintEther = plannedDrain.removedEther() - removedInternal;
+        float removedGlint = requestedGlintEther > 0.0f
+                ? decrementGlints(inventory, requestedGlintEther)
+                : 0.0f;
+        return new EtherDrainResult(
+                plannedDrain.storedEther(),
+                removedInternal + removedGlint
+        );
+    }
+
+    static float glintChargeOffer(float storageEther) {
+        return storageEther - Math.max(0.0f, storageEther - 1.0f);
+    }
+
+    static EtherDrainResult drainAvailableEther(
+            float storageEther,
+            float glintEther,
+            float value
+    ) {
+        if (storageEther >= value) {
+            float storedAfter = Math.max(storageEther - value, 0.0f);
+            return new EtherDrainResult(storedAfter, storageEther - storedAfter);
+        }
+
+        if (glintEther >= value) {
+            return new EtherDrainResult(storageEther, value);
+        }
+
+        float storedAfter = Math.max(storageEther - value, 0.0f);
+        float removedInternal = storageEther - storedAfter;
+        float removedGlint = Math.min(glintEther, value - removedInternal);
+        return new EtherDrainResult(storedAfter, removedInternal + removedGlint);
     }
 }

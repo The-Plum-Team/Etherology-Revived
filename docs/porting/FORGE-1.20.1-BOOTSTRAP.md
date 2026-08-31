@@ -1,10 +1,12 @@
-# Forge 1.20.1 bootstrap and persistent-storage-core status
+# Forge 1.20.1 bootstrap and bounded-storage status
 
 The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and one
 complete loader-neutral item registration vertical. Its bounded ethereal-storage vertical now
 persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
-vanilla sided insertion, and registers a Dist-scoped Forge client screen. This is a persistent
-storage/menu core, not complete storage parity or a playable Etherology port. It cannot produce or
+vanilla sided insertion and native Forge item-handler access, transfers Ether into canonical Glint
+state, registers a Dist-scoped Forge client screen and Gecko renderer, and has passed a packaged
+save/restart/reopen scenario in an isolated macOS client. This accepts the bounded storage-parity
+milestone only, not the channel/network graph or a playable Etherology port. It cannot produce or
 publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
@@ -33,24 +35,24 @@ client systems have been registered.
   sided automation, the deferred screen-handler registry, and Dist-scoped enqueued client
   registration. It depends on real Common and Forge test/compile tasks, reads the Common JAR and
   compiled Forge classes, and does not accept source comments as Forge client or capability proof.
+- `validateForgeStorageParityMilestone` is expected to pass. It adds canonical per-Glint Ether
+  arithmetic, invalidatable Forge item-handler capability interop, synchronized Gecko open/close
+  animation, and the required model, animation, and texture resources to the positive storage
+  gate.
 - `verifyForgePortGateClosed` is expected to pass. It is a diagnostic task, not an artifact gate:
   after requiring every accepted positive gate, it reports the first incomplete forward stage.
-  That stage is storage parity today and automatically becomes channel/network after storage
-  parity passes.
-- `validateForgeStorageParityMilestone` is expected to fail until per-glint Ether arithmetic,
-  invalidatable Forge item-handler capability interop, and synchronized Gecko open/close animation
-  are implemented.
+  That stage is now ethereal channel/network.
 - `validateForgeChannelNetworkMilestone` is the explicit next forward gate. It depends on storage
-  parity, so it cannot run past today's first failure; once storage parity passes, it requires the
-  shared Ether transfer contract and registered persistent directed ethereal channel.
+  parity and is expected to fail until the shared Ether transfer contract and registered persistent
+  directed ethereal channel are implemented and accepted.
 - `validateForgeReleaseReadinessMilestone` is a permanent final backstop after channel/network. It
-  fails unconditionally until the full gameplay graph and packaged native Forge client,
-  dedicated-server, persistence, and E2E proof are implemented and the task itself is replaced by
-  concrete acceptance checks. Class or method-name stubs cannot open this gate.
+  fails unconditionally until the full gameplay graph and complete packaged native Forge client,
+  dedicated-server, persistence, and E2E matrix are implemented and the task itself is replaced by
+  concrete acceptance checks. The bounded storage run is not sufficient. Class or method-name
+  stubs cannot open this gate.
 - `validateForgePortInputs`, `remapJar`, and every future `publish*` task depend on every accepted
-  gate plus all three forward milestones and are therefore expected to fail during storage parity,
-  remain closed during channel/network work, and remain closed afterward until full native release
-  readiness is explicitly accepted.
+  positive gate plus the channel/network and final-readiness milestones. They remain closed during
+  channel/network work and afterward until full native release readiness is explicitly accepted.
 
 The diagnostic verification walks the predeclared forward milestones in order. A completed stage
 must gain its positive and native proof, while the unconditional final readiness stage remains in
@@ -89,9 +91,9 @@ being a block-only marker.
 `SharedDeferredRegister` centralizes attach-once and first-failure lifecycle behavior. All
 foundation class names differ from canonical Fabric's `EBlocks`, `EtherealStorageBlock`, and
 `EtherealStorageBlockEntity`, preventing shadow replacement while the source graphs coexist. The
-Forge source set packages the existing blockstate, models, texture, translation, loot table, and
-recipe. The recipe remains unusable because `etheroscope` is not yet registered in the shared
-Forge graph.
+Forge source set packages the existing blockstate, models, texture, translation, and loot table.
+The recipe is deliberately excluded from the accepted Forge data set because `etheroscope` and its
+other supporting gameplay registrations are not yet present in the shared Forge graph.
 
 ## Accepted persistent storage/menu core
 
@@ -111,36 +113,48 @@ the shared deferred lifecycle. `ForgeClientEvents` is a `Dist.CLIENT` mod-bus su
 the native screen from enqueued `FMLClientSetupEvent` work, leaving the JavaFML entrypoint free of
 client references.
 
-The common tests execute pure normalization, display-count, clear/display, and multi-viewer
-transitions. ASM tests inspect compiled control flow for the NBT read/write order, typed slots,
-quick-move structure, sided restrictions, and logical-server guards. The positive gate runs these
-Common tests and the Forge test/compile path before inspecting compiled loader artifacts. A real
-NBT save/restart/reopen round trip was not run in this slice. These deterministic checks do not
-claim native loader or packaged E2E proof; an isolated Forge runtime scenario remains required.
+The common tests execute normalization, display-count, clear/display, viewer, Glint-capacity, and
+transfer transitions. ASM tests inspect compiled control flow for NBT order, typed slots,
+quick-move structure, sided restrictions, server guards, ticking, and Gecko controller ownership.
+Forge tests cover item-handler views and invalidation, client registration, resource packaging,
+and distribution safety. The positive gates run those Common and Forge test/compile paths before
+inspecting compiled loader artifacts.
 
-## Forward fail-closed storage-parity milestone
+## Accepted bounded ethereal-storage parity milestone
 
-Artifacts remain blocked on all three conditions below:
+The positive storage-parity gate now accepts all three previously declared conditions:
 
-1. The bounded glint item has no canonical `stored_ether` NBT, capacity arithmetic, or transfer
-   behavior. The three input slots therefore store items but do not charge or drain them.
-2. Vanilla `SidedInventory` insertion is present, but Forge `ForgeCapabilities.ITEM_HANDLER`,
-   `LazyOptional`, and invalidation lifecycle are absent. The forward gate reserves the concrete
-   Forge owner `EtherealStorageItemHandlerProvider` so unrelated item capabilities cannot satisfy
-   this condition.
-3. Basic viewer counting and server chest sounds are present, but the Gecko renderer/controller and
-   tracking-recipient open/close animation packets are absent.
+1. `etherology:components/stored_ether` is the canonical per-Glint state, each Glint is bounded to
+   128 Ether, and storage moves at most one Ether on every fifth server tick while preserving the
+   combined total. The derived display slot represents internal Ether only.
+2. `EtherealStorageItemHandlerProvider` exposes exactly the three input slots through cached
+   unsided and six-faced `ForgeCapabilities.ITEM_HANDLER` views. It allows insertion, rejects
+   extraction, hides the display slot, and invalidates every `LazyOptional` with its block entity.
+3. The shared block entity owns one Gecko controller and synchronized open/close triggers. The
+   Forge client registers the canonical model, renderer, render layer, and item model predicate.
 
-The first gate must remain on these storage behaviors. The already-declared
-`validateForgeChannelNetworkMilestone` keeps the artifact path closed when storage parity later
-passes, until the ethereal channel/network vertical is itself complete. The unconditional
-`validateForgeReleaseReadinessMilestone` then keeps it closed for every remaining gameplay and
-native-runtime slice.
+The packaged `ethereal-storage` scenario then placed the block in a fresh integrated world,
+exercised the item handler and Glint transfer, captured closed/open/closed-again and menu frames,
+forced a save, disconnected, restarted the same isolated world, compared exact persistent state,
+and reopened the menu. It passed 34 of 34 assertions in 438 client ticks. The full artifact hashes,
+five native framebuffers, report, and deterministic visual ratios are frozen in the
+[`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md).
+
+## Forward fail-closed channel/network milestone
+
+The first incomplete gate is now `validateForgeChannelNetworkMilestone`. It requires the shared
+Ether storage transfer contract, a registered `ethereal_channel` block and block entity, persistent
+`stored_ether`, output-direction state, and directed transfer behavior. Its eventual acceptance
+must include the matching native runtime proof; storage evidence cannot stand in for channel
+transport.
+
+`validateForgeReleaseReadinessMilestone` remains behind that gate and keeps the artifact path
+closed for every subsequent gameplay, dedicated-server, client, persistence, and E2E slice.
 
 ## Remaining implementation blockers
 
 - The common JAR contains component state/access contracts, the loader handshake,
-  `etherology:ether`, and the bounded persistent ethereal-storage/menu core.
+  `etherology:ether`, and the accepted bounded ethereal-storage vertical.
 - The canonical initializer remains in the Fabric production source graph. Of 352 canonical main
   Java files, 22 directly import Fabric API, Biolith, Trinkets, or Fabric Shield Lib through 34
   import statements. Transitive ownership work remains beyond that lower bound.
@@ -154,6 +168,6 @@ native-runtime slice.
 - The client tree has 211 Java files; 64 directly import Fabric, REI/EMI, owo, Biolith, Trinkets, or
   Fabric Shield Lib APIs and still need common-versus-loader ownership decisions.
 
-The next native slice must close the three storage-parity gaps before implementing the already
-gated channel/network vertical. A release remains invalid until subsequent gameplay systems and
-their native tests are ported as well.
+The next native slice is the already gated ethereal channel/network vertical. A release remains
+invalid until that slice and every subsequent gameplay system, dedicated-server check, and native
+E2E requirement are ported and accepted as well.

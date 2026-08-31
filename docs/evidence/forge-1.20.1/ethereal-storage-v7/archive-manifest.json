@@ -1,0 +1,66 @@
+{
+  "schema": 1,
+  "kind": "etherology-forge-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "ethereal-storage",
+  "profile": {
+    "id": "etherology-e2e-forge-1.20.1-v7",
+    "manifest_path": "scripts/e2e/forge-1.20.1-profile.json",
+    "manifest_sha256": "56244f01a169f6189b8f89f6c32ba7bd1d4edc7c573481d47f96f56f6018ccb7"
+  },
+  "runtime": {
+    "artifact_node": "forge-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "forge",
+    "loader_version": "47.4.9",
+    "java": 17,
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "assertion_count": 34,
+  "screenshot_count": 5,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-forge-under-test.jar",
+      "size": 1189247,
+      "sha256": "c634d89d61b0ea6ccd8d9e523e6c8928446b8cf7c98d5b80d0691c1847063006"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-forge-e2e-harness.jar",
+      "size": 51140,
+      "sha256": "4a28be83711c5c68dc1749197f0f1a00ccb7029b89496a408cd3e7913d9e288b"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 10663,
+      "sha256": "5fe0e9d124206d1be07e9c2db3a4dc488b84f220267ef412ebd868ad23b91048"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/ethereal-storage-closed.png": {
+      "size": 728007,
+      "sha256": "6794bbf178f1bbc24d6ee0c95f99efb9df439fd782acea80267fd0bc54a7ce5b"
+    },
+    "screenshots/ethereal-storage-open.png": {
+      "size": 661679,
+      "sha256": "956cac7e9d584d57630fb4db062cb49c0944fe01215a56953665dff59dc5ac73"
+    },
+    "screenshots/ethereal-storage-closed-again.png": {
+      "size": 588705,
+      "sha256": "626d41d543ac02e794083a1bf61cdb36677a02ce66254d3d25a99bd0f9e21d8c"
+    },
+    "screenshots/ethereal-storage-menu.png": {
+      "size": 580616,
+      "sha256": "878a3d8fa8d81fd0d99c9da4132db28b9a720fca42bedf86459ab2a45ba55336"
+    },
+    "screenshots/ethereal-storage-reopened.png": {
+      "size": 282275,
+      "sha256": "550b1e762ee99e9b162313296e2adbbe16712363c9459fc01ef926f44591b334"
+    }
+  }
+}

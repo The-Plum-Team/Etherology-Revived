@@ -1,9 +1,7 @@
 package ru.feytox.etherology.item.glints;
 
-import lombok.Getter;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.client.item.TooltipData;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -11,21 +9,22 @@ import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import ru.feytox.etherology.registry.misc.ComponentTypes;
+import ru.feytox.etherology.item.EtherealStorageInputItem;
 
 import java.util.List;
 import java.util.Optional;
 
 import static ru.feytox.etherology.registry.item.EItems.ETHER;
 
-@Getter
-public class GlintItem extends Item {
+public class GlintItem extends EtherealStorageInputItem {
 
-    private final float maxEther;
-
+    /**
+     * Creates the canonical Fabric presentation over the shared glint capacity contract.
+     *
+     * @param maxEther Ether capacity for this glint type
+     */
     public GlintItem(float maxEther) {
-        super(new Settings().maxCount(1));
-        this.maxEther = maxEther;
+        super(maxEther);
     }
 
     @Override
@@ -33,7 +32,7 @@ public class GlintItem extends Item {
         float storedEther = getStoredEther(stack);
         int etherValue = MathHelper.floor(storedEther);
 
-        int slots = MathHelper.floor(maxEther / 64);
+        int slots = MathHelper.floor(getMaxEther() / 64);
         DefaultedList<ItemStack> defaultedList = DefaultedList.of();
         for (int i = 0; i < slots && etherValue > 0; i++) {
             int count = Math.min(64, etherValue);
@@ -43,7 +42,11 @@ public class GlintItem extends Item {
             defaultedList.add(etherStack);
         }
 
-        return Optional.of(new GlintTooltipData(defaultedList, MathHelper.floor(storedEther), MathHelper.floor(maxEther)));
+        return Optional.of(new GlintTooltipData(
+                defaultedList,
+                MathHelper.floor(storedEther),
+                MathHelper.floor(getMaxEther())
+        ));
     }
 
     @Override
@@ -56,48 +59,55 @@ public class GlintItem extends Item {
 
     @Override
     public int getItemBarStep(ItemStack stack) {
-        return MathHelper.clamp(Math.round(13.0f * getStoredEther(stack) / maxEther), 0, 13);
+        return MathHelper.clamp(
+                Math.round(13.0f * getStoredEther(stack) / getMaxEther()),
+                0,
+                13
+        );
     }
 
     @Override
     public int getItemBarColor(ItemStack stack) {
-        float percent = Math.max(0.0F, (getStoredEther(stack) / maxEther));
+        float percent = Math.max(0.0F, (getStoredEther(stack) / getMaxEther()));
         return MathHelper.hsvToRgb(percent / 3.0F, 1.0F, 1.0F);
     }
 
     @Override
     public boolean isItemBarVisible(ItemStack stack) {
         float ether = getStoredEther(stack);
-        return ether > 0 && ether < maxEther;
-    }
-
-    public static Float getStoredEther(ItemStack stack) {
-        return ComponentTypes.STORED_ETHER.getOrDefault(stack, 0.0f);
-    }
-
-    private static void setStoredEther(ItemStack stack, float value) {
-        ComponentTypes.STORED_ETHER.set(stack, value);
+        return ether > 0 && ether < getMaxEther();
     }
 
     /**
-     * @return излишек, который не поместился в глинт
+     * Reads persisted Ether through the loader-neutral glint data owner.
+     *
+     * @param stack glint stack whose Ether is read
+     * @return stored Ether units, or zero when absent
+     */
+    public static Float getStoredEther(ItemStack stack) {
+        return GlintEtherData.getStoredEther(stack);
+    }
+
+    /**
+     * Adds Ether up to this glint's capacity and returns the remainder.
+     *
+     * @param stack glint stack receiving Ether
+     * @param maxEther capacity of the concrete glint type
+     * @param value Ether units offered
+     * @return Ether units that did not fit
      */
     public static float increment(ItemStack stack, float maxEther, float value) {
-        float storedEther = getStoredEther(stack);
-        float newEther = Math.min(storedEther + value, maxEther);
-        setStoredEther(stack, newEther);
-
-        return value + storedEther - newEther;
+        return GlintEtherData.increment(stack, maxEther, value);
     }
 
     /**
-     * @return количество забранного эфира
+     * Removes up to the requested Ether and returns the amount removed.
+     *
+     * @param stack glint stack supplying Ether
+     * @param value maximum Ether units to remove
+     * @return Ether units removed
      */
     public static float decrement(ItemStack stack, float value) {
-        float storedEther = getStoredEther(stack);
-        float newEther = Math.max(storedEther - value, 0);
-        setStoredEther(stack, newEther);
-
-        return storedEther - newEther;
+        return GlintEtherData.decrement(stack, value);
     }
 }

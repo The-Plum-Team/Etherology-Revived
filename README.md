@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
-| 1.20.1 | Forge | Active port; bootstrap and persistent storage/menu core accepted, release gate still closed |
+| 1.20.1 | Forge | Active port; bounded Ethereal Storage vertical accepted in native E2E, channel/network and release gates still closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -22,7 +22,8 @@ Forge artifacts are intentionally blocked until the remaining gameplay,
 client, native-loader, and E2E parity gates pass. See
 [`BUILDING.md`](BUILDING.md), the
 [`Forge 1.20.1 completion plan`](docs/porting/FORGE-1.20.1-COMPLETION-PLAN.md),
-and the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.md).
+the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.md),
+and the bounded [Forge 1.20.1 Ethereal Storage evidence](docs/evidence/forge-1.20.1/README.md).
 
 ## About Etherology
 

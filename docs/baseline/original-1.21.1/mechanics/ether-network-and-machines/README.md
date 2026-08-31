@@ -47,3 +47,36 @@ provenance are stored in
 [`report.json`](../../../../evidence/fabric-1.20.1/ether-network-v19/reports/report.json).
 The deterministic verifier measured a changed-pixel ratio of `0.432843` between
 the two native 1920x1080 Minecraft framebuffers.
+
+## Forge 1.20.1 Ethereal Storage record
+
+The isolated `etherology-e2e-forge-1.20.1-v7` client completed the bounded
+`ethereal-storage` scenario with 34 passing assertions and no failures. Its real
+integrated-world fixture verifies:
+
+- one four-slot Ethereal Storage block entity reconstructed from NBT;
+- Forge `ITEM_HANDLER` access on the unsided view and all six faces, including
+  simulated and live Glint insertion, blocked extraction, and the hidden display
+  slot;
+- transfer from 64 internal Ether plus a 64-Ether Glint while preserving 128
+  total Ether;
+- viewer open/close calls and the synchronized Gecko open/close animation;
+- the native menu before save and after a complete integrated-world restart;
+- exact Ether distribution, ordered input inventory, display state, and
+  block-entity type retained across forced save, disconnect, and restart.
+
+![Forge 1.20.1 Ethereal Storage closed](../../../../evidence/forge-1.20.1/ethereal-storage-v7/screenshots/ethereal-storage-closed.png)
+
+![Forge 1.20.1 Ethereal Storage open](../../../../evidence/forge-1.20.1/ethereal-storage-v7/screenshots/ethereal-storage-open.png)
+
+![Forge 1.20.1 Ethereal Storage menu before restart](../../../../evidence/forge-1.20.1/ethereal-storage-v7/screenshots/ethereal-storage-menu.png)
+
+![Forge 1.20.1 Ethereal Storage menu after restart](../../../../evidence/forge-1.20.1/ethereal-storage-v7/screenshots/ethereal-storage-reopened.png)
+
+The complete assertion inventory and artifact provenance are stored in
+[`report.json`](../../../../evidence/forge-1.20.1/ethereal-storage-v7/reports/report.json).
+The deterministic verifier measured `0.253670` changed pixels in the centered
+storage region from closed to open and only `0.001168` from the original closed
+frame to the closed-again frame. These captures and assertions accept only the
+bounded storage vertical; Forge channel transfer and the wider Ether network
+remain separate, release-blocking work.

@@ -34,3 +34,10 @@ mandatory=true
 versionRange="${architectury_version_range}"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.etherology]]
+modId="geckolib"
+mandatory=true
+versionRange="${geckolib_version_range}"
+ordering="AFTER"
+side="BOTH"

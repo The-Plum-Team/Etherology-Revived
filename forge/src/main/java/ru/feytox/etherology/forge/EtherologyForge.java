@@ -5,6 +5,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import ru.feytox.etherology.bootstrap.EtherologyBootstrap;
+import software.bernie.geckolib.GeckoLib;
 
 /**
  * Installs the Forge lifecycle adapter for Etherology.
@@ -20,6 +21,7 @@ public final class EtherologyForge {
     public EtherologyForge(FMLJavaModLoadingContext loadingContext) {
         IEventBus modEventBus = loadingContext.getModEventBus();
         EventBuses.registerModEventBus(EtherologyBootstrap.MOD_ID, modEventBus);
+        GeckoLib.initialize();
         EtherologyBootstrap.initialize(
                 new ForgePlatformRegistrar(modEventBus)
         );

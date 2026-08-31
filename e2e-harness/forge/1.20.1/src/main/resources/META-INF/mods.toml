@@ -1,0 +1,34 @@
+modLoader="javafml"
+loaderVersion="${forge_loader_range}"
+license="LGPL-2.1-only"
+
+[[mods]]
+modId="etherology_e2e_harness"
+version="${version}"
+displayName="Etherology Forge E2E Harness"
+authors="The Plum Team"
+description='''
+Client-only automation for repository-owned Etherology Forge end-to-end profiles.
+This test harness is never a release dependency or publication artifact.
+'''
+
+[[dependencies.etherology_e2e_harness]]
+modId="forge"
+mandatory=true
+versionRange="${forge_version_range}"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.etherology_e2e_harness]]
+modId="minecraft"
+mandatory=true
+versionRange="${minecraft_version_range}"
+ordering="NONE"
+side="CLIENT"
+
+[[dependencies.etherology_e2e_harness]]
+modId="etherology"
+mandatory=true
+versionRange="[${version}]"
+ordering="AFTER"
+side="CLIENT"

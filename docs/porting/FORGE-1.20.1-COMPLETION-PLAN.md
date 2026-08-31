@@ -5,10 +5,11 @@ complete Etherology gameplay port. It is intentionally stricter than a compilati
 each slice must own a coherent mechanic, preserve the canonical registry identifiers and save
 semantics, and finish with native runtime evidence before the release gate advances.
 
-The shared Ether item and the bounded persistent ethereal-storage/menu core are accepted
-foundations, not the finished port. Storage still lacks per-glint Ether arithmetic, native Forge
-item-handler capability lifecycle, synchronized Gecko animation, and native save/reload proof.
-Broad content migration must follow the ownership and dependency order below after those gaps.
+The shared Ether item and the bounded Ethereal Storage vertical are accepted foundations, not the
+finished port. Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler
+capability lifecycle, synchronized Gecko animation, and packaged save/restart/reopen proof. The
+ethereal channel/network gate is the first incomplete forward milestone. Broad content migration
+must still follow the ownership and dependency order below.
 
 ## Audit snapshot
 
@@ -167,10 +168,12 @@ Proof:
 - Two-client tests for tracking range, sender inclusion, and exclusion variants.
 - Native storage animation and Redstone Lens particle evidence when their owning slices land.
 
-### Slice 3: complete ethereal storage
+### Slice 3: complete ethereal storage — bounded milestone accepted
 
-The persistent inventory/menu core in this slice is implemented. The full slice remains open on
-the explicitly gated glint, Forge capability, animation/sync, and native-runtime proof below.
+The deliberately bounded shared-foundation vertical in this slice is implemented and accepted.
+Its declarations remain temporary owners that must be folded into the authoritative registry spine
+during convergence; acceptance here does not establish parity for the channel/network graph or any
+other Forge gameplay slice.
 
 Source owners:
 
@@ -182,8 +185,10 @@ Source owners:
   `SharedScreenHandlers`, and `EtherologyBootstrap`.
 - Supporting behavior: `ListBackedInventory`, `TypedSlot`, `ClosedSlot`, `GlintItem`,
   `EtherGlint`, `ComponentTypes.STORED_ETHER`, and the minimal Ether storage/counter contract.
-- Client completion: `EtherealStorageScreen`; later visual parity also needs
-  `EtherealStorageModel`, `EtherealStorageRenderer`, GeckoLib, and the animation packets.
+- Forge client completion: `EtherealStorageFoundationScreen`,
+  `EtherealStorageFoundationModel`, `EtherealStorageFoundationRenderer`, the canonical Gecko
+  resources, and Gecko's built-in trigger synchronization. This vertical does not add a parallel
+  Etherology animation packet.
 
 Mechanic contract:
 
@@ -192,31 +197,47 @@ Mechanic contract:
   state and cannot be directly modified by the player.
 - `Inventory.clear()` clears those three real inputs while retaining `storage_ether` and rebuilding
   the derived display slot immediately.
+- Persist per-Glint Ether under `etherology:components/stored_ether`, bounded to 128 per Glint.
+  Charge at most one Ether every fifth server tick, fill input slots from zero through two, and
+  keep the display slot derived from internal Ether only.
 - Open the menu only from the logical server and let the block entity own the inventory.
 - Implement correct quick-move, viewer lifecycle, dirty marking, and break-drop behavior.
-- Expose vanilla sided inventory behavior. Add Forge `ITEM_HANDLER` wrappers and invalidation when
-  general Forge automation interoperability is included; otherwise record it as a following
-  requirement rather than implying support.
+- Expose vanilla sided inventory behavior plus cached Forge `ITEM_HANDLER` wrappers for the
+  unsided view and all six faces. Expose only the three insertion slots, reject extraction, and
+  invalidate every `LazyOptional` with the block entity.
 - Register the menu with a shared deferred `ScreenHandlerType`. Register its Forge client screen
   from enqueued client setup and keep the class distribution-safe.
+- Drive one shared Gecko controller from first-viewer open and final-viewer close, using Gecko's
+  tracking synchronization for the open and close triggers.
 
-Proof:
+Accepted bounded proof:
 
 - Ether and four-slot NBT round trip.
-- Slot insertion, display-slot rejection, quick-move, and hopper tests.
-- Multiple-viewer open/close behavior.
-- Break drops the three real input slots exactly once.
+- Typed slot insertion and display-slot rejection, compiled quick-move structure, and Forge
+  item-handler automation behavior.
+- Viewer-count transitions, first/final-viewer guards, and native single-viewer animation.
+- Compiled logical-server break/drop ownership for the three input slots.
 - Place, open, insert, mutate ether, save, restart, and reopen in the native E2E scenario.
 - Before/after menu captures.
 
-The positive persistent storage/menu core gate has advanced. The first forward fail-closed gate
-remains on per-glint Ether arithmetic, invalidatable Forge `ITEM_HANDLER` interop, and synchronized
-Gecko viewer animation because those storage behaviors are not implemented. The next explicit
-`validateForgeChannelNetworkMilestone` is already in the release dependency graph; after storage
-parity and its native proof pass, that gate becomes the first incomplete stage automatically. The
-unconditional `validateForgeReleaseReadinessMilestone` follows it and cannot be satisfied by
-channel-shaped class or method stubs. The release graph must never remove or relax any stage merely
-to allow `remapJar`.
+Still required before full storage parity can contribute to release readiness:
+
+- a live hopper insertion sequence;
+- two concurrent real viewers proving first-open and final-close behavior;
+- a native block break proving that the three real inputs drop exactly once.
+
+The positive `validateForgeStorageParityMilestone` now covers the accepted bounded Common and Forge
+proof above; it does not claim the three deferred live checks. The packaged `ethereal-storage`
+scenario adds a real isolated Forge 47.4.9 client and
+integrated-world run: 34 of 34 assertions passed in 438 client ticks, with five native framebuffers,
+forced save, disconnect, restart, exact persistent-state comparison, and menu reopen. Its frozen
+record is the
+[`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md).
+
+`validateForgeChannelNetworkMilestone` is now the first incomplete stage in the release dependency
+graph. The unconditional `validateForgeReleaseReadinessMilestone` follows it and cannot be
+satisfied by channel-shaped class or method stubs, or by reusing the bounded storage evidence. The
+release graph must never remove or relax either stage merely to allow `remapJar`.
 
 ### Slice 4: static content and storage utilities
 
@@ -445,7 +466,8 @@ Required for Forge gameplay parity:
 
 - Forge 1.20.1-47.4.9.
 - Architectury API 9.2.14.
-- Loader-matched GeckoLib 4.8.4.
+- GeckoLib 4.8.4 for the shared compile API and Forge GeckoLib 4.7.4 at runtime, constrained by
+  metadata to the compatible `[4.7.4,5)` range.
 - MixinExtras 0.5.0 whenever retained MixinExtras injectors are enabled.
 - Lombok 1.18.36 as compile-only plus annotation processor for common sources that use it.
 - Curios Forge for Prana Vision parity.

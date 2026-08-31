@@ -190,11 +190,104 @@ network behavior with storage endpoints and native Forge lever support. Channel
 case interaction and registration, channel particles and the client ticker,
 channel loot and recipe data, and the wider machine/network graph remain
 deferred. The bounded SharedSounds, SharedGameEvents, SharedLootConditions, and
-SharedEnchantments registry foundation has since passed, but no native
-sound-playback or enchantment-gameplay E2E was run. The broader authoritative
-registry spine is the next forward gate. The Forge release gate remains closed.
+SharedEnchantments registry foundation has since passed. The exact shared
+particle registry and server-side wire contract have also passed, but no native
+sound-playback, enchantment-gameplay, or particle-rendering E2E was run. The
+broader authoritative registry spine is the next forward gate. The Forge
+release gate remains closed.
 
-## Current enchantment-registry dedicated server (v7)
+## Current particle-registry dedicated server (v10)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v10`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v10`
+- Scenario: `particle-registry`
+- Tracked profile manifest SHA-256:
+  `5b3def0df2aacfea5db04b92975925c25223f117941ceb576cc6b3e6616f14e4`
+- Tracked profile manifest size: `1190` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: fresh repository-owned Loom-userdev dedicated server
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `6`; archive-manifest schema: `1`
+- Report status: `passed`
+- Assertions: `138` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f`
+
+`SharedParticleTypes` is the sole Common deferred owner of exactly these 22
+particle-type IDs:
+
+```text
+light, steam, spark, electricity1, electricity2, item, rising, vital,
+shockwave, glint_particle, energy_absorption, armillary_sphere, haze, alchemy,
+ether_star, ether_dot, resonation, lightning_bolt, scalable_sweep,
+redstone_flash, redstone_stream, seal
+```
+
+The native server resolved that exact Etherology registry membership and no
+capture error. It checked the canonical `simple`, `moving`, `electricity`,
+`item`, `light`, `scalable`, `seal`, and `spark` payload families, their
+concrete particle types, `shouldAlwaysSpawn = false`, codecs, parameter
+factories, sample effect/type identities, command strings, packet round trips,
+codec round trips, and the exact seal order, colors, and texture identifiers.
+The item command parser round-tripped `minecraft:diamond`; the port uses
+`Identifier.fromCommandInput` so the namespace separator is consumed instead
+of truncating the identifier before `:`.
+
+The registry and wire observations matched after the initial server-data load,
+at `ServerStartedEvent`, and after a real `reload`. The cumulative report also
+reproved the accepted enchantment, game-event/tag, loot-condition, and
+Ether-source contracts. The exact lifecycle was `tags_updated_initial`,
+`server_started`, `reload_requested`, `tags_updated_reload`,
+`reload_command_returned`, `stop_requested`, `server_stopping`, and
+`server_stopped`. The world saved, normal `stop(false)` completed, the launcher
+exited zero, and the copied log contains no `ERROR`, `FATAL`, or client-startup
+marker.
+
+Frozen file digests:
+
+- `particle-registry-server-v10/archive-manifest.json`:
+  `29fddf549c4b8728911fe1d048816d0353256ef7a7e533b62d0461249c485ed1`
+- `particle-registry-server-v10/reports/report.json`:
+  `ab829d182e648385f6052fea469bef3a18a6a972f0baa98be6b83569897f3d75`
+- `particle-registry-server-v10/reports/launcher-result.json`:
+  `5e5fa2e942b271eac607efd3dd6a8c5f4c8a7f22fd6912fa3952ef9a8801eec3`
+- `particle-registry-server-v10/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `particle-registry-server-v10/logs/latest.log`:
+  `44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f`
+
+Validate the five-file archive without the ignored live runtime:
+
+```bash
+python3 -B scripts/e2e/forge_server_particle_evidence_v10.py \
+  --archive docs/evidence/forge-1.20.1/particle-registry-server-v10
+```
+
+```text
+Validated archived particle-registry for etherology-e2e-forge-server-1.20.1-v10: 138 assertions
+Server log SHA-256: 44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+`validateForgeParticleRegistryServerEvidenceArchiveIntegrity` validates this
+immutable archive and its pinned v10 runner/verifier contract.
+`validateForgeParticleRegistryMilestone` combines it with the current Common,
+Fabric, Forge, bytecode, artifact, bootstrap, and isolation checks. The archive
+proves its capture-time observations and payload integrity; it does not by
+itself prove identity with later source or rebuilt artifacts.
+
+This is a headless registry and wire-format milestone. It neither installs nor
+exercises Forge client particle factories or renderers, and it produces no
+screenshots. Native visual behavior, particle-emitting mechanics, full client
+parity, the remaining authoritative registry spine, and release readiness stay
+behind later client and gameplay evidence.
+
+## Historical enchantment-registry dedicated server (v7)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v7`
 - Runtime directory:
@@ -369,7 +462,8 @@ This bounded record does not prove furnace or machine consumption, the wider
 Ether network, the full authoritative registry, native sound playback, Forge
 custom sculk-frequency behavior, Attrahite drops, or release readiness. It is
 retained as immutable historical proof; the cumulative v7 enchantment-registry
-section is the current dedicated-server proof.
+section remains its successor, and the cumulative v10 particle-registry section
+is the current dedicated-server proof.
 
 ## Historical registry-foundation dedicated server (v4)
 
@@ -467,7 +561,7 @@ evidence predates this registry rebuild.
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v7 enchantment-registry archive is the current
+registry-foundation proof. The v10 particle-registry archive is the current
 cumulative dedicated-server proof. No current acceptance task or verifier
 treats v2 as the active archive.
 
@@ -550,4 +644,5 @@ full registry-ID manifest, every catalog entry's placement/save behavior, or
 the remaining gameplay and native E2E matrix. The Forge release gate remains
 closed on the broader authoritative registry spine. The v4 section above is
 the superseding registry-foundation proof; v6 is the historical Ether-source
-reload proof, and v7 is the current cumulative dedicated-server proof.
+reload proof, v7 is the historical enchantment-registry proof, and v10 is the
+current cumulative dedicated-server proof.

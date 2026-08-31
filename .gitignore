@@ -39,6 +39,8 @@ crash-reports/
 # Frozen Forge evidence logs are repository artifacts, not runtime logs.
 !/docs/evidence/forge-1.20.1/enchantment-registry-server-v7/logs/
 !/docs/evidence/forge-1.20.1/enchantment-registry-server-v7/logs/latest.log
+!/docs/evidence/forge-1.20.1/particle-registry-server-v10/logs/
+!/docs/evidence/forge-1.20.1/particle-registry-server-v10/logs/latest.log
 
 # java
 

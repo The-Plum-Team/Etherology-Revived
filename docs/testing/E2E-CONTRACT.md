@@ -1,12 +1,14 @@
-# Packaged end-to-end test contract
+# End-to-end test contract
 
-Etherology's E2E gate uses a production-plus-harness architecture. A test run
-launches only Etherology's exact staged production JAR and its required runtime
-libraries in a real client. Scenarios use a real integrated server or disposable
-dedicated server according to the behavior under test. The automation code is
-delivered as a separate client-only JAR and must never be included in a published
-mod. No architecture-reference project code or JAR is built, launched, copied into
-a profile, or treated as an E2E target.
+Etherology uses two explicit E2E evidence modes. Packaged-client scenarios launch
+Etherology's exact staged production JAR and required runtime libraries in a real
+client; their automation is a separate client-only JAR that must never enter a
+published mod. Headless Forge registry scenarios launch checked-out production
+source-set output through the pinned Loom-userdev dedicated-server task plus a
+separate server-only probe that must never enter the production artifact. Every
+scenario uses a fresh repository-owned runtime, and no architecture-reference
+project code or JAR is built, launched, copied into a profile, or treated as an
+E2E target.
 
 ## Target matrix
 
@@ -58,7 +60,7 @@ profile. Its exact ordered scenario inventory is `ethereal-storage`, then
 `ethereal-channel`; an absent property defaults to `ethereal-storage`. An explicit
 id must match one of those two values without whitespace normalization.
 
-## Evidence lifecycle
+## Packaged-client evidence lifecycle
 
 1. Build and stage the production and E2E JARs.
 2. Record and verify the SHA-256 of both JARs before launch. Loader-specific
@@ -80,6 +82,24 @@ id must match one of those two values without whitespace normalization.
 10. Validate dimensions, hashes, blank-image probes, logs, crashes, step order,
     world lifecycle, and production-JAR identity before declaring the lane
     successful.
+
+## Headless Loom-userdev evidence lifecycle
+
+1. Build and test the production source sets and separate server probe, then
+   prove that probe classes are absent from production artifacts.
+2. Bind the exact tracked profile-manifest bytes, Minecraft/Forge/Java pins,
+   named Loom task, required mod IDs, and forbidden client/foreign mod IDs.
+3. Provision exactly one new repository-owned runtime. Never adopt, clean, or
+   replace a prior capture directory.
+4. Launch the offline dedicated server from the checked-out source-set output;
+   no client harness or staged production JAR is part of this evidence mode.
+5. Drive the scenario on server lifecycle events and commands, capture registry
+   state at its declared checkpoints, and force-save the world.
+6. Atomically publish the report, validate and copy the server log, publish the
+   launcher result, then write `done.marker` last after normal shutdown.
+7. Reject assertion, lifecycle, timeout, crash, fatal-log, forbidden mod/class,
+   saved-world, publication-order, or profile-binding failures. Headless
+   scenarios neither wait for render callbacks nor create screenshots.
 
 ## Standard scenarios
 
@@ -109,23 +129,26 @@ not replace any standard scenario or establish complete loader readiness.
 | `ethereal-storage` | `forge-1.20.1` | Bounded Ethereal Storage vertical in a fresh integrated world: four-slot block entity and NBT reconstruction; per-Glint Ether transfer with exact-total conservation; Forge item-handler access on the unsided view and all six faces with simulated/live insertion, blocked extraction, and hidden display slot; viewer open/close and synchronized Gecko animation; native menu; closed/open/closed-again plus pre-restart and post-restart menu captures; forced save, full disconnect/restart, exact Ether distribution, ordered input inventory, display state, block-entity type, and menu reopen. This scenario does not satisfy `ether-network`, general `persistence`, multiplayer, or full-loader readiness. |
 | `ethereal-channel` | `forge-1.20.1` | Bounded directed-channel vertical in a fresh integrated world and forced fixture chunk: exact channel/storage block and block-entity ids at non-overlapping fixture positions; redstone-fed powered repeaters provide exact strong power from the full solid arena floor while temporary support blocks are replaced by channels, then the first scheduled server tick resolves ACTIVATED with source-above `up=in` and target-east `east=out` without any manual neighbor refresh; an independent vanilla wall lever remains attached to a channel after natural propagation, reports `canPlaceAt=true`, produces the exact `north=in`, `east=out`, `west=empty`, cross topology, mirrors to the client, and survives save/restart; a strongly powered channel receives and retains exactly one Ether without forwarding; natural power removal transfers exactly one Ether on the fifth-tick cadence with total conservation and no reverse motion; a missing output evaporates exactly 0.2 Ether and exposes then naturally clears its evaporation flags after natural reactivation; channel NBT reconstruction and client sync; gated, transferred, and reopened 1920×1080 captures after 120 consecutive exact client/terrain-ready frames at the fixed first-person camera pose, with capture-time mirror, renderer, and camera assertions; forced save, full disconnect/restart, exact server state, and exact block-entity types. Storage Ether distribution is a server oracle because the storage foundation has no client update packet. This scenario does not satisfy the complete `ether-network`, general `persistence`, multiplayer, or full-loader readiness contracts. |
 | `ether-source-reload` | `forge-1.20.1` | Bounded dedicated-server data-reload vertical in a fresh repository-owned Loom-userdev profile: Common is the sole listener/default-data owner; exact initial 23-entry map with corrected `etherology:primoshard_rella = 4` and `minecraft:redstone = 2`; a real `reload` command with an enabled probe pack; exact reloaded 24-entry map with `minecraft:redstone = 9.5` and added `minecraft:diamond = 13`; stable game-event registry and tags; stable loot-condition registry and evaluated behavior while the probe `LootTable` instance is replaced; world save, normal stop, exit code zero, and no `ERROR` or `FATAL` marker. This headless scenario requires no screenshots and does not satisfy furnace/machine consumption, the wider Ether network, the full authoritative registry, sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness. |
-| `enchantment-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload proof in a fresh repository-owned Loom-userdev profile: Common owns exactly `etherology:peal` and `etherology:reflection` through `ru.feytox.etherology.registry.misc.PealEnchantment` and `ru.feytox.etherology.registry.misc.ReflectionEnchantment`; Peal has maximum level 3, minimum powers `1, 12, 23`, and maximum powers `21, 32, 43`; Reflection has maximum level 1, minimum power `1`, and maximum power `21`; both are the only Etherology entries in the singular `minecraft:non_treasure` tag; exact registry identities, properties, and tag membership remain stable at server start and through a real `reload`; the previously accepted game-event, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or client-only marker. This headless scenario requires no screenshots and does not prove enchantment applicability, Peal shockwaves, projectile reflection, client visuals, complete combat parity, the full authoritative registry, or release readiness. |
+| `enchantment-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: Common owns exactly `etherology:peal` and `etherology:reflection` through `ru.feytox.etherology.registry.misc.PealEnchantment` and `ru.feytox.etherology.registry.misc.ReflectionEnchantment`; Peal has maximum level 3, minimum powers `1, 12, 23`, and maximum powers `21, 32, 43`; Reflection has maximum level 1, minimum power `1`, and maximum power `21`; both are the only Etherology entries in the singular `minecraft:non_treasure` tag; exact registry identities, properties, and tag membership remain stable at server start and through a real `reload`; the previously accepted game-event, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and does not prove enchantment applicability, Peal shockwaves, projectile reflection, client visuals, complete combat parity, the full authoritative registry, or release readiness. |
+| `particle-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload proof in a fresh repository-owned Loom-userdev profile: `SharedParticleTypes` owns the exact 22 canonical IDs; exact type classes, eight payload families, `shouldAlwaysSpawn = false`, codecs, parameter factories, sample command strings, packet/codec round trips, and seal order/colors/textures are captured without error and remain stable at server start and through a real `reload`; the item parser accepts namespaced IDs; all historical enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and does not install or exercise Forge client particle factories/renderers, emitted visuals, gameplay consumers, the full authoritative registry, or release readiness. |
 
-The current accepted cumulative record is `enchantment-registry` report schema
-5 with 95 of 95 passing assertions in
-`docs/evidence/forge-1.20.1/enchantment-registry-server-v7`. It binds
+The current accepted cumulative record is `particle-registry` report schema 6
+with 138 of 138 passing assertions in
+`docs/evidence/forge-1.20.1/particle-registry-server-v10`. It binds
 profile-manifest SHA-256
-`36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`,
+`5b3def0df2aacfea5db04b92975925c25223f117941ceb576cc6b3e6616f14e4`,
 report SHA-256
-`1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`,
+`ab829d182e648385f6052fea469bef3a18a6a972f0baa98be6b83569897f3d75`,
 server-log SHA-256
-`b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
+`44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f`,
 and archive-manifest SHA-256
-`377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
-The v6 `ether-source-reload` archive remains historical evidence; its accepted
-state is included in and superseded by the cumulative v7 runtime proof. Frozen
-archives prove capture-time integrity; current-source or rebuilt-artifact
-identity still requires a new isolated native run.
+`29fddf549c4b8728911fe1d048816d0353256ef7a7e533b62d0461249c485ed1`.
+The v6 `ether-source-reload` and v7 `enchantment-registry` archives remain
+historical evidence; their accepted states are included in and superseded by
+the cumulative v10 runtime proof. This Loom-userdev record binds the checked-out
+source-set execution, not a packaged Forge JAR. Frozen archives prove
+capture-time integrity; current-source or rebuilt-artifact identity still
+requires a new isolated native run.
 
 ## Screenshot contract
 
@@ -145,7 +168,10 @@ identity still requires a new isolated native run.
 
 ## Failure policy
 
-The gate fails for any missing or unexpected step, assertion failure, missing or
-blank screenshot, wrong dimensions, unapproved crash report, fatal mixin/access
-widener/linkage/mod-loading log marker, evidence over the configured bound, or a
-production JAR whose digest differs from the staged release manifest.
+The gate fails for any missing or unexpected step, assertion failure, unapproved
+crash report, fatal mixin/access-widener/linkage/mod-loading log marker, or
+evidence over the configured bound. A packaged-client scenario also fails for a
+missing or blank screenshot, wrong dimensions, or a production JAR whose digest
+differs from the staged release manifest. A headless Loom-userdev scenario
+instead fails when its exact profile, source-set task, probe isolation, or
+publication contract does not match.

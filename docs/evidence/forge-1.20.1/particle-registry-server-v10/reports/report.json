@@ -1,0 +1,1500 @@
+{
+  "schema": 6,
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v10",
+  "scenario": "particle-registry",
+  "status": "passed",
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "loader_version": "47.4.9",
+  "java": 17,
+  "distribution": "DEDICATED_SERVER",
+  "runtime_kind": "loom-userdev",
+  "loaded_mod_ids": [
+    "architectury",
+    "etherology",
+    "etherology_e2e_server_probe",
+    "forge",
+    "geckolib",
+    "generated_9d60eac",
+    "minecraft"
+  ],
+  "forbidden_mod_ids_loaded": [],
+  "mods": {
+    "etherology": {
+      "loaded": true
+    },
+    "etherology_e2e_server_probe": {
+      "loaded": true
+    },
+    "etherology_e2e_harness": {
+      "loaded": false
+    },
+    "quickskin": {
+      "loaded": false
+    },
+    "cpm": {
+      "loaded": false
+    },
+    "ears": {
+      "loaded": false
+    },
+    "modmenu": {
+      "loaded": false
+    },
+    "roughlyenoughitems": {
+      "loaded": false
+    },
+    "emi": {
+      "loaded": false
+    }
+  },
+  "registry": {
+    "registry_id": "minecraft:game_event",
+    "event_id": "etherology:etherology_resonance",
+    "etherology_event_ids": [
+      "etherology:etherology_resonance"
+    ],
+    "internal_id": "etherology_resonance",
+    "range": 16,
+    "same_instance_at_server_started": true,
+    "stable_after_reload": true
+  },
+  "enchantments": {
+    "registry_id": "minecraft:enchantment",
+    "non_treasure_tag_id": "minecraft:non_treasure",
+    "etherology_enchantment_ids": [
+      "etherology:peal",
+      "etherology:reflection"
+    ],
+    "peal": {
+      "id": "etherology:peal",
+      "class": "ru.feytox.etherology.registry.misc.PealEnchantment",
+      "max_level": 3,
+      "min_powers": [
+        1,
+        12,
+        23
+      ],
+      "max_powers": [
+        21,
+        32,
+        43
+      ],
+      "in_non_treasure": true
+    },
+    "reflection": {
+      "id": "etherology:reflection",
+      "class": "ru.feytox.etherology.registry.misc.ReflectionEnchantment",
+      "max_level": 1,
+      "min_powers": [
+        1
+      ],
+      "max_powers": [
+        21
+      ],
+      "in_non_treasure": true
+    },
+    "non_treasure_etherology_enchantment_ids": [
+      "etherology:peal",
+      "etherology:reflection"
+    ],
+    "same_state_at_server_started": true,
+    "registry_stable_after_reload": true,
+    "properties_stable_after_reload": true,
+    "tag_stable_after_reload": true
+  },
+  "particles": {
+    "registry_id": "minecraft:particle_type",
+    "capture_error": "",
+    "etherology_particle_ids": [
+      "etherology:alchemy",
+      "etherology:armillary_sphere",
+      "etherology:electricity1",
+      "etherology:electricity2",
+      "etherology:energy_absorption",
+      "etherology:ether_dot",
+      "etherology:ether_star",
+      "etherology:glint_particle",
+      "etherology:haze",
+      "etherology:item",
+      "etherology:light",
+      "etherology:lightning_bolt",
+      "etherology:redstone_flash",
+      "etherology:redstone_stream",
+      "etherology:resonation",
+      "etherology:rising",
+      "etherology:scalable_sweep",
+      "etherology:seal",
+      "etherology:shockwave",
+      "etherology:spark",
+      "etherology:steam",
+      "etherology:vital"
+    ],
+    "payload_families": [
+      "electricity",
+      "item",
+      "light",
+      "moving",
+      "scalable",
+      "seal",
+      "simple",
+      "spark"
+    ],
+    "entries": {
+      "alchemy": {
+        "id": "etherology:alchemy",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:alchemy",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "armillary_sphere": {
+        "id": "etherology:armillary_sphere",
+        "family": "moving",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.MovingParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:armillary_sphere 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "electricity1": {
+        "id": "etherology:electricity1",
+        "family": "electricity",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.ElectricityParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:electricity1 SIMPLE",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "electricity2": {
+        "id": "etherology:electricity2",
+        "family": "electricity",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.ElectricityParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:electricity2 MATRIX",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "energy_absorption": {
+        "id": "etherology:energy_absorption",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:energy_absorption",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "ether_dot": {
+        "id": "etherology:ether_dot",
+        "family": "moving",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.MovingParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:ether_dot 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "ether_star": {
+        "id": "etherology:ether_star",
+        "family": "moving",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.MovingParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:ether_star 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "glint_particle": {
+        "id": "etherology:glint_particle",
+        "family": "moving",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.MovingParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:glint_particle 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "haze": {
+        "id": "etherology:haze",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:haze",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "item": {
+        "id": "etherology:item",
+        "family": "item",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.ItemParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:item minecraft:diamond 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "light": {
+        "id": "etherology:light",
+        "family": "light",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.LightParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:light SIMPLE 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "lightning_bolt": {
+        "id": "etherology:lightning_bolt",
+        "family": "scalable",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.ScalableParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:lightning_bolt 1.5",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "redstone_flash": {
+        "id": "etherology:redstone_flash",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:redstone_flash",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "redstone_stream": {
+        "id": "etherology:redstone_stream",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:redstone_stream",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "resonation": {
+        "id": "etherology:resonation",
+        "family": "scalable",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.ScalableParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:resonation 1.5",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "rising": {
+        "id": "etherology:rising",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:rising",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "scalable_sweep": {
+        "id": "etherology:scalable_sweep",
+        "family": "scalable",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.ScalableParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:scalable_sweep 1.5",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "seal": {
+        "id": "etherology:seal",
+        "family": "seal",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SealParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:seal KETA 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "shockwave": {
+        "id": "etherology:shockwave",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:shockwave",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "spark": {
+        "id": "etherology:spark",
+        "family": "spark",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SparkParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:spark 1.0 2.0 3.0 JEWELRY",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "steam": {
+        "id": "etherology:steam",
+        "family": "simple",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.SimpleParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:steam",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      },
+      "vital": {
+        "id": "etherology:vital",
+        "family": "moving",
+        "type_class": "ru.feytox.etherology.particle.effects.misc.FeyParticleType",
+        "should_always_spawn": false,
+        "codec_present": true,
+        "parameters_factory_present": true,
+        "factory_sample_effect_class": "ru.feytox.etherology.particle.effects.MovingParticleEffect",
+        "factory_sample_type_matches": true,
+        "factory_sample_as_string": "etherology:vital 1.0 2.0 3.0",
+        "packet_round_trip_exact": true,
+        "codec_round_trip_exact": true
+      }
+    },
+    "seal_types": {
+      "order": [
+        "EMPTY",
+        "KETA",
+        "RELLA",
+        "VIA",
+        "CLOS"
+      ],
+      "codec_round_trips_exact": true,
+      "entries": {
+        "empty": {
+          "enum_name": "EMPTY",
+          "as_string": "empty"
+        },
+        "keta": {
+          "enum_name": "KETA",
+          "as_string": "keta",
+          "start_color": "128,205,247",
+          "end_color": "105,128,231",
+          "texture_id": "etherology:textures/block/keta_seal.png",
+          "texture_light_id": "etherology:textures/block/keta_seal_light.png"
+        },
+        "rella": {
+          "enum_name": "RELLA",
+          "as_string": "rella",
+          "start_color": "177,229,106",
+          "end_color": "106,182,81",
+          "texture_id": "etherology:textures/block/rella_seal.png",
+          "texture_light_id": "etherology:textures/block/rella_seal_light.png"
+        },
+        "via": {
+          "enum_name": "VIA",
+          "as_string": "via",
+          "start_color": "248,122,95",
+          "end_color": "205,58,76",
+          "texture_id": "etherology:textures/block/via_seal.png",
+          "texture_light_id": "etherology:textures/block/via_seal_light.png"
+        },
+        "clos": {
+          "enum_name": "CLOS",
+          "as_string": "clos",
+          "start_color": "106,182,81",
+          "end_color": "208,158,89",
+          "texture_id": "etherology:textures/block/clos_seal.png",
+          "texture_light_id": "etherology:textures/block/clos_seal_light.png"
+        }
+      }
+    },
+    "same_state_at_server_started": true,
+    "registry_stable_after_reload": true,
+    "type_contract_stable_after_reload": true,
+    "wire_contract_stable_after_reload": true
+  },
+  "loot_condition": {
+    "registry_id": "minecraft:loot_condition_type",
+    "condition_id": "etherology:random_chance_with_fortune",
+    "etherology_condition_ids": [
+      "etherology:random_chance_with_fortune"
+    ],
+    "serializer_class": "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer",
+    "probe_table_id": "etherology_e2e_server_probe:registry_foundation",
+    "empty_tool_items": [
+      "minecraft:gold_ingot",
+      "minecraft:stone"
+    ],
+    "fortune_one_items": [
+      "minecraft:diamond",
+      "minecraft:gold_ingot",
+      "minecraft:stone"
+    ],
+    "same_state_at_server_started": true,
+    "registry_and_behavior_stable_after_reload": true,
+    "probe_table_instance_replaced_after_reload": true
+  },
+  "ether_sources": {
+    "listener_class": "ru.feytox.etherology.data.ethersource.EtherSourceLoader",
+    "resource_directory": "ether_sources",
+    "initial": {
+      "capture_error": "",
+      "entries": {
+        "etherology:primoshard_clos": 4.0,
+        "etherology:primoshard_keta": 4.0,
+        "etherology:primoshard_rella": 4.0,
+        "etherology:primoshard_via": 4.0,
+        "minecraft:ancient_debris": 4.0,
+        "minecraft:blaze_powder": 2.0,
+        "minecraft:chorus_fruit": 2.0,
+        "minecraft:crying_obsidian": 6.0,
+        "minecraft:echo_shard": 12.0,
+        "minecraft:ender_eye": 6.0,
+        "minecraft:ender_pearl": 4.0,
+        "minecraft:experience_bottle": 8.0,
+        "minecraft:ghast_tear": 4.0,
+        "minecraft:glowstone_dust": 1.0,
+        "minecraft:gunpowder": 1.0,
+        "minecraft:heart_of_the_sea": 12.0,
+        "minecraft:honeycomb": 1.0,
+        "minecraft:lapis_lazuli": 1.0,
+        "minecraft:magma_cream": 2.0,
+        "minecraft:prismarine_crystals": 1.0,
+        "minecraft:quartz": 1.0,
+        "minecraft:redstone": 2.0,
+        "minecraft:sculk": 12.0
+      }
+    },
+    "server_started": {
+      "capture_error": "",
+      "entries": {
+        "etherology:primoshard_clos": 4.0,
+        "etherology:primoshard_keta": 4.0,
+        "etherology:primoshard_rella": 4.0,
+        "etherology:primoshard_via": 4.0,
+        "minecraft:ancient_debris": 4.0,
+        "minecraft:blaze_powder": 2.0,
+        "minecraft:chorus_fruit": 2.0,
+        "minecraft:crying_obsidian": 6.0,
+        "minecraft:echo_shard": 12.0,
+        "minecraft:ender_eye": 6.0,
+        "minecraft:ender_pearl": 4.0,
+        "minecraft:experience_bottle": 8.0,
+        "minecraft:ghast_tear": 4.0,
+        "minecraft:glowstone_dust": 1.0,
+        "minecraft:gunpowder": 1.0,
+        "minecraft:heart_of_the_sea": 12.0,
+        "minecraft:honeycomb": 1.0,
+        "minecraft:lapis_lazuli": 1.0,
+        "minecraft:magma_cream": 2.0,
+        "minecraft:prismarine_crystals": 1.0,
+        "minecraft:quartz": 1.0,
+        "minecraft:redstone": 2.0,
+        "minecraft:sculk": 12.0
+      }
+    },
+    "reloaded": {
+      "capture_error": "",
+      "entries": {
+        "etherology:primoshard_clos": 4.0,
+        "etherology:primoshard_keta": 4.0,
+        "etherology:primoshard_rella": 4.0,
+        "etherology:primoshard_via": 4.0,
+        "minecraft:ancient_debris": 4.0,
+        "minecraft:blaze_powder": 2.0,
+        "minecraft:chorus_fruit": 2.0,
+        "minecraft:crying_obsidian": 6.0,
+        "minecraft:diamond": 13.0,
+        "minecraft:echo_shard": 12.0,
+        "minecraft:ender_eye": 6.0,
+        "minecraft:ender_pearl": 4.0,
+        "minecraft:experience_bottle": 8.0,
+        "minecraft:ghast_tear": 4.0,
+        "minecraft:glowstone_dust": 1.0,
+        "minecraft:gunpowder": 1.0,
+        "minecraft:heart_of_the_sea": 12.0,
+        "minecraft:honeycomb": 1.0,
+        "minecraft:lapis_lazuli": 1.0,
+        "minecraft:magma_cream": 2.0,
+        "minecraft:prismarine_crystals": 1.0,
+        "minecraft:quartz": 1.0,
+        "minecraft:redstone": 9.5,
+        "minecraft:sculk": 12.0
+      }
+    },
+    "same_at_server_started": true,
+    "changed_after_reload": true
+  },
+  "reload": {
+    "pack_directory": "etherology-e2e-ether-source-reload",
+    "pack_resources": [
+      "pack.mcmeta",
+      "data/etherology/ether_sources/default.json",
+      "data/etherology/ether_sources/probe_addition.json"
+    ],
+    "enabled_pack_name": "file/etherology-e2e-ether-source-reload",
+    "enabled_data_pack_names": [
+      "file/etherology-e2e-ether-source-reload",
+      "mod:architectury",
+      "mod:etherology",
+      "mod:etherology_e2e_server_probe",
+      "mod:forge",
+      "mod:geckolib",
+      "mod:generated_9d60eac",
+      "vanilla"
+    ],
+    "enabled_data_packs_exact": true,
+    "command": "reload",
+    "command_result": 0,
+    "failure": "",
+    "completed": true,
+    "update_cause": "SERVER_DATA_LOAD",
+    "should_update_static_data": true,
+    "registry_stable": true,
+    "tags_stable": true,
+    "loot_condition_registry_and_behavior_stable": true,
+    "loot_table_instance_replaced": true,
+    "enchantment_registry_stable": true,
+    "enchantment_properties_stable": true,
+    "enchantment_tag_stable": true,
+    "particle_registry_stable": true,
+    "particle_type_contract_stable": true,
+    "particle_wire_contract_stable": true,
+    "stop_requested_after_completion": true
+  },
+  "tags": {
+    "update_cause": "SERVER_DATA_LOAD",
+    "should_update_static_data": true,
+    "update_count": 2,
+    "reload_update_cause": "SERVER_DATA_LOAD",
+    "reload_should_update_static_data": true,
+    "vibrations": {
+      "id": "minecraft:vibrations",
+      "contains_event": true,
+      "etherology_event_ids": [
+        "etherology:etherology_resonance"
+      ]
+    },
+    "warden_can_listen": {
+      "id": "minecraft:warden_can_listen",
+      "contains_event": true,
+      "etherology_event_ids": [
+        "etherology:etherology_resonance"
+      ]
+    },
+    "etherology_tag_ids": [
+      "minecraft:vibrations",
+      "minecraft:warden_can_listen"
+    ],
+    "same_membership_at_server_started": true,
+    "stable_after_reload": true
+  },
+  "lifecycle": [
+    "tags_updated_initial",
+    "server_started",
+    "reload_requested",
+    "tags_updated_reload",
+    "reload_command_returned",
+    "stop_requested",
+    "server_stopping",
+    "server_stopped"
+  ],
+  "assertions": [
+    {
+      "name": "distribution_dedicated_server",
+      "passed": true,
+      "expected": "DEDICATED_SERVER",
+      "actual": "DEDICATED_SERVER"
+    },
+    {
+      "name": "runtime_kind_loom_userdev",
+      "passed": true,
+      "expected": "loom-userdev",
+      "actual": "loom-userdev"
+    },
+    {
+      "name": "mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "mod_loaded:etherology_e2e_server_probe",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "mod_absent:etherology_e2e_harness",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:quickskin",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:cpm",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:ears",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:modmenu",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:roughlyenoughitems",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mod_absent:emi",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "mods_forbidden_intersection_empty",
+      "passed": true,
+      "expected": "none",
+      "actual": "none"
+    },
+    {
+      "name": "registry:game_event:etherology:etherology_resonance",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:game_event_etherology_ids_exact",
+      "passed": true,
+      "expected": "etherology:etherology_resonance",
+      "actual": "etherology:etherology_resonance"
+    },
+    {
+      "name": "registry_internal_id",
+      "passed": true,
+      "expected": "etherology_resonance",
+      "actual": "etherology_resonance"
+    },
+    {
+      "name": "registry_range",
+      "passed": true,
+      "expected": "16",
+      "actual": "16"
+    },
+    {
+      "name": "registry:enchantment:etherology:peal",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:enchantment:etherology:reflection",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:enchantment_etherology_ids_exact",
+      "passed": true,
+      "expected": "etherology:peal,etherology:reflection",
+      "actual": "etherology:peal,etherology:reflection"
+    },
+    {
+      "name": "enchantment:peal_class",
+      "passed": true,
+      "expected": "ru.feytox.etherology.registry.misc.PealEnchantment",
+      "actual": "ru.feytox.etherology.registry.misc.PealEnchantment"
+    },
+    {
+      "name": "enchantment:reflection_class",
+      "passed": true,
+      "expected": "ru.feytox.etherology.registry.misc.ReflectionEnchantment",
+      "actual": "ru.feytox.etherology.registry.misc.ReflectionEnchantment"
+    },
+    {
+      "name": "enchantment:peal_max_level",
+      "passed": true,
+      "expected": "3",
+      "actual": "3"
+    },
+    {
+      "name": "enchantment:peal_min_power_level_1",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "enchantment:peal_min_power_level_2",
+      "passed": true,
+      "expected": "12",
+      "actual": "12"
+    },
+    {
+      "name": "enchantment:peal_min_power_level_3",
+      "passed": true,
+      "expected": "23",
+      "actual": "23"
+    },
+    {
+      "name": "enchantment:peal_max_power_level_1",
+      "passed": true,
+      "expected": "21",
+      "actual": "21"
+    },
+    {
+      "name": "enchantment:peal_max_power_level_2",
+      "passed": true,
+      "expected": "32",
+      "actual": "32"
+    },
+    {
+      "name": "enchantment:peal_max_power_level_3",
+      "passed": true,
+      "expected": "43",
+      "actual": "43"
+    },
+    {
+      "name": "enchantment:reflection_max_level",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "enchantment:reflection_min_power_level_1",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "enchantment:reflection_max_power_level_1",
+      "passed": true,
+      "expected": "21",
+      "actual": "21"
+    },
+    {
+      "name": "tag:enchantment_non_treasure_contains_peal",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tag:enchantment_non_treasure_contains_reflection",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tag:enchantment_non_treasure_etherology_entries_exact",
+      "passed": true,
+      "expected": "etherology:peal,etherology:reflection",
+      "actual": "etherology:peal,etherology:reflection"
+    },
+    {
+      "name": "enchantments_captured_after_server_data_load",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_enchantments_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "enchantment_registry_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "enchantment_properties_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "enchantment_tag_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "registry:particle_type:etherology:alchemy",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:armillary_sphere",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:electricity1",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:electricity2",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:energy_absorption",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:ether_dot",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:ether_star",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:glint_particle",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:haze",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:item",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:light",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:lightning_bolt",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:redstone_flash",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:redstone_stream",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:resonation",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:rising",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:scalable_sweep",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:seal",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:shockwave",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:spark",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:steam",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type:etherology:vital",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:particle_type_etherology_ids_exact",
+      "passed": true,
+      "expected": "etherology:alchemy,etherology:armillary_sphere,etherology:electricity1,etherology:electricity2,etherology:energy_absorption,etherology:ether_dot,etherology:ether_star,etherology:glint_particle,etherology:haze,etherology:item,etherology:light,etherology:lightning_bolt,etherology:redstone_flash,etherology:redstone_stream,etherology:resonation,etherology:rising,etherology:scalable_sweep,etherology:seal,etherology:shockwave,etherology:spark,etherology:steam,etherology:vital",
+      "actual": "etherology:alchemy,etherology:armillary_sphere,etherology:electricity1,etherology:electricity2,etherology:energy_absorption,etherology:ether_dot,etherology:ether_star,etherology:glint_particle,etherology:haze,etherology:item,etherology:light,etherology:lightning_bolt,etherology:redstone_flash,etherology:redstone_stream,etherology:resonation,etherology:rising,etherology:scalable_sweep,etherology:seal,etherology:shockwave,etherology:spark,etherology:steam,etherology:vital"
+    },
+    {
+      "name": "particle_capture_error",
+      "passed": true,
+      "expected": "none",
+      "actual": "none"
+    },
+    {
+      "name": "particle_payload_families_exact",
+      "passed": true,
+      "expected": "electricity,item,light,moving,scalable,seal,simple,spark",
+      "actual": "electricity,item,light,moving,scalable,seal,simple,spark"
+    },
+    {
+      "name": "particle_type_classes_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_should_always_spawn_false_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_codecs_present_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_parameters_factories_present_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_factory_sample_effect_classes_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_factory_sample_types_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_factory_sample_as_strings_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_packet_round_trips_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_codec_round_trips_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "seal_type_order_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "seal_type_codec_round_trips_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "seal_type_colors_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "seal_type_textures_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particles_captured_after_server_data_load",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_particles_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_registry_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_type_contract_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "particle_wire_contract_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "registry:loot_condition:etherology:random_chance_with_fortune",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:loot_condition_etherology_ids_exact",
+      "passed": true,
+      "expected": "etherology:random_chance_with_fortune",
+      "actual": "etherology:random_chance_with_fortune"
+    },
+    {
+      "name": "registry:loot_condition_serializer_class",
+      "passed": true,
+      "expected": "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer",
+      "actual": "ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer"
+    },
+    {
+      "name": "loot_table:probe_table_loaded",
+      "passed": true,
+      "expected": "etherology_e2e_server_probe:registry_foundation",
+      "actual": "etherology_e2e_server_probe:registry_foundation"
+    },
+    {
+      "name": "loot_table:empty_tool_items_exact",
+      "passed": true,
+      "expected": "minecraft:gold_ingot,minecraft:stone",
+      "actual": "minecraft:gold_ingot,minecraft:stone"
+    },
+    {
+      "name": "loot_table:fortune_one_items_exact",
+      "passed": true,
+      "expected": "minecraft:diamond,minecraft:gold_ingot,minecraft:stone",
+      "actual": "minecraft:diamond,minecraft:gold_ingot,minecraft:stone"
+    },
+    {
+      "name": "loot_condition_captured_after_server_data_load",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "ether_source_listener_class",
+      "passed": true,
+      "expected": "ru.feytox.etherology.data.ethersource.EtherSourceLoader",
+      "actual": "ru.feytox.etherology.data.ethersource.EtherSourceLoader"
+    },
+    {
+      "name": "ether_source_resource_directory",
+      "passed": true,
+      "expected": "ether_sources",
+      "actual": "ether_sources"
+    },
+    {
+      "name": "ether_source_initial_capture_error",
+      "passed": true,
+      "expected": "none",
+      "actual": "none"
+    },
+    {
+      "name": "ether_source_initial_entry_count",
+      "passed": true,
+      "expected": "23",
+      "actual": "23"
+    },
+    {
+      "name": "ether_source_initial_entries_exact",
+      "passed": true,
+      "expected": "etherology:primoshard_clos\u003d4.0,etherology:primoshard_keta\u003d4.0,etherology:primoshard_rella\u003d4.0,etherology:primoshard_via\u003d4.0,minecraft:ancient_debris\u003d4.0,minecraft:blaze_powder\u003d2.0,minecraft:chorus_fruit\u003d2.0,minecraft:crying_obsidian\u003d6.0,minecraft:echo_shard\u003d12.0,minecraft:ender_eye\u003d6.0,minecraft:ender_pearl\u003d4.0,minecraft:experience_bottle\u003d8.0,minecraft:ghast_tear\u003d4.0,minecraft:glowstone_dust\u003d1.0,minecraft:gunpowder\u003d1.0,minecraft:heart_of_the_sea\u003d12.0,minecraft:honeycomb\u003d1.0,minecraft:lapis_lazuli\u003d1.0,minecraft:magma_cream\u003d2.0,minecraft:prismarine_crystals\u003d1.0,minecraft:quartz\u003d1.0,minecraft:redstone\u003d2.0,minecraft:sculk\u003d12.0",
+      "actual": "etherology:primoshard_clos\u003d4.0,etherology:primoshard_keta\u003d4.0,etherology:primoshard_rella\u003d4.0,etherology:primoshard_via\u003d4.0,minecraft:ancient_debris\u003d4.0,minecraft:blaze_powder\u003d2.0,minecraft:chorus_fruit\u003d2.0,minecraft:crying_obsidian\u003d6.0,minecraft:echo_shard\u003d12.0,minecraft:ender_eye\u003d6.0,minecraft:ender_pearl\u003d4.0,minecraft:experience_bottle\u003d8.0,minecraft:ghast_tear\u003d4.0,minecraft:glowstone_dust\u003d1.0,minecraft:gunpowder\u003d1.0,minecraft:heart_of_the_sea\u003d12.0,minecraft:honeycomb\u003d1.0,minecraft:lapis_lazuli\u003d1.0,minecraft:magma_cream\u003d2.0,minecraft:prismarine_crystals\u003d1.0,minecraft:quartz\u003d1.0,minecraft:redstone\u003d2.0,minecraft:sculk\u003d12.0"
+    },
+    {
+      "name": "ether_source_initial_rella_value",
+      "passed": true,
+      "expected": "4.0",
+      "actual": "4.0"
+    },
+    {
+      "name": "ether_source_initial_legacy_rela_absent",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "ether_source_initial_redstone_value",
+      "passed": true,
+      "expected": "2.0",
+      "actual": "2.0"
+    },
+    {
+      "name": "ether_source_captured_after_server_data_load",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_ether_sources_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "reload_pack_directory",
+      "passed": true,
+      "expected": "etherology-e2e-ether-source-reload",
+      "actual": "etherology-e2e-ether-source-reload"
+    },
+    {
+      "name": "reload_pack_resources_exact",
+      "passed": true,
+      "expected": "pack.mcmeta,data/etherology/ether_sources/default.json,data/etherology/ether_sources/probe_addition.json",
+      "actual": "pack.mcmeta,data/etherology/ether_sources/default.json,data/etherology/ether_sources/probe_addition.json"
+    },
+    {
+      "name": "reload_pack_enabled",
+      "passed": true,
+      "expected": "file/etherology-e2e-ether-source-reload",
+      "actual": "file/etherology-e2e-ether-source-reload"
+    },
+    {
+      "name": "enabled_data_packs_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "reload_failure",
+      "passed": true,
+      "expected": "none",
+      "actual": "none"
+    },
+    {
+      "name": "reload_command",
+      "passed": true,
+      "expected": "reload",
+      "actual": "reload"
+    },
+    {
+      "name": "reload_command_result",
+      "passed": true,
+      "expected": "0",
+      "actual": "0"
+    },
+    {
+      "name": "reload_completed",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "reload_update_cause",
+      "passed": true,
+      "expected": "SERVER_DATA_LOAD",
+      "actual": "SERVER_DATA_LOAD"
+    },
+    {
+      "name": "reload_static_data",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "ether_source_reloaded_capture_error",
+      "passed": true,
+      "expected": "none",
+      "actual": "none"
+    },
+    {
+      "name": "ether_source_reloaded_entry_count",
+      "passed": true,
+      "expected": "24",
+      "actual": "24"
+    },
+    {
+      "name": "ether_source_reloaded_entries_exact",
+      "passed": true,
+      "expected": "etherology:primoshard_clos\u003d4.0,etherology:primoshard_keta\u003d4.0,etherology:primoshard_rella\u003d4.0,etherology:primoshard_via\u003d4.0,minecraft:ancient_debris\u003d4.0,minecraft:blaze_powder\u003d2.0,minecraft:chorus_fruit\u003d2.0,minecraft:crying_obsidian\u003d6.0,minecraft:diamond\u003d13.0,minecraft:echo_shard\u003d12.0,minecraft:ender_eye\u003d6.0,minecraft:ender_pearl\u003d4.0,minecraft:experience_bottle\u003d8.0,minecraft:ghast_tear\u003d4.0,minecraft:glowstone_dust\u003d1.0,minecraft:gunpowder\u003d1.0,minecraft:heart_of_the_sea\u003d12.0,minecraft:honeycomb\u003d1.0,minecraft:lapis_lazuli\u003d1.0,minecraft:magma_cream\u003d2.0,minecraft:prismarine_crystals\u003d1.0,minecraft:quartz\u003d1.0,minecraft:redstone\u003d9.5,minecraft:sculk\u003d12.0",
+      "actual": "etherology:primoshard_clos\u003d4.0,etherology:primoshard_keta\u003d4.0,etherology:primoshard_rella\u003d4.0,etherology:primoshard_via\u003d4.0,minecraft:ancient_debris\u003d4.0,minecraft:blaze_powder\u003d2.0,minecraft:chorus_fruit\u003d2.0,minecraft:crying_obsidian\u003d6.0,minecraft:diamond\u003d13.0,minecraft:echo_shard\u003d12.0,minecraft:ender_eye\u003d6.0,minecraft:ender_pearl\u003d4.0,minecraft:experience_bottle\u003d8.0,minecraft:ghast_tear\u003d4.0,minecraft:glowstone_dust\u003d1.0,minecraft:gunpowder\u003d1.0,minecraft:heart_of_the_sea\u003d12.0,minecraft:honeycomb\u003d1.0,minecraft:lapis_lazuli\u003d1.0,minecraft:magma_cream\u003d2.0,minecraft:prismarine_crystals\u003d1.0,minecraft:quartz\u003d1.0,minecraft:redstone\u003d9.5,minecraft:sculk\u003d12.0"
+    },
+    {
+      "name": "ether_source_reloaded_redstone_value",
+      "passed": true,
+      "expected": "9.5",
+      "actual": "9.5"
+    },
+    {
+      "name": "ether_source_reloaded_diamond_value",
+      "passed": true,
+      "expected": "13.0",
+      "actual": "13.0"
+    },
+    {
+      "name": "ether_source_reloaded_rella_value",
+      "passed": true,
+      "expected": "4.0",
+      "actual": "4.0"
+    },
+    {
+      "name": "ether_source_reloaded_legacy_rela_absent",
+      "passed": true,
+      "expected": "absent",
+      "actual": "absent"
+    },
+    {
+      "name": "ether_source_map_changed_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "registry_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tags_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "loot_condition_registry_and_behavior_stable_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "loot_table_instance_replaced_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_stop_requested_after_reload",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tags_update_cause",
+      "passed": true,
+      "expected": "SERVER_DATA_LOAD",
+      "actual": "SERVER_DATA_LOAD"
+    },
+    {
+      "name": "tags_static_data",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tags_update_count",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "tag:vibrations_contains_resonance",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tag:vibrations_etherology_entries_exact",
+      "passed": true,
+      "expected": "etherology:etherology_resonance",
+      "actual": "etherology:etherology_resonance"
+    },
+    {
+      "name": "tag:warden_can_listen_contains_resonance",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tag:warden_can_listen_etherology_entries_exact",
+      "passed": true,
+      "expected": "etherology:etherology_resonance",
+      "actual": "etherology:etherology_resonance"
+    },
+    {
+      "name": "tags:etherology_tag_ids_exact",
+      "passed": true,
+      "expected": "minecraft:vibrations,minecraft:warden_can_listen",
+      "actual": "minecraft:vibrations,minecraft:warden_can_listen"
+    },
+    {
+      "name": "tags_before_server_started",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_mods_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_registry_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_tags_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_started_loot_condition_rechecked",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "server_stop_requested_without_restart",
+      "passed": true,
+      "expected": "stop(false)",
+      "actual": "stop(false)"
+    },
+    {
+      "name": "server_lifecycle_identity",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "lifecycle",
+      "passed": true,
+      "expected": "tags_updated_initial\u003eserver_started\u003ereload_requested\u003etags_updated_reload\u003ereload_command_returned\u003estop_requested\u003eserver_stopping\u003eserver_stopped",
+      "actual": "tags_updated_initial\u003eserver_started\u003ereload_requested\u003etags_updated_reload\u003ereload_command_returned\u003estop_requested\u003eserver_stopping\u003eserver_stopped"
+    }
+  ]
+}

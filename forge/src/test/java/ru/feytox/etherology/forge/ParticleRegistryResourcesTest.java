@@ -240,7 +240,7 @@ final class ParticleRegistryResourcesTest {
                 for (String entry : packagedJsons) {
                     assertCanonicalBytes(repositoryRoot, jar, entry, artifact.description());
                 }
-                for (String entry : referencedParticleTextures) {
+                for (String entry : allCanonicalParticleTextures) {
                     assertCanonicalBytes(repositoryRoot, jar, entry, artifact.description());
                 }
                 for (String entry : SEAL_TEXTURES) {

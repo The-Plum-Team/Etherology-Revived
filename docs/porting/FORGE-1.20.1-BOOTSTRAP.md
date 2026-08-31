@@ -1,8 +1,8 @@
-# Forge 1.20.1 bootstrap, storage, channel, sound, registry, Ether-source, and enchantment status
+# Forge 1.20.1 bootstrap, storage, channel, sound, registry, Ether-source, enchantment, and particle status
 
 The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and
 accepted bounded item, storage, channel, sound-registry, game-event, loot-condition,
-Ether-source reload, and enchantment-registry/server milestones.
+Ether-source reload, enchantment-registry/server, and particle-registry/server milestones.
 Its ethereal-storage
 vertical persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
 vanilla sided insertion and native Forge item-handler access, transfers Ether into canonical Glint
@@ -20,14 +20,16 @@ subtitles. It does not prove native playback. The game-event milestone gives
 `warden_can_listen` tag membership on both loaders, and adds a real Forge dedicated-server
 registry/tag data-load proof. The loot-condition milestone gives
 `etherology:random_chance_with_fortune` one Common deferred owner and proves its canonical
-serializer with a synthetic server loot table. Channel cases, particles, the remaining loot and
-recipes, the wider machine/network graph, most of the authoritative registry spine, enchanting
-applicability and combat behavior, and a playable Etherology port remain incomplete.
+serializer with a synthetic server loot table. `SharedParticleTypes` now owns the exact 22
+particle IDs and their server-side payload/codec/wire contracts. Channel cases, client particle
+factories and rendering, the remaining loot and recipes, the wider machine/network graph, most of
+the authoritative registry spine, enchanting applicability and combat behavior, and a playable
+Etherology port remain incomplete.
 The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
 `EtherologyBootstrap` attaches the shared block, item, block-entity, screen-handler, sound-event,
-game-event, loot-condition, and enchantment registries during `@Mod` construction, before Forge
+game-event, loot-condition, enchantment, and particle registries during `@Mod` construction, before Forge
 registry events run. It delegates
 handshake idempotence and failure state to `BootstrapLifecycle`. `PlatformRegistrar` supplies the
 loader boundary. The native `ForgePlatformRegistrar` listens for `FMLCommonSetupEvent` and uses
@@ -106,8 +108,8 @@ client systems have been registered.
   consulting the ignored live runtime.
 - `validateForgeEtherSourceReloadMilestone` is an accepted predecessor gate. It requires the
   static Ether-source ownership/resource proof, the inherited registry foundation, and the frozen
-  v6 native reload evidence. That archive is historical now that v7 supplies the current
-  cumulative dedicated-server proof.
+  v6 native reload evidence. That archive and its v7 successor are historical now that v10
+  supplies the current cumulative dedicated-server proof.
 - `validateForgeEnchantmentRegistryStaticMilestone` is expected to pass. It proves
   `SharedEnchantments` is the sole Common deferred owner of `etherology:peal` and
   `etherology:reflection`, preserves their exact concrete classes and properties, requires
@@ -117,8 +119,17 @@ client systems have been registered.
 - `validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity` is expected to pass. It runs
   the v7 runner/verifier safety suite and validates the immutable five-file schema-5,
   95-assertion archive without consulting ignored live runtime state.
-- `validateForgeEnchantmentRegistryMilestone` is the current combined positive gate. It requires
-  the static/resource proof and current frozen v7 native reload evidence before the broader
+- `validateForgeEnchantmentRegistryMilestone` is an accepted predecessor gate. It requires the
+  static/resource proof and historical frozen v7 native reload evidence.
+- `validateForgeParticleRegistryStaticMilestone` is expected to pass. It proves
+  `SharedParticleTypes` is the sole Common deferred owner of the exact 22 canonical IDs, preserves
+  the eight payload families, codecs, command/packet formats, seal metadata, and
+  `shouldAlwaysSpawn = false`, and checks Common/Fabric/Forge bytecode and artifact isolation.
+- `validateForgeParticleRegistryServerEvidenceArchiveIntegrity` is expected to pass. It runs the
+  v10 runner/verifier safety suite and validates the immutable five-file schema-6,
+  138-assertion archive without consulting ignored live runtime state.
+- `validateForgeParticleRegistryMilestone` is the current combined positive gate. It requires the
+  static/bytecode/artifact proof and frozen v10 native reload evidence before the remaining
   authoritative registry gate may run.
 - `validateForgeChannelCurrentArtifactDiagnostic` is deliberately not an acceptance dependency.
   It now fails because the later sound milestone changed the whole production JAR relative to the
@@ -127,14 +138,14 @@ client systems have been registered.
 - `verifyForgePortGateClosed` is expected to pass. It is a diagnostic task, not an artifact gate:
   after requiring every accepted positive gate, it reports the first incomplete forward stage.
   That stage is now the broader authoritative registry spine; the bounded sound, game-event,
-  loot-condition, Ether-source reload, and enchantment-registry steps are no longer in its
+  loot-condition, Ether-source reload, enchantment-registry, and particle-registry steps are no longer in its
   missing-condition list.
 - `validateForgeReleaseReadinessMilestone` is a permanent final backstop after every bounded
   forward gate. It fails unconditionally until the full gameplay graph and complete packaged
   native Forge client, dedicated-server, persistence, and E2E matrix are implemented and the task
   itself is replaced by concrete acceptance checks. The bounded Storage and Channel runs, static
   sound gate, registry-foundation dedicated-server proof, bounded Ether-source reload proof, and
-  bounded enchantment-registry proof are not sufficient. Class or method-name
+  bounded enchantment-registry and particle-registry proofs are not sufficient. Class or method-name
   stubs cannot open this gate.
 - `validateForgePortInputs`, `remapJar`, and every future `publish*` task depend on every accepted
   positive gate plus the remaining authoritative-registry, gameplay, and final-readiness
@@ -317,8 +328,8 @@ The runner required a saved world, normal `stop(false)`, exit code zero, and no 
 log marker. No screenshots are produced or claimed for this server-only proof. The synthetic table
 proves the shared condition and serializer; it does not prove Attrahite gameplay or drop parity.
 The immutable v2 game-event-only archive remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v6 Ether-source reload archive also remains historical evidence;
-the v7 enchantment-registry archive is the current cumulative dedicated-server proof.
+registry-foundation proof. The v6 Ether-source reload and v7 enchantment-registry archives also
+remain historical evidence; v10 is the current cumulative dedicated-server proof.
 
 The probe observes `ServerStoppedEvent` and atomically publishes its report before scheduling a
 probe-only terminator. That path joins the actual stopped-event server thread before `System.exit`
@@ -366,7 +377,7 @@ server-log SHA-256
 and archive-manifest SHA-256
 `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
 This v6 archive remains immutable historical evidence. Its exact Ether-source and inherited
-registry assertions are re-proved by the current cumulative v7 record below.
+registry assertions are re-proved by the cumulative v7 and current v10 records below.
 It does not prove furnace or machine consumption, the wider Ether network, the
 full authoritative registry, native sound playback, Forge custom sculk
 frequency, Attrahite drops, or release readiness.
@@ -408,7 +419,7 @@ this headless dedicated-server proof.
 
 The immutable
 [`enchantment-registry-server-v7`](../evidence/forge-1.20.1/enchantment-registry-server-v7)
-archive is the current dedicated-server proof. It records profile-manifest SHA-256
+archive is the immutable historical enchantment-registry proof. It records profile-manifest SHA-256
 `36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`, report SHA-256
 `1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`, server-log SHA-256
 `b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`, and archive-manifest
@@ -418,15 +429,50 @@ This acceptance does not prove enchanting-table, anvil, book, or item applicabil
 shockwave; projectile reflection; client visuals or screenshots; full combat parity; or release
 readiness. Those remain explicit later consumer-mechanic and native-client/full-E2E obligations.
 
+## Accepted bounded SharedParticleTypes registry and server milestone
+
+`SharedParticleTypes` is the sole Common deferred owner of the exact 22 canonical particle-type
+IDs. Fabric attaches it directly before the retained initializer path, while Forge attaches the
+same owner through `EtherologyBootstrap` before registry events. The legacy eager
+`EtherParticleTypes` owner is removed. The moved Common effect classes preserve all eight payload
+families, their codecs and parameter factories, command and packet serialization, the exact seal
+order/colors/textures, and `shouldAlwaysSpawn = false`. `ItemParticleEffect` parses its item ID
+with `Identifier.fromCommandInput`, including namespaced values such as `minecraft:diamond`.
+
+`validateForgeParticleRegistryStaticMilestone` checks declaration multiplicity, construction,
+supplier lifecycle, parser bytecode, consumer access, and class/artifact isolation across Common,
+both loader-transformed Common artifacts, Fabric development/remapped production, and the Forge
+shadow artifact. `validateForgeParticleRegistryMilestone` combines that proof with the immutable
+[`particle-registry-server-v10`](../evidence/forge-1.20.1/particle-registry-server-v10) archive.
+
+The fresh repository-owned `etherology-e2e-forge-server-1.20.1-v10` profile ran the headless
+`particle-registry` scenario through `:forge:1.20.1:runRegistryFoundationServerProbe` on Java 17
+and Forge 47.4.9. Report schema 6 passed all 138 ordered assertions. The exact 22 IDs, type
+classes, spawn flags, codecs, factories, sample strings, command/packet/codec round trips, and seal
+metadata matched after server-data load, at server start, and after a real `reload`. The cumulative
+run also re-proved the earlier enchantment, game-event/tag, loot-condition, and Ether-source
+contracts. The world saved, `stop(false)` completed, the launcher exited zero, and the copied log
+contains no fatal or client-startup marker.
+
+The archive binds profile-manifest SHA-256
+`5b3def0df2aacfea5db04b92975925c25223f117941ceb576cc6b3e6616f14e4`, report SHA-256
+`ab829d182e648385f6052fea469bef3a18a6a972f0baa98be6b83569897f3d75`, server-log SHA-256
+`44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f`, and archive-manifest
+SHA-256 `29fddf549c4b8728911fe1d048816d0353256ef7a7e533b62d0461249c485ed1`.
+
+This milestone is server registry/wire proof only. It does not install or exercise Forge client
+particle factories or renderers, emit particles through gameplay, or produce screenshots. Those
+remain explicit native-client and mechanic-level E2E obligations.
+
 ## Forward fail-closed broader authoritative registry milestone
 
 The next forward gate remains the rest of the authoritative registry spine. The temporary block,
 item, block-entity, and screen-handler catalogs must converge into one active declaration owner per
 canonical ID without shadowing Fabric classes or resolving suppliers during declaration. Entity,
-recipe, effect, remaining game-event and loot consumers, particle, tree, world-generation, and
-lifecycle-hook ownership also remains incomplete. Enchantment registry ownership is no longer in
-this list; enchanting applicability, Peal shockwave behavior, and projectile reflection remain
-later gameplay obligations. The bounded
+recipe, effect, remaining game-event and loot consumers, tree, world-generation, and
+lifecycle-hook ownership also remains incomplete. Enchantment and particle registry ownership are
+no longer in this list; enchanting applicability, Peal shockwave behavior, projectile reflection,
+and client particle rendering remain later gameplay/client obligations. The bounded
 registry-foundation and Ether-source reload server proofs do not satisfy the full
 registry/catalog placement-and-save smoke. The unfinished portions
 of the Ether graph stay behind that work.
@@ -439,14 +485,14 @@ E2E slice.
 
 - The common JAR contains component state/access contracts, the loader handshake,
   `etherology:ether`, the accepted bounded ethereal-storage vertical, and the accepted bounded
-  ethereal-channel foundation. `SharedSounds`, `SharedGameEvents`, `SharedLootConditions`, and
-  `SharedEnchantments` now own the accepted Common sound, resonance, Fortune-scaled condition, and
-  enchantment declarations;
+  ethereal-channel foundation. `SharedSounds`, `SharedGameEvents`, `SharedLootConditions`,
+  `SharedEnchantments`, and `SharedParticleTypes` now own the accepted Common sound, resonance,
+  Fortune-scaled condition, enchantment, and particle declarations;
   `ResourceReloaders` and `EtherSourceLoader` own the accepted Common Ether-source data path. The
   other temporary catalogs have not yet converged into the authoritative registry spine.
-- The canonical initializer remains in the Fabric production source graph. Of 352 canonical main
-  Java files, 22 directly import Fabric API, Biolith, Trinkets, or Fabric Shield Lib through 34
-  import statements. Transitive ownership work remains beyond that lower bound.
+- The canonical initializer remains in the 322-file Fabric main source graph. Direct loader imports
+  and their transitive ownership closure still require per-slice decisions as classes move to
+  Common; the initial audit's raw import counts are no longer treated as a current snapshot.
 - The canonical initializer directly reaches unported loader APIs for dynamic registries, the
   remaining reload lifecycle, networking, commands, block and wood type builders, brewing recipes,
   and biome modification. The Ether-source server-data listener is now Common-owned. Fabric's
@@ -461,8 +507,8 @@ E2E slice.
   Fabric Shield Lib APIs and still need common-versus-loader ownership decisions.
 
 The next gameplay slice is the broader authoritative registry spine after the accepted
-SharedSounds, SharedGameEvents, SharedLootConditions, Ether-source reload, and SharedEnchantments
-foundations. A release remains invalid until that gate, the full-catalog dedicated-server
+SharedSounds, SharedGameEvents, SharedLootConditions, Ether-source reload, SharedEnchantments, and
+SharedParticleTypes foundations. A release remains invalid until that gate, the full-catalog dedicated-server
 placement/save smoke, enchanting applicability, Peal shockwave and projectile reflection behavior,
-client visuals/screenshots, full combat, the deferred channel and sculk-frequency work, every
+client visuals/screenshots, Forge particle factories/rendering, full combat, the deferred channel and sculk-frequency work, every
 subsequent gameplay system, and the full native E2E matrix are ported and accepted.

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "etherology_original_baseline_harness",
+  "version": "${version}",
+  "name": "Etherology Original Baseline Harness",
+  "description": "Client-only evidence harness for the published Etherology 0.1.7 reference.",
+  "license": "LGPL-2.1-only",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.theplumteam.etherology.baseline.fabric.OriginalPhaseZeroHarness"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "etherology-original-baseline-harness.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": "=${fabric_loader_version}",
+    "fabric-api": "=${fabric_api_version}",
+    "minecraft": "=${minecraft_version}",
+    "java": ">=${java_version}",
+    "etherology": "=${etherology_version}"
+  }
+}

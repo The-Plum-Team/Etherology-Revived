@@ -1,0 +1,2073 @@
+from __future__ import annotations
+
+from contextlib import ExitStack
+import hashlib
+import importlib.util
+import io
+import json
+import os
+from pathlib import Path, PurePosixPath
+import signal
+import struct
+import sys
+import tempfile
+import time
+import unittest
+from unittest import mock
+import zipfile
+import zlib
+
+
+BASELINE_DIRECTORY = Path(__file__).resolve().parents[1]
+MODULE_PATH = BASELINE_DIRECTORY / "original_client.py"
+SPECIFICATION = importlib.util.spec_from_file_location(
+    "etherology_original_client", MODULE_PATH
+)
+if SPECIFICATION is None or SPECIFICATION.loader is None:
+    raise RuntimeError(f"Cannot load controller module: {MODULE_PATH}")
+client = importlib.util.module_from_spec(SPECIFICATION)
+sys.modules[SPECIFICATION.name] = client
+SPECIFICATION.loader.exec_module(client)
+
+TRACKED_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
+)
+
+
+def fabric_jar_bytes(mod_id: str, nested_mod_id: str | None = None) -> bytes:
+    nested_path = "META-INF/jars/nested.jar"
+    metadata: dict[str, object] = {
+        "schemaVersion": 1,
+        "id": mod_id,
+        "version": "test-version",
+    }
+    if nested_mod_id is not None:
+        metadata["jars"] = [{"file": nested_path}]
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("fabric.mod.json", json.dumps(metadata))
+        if nested_mod_id is not None:
+            archive.writestr(nested_path, fabric_jar_bytes(nested_mod_id))
+    return output.getvalue()
+
+
+def harness_jar_bytes(*, production_link: bool = False) -> bytes:
+    metadata = {
+        "schemaVersion": 1,
+        "id": "etherology_original_baseline_harness",
+        "version": "1.0.0",
+        "environment": "client",
+        "entrypoints": {
+            "client": [
+                "dev.theplumteam.etherology.baseline.fabric.OriginalPhaseZeroHarness"
+            ]
+        },
+        "mixins": [
+            {
+                "config": "etherology-original-baseline-harness.mixins.json",
+                "environment": "client",
+            }
+        ],
+        "depends": {
+            "fabricloader": "=0.17.3",
+            "fabric-api": "=0.110.0+1.21.1",
+            "minecraft": "=1.21.1",
+            "java": ">=21",
+            "etherology": "=1.21-0.1.7",
+        },
+    }
+    mixin = {
+        "required": True,
+        "package": "dev.theplumteam.etherology.baseline.fabric.mixin",
+        "compatibilityLevel": "JAVA_21",
+        "client": ["GameRendererMixin"],
+        "injectors": {"defaultRequire": 1},
+    }
+    class_content = (
+        b"ru/feytox/etherology/implementation"
+        if production_link
+        else b"synthetic-harness-class"
+    )
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("META-INF/MANIFEST.MF", "Manifest-Version: 1.0\n")
+        archive.writestr("fabric.mod.json", json.dumps(metadata))
+        archive.writestr(
+            "etherology-original-baseline-harness.mixins.json", json.dumps(mixin)
+        )
+        archive.writestr(
+            "Etherology-Original-E2E-Harness-Fabric-1.21.1-refmap.json", "{}\n"
+        )
+        archive.writestr(
+            "dev/theplumteam/etherology/baseline/fabric/"
+            "OriginalPhaseZeroHarness.class",
+            class_content,
+        )
+        archive.writestr(
+            "dev/theplumteam/etherology/baseline/fabric/mixin/"
+            "GameRendererMixin.class",
+            b"synthetic-mixin-class",
+        )
+    return output.getvalue()
+
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + "\n", encoding="utf-8")
+
+
+FIXTURE_ASSET_CONTENT = b"fixture-asset"
+FIXTURE_CLIENT_CONTENT = b"fixture"
+
+
+def compact_json_bytes(value: object) -> bytes:
+    return json.dumps(value, sort_keys=True, separators=(",", ":")).encode("utf-8")
+
+
+def fixture_library_content(coordinate: str) -> bytes:
+    return f"fixture-library:{coordinate}".encode("utf-8")
+
+
+def fixture_asset_index() -> dict[str, object]:
+    asset_sha1 = hashlib.sha1(FIXTURE_ASSET_CONTENT).hexdigest()
+    return {
+        "objects": {
+            "fixture/object": {
+                "hash": asset_sha1,
+                "size": len(FIXTURE_ASSET_CONTENT),
+            }
+        }
+    }
+
+
+def fixture_vanilla_libraries() -> list[dict[str, object]]:
+    native_coordinates = dict(client.EXPECTED_NATIVE_CLASSIFIERS)
+    unconditional_indexes = {
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        46,
+        53,
+        60,
+        67,
+        74,
+        81,
+        88,
+        95,
+        96,
+    }
+    libraries: list[dict[str, object]] = []
+    for index in range(97):
+        coordinate = native_coordinates.get(
+            index, f"fixture.minecraft:library-{index}:1.0"
+        )
+        relative_path = client.maven_library_path(coordinate).as_posix()
+        content = fixture_library_content(coordinate)
+        library: dict[str, object] = {
+            "downloads": {
+                "artifact": {
+                    "path": relative_path,
+                    "sha1": hashlib.sha1(content).hexdigest(),
+                    "size": len(content),
+                    "url": f"https://libraries.minecraft.net/{relative_path}",
+                }
+            },
+            "name": coordinate,
+        }
+        if index in native_coordinates or index == 0:
+            library["rules"] = [{"action": "allow", "os": {"name": "osx"}}]
+        elif index not in unconditional_indexes:
+            library["rules"] = [
+                {"action": "allow", "os": {"name": "windows"}}
+            ]
+        libraries.append(library)
+    return libraries
+
+
+def fixture_vanilla_metadata(manifest: dict[str, object]) -> dict[str, object]:
+    runtime = manifest["runtime"]
+    metadata = runtime["metadata"]
+    asset_index = metadata["asset_index"]
+    minecraft_client = metadata["client"]
+    return {
+        "id": "1.21.1",
+        "type": "release",
+        "assetIndex": {
+            "id": asset_index["id"],
+            "sha1": asset_index["sha1"],
+            "size": asset_index["size"],
+            "totalSize": asset_index["total_size"],
+            "url": asset_index["url"],
+        },
+        "downloads": {
+            "client": {
+                "sha1": minecraft_client["sha1"],
+                "size": minecraft_client["size"],
+                "url": minecraft_client["url"],
+            }
+        },
+        "javaVersion": {"component": "java-runtime-delta", "majorVersion": 21},
+        "libraries": fixture_vanilla_libraries(),
+    }
+
+
+def fixture_fabric_profile(manifest: dict[str, object]) -> dict[str, object]:
+    runtime = manifest["runtime"]
+    return {
+        "arguments": {
+            "game": [],
+            "jvm": ["-DFabricMcEmu= net.minecraft.client.main.Main "],
+        },
+        "id": "fabric-loader-0.17.3-1.21.1",
+        "inheritsFrom": "1.21.1",
+        "libraries": [
+            {"name": library["coordinate"], "url": "https://maven.fabricmc.net/"}
+            for library in runtime["fabric_profile"]["libraries"]
+        ],
+        "mainClass": "net.fabricmc.loader.impl.launch.knot.KnotClient",
+        "type": "release",
+    }
+
+
+def configure_synthetic_runtime_manifest(manifest: dict[str, object]) -> None:
+    runtime = manifest["runtime"]
+    metadata = runtime["metadata"]
+    asset_index_content = compact_json_bytes(fixture_asset_index())
+    metadata["asset_index"].update(
+        {
+            "size": len(asset_index_content),
+            "total_size": len(FIXTURE_ASSET_CONTENT),
+            "sha1": hashlib.sha1(asset_index_content).hexdigest(),
+            "sha256": hashlib.sha256(asset_index_content).hexdigest(),
+        }
+    )
+    metadata["client"].update(
+        {
+            "size": len(FIXTURE_CLIENT_CONTENT),
+            "sha1": hashlib.sha1(FIXTURE_CLIENT_CONTENT).hexdigest(),
+            "sha256": hashlib.sha256(FIXTURE_CLIENT_CONTENT).hexdigest(),
+        }
+    )
+    vanilla_content = compact_json_bytes(fixture_vanilla_metadata(manifest))
+    metadata.update(
+        {
+            "size": len(vanilla_content),
+            "sha1": hashlib.sha1(vanilla_content).hexdigest(),
+            "sha256": hashlib.sha256(vanilla_content).hexdigest(),
+        }
+    )
+    fabric_profile = runtime["fabric_profile"]
+    for library in fabric_profile["libraries"]:
+        content = fixture_library_content(library["coordinate"])
+        library.update(
+            {
+                "size": len(content),
+                "sha1": hashlib.sha1(content).hexdigest(),
+                "sha256": hashlib.sha256(content).hexdigest(),
+            }
+        )
+    fabric_content = compact_json_bytes(fixture_fabric_profile(manifest))
+    fabric_profile.update(
+        {
+            "size": len(fabric_content),
+            "sha1": hashlib.sha1(fabric_content).hexdigest(),
+            "sha256": hashlib.sha256(fabric_content).hexdigest(),
+        }
+    )
+
+
+def populate_runtime_launcher(configuration: object, root: Path) -> None:
+    launcher = client.launcher_directory(configuration, root)
+    installer = client.installer_directory(configuration, root)
+    installer.mkdir(parents=True, exist_ok=True)
+    launcher.mkdir(parents=True, exist_ok=True)
+    manifest = configuration.manifest
+    vanilla_source = fixture_vanilla_metadata(manifest)
+    fabric_source = fixture_fabric_profile(manifest)
+    client.pinned_vanilla_metadata_path(configuration, root).write_bytes(
+        compact_json_bytes(vanilla_source)
+    )
+    client.pinned_fabric_profile_path(configuration, root).write_bytes(
+        compact_json_bytes(fabric_source)
+    )
+    vanilla_projection = dict(vanilla_source)
+    vanilla_projection.pop("javaVersion")
+    write_json(client.vanilla_metadata_path(configuration, root), vanilla_projection)
+    fabric_projection = dict(fabric_source)
+    fabric_projection["jar"] = "1.21.1"
+    write_json(client.fabric_metadata_path(configuration, root), fabric_projection)
+
+    vanilla_jar = launcher / "versions" / "1.21.1" / "1.21.1.jar"
+    vanilla_jar.parent.mkdir(parents=True, exist_ok=True)
+    vanilla_jar.write_bytes(FIXTURE_CLIENT_CONTENT)
+    for library in fixture_vanilla_libraries():
+        if not client.library_is_selected_on_macos(library):
+            continue
+        coordinate = str(library["name"])
+        path = launcher / "libraries" / Path(
+            *client.maven_library_path(coordinate).parts
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(fixture_library_content(coordinate))
+    for library in client.require_list(
+        client.require_object(client.runtime_spec(configuration), "fabric_profile"),
+        "libraries",
+    ):
+        coordinate = str(library["coordinate"])
+        path = launcher / "libraries" / Path(
+            *client.maven_library_path(coordinate).parts
+        )
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(fixture_library_content(coordinate))
+
+    asset_index = fixture_asset_index()
+    asset_index_path = launcher / "assets" / "indexes" / "17.json"
+    asset_index_path.parent.mkdir(parents=True, exist_ok=True)
+    asset_index_path.write_bytes(compact_json_bytes(asset_index))
+    asset_sha1 = hashlib.sha1(FIXTURE_ASSET_CONTENT).hexdigest()
+    asset_path = launcher / "assets" / "objects" / asset_sha1[:2] / asset_sha1
+    asset_path.parent.mkdir(parents=True, exist_ok=True)
+    asset_path.write_bytes(FIXTURE_ASSET_CONTENT)
+
+
+def png_bytes(width: int, height: int, *, blank: bool = False) -> bytes:
+    def chunk(chunk_type: bytes, payload: bytes) -> bytes:
+        checksum = zlib.crc32(chunk_type + payload) & 0xFFFFFFFF
+        return (
+            struct.pack(">I", len(payload))
+            + chunk_type
+            + payload
+            + struct.pack(">I", checksum)
+        )
+
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+    if blank:
+        row = b"\0" * (width * 3)
+    else:
+        row_content = bytearray()
+        for x_coordinate in range(width):
+            row_content.extend(
+                (
+                    x_coordinate % 256,
+                    (x_coordinate * 3) % 256,
+                    (x_coordinate * 7) % 256,
+                )
+            )
+        row = bytes(row_content)
+    scanlines = (b"\0" + row) * height
+    return (
+        b"\x89PNG\r\n\x1a\n"
+        + chunk(b"IHDR", ihdr)
+        + chunk(b"IDAT", zlib.compress(scanlines))
+        + chunk(b"IEND", b"")
+    )
+
+
+def reference_fixture(
+    temporary_root: Path,
+    *,
+    nested_forbidden_mod_id: str | None = None,
+    extra_entry: tuple[str, bytes] | None = None,
+    harness_production_link: bool = False,
+) -> tuple[object, Path, dict[str, bytes]]:
+    repository = temporary_root / "repository"
+    baseline = repository / "scripts" / "baseline"
+    state = baseline / ".state"
+    state.mkdir(parents=True)
+    manifest = json.loads(TRACKED_MANIFEST_PATH.read_text(encoding="utf-8"))
+    configure_synthetic_runtime_manifest(manifest)
+    bundle = manifest["reference_bundle"]
+    bundle["path"] = "scripts/baseline/.state/reference.mrpack"
+    member_contents: dict[str, bytes] = {}
+    for index, member in enumerate(bundle["members"]):
+        nested = nested_forbidden_mod_id if index == 0 else None
+        content = fabric_jar_bytes(member["mod_id"], nested)
+        member["size"] = len(content)
+        member["sha256"] = hashlib.sha256(content).hexdigest()
+        member_contents[member["archive_path"]] = content
+
+    bundle_path = state / "reference.mrpack"
+    index = {
+        "dependencies": {
+            "fabric-loader": manifest["runtime"]["loader_version"],
+            "minecraft": manifest["runtime"]["minecraft_version"],
+        },
+        "files": [],
+        "formatVersion": 1,
+        "game": "minecraft",
+        "name": "Synthetic Etherology reference",
+        "versionId": "synthetic-reference",
+    }
+    with zipfile.ZipFile(bundle_path, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("modrinth.index.json", json.dumps(index))
+        archive.writestr("overrides/profile.json", "{}\n")
+        archive.writestr("overrides/options.txt", "fullscreen:false\n")
+        for archive_path, content in member_contents.items():
+            archive.writestr(archive_path, content)
+        if extra_entry is not None:
+            archive.writestr(extra_entry[0], extra_entry[1])
+    bundle["size"] = bundle_path.stat().st_size
+    bundle["sha256"] = hashlib.sha256(bundle_path.read_bytes()).hexdigest()
+    harness = manifest["capture"]["harness"]
+    harness_content = harness_jar_bytes(production_link=harness_production_link)
+    harness_path = repository / harness["path"]
+    harness_path.parent.mkdir(parents=True)
+    harness_path.write_bytes(harness_content)
+    harness["size"] = len(harness_content)
+    harness["sha256"] = hashlib.sha256(harness_content).hexdigest()
+    member_contents[str(harness["file_name"])] = harness_content
+    manifest_path = baseline / "fixture.json"
+    write_json(manifest_path, manifest)
+    configuration = client.load_configuration(manifest_path, repository)
+    return configuration, manifest_path, member_contents
+
+
+def owned_runtime_fixture(
+    configuration: object, temporary_root: Path
+) -> tuple[Path, Path]:
+    runtimes_root = temporary_root / "state" / "runtimes"
+    runtimes_root.mkdir(parents=True)
+    root = client.runtime_root(configuration, runtimes_root)
+    root.mkdir()
+    for field_name in (
+        "game_directory",
+        "launcher_directory",
+        "evidence_directory",
+        "logs_directory",
+        "installer_directory",
+        "home_directory",
+        "temporary_directory",
+    ):
+        client.owned_child(configuration, field_name, root).mkdir()
+    populate_runtime_launcher(configuration, root)
+    game = client.game_directory(configuration, root)
+    for directory in client.require_list(configuration.manifest, "profile_directories"):
+        (game / str(directory)).mkdir(exist_ok=True)
+    (game / "options.txt").write_bytes(client.expected_options_content(configuration))
+    with zipfile.ZipFile(configuration.bundle_path) as archive:
+        for member in client.member_specs(configuration):
+            (game / "mods" / str(member["file_name"])).write_bytes(
+                archive.read(str(member["archive_path"]))
+            )
+    harness = client.harness_spec(configuration)
+    (game / "mods" / str(harness["file_name"])).write_bytes(
+        configuration.harness_path.read_bytes()
+    )
+    client.scenario_root(configuration, root).mkdir()
+    client.reports_directory(configuration, root).mkdir()
+    client.screenshots_directory(configuration, root).mkdir()
+    write_json(
+        client.evidence_marker_path(configuration, root),
+        client.evidence_descriptor(configuration),
+    )
+    client.lifecycle_lock_path(configuration, root).write_bytes(b"")
+    write_json(client.marker_path(configuration, root), client.profile_descriptor(configuration))
+    write_json(
+        client.runtime_lock_path(configuration, root),
+        client.runtime_lock_descriptor(configuration, root),
+    )
+    return runtimes_root, root
+
+
+def write_launch_attempt_fixture(configuration: object, root: Path) -> Path:
+    launcher = client.launcher_directory(configuration, root)
+    game = client.game_directory(configuration, root)
+    java = root.parent / "fixture-jdk" / "bin" / "java"
+    library = launcher / "libraries" / "fixture.jar"
+    for path in (java, library):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fixture")
+    artifact_lock = client.artifact_lock_path(configuration, root)
+    write_json(artifact_lock, client.artifact_lock_descriptor(configuration, root))
+    extraction_directory = client.native_extraction_directory(configuration, root)
+    classpath = [
+        str(launcher / Path(*PurePosixPath(relative_path).parts))
+        for relative_path in client.expected_merged_classpath_paths(configuration, root)
+    ]
+    command = [
+        str(java),
+        "-Duser.home=" + str(client.home_directory(configuration, root)),
+        "-Djava.io.tmpdir=" + str(client.temporary_directory(configuration, root)),
+        "-Djava.library.path=" + str(extraction_directory),
+        "-Djna.tmpdir=" + str(extraction_directory),
+        "-Dorg.lwjgl.system.SharedLibraryExtractPath=" + str(extraction_directory),
+        "-Dio.netty.native.workdir=" + str(extraction_directory),
+        f"-D{client.SCENARIO_PROPERTY_NAME}=phase0-smoke",
+        "-cp",
+        os.pathsep.join(classpath),
+        "net.fabricmc.loader.impl.launch.knot.KnotClient",
+        "--gameDir",
+        str(game),
+        "--assetsDir",
+        str(launcher / "assets"),
+        "--assetIndex",
+        "17",
+        "--version",
+        client.version_id(configuration),
+        "--username",
+        "EtherologyE2E",
+        "--uuid",
+        client.offline_uuid("EtherologyE2E"),
+        "--accessToken",
+        "offline-etherology-original-baseline",
+        "--width",
+        "960",
+        "--height",
+        "540",
+    ]
+    environment = client.controlled_launch_environment(configuration, root, java)
+    attempt = {
+        "schema": 1,
+        "profile_id": client.profile_spec(configuration)["id"],
+        "scenario": "phase0-smoke",
+        "created_at_unix_ns": time.time_ns() - 10_000_000_000,
+        "manifest_sha256": client.sha256_file(configuration.manifest_path),
+        "artifact_lock": {
+            "size": artifact_lock.stat().st_size,
+            "sha256": client.sha256_file(artifact_lock),
+        },
+        "prelaunch_profile": client.prelaunch_profile_descriptor(
+            configuration, root
+        ),
+        "generator": client.verify_launcher_library(
+            client.temporary_directory(configuration, root) / "python-bytecode-cache"
+        ),
+        "provisioning_metadata": client.provisioning_metadata_descriptor(
+            configuration, root
+        ),
+        "java": {
+            "path": str(java),
+            "major": 21,
+            "size": java.stat().st_size,
+            "sha256": client.sha256_file(java),
+            "runtime": client.java_runtime_descriptor(java),
+        },
+        "launch": {
+            "wrapper": [str(client.CAFFEINATE_PATH), "-dimsu"],
+            "wrapper_executable": {
+                "path": str(client.CAFFEINATE_PATH),
+                "size": client.CAFFEINATE_PATH.stat().st_size,
+                "sha256": client.sha256_file(client.CAFFEINATE_PATH),
+            },
+            "arguments": command,
+            "arguments_sha256": client.canonical_json_sha256(command),
+            "classpath": client.command_classpath_inventory(
+                configuration, root, command
+            ),
+            "environment": environment,
+            "environment_sha256": client.canonical_json_sha256(environment),
+        },
+        "version_metadata": client.version_metadata_inventory(configuration, root),
+        "fabric_libraries": client.fabric_library_inventory(configuration, root),
+        "vanilla_libraries": client.vanilla_library_inventory(configuration, root),
+        "native_classifiers": client.native_classifier_inventory(
+            configuration, root, command
+        ),
+        "assets": client.asset_inventory_descriptor(configuration, root),
+        "launcher_files": client.launcher_file_inventory(configuration, root),
+    }
+    attempt_path = client.launch_attempt_path(configuration, root)
+    write_json(attempt_path, attempt)
+    return attempt_path
+
+
+def write_passing_evidence(configuration: object, root: Path) -> None:
+    scenario = client.scenario_spec(configuration)
+    framebuffer = scenario["framebuffer"]
+    attempt_path = write_launch_attempt_fixture(configuration, root)
+    extracted_native = (
+        client.native_extraction_directory(configuration, root) / "libfixture.dylib"
+    )
+    extracted_native.parent.mkdir()
+    extracted_native.write_bytes(b"runtime-native")
+    screenshot_content = png_bytes(framebuffer["width"], framebuffer["height"])
+    screenshot = client.screenshot_path(configuration, root)
+    screenshot.write_bytes(screenshot_content)
+    world = client.save_directory(configuration, root)
+    world.mkdir(parents=True)
+    (world / "level.dat").write_bytes(b"level-data")
+    (world / "session.lock").write_bytes(b"session-lock")
+    region = world / "region"
+    region.mkdir()
+    (region / "r.0.0.mca").write_bytes(b"region-data")
+
+    assertion_values = {
+        "fabric_mod_loaded:etherology": ("loaded", "loaded"),
+        "published_resources_loaded": (
+            "[minecraft:texts/splashes.txt, etherology:models/item/oculus.json]",
+            "present",
+        ),
+        "registry_preflight": ("all phase0 registry entries present", "present"),
+        "etherology_block_states_have_network_ids": (
+            "every Etherology block state has a non-negative raw id",
+            "42 inspected; missing=[]",
+        ),
+        "packaged_root_jar:etherology": (
+            "one regular root JAR",
+            "one regular root JAR",
+        ),
+        "packaged_root_jar:etherology_original_baseline_harness": (
+            "one regular root JAR",
+            "one regular root JAR",
+        ),
+        "native_framebuffer_dimensions": ("1920x1080", "1920x1080"),
+        "completed_world_renders_before_capture": ("120", "120"),
+        "capture_render_ready": (
+            "terrain complete and all four fixture positions rendering-ready",
+            "ready",
+        ),
+        "capture_camera_exact": (
+            "first_person=true;x=0.5;y=121.0;z=-7.5;yaw=0.0;pitch=8.0;"
+            "on_ground=true;tolerance=1.0E-4",
+            "first_person=true;x=0.5;y=121.0;z=-7.5;yaw=0.0;pitch=8.0;"
+            "on_ground=true",
+        ),
+        "native_screenshot_written": (
+            "one non-empty unedited framebuffer PNG",
+            f"{len(screenshot_content)} bytes, sha256="
+            f"{hashlib.sha256(screenshot_content).hexdigest()}",
+        ),
+        "integrated_world_joined": (
+            "running server and connected client",
+            "joined",
+        ),
+        "client_world_mirrors_server_fixture": (
+            "all four blocks and exact block entity types mirrored",
+            "mirrored",
+        ),
+        "client_fixture_block_entity_types_exact": (
+            "[etherology:brewing_cauldron_block_entity, "
+            "etherology:empowerment_table_block_entity, "
+            "etherology:ethereal_storage_block_entity, "
+            "etherology:armillary_sphere_block_entity]",
+            "[-3, 121, 2=etherology:brewing_cauldron_block_entity, "
+            "0, 121, 2=etherology:empowerment_table_block_entity, "
+            "3, 121, 2=etherology:ethereal_storage_block_entity, "
+            "0, 121, 5=etherology:armillary_sphere_block_entity]",
+        ),
+        "server_arena_chunk_loaded": ("full chunk", "true"),
+        "server_player_creative": ("creative", "true"),
+        "server_fixture_blocks_placed": (
+            "all expected identifiers",
+            "[-3, 121, 2=etherology:brewing_cauldron, "
+            "0, 121, 2=etherology:empowerment_table, "
+            "3, 121, 2=etherology:ethereal_storage, "
+            "0, 121, 5=etherology:armillary_sphere]",
+        ),
+        "server_fixture_block_entities_present": ("four block entities", "true"),
+        "server_fixture_block_entity_types_exact": (
+            "[etherology:brewing_cauldron_block_entity, "
+            "etherology:empowerment_table_block_entity, "
+            "etherology:ethereal_storage_block_entity, "
+            "etherology:armillary_sphere_block_entity]",
+            "[-3, 121, 2=etherology:brewing_cauldron_block_entity, "
+            "0, 121, 2=etherology:empowerment_table_block_entity, "
+            "3, 121, 2=etherology:ethereal_storage_block_entity, "
+            "0, 121, 5=etherology:armillary_sphere_block_entity]",
+        ),
+        "live_world_identity": (
+            "Etherology Original 0.1.7 Phase 0;19514442935972151;minecraft:overworld",
+            "Etherology Original 0.1.7 Phase 0;19514442935972151;minecraft:overworld",
+        ),
+        "forced_world_save": ("true", "true"),
+        "isolated_save_directory_present": (
+            str(scenario["world_directory_name"]),
+            str(scenario["world_directory_name"]),
+        ),
+    }
+    for name in client.EXPECTED_ASSERTION_NAMES:
+        if name.startswith("registry:"):
+            assertion_values[name] = ("present", "present")
+    etherology = next(
+        member
+        for member in client.member_specs(configuration)
+        if member["mod_id"] == "etherology"
+    )
+    harness = client.harness_spec(configuration)
+    report = {
+        "schema": 1,
+        "reference_id": "published-0.1.7",
+        "scenario": "phase0-smoke",
+        "lane": "fabric-1.21.1-original",
+        "status": "passed",
+        "client_ticks": 120,
+        "lifecycle_failure": "",
+        "assertions": [
+            {
+                "name": name,
+                "passed": True,
+                "expected": assertion_values[name][0],
+                "actual": assertion_values[name][1],
+            }
+            for name in client.EXPECTED_ASSERTION_NAMES
+        ],
+        "world": {
+            "save_directory": scenario["world_directory_name"],
+            "display_name": scenario["world_display_name"],
+            "seed": scenario["world_seed"],
+            "dimension": "minecraft:overworld",
+            "integrated": True,
+        },
+        "artifacts": [
+            {
+                "mod_id": "etherology",
+                "origin_kind": "PATH",
+                "file_name": etherology["file_name"],
+                "size": etherology["size"],
+                "sha256": etherology["sha256"],
+            },
+            {
+                "mod_id": harness["mod_id"],
+                "origin_kind": "PATH",
+                "file_name": harness["file_name"],
+                "size": harness["size"],
+                "sha256": harness["sha256"],
+            },
+        ],
+        "screenshots": [
+            {
+                "step": "integrated-world-fixture",
+                "file": f"screenshots/{scenario['screenshot_file']}",
+                "width": framebuffer["width"],
+                "height": framebuffer["height"],
+                "size": len(screenshot_content),
+                "sha256": hashlib.sha256(screenshot_content).hexdigest(),
+                "completed_render_count": 120,
+                "source": "minecraft-framebuffer",
+                "edited": False,
+            }
+        ],
+    }
+    report_file = client.report_path(configuration, root)
+    write_json(report_file, report)
+    client.completion_marker_path(configuration, root).write_text(
+        "phase0-smoke:passed\n"
+        f"report_sha256:{client.sha256_file(report_file)}\n",
+        encoding="utf-8",
+    )
+    latest_log = client.game_directory(configuration, root) / "logs" / "latest.log"
+    latest_log.write_text(
+        "Original phase0-smoke evidence published with status passed: fixture\n"
+        "Stopping!\n",
+        encoding="utf-8",
+    )
+    base_time = time.time_ns() - 5_000_000_000
+    os.utime(attempt_path, ns=(base_time, base_time))
+    for path, offset in (
+        (world / "level.dat", 1_000_000),
+        (world / "session.lock", 1_000_000),
+        (screenshot, 2_000_000),
+        (report_file, 3_000_000),
+        (client.completion_marker_path(configuration, root), 4_000_000),
+        (latest_log, 5_000_000),
+    ):
+        os.utime(path, ns=(base_time + offset, base_time + offset))
+
+
+def rewrite_report_and_marker(
+    configuration: object, root: Path, report: dict[str, object]
+) -> None:
+    report_file = client.report_path(configuration, root)
+    marker = client.completion_marker_path(configuration, root)
+    write_json(report_file, report)
+    marker.write_text(
+        "phase0-smoke:passed\n"
+        f"report_sha256:{client.sha256_file(report_file)}\n",
+        encoding="utf-8",
+    )
+    now = time.time_ns()
+    screenshot = client.screenshot_path(configuration, root)
+    os.utime(screenshot, ns=(now - 2_000_000, now - 2_000_000))
+    os.utime(report_file, ns=(now - 1_000_000, now - 1_000_000))
+    os.utime(marker, ns=(now, now))
+
+
+class TrackedManifestTests(unittest.TestCase):
+    def test_tracked_manifest_and_bundle_validate(self) -> None:
+        configuration = client.load_configuration()
+        inventory = client.verify_reference_bundle(configuration)
+        client.verify_harness_artifact(configuration)
+        self.assertEqual(
+            client.profile_spec(configuration)["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v1",
+        )
+        self.assertEqual(len(inventory), 8)
+        self.assertEqual(
+            client.bundle_spec(configuration)["sha256"],
+            "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b",
+        )
+
+    def test_tracked_runtime_authority_pins_are_exact(self) -> None:
+        configuration = client.load_configuration()
+        runtime = client.runtime_spec(configuration)
+        metadata = client.require_object(runtime, "metadata")
+        self.assertEqual(
+            {
+                "url": metadata["url"],
+                "size": metadata["size"],
+                "sha1": metadata["sha1"],
+                "sha256": metadata["sha256"],
+            },
+            {
+                "url": "https://piston-meta.mojang.com/v1/packages/"
+                "7d538f57bd7f3d0638755fa605a432494e736db3/1.21.1.json",
+                "size": 38408,
+                "sha1": "7d538f57bd7f3d0638755fa605a432494e736db3",
+                "sha256": "06ba60da1f8c6fe469bed1b348a064648bfdda57fc2fb56920e3f177f844fdfd",
+            },
+        )
+        self.assertEqual(
+            metadata["asset_index"],
+            {
+                "id": "17",
+                "url": "https://piston-meta.mojang.com/v1/packages/"
+                "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c/17.json",
+                "size": 449557,
+                "total_size": 824474118,
+                "sha1": "1f22f8f4b4575831ce8d1d74b5656eb1bc04732c",
+                "sha256": "8779cb0b10b5edbe494b69a3c5aaf823e1489b22497f40a985f5c35688eba635",
+            },
+        )
+        self.assertEqual(
+            metadata["client"],
+            {
+                "url": "https://piston-data.mojang.com/v1/objects/"
+                "30c73b1c5da787909b2f73340419fdf13b9def88/client.jar",
+                "size": 26836906,
+                "sha1": "30c73b1c5da787909b2f73340419fdf13b9def88",
+                "sha256": "499f6897d1837516680f3114072d8106e11c9adcd933fe5cf051b551089b0c99",
+            },
+        )
+        fabric_profile = client.require_object(runtime, "fabric_profile")
+        self.assertEqual(fabric_profile["size"], 2847)
+        self.assertEqual(
+            fabric_profile["sha256"],
+            "95904f86cb85064223216f6ff5cd14517bd1a30169f93d88a2857654979561bf",
+        )
+        self.assertEqual(
+            [library["coordinate"] for library in fabric_profile["libraries"]],
+            [
+                "org.ow2.asm:asm:9.9",
+                "org.ow2.asm:asm-analysis:9.9",
+                "org.ow2.asm:asm-commons:9.9",
+                "org.ow2.asm:asm-tree:9.9",
+                "org.ow2.asm:asm-util:9.9",
+                "net.fabricmc:sponge-mixin:0.16.5+mixin.0.8.7",
+                "net.fabricmc:intermediary:1.21.1",
+                "net.fabricmc:fabric-loader:0.17.3",
+            ],
+        )
+
+    def test_manifest_has_no_external_profile_contract(self) -> None:
+        content = TRACKED_MANIFEST_PATH.read_text(encoding="utf-8").casefold()
+        self.assertNotIn("modrinthapp", content)
+        self.assertNotIn("source_profile", content)
+        self.assertNotIn("app_root", content)
+        self.assertNotIn("quick-skin", content)
+
+    def test_parser_has_no_profile_adoption_or_deletion_actions(self) -> None:
+        with mock.patch("sys.stderr", io.StringIO()):
+            for arguments in (
+                ["adopt"],
+                ["reset"],
+                ["delete"],
+                ["validate", "--profile", "/tmp/foreign"],
+            ):
+                with self.subTest(arguments=arguments):
+                    with self.assertRaises(SystemExit):
+                        client.parse_arguments(arguments)
+
+
+class ManifestAndPathSafetyTests(unittest.TestCase):
+    def test_runtime_traversal_is_rejected(self) -> None:
+        manifest = json.loads(TRACKED_MANIFEST_PATH.read_text(encoding="utf-8"))
+        manifest["profile"]["runtime_directory"] = "../foreign"
+        with self.assertRaises(client.BaselineError):
+            client.validate_manifest_shape(manifest)
+
+    def test_bundle_symlink_is_rejected_before_read(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, manifest_path, _ = reference_fixture(temporary_root)
+            bundle_path = configuration.bundle_path
+            external = temporary_root / "external.mrpack"
+            bundle_path.replace(external)
+            bundle_path.symlink_to(external)
+            with self.assertRaises(client.BaselineError):
+                client.load_configuration(manifest_path, configuration.repository_root)
+
+    def test_repository_path_traversal_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            with self.assertRaises(client.BaselineError):
+                client.safe_repository_path(root, "../outside", "fixture")
+
+    def test_owned_runtime_rejects_foreign_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            runtimes_root, root = owned_runtime_fixture(configuration, temporary_root)
+            client.verify_owned_runtime(configuration, root, runtimes_root)
+            marker = client.load_json_object(
+                client.marker_path(configuration, root), "fixture marker"
+            )
+            marker["managed_by"] = "foreign-controller"
+            write_json(client.marker_path(configuration, root), marker)
+            with self.assertRaises(client.BaselineError):
+                client.verify_owned_runtime(configuration, root, runtimes_root)
+
+    def test_owned_runtime_symlink_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            runtimes_root = temporary_root / "state" / "runtimes"
+            runtimes_root.mkdir(parents=True)
+            external = temporary_root / "foreign"
+            external.mkdir()
+            root = client.runtime_root(configuration, runtimes_root)
+            root.symlink_to(external, target_is_directory=True)
+            with self.assertRaises(client.BaselineError):
+                client.verify_owned_runtime(configuration, root, runtimes_root)
+
+
+class BundleSafetyTests(unittest.TestCase):
+    def test_outer_hash_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, manifest_path, _ = reference_fixture(temporary_root)
+            manifest = client.load_json_object(manifest_path, "fixture manifest")
+            manifest["reference_bundle"]["sha256"] = "0" * 64
+            write_json(manifest_path, manifest)
+            configuration = client.load_configuration(
+                manifest_path, configuration.repository_root
+            )
+            with self.assertRaises(client.BaselineError):
+                client.verify_reference_bundle(configuration)
+
+    def test_member_hash_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, manifest_path, _ = reference_fixture(temporary_root)
+            manifest = client.load_json_object(manifest_path, "fixture manifest")
+            manifest["reference_bundle"]["members"][0]["sha256"] = "f" * 64
+            write_json(manifest_path, manifest)
+            configuration = client.load_configuration(
+                manifest_path, configuration.repository_root
+            )
+            with self.assertRaises(client.BaselineError):
+                client.verify_reference_bundle(configuration)
+
+    def test_extra_archive_member_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration, _, _ = reference_fixture(
+                Path(temporary_directory),
+                extra_entry=("overrides/mods/foreign.jar", fabric_jar_bytes("foreign")),
+            )
+            with self.assertRaises(client.BaselineError):
+                client.verify_reference_bundle(configuration)
+
+    def test_unsafe_archive_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration, _, _ = reference_fixture(
+                Path(temporary_directory), extra_entry=("../escape.txt", b"unsafe")
+            )
+            with self.assertRaises(client.BaselineError):
+                client.verify_reference_bundle(configuration)
+
+    def test_nested_forbidden_mod_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration, _, _ = reference_fixture(
+                Path(temporary_directory), nested_forbidden_mod_id="quickskin"
+            )
+            with self.assertRaises(client.BaselineError):
+                client.verify_reference_bundle(configuration)
+
+    def test_staged_inventory_rejects_extra_and_linked_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, contents = reference_fixture(temporary_root)
+            mods = temporary_root / "mods"
+            mods.mkdir()
+            for member in client.member_specs(configuration):
+                archive_path = str(member["archive_path"])
+                (mods / str(member["file_name"])).write_bytes(contents[archive_path])
+            harness = client.harness_spec(configuration)
+            (mods / str(harness["file_name"])).write_bytes(
+                contents[str(harness["file_name"])]
+            )
+            client.verify_mod_inventory(configuration, mods)
+            extra = mods / "foreign.jar"
+            extra.write_bytes(b"foreign")
+            with self.assertRaises(client.BaselineError):
+                client.verify_mod_inventory(configuration, mods)
+            extra.unlink()
+            target = mods / str(client.member_specs(configuration)[0]["file_name"])
+            target.unlink()
+            target.symlink_to(mods / str(client.member_specs(configuration)[1]["file_name"]))
+            with self.assertRaises(client.BaselineError):
+                client.verify_mod_inventory(configuration, mods)
+
+    def test_staging_preflights_every_target_before_replacing_any_jar(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            members = client.member_specs(configuration)
+            mods = client.game_directory(configuration, root) / "mods"
+            first_target = mods / str(members[0]["file_name"])
+            first_target.write_bytes(b"keep-this-content")
+            later_bad_target = mods / str(members[1]["file_name"])
+            later_bad_target.unlink()
+            later_bad_target.mkdir()
+
+            with mock.patch.object(client, "verify_owned_runtime", return_value=root):
+                with mock.patch.object(client, "verify_installed_game"):
+                    with mock.patch.object(client, "verify_runtime_lock"):
+                        with self.assertRaisesRegex(client.BaselineError, "non-file"):
+                            client.stage_reference_members(configuration)
+
+            self.assertEqual(first_target.read_bytes(), b"keep-this-content")
+
+
+class HarnessSafetyTests(unittest.TestCase):
+    def test_harness_hash_mismatch_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration, _, _ = reference_fixture(Path(temporary_directory))
+            configuration.harness_path.write_bytes(b"tampered")
+
+            with self.assertRaises(client.BaselineError):
+                client.verify_harness_artifact(configuration)
+
+    def test_harness_production_link_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration, _, _ = reference_fixture(
+                Path(temporary_directory), harness_production_link=True
+            )
+
+            with self.assertRaisesRegex(client.BaselineError, "implementation code"):
+                client.verify_harness_artifact(configuration)
+
+    def test_harness_symlink_is_rejected_before_read(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, manifest_path, _ = reference_fixture(temporary_root)
+            external = temporary_root / "foreign-harness.jar"
+            configuration.harness_path.replace(external)
+            configuration.harness_path.symlink_to(external)
+
+            with self.assertRaises(client.BaselineError):
+                client.load_configuration(
+                    manifest_path, configuration.repository_root
+                )
+
+
+class CaptureContractTests(unittest.TestCase):
+    @staticmethod
+    def prerequisite_patches(root: Path) -> ExitStack:
+        stack = ExitStack()
+        stack.enter_context(mock.patch.object(client, "verify_reference_bundle"))
+        stack.enter_context(mock.patch.object(client, "verify_harness_artifact"))
+        stack.enter_context(
+            mock.patch.object(client, "verify_owned_runtime", return_value=root)
+        )
+        stack.enter_context(mock.patch.object(client, "verify_installed_game"))
+        stack.enter_context(mock.patch.object(client, "verify_runtime_lock"))
+        stack.enter_context(mock.patch.object(client, "assert_runtime_not_running"))
+        return stack
+
+    def test_fresh_capture_layout_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+
+            client.verify_capture_layout(configuration, root, require_fresh=True)
+
+    def test_preexisting_evidence_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            client.report_path(configuration, root).write_text(
+                "existing\n", encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(client.BaselineError, "overwrite"):
+                client.verify_capture_layout(configuration, root, require_fresh=True)
+
+    def test_stage_fails_before_mutation_when_evidence_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            client.report_path(configuration, root).write_text(
+                "existing\n", encoding="utf-8"
+            )
+
+            with self.prerequisite_patches(root):
+                with self.assertRaisesRegex(client.BaselineError, "overwrite"):
+                    client.stage_reference_members(configuration)
+
+    def test_check_fails_before_java_resolution_when_evidence_exists(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            client.report_path(configuration, root).write_text(
+                "existing\n", encoding="utf-8"
+            )
+
+            with self.prerequisite_patches(root):
+                with mock.patch.object(client, "verify_staged_reference"):
+                    with mock.patch.object(client, "resolve_java_21") as resolve_java:
+                        with self.assertRaisesRegex(client.BaselineError, "overwrite"):
+                            client.check_environment(configuration, "phase0-smoke")
+                        resolve_java.assert_not_called()
+
+    def test_preexisting_world_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            client.save_directory(configuration, root).mkdir(parents=True)
+
+            with self.assertRaisesRegex(client.BaselineError, "reuse"):
+                client.verify_capture_layout(configuration, root, require_fresh=True)
+
+    def test_preexisting_launch_attempt_seal_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_json(client.launch_attempt_path(configuration, root), {"attempted": True})
+
+            with self.assertRaisesRegex(client.BaselineError, "launch-attempt seal"):
+                client.verify_capture_layout(configuration, root, require_fresh=True)
+
+    def test_linked_capture_directory_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            reports = client.reports_directory(configuration, root)
+            external = temporary_root / "external-reports"
+            external.mkdir()
+            reports.rmdir()
+            reports.symlink_to(external, target_is_directory=True)
+
+            with self.assertRaises(client.BaselineError):
+                client.verify_capture_layout(configuration, root, require_fresh=True)
+
+    def test_machine_verifier_accepts_exact_passing_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+
+            self.assertEqual(
+                client.verify_scenario_evidence(configuration, root),
+                {
+                    "path": "assets/skins",
+                    "present": False,
+                    "file_count": 0,
+                    "total_size": 0,
+                    "files": [],
+                },
+            )
+
+    def test_successful_run_record_binds_mutable_skin_cache(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            skin_cache = client.verify_scenario_evidence(configuration, root)
+            controller_log = (
+                client.logs_directory(configuration, root) / "original-client-fixture.log"
+            )
+            controller_log.write_bytes(b"fixture controller log\n")
+
+            verification = client.write_successful_run_verification(
+                configuration, root, controller_log, skin_cache
+            )
+            descriptor = client.load_json_object(
+                verification, "fixture successful-run verification"
+            )
+            self.assertEqual(descriptor["status"], "passed")
+            self.assertEqual(
+                descriptor["mutable_launcher_outputs"],
+                {"skin_cache": skin_cache},
+            )
+
+    def test_machine_verifier_rejects_tampered_screenshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            screenshot = client.screenshot_path(configuration, root)
+            screenshot.write_bytes(screenshot.read_bytes() + b"tampered")
+
+            with self.assertRaises(client.BaselineError):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_machine_verifier_rejects_failed_report(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            report = client.load_json_object(
+                client.report_path(configuration, root), "fixture report"
+            )
+            report["status"] = "failed"
+            write_json(client.report_path(configuration, root), report)
+
+            with self.assertRaisesRegex(client.BaselineError, "did not pass"):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_machine_verifier_rejects_blank_screenshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            scenario = client.scenario_spec(configuration)
+            framebuffer = scenario["framebuffer"]
+            screenshot = client.screenshot_path(configuration, root)
+            blank_content = png_bytes(
+                framebuffer["width"], framebuffer["height"], blank=True
+            )
+            screenshot.write_bytes(blank_content)
+            report = client.load_json_object(
+                client.report_path(configuration, root), "fixture report"
+            )
+            screenshot_node = report["screenshots"][0]
+            screenshot_node["size"] = len(blank_content)
+            screenshot_node["sha256"] = hashlib.sha256(blank_content).hexdigest()
+            for assertion in report["assertions"]:
+                if assertion["name"] == "native_screenshot_written":
+                    assertion["actual"] = (
+                        f"{len(blank_content)} bytes, sha256="
+                        f"{hashlib.sha256(blank_content).hexdigest()}"
+                    )
+            rewrite_report_and_marker(configuration, root, report)
+
+            with self.assertRaisesRegex(client.BaselineError, "blank or near-uniform"):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_machine_verifier_rejects_empty_world_proof(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            (client.save_directory(configuration, root) / "level.dat").write_bytes(b"")
+
+            with self.assertRaisesRegex(client.BaselineError, "proof file"):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_machine_verifier_rejects_reordered_assertions(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            report = client.load_json_object(
+                client.report_path(configuration, root), "fixture report"
+            )
+            report["assertions"][0], report["assertions"][1] = (
+                report["assertions"][1],
+                report["assertions"][0],
+            )
+            rewrite_report_and_marker(configuration, root, report)
+
+            with self.assertRaisesRegex(client.BaselineError, "order/inventory"):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_machine_verifier_rejects_marker_published_early(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            marker = client.completion_marker_path(configuration, root)
+            screenshot_time = client.screenshot_path(configuration, root).stat().st_mtime_ns
+            os.utime(marker, ns=(screenshot_time - 1, screenshot_time - 1))
+
+            with self.assertRaisesRegex(client.BaselineError, "published in"):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_machine_verifier_rejects_tampered_launcher_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            library = client.launcher_directory(configuration, root) / "libraries" / (
+                "fixture.jar"
+            )
+            library.write_bytes(b"tampered")
+
+            with self.assertRaises(client.BaselineError):
+                client.verify_scenario_evidence(configuration, root)
+
+    def test_provision_time_runtime_lock_rejects_later_tampering(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_launch_attempt_fixture(configuration, root)
+            lock_path = client.runtime_lock_path(configuration, root)
+            write_json(lock_path, client.runtime_lock_descriptor(configuration, root))
+            client.verify_runtime_lock(configuration, root)
+            first_native = client.native_classifier_inventory(configuration, root)[0]
+            native = client.launcher_directory(configuration, root) / Path(
+                *PurePosixPath(str(first_native["path"])).parts
+            )
+            native.write_bytes(b"tampered")
+
+            with self.assertRaises(client.BaselineError):
+                client.verify_runtime_lock(configuration, root)
+
+    def test_machine_verifier_requires_exact_origin_region_file(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            region = client.save_directory(configuration, root) / "region"
+            (region / "r.0.0.mca").rename(region / "r.1.0.mca")
+
+            with self.assertRaisesRegex(client.BaselineError, "region/r.0.0.mca"):
+                client.verify_scenario_evidence(configuration, root)
+
+
+class RuntimeAuthorityTests(unittest.TestCase):
+    def test_skin_cache_is_bounded_mutable_output_not_an_immutable_input(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            immutable_before = client.launcher_file_inventory(configuration, root)
+            cache_file = (
+                client.skin_cache_directory(configuration, root)
+                / "ab"
+                / ("ab" + "0" * 38)
+            )
+            cache_file.parent.mkdir(parents=True)
+            cache_file.write_bytes(b"network-populated-skin-cache")
+
+            self.assertEqual(
+                client.launcher_file_inventory(configuration, root), immutable_before
+            )
+            self.assertEqual(
+                client.runtime_skin_cache_descriptor(configuration, root),
+                {
+                    "path": "assets/skins",
+                    "present": True,
+                    "file_count": 1,
+                    "total_size": len(b"network-populated-skin-cache"),
+                    "files": [
+                        {
+                            "path": "ab/" + "ab" + "0" * 38,
+                            "size": len(b"network-populated-skin-cache"),
+                            "sha256": hashlib.sha256(
+                                b"network-populated-skin-cache"
+                            ).hexdigest(),
+                        }
+                    ],
+                },
+            )
+            with self.assertRaisesRegex(client.BaselineError, "assets/skins"):
+                client.prelaunch_profile_descriptor(configuration, root)
+
+    def test_runtime_skin_cache_rejects_a_linked_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            external = temporary_root / "foreign-skin-cache"
+            external.mkdir()
+            cache_root = client.skin_cache_directory(configuration, root)
+            cache_root.symlink_to(external, target_is_directory=True)
+
+            with self.assertRaises(client.BaselineError):
+                client.runtime_skin_cache_descriptor(configuration, root)
+
+    def test_download_hash_failure_removes_partial_destination(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            destination = Path(temporary_directory) / "download.bin"
+            with mock.patch.object(
+                client.urllib.request,
+                "urlopen",
+                return_value=io.BytesIO(b"wrong bytes"),
+            ):
+                with self.assertRaises(client.BaselineError):
+                    client.download_pinned_file(
+                        "https://example.invalid/download.bin",
+                        destination,
+                        hashlib.sha256(b"expected bytes").hexdigest(),
+                        "fixture download",
+                        len(b"expected bytes"),
+                    )
+            self.assertFalse(destination.exists())
+
+    def test_fabric_library_inventory_rejects_tampering(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            first_library = client.fabric_library_inventory(configuration, root)[0]
+            path = client.launcher_directory(configuration, root) / Path(
+                *PurePosixPath(str(first_library["path"])).parts
+            )
+            path.write_bytes(b"tampered")
+
+            with self.assertRaises(client.BaselineError):
+                client.fabric_library_inventory(configuration, root)
+
+    def test_native_classifier_inventory_rejects_missing_jar(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            first_native = client.native_classifier_inventory(configuration, root)[0]
+            path = client.launcher_directory(configuration, root) / Path(
+                *PurePosixPath(str(first_native["path"])).parts
+            )
+            path.unlink()
+
+            with self.assertRaisesRegex(client.BaselineError, "Native classifier"):
+                client.native_classifier_inventory(configuration, root)
+
+    def test_prelaunch_profile_rejects_options_and_config_contamination(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            client.prelaunch_profile_descriptor(configuration, root)
+            options_path = client.game_directory(configuration, root) / "options.txt"
+            options_path.write_text("fullscreen:true\n", encoding="utf-8")
+            with self.assertRaisesRegex(client.BaselineError, "options.txt"):
+                client.prelaunch_profile_descriptor(configuration, root)
+            options_path.write_bytes(client.expected_options_content(configuration))
+            (client.game_directory(configuration, root) / "config" / "foreign.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            with self.assertRaisesRegex(client.BaselineError, "config"):
+                client.prelaunch_profile_descriptor(configuration, root)
+
+    def test_pinned_metadata_projections_reject_tampering(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            vanilla_path = client.vanilla_metadata_path(configuration, root)
+            vanilla = client.load_json_object(vanilla_path, "fixture vanilla metadata")
+            vanilla["foreign"] = True
+            write_json(vanilla_path, vanilla)
+            with self.assertRaisesRegex(client.BaselineError, "projection"):
+                client.verify_pinned_launcher_metadata(configuration, root)
+            vanilla.pop("foreign")
+            write_json(vanilla_path, vanilla)
+            fabric_path = client.fabric_metadata_path(configuration, root)
+            fabric = client.load_json_object(fabric_path, "fixture Fabric metadata")
+            fabric["mainClass"] = "foreign.Main"
+            write_json(fabric_path, fabric)
+            with self.assertRaisesRegex(client.BaselineError, "projection"):
+                client.verify_pinned_fabric_metadata(configuration, root)
+
+    def test_stage_rejects_profile_contamination_before_repairing_mod(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            first_member = client.member_specs(configuration)[0]
+            first_target = (
+                client.game_directory(configuration, root)
+                / "mods"
+                / str(first_member["file_name"])
+            )
+            first_target.write_bytes(b"keep-this-tamper")
+            (client.game_directory(configuration, root) / "config" / "foreign.json").write_text(
+                "{}\n", encoding="utf-8"
+            )
+            with mock.patch.object(client, "verify_owned_runtime", return_value=root):
+                with self.assertRaisesRegex(client.BaselineError, "config"):
+                    client.stage_reference_members(configuration)
+            self.assertEqual(first_target.read_bytes(), b"keep-this-tamper")
+
+
+class JavaAndScenarioSafetyTests(unittest.TestCase):
+    def test_controlled_termination_signal_raises_and_restores(self) -> None:
+        previous_handler = signal.getsignal(signal.SIGTERM)
+        with self.assertRaisesRegex(client.BaselineError, "SIGTERM"):
+            with client.controlled_termination_signals():
+                signal.raise_signal(signal.SIGTERM)
+        self.assertEqual(signal.getsignal(signal.SIGTERM), previous_handler)
+
+    def test_termination_signal_is_deferred_across_spawn_assignment(self) -> None:
+        assignment_completed = False
+        previous_handler = signal.getsignal(signal.SIGTERM)
+        with self.assertRaisesRegex(client.BaselineError, "SIGTERM"):
+            with client.controlled_termination_signals():
+                with client.blocked_termination_signals():
+                    signal.raise_signal(signal.SIGTERM)
+                    assignment_completed = True
+        self.assertTrue(assignment_completed)
+        self.assertEqual(signal.getsignal(signal.SIGTERM), previous_handler)
+
+    def test_minecraft_installation_worker_has_a_hard_timeout(self) -> None:
+        def hang_in_worker(
+            _configuration: object,
+            _root: Path,
+            _result_connection: object,
+        ) -> None:
+            for termination_signal in client.CONTROLLER_TERMINATION_SIGNALS:
+                signal.signal(termination_signal, signal.SIG_DFL)
+            time.sleep(60)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            root = temporary_root / "owned-runtime"
+            root.mkdir()
+            started = time.monotonic()
+            with (
+                mock.patch.object(
+                    client, "PROVISION_INSTALL_TIMEOUT_SECONDS", 0.05
+                ),
+                mock.patch.object(client, "PROCESS_STOP_TIMEOUT_SECONDS", 0.25),
+                mock.patch.object(client, "minecraft_install_worker", hang_in_worker),
+            ):
+                with self.assertRaisesRegex(client.BaselineError, "one-hour worker"):
+                    client.install_minecraft_in_owned_worker(configuration, root)
+            self.assertLess(time.monotonic() - started, 3)
+
+    def test_minecraft_installation_worker_propagates_failure(self) -> None:
+        def fail_in_worker(
+            _configuration: object,
+            _root: Path,
+            result_connection: object,
+        ) -> None:
+            result_connection.send(
+                {
+                    "status": "failed",
+                    "error_type": "FixtureError",
+                    "error": "fixture worker failure",
+                }
+            )
+            result_connection.close()
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            root = temporary_root / "owned-runtime"
+            root.mkdir()
+            with mock.patch.object(
+                client, "minecraft_install_worker", fail_in_worker
+            ):
+                with self.assertRaisesRegex(
+                    client.BaselineError, "FixtureError: fixture worker failure"
+                ):
+                    client.install_minecraft_in_owned_worker(configuration, root)
+
+    def test_http_dependency_shadow_is_rejected_before_launcher_execution(self) -> None:
+        existing_launcher_modules = {
+            name: module for name, module in sys.modules.items()
+            if name == "minecraft_launcher_lib"
+            or name.startswith("minecraft_launcher_lib.")
+        }
+        for name in existing_launcher_modules:
+            sys.modules.pop(name, None)
+        try:
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temporary_root = Path(temporary_directory)
+                cache_parent = temporary_root / "tmp"
+                cache_parent.mkdir()
+                shadow_root = temporary_root / "shadow" / "requests"
+                shadow_root.mkdir(parents=True)
+                shadow_entry = shadow_root / "__init__.py"
+                shadow_entry.write_text("raise RuntimeError('must not execute')\n")
+                shadow_specification = importlib.util.spec_from_file_location(
+                    "requests",
+                    shadow_entry,
+                    submodule_search_locations=[str(shadow_root)],
+                )
+                real_find_spec = client.importlib.util.find_spec
+
+                def find_spec(module_name: str, package: str | None = None) -> object:
+                    if module_name == "requests":
+                        return shadow_specification
+                    return real_find_spec(module_name, package)
+
+                with mock.patch.object(
+                    client.importlib.util, "find_spec", side_effect=find_spec
+                ):
+                    with self.assertRaisesRegex(
+                        client.BaselineError, "does not select pinned requests"
+                    ):
+                        client.load_verified_launcher_module(
+                            "minecraft_launcher_lib.command",
+                            cache_parent / "python-bytecode-cache",
+                        )
+        finally:
+            for name in client.launcher_module_names():
+                sys.modules.pop(name, None)
+            sys.modules.update(existing_launcher_modules)
+
+    def test_launcher_distribution_record_covers_eager_modules(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            cache_parent = temporary_root / "tmp"
+            cache_parent.mkdir()
+            descriptor = client.verify_launcher_library(
+                cache_parent / "python-bytecode-cache"
+            )
+        paths = {entry["path"] for entry in descriptor["files"]}
+        self.assertEqual(
+            descriptor["record"]["sha256"],
+            client.PINNED_LAUNCHER_RECORD_SHA256,
+        )
+        self.assertTrue(
+            {
+                "minecraft_launcher_lib/__init__.py",
+                "minecraft_launcher_lib/install.py",
+                "minecraft_launcher_lib/command.py",
+                "minecraft_launcher_lib/types.py",
+                "minecraft_launcher_lib/_internal_types/install_types.py",
+            }.issubset(paths)
+        )
+        self.assertEqual(
+            {
+                dependency["distribution"]: (
+                    dependency["version"],
+                    dependency["record"]["sha256"],
+                )
+                for dependency in descriptor["http_dependencies"]
+            },
+            {
+                "requests": (
+                    "2.34.2",
+                    "80a07dc1ca3b1a0c981e49e8dfde15af08a07050a74107fa8d699181d46c2d5c",
+                ),
+                "urllib3": (
+                    "2.7.0",
+                    "f254d3adc53473ba7dcd88bda8602dc3bf2193858f95eebf952f077612726290",
+                ),
+                "certifi": (
+                    "2026.6.17",
+                    "3472ecda100873d7a0f591a37cd756b029afb3dab5542be6e0fcdd6ae94cdcbb",
+                ),
+                "idna": (
+                    "3.18",
+                    "5ef552c0058464669e5c74cb698590607a86fe5e038c6f28b263b8dc71306f8a",
+                ),
+                "charset-normalizer": (
+                    "3.4.9",
+                    "478ffdfc59d8a071fdf34931107af09988a9b2b684996ae359887d8b7d030962",
+                ),
+            },
+        )
+
+    def test_launcher_distribution_rejects_unverified_preimport(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            cache_parent = Path(temporary_directory) / "tmp"
+            cache_parent.mkdir()
+            with mock.patch.object(
+                client, "_VERIFIED_LAUNCHER_DISTRIBUTION_SHA256", None
+            ):
+                with mock.patch.dict(
+                    sys.modules, {"minecraft_launcher_lib": mock.Mock()}
+                ):
+                    with self.assertRaisesRegex(client.BaselineError, "before complete"):
+                        client.verify_launcher_library(
+                            cache_parent / "python-bytecode-cache"
+                        )
+
+    def test_verified_launcher_module_load_uses_pinned_package(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            cache_parent = Path(temporary_directory) / "tmp"
+            cache_parent.mkdir()
+            command_module = client.load_verified_launcher_module(
+                "minecraft_launcher_lib.command",
+                cache_parent / "python-bytecode-cache",
+            )
+            descriptor = client.verify_launcher_distribution()
+            package_root = Path(descriptor["package_root"]).resolve(strict=True)
+            client.verify_loaded_launcher_module_origins(package_root)
+            self.assertTrue(
+                client.is_relative_to(
+                    Path(command_module.__file__).resolve(strict=True), package_root
+                )
+            )
+
+    def test_verified_launcher_module_load_rejects_shadow_resolution(self) -> None:
+        existing_modules = {
+            name: module
+            for name, module in sys.modules.items()
+            if name == "minecraft_launcher_lib"
+            or name.startswith("minecraft_launcher_lib.")
+        }
+        for name in existing_modules:
+            sys.modules.pop(name, None)
+        try:
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temporary_root = Path(temporary_directory)
+                cache_parent = temporary_root / "tmp"
+                cache_parent.mkdir()
+                shadow_root = temporary_root / "shadow" / "minecraft_launcher_lib"
+                shadow_root.mkdir(parents=True)
+                shadow_entry = shadow_root / "__init__.py"
+                shadow_entry.write_text("raise RuntimeError('must not execute')\n")
+                shadow_specification = importlib.util.spec_from_file_location(
+                    "minecraft_launcher_lib",
+                    shadow_entry,
+                    submodule_search_locations=[str(shadow_root)],
+                )
+                real_find_spec = client.importlib.util.find_spec
+
+                def find_spec(module_name: str, package: str | None = None) -> object:
+                    if module_name == "minecraft_launcher_lib":
+                        return shadow_specification
+                    return real_find_spec(module_name, package)
+
+                with mock.patch.object(
+                    client.importlib.util,
+                    "find_spec",
+                    side_effect=find_spec,
+                ):
+                    with self.assertRaisesRegex(
+                        client.BaselineError,
+                        "does not select the verified minecraft-launcher-lib",
+                    ):
+                        client.load_verified_launcher_module(
+                            "minecraft_launcher_lib.command",
+                            cache_parent / "python-bytecode-cache",
+                        )
+        finally:
+            for name in client.launcher_module_names():
+                sys.modules.pop(name, None)
+            sys.modules.update(existing_modules)
+
+    def test_provision_preflights_java_before_creating_runtime_roots(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            runtimes_root = temporary_root / "new-state" / "runtimes"
+            with mock.patch.object(
+                client,
+                "resolve_java_21",
+                side_effect=client.BaselineError("no java fixture"),
+            ):
+                with self.assertRaisesRegex(client.BaselineError, "no java fixture"):
+                    client.provision_profile(configuration, runtimes_root)
+            self.assertFalse(runtimes_root.exists())
+            self.assertFalse(runtimes_root.parent.exists())
+
+    def test_provision_preflights_import_resolution_before_runtime_mutation(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            runtimes_root = temporary_root / "new-state" / "runtimes"
+            with (
+                mock.patch.object(
+                    client,
+                    "preflight_launcher_import_resolution",
+                    side_effect=client.BaselineError("shadowed dependency fixture"),
+                ),
+                mock.patch.object(client, "resolve_java_21") as resolve_java,
+            ):
+                with self.assertRaisesRegex(
+                    client.BaselineError, "shadowed dependency fixture"
+                ):
+                    client.provision_profile(configuration, runtimes_root)
+            resolve_java.assert_not_called()
+            self.assertFalse(runtimes_root.exists())
+            self.assertFalse(runtimes_root.parent.exists())
+
+    def test_java_selection_skips_profile_and_non_21_candidates(self) -> None:
+        profile_java = Path("/tmp/ModrinthApp/profiles/reference/java")
+        java_17 = Path("/tmp/jdks/java-17/bin/java")
+        java_21 = Path("/tmp/jdks/java-21/bin/java")
+        versions = {
+            java_17.resolve(strict=False): 17,
+            java_21.resolve(strict=False): 21,
+        }
+        selected = client.select_java_21(
+            [profile_java, java_17, java_21], lambda path: versions.get(path)
+        )
+        self.assertEqual(selected, java_21.resolve(strict=False))
+
+    def test_java_selection_fails_without_safe_java_21(self) -> None:
+        with self.assertRaises(client.BaselineError):
+            client.select_java_21(
+                [Path("/tmp/instances/reference/java"), Path("/tmp/java17")],
+                lambda _path: 17,
+            )
+
+    def test_scenario_requires_exact_allowlist_entry(self) -> None:
+        configuration = client.load_configuration()
+        self.assertEqual(
+            client.resolve_scenario_id(configuration, "phase0-smoke"),
+            "phase0-smoke",
+        )
+        for scenario in (None, "", "phase0-smoke ", "../phase0-smoke", "other"):
+            with self.subTest(scenario=scenario):
+                with self.assertRaises(client.BaselineError):
+                    client.resolve_scenario_id(configuration, scenario)
+
+    def test_capture_harness_is_exactly_pinned(self) -> None:
+        configuration = client.load_configuration()
+        client.require_capture_harness(configuration)
+        self.assertEqual(
+            client.harness_spec(configuration)["sha256"],
+            "5554034a7535b9f324d38cb4c2c79721a8c45f507aac6e450f5d807787506d24",
+        )
+
+    def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:
+        manifest = json.loads(TRACKED_MANIFEST_PATH.read_text(encoding="utf-8"))
+        manifest["capture"]["harness"]["path"] = "/tmp/foreign.jar"
+        with self.assertRaises(client.BaselineError):
+            client.validate_manifest_shape(manifest)
+
+    def test_optional_http_dependency_is_rejected_before_launcher_execution(self) -> None:
+        existing_launcher_modules = {
+            name: module for name, module in sys.modules.items()
+            if name == "minecraft_launcher_lib"
+            or name.startswith("minecraft_launcher_lib.")
+        }
+        for name in existing_launcher_modules:
+            sys.modules.pop(name, None)
+        try:
+            with tempfile.TemporaryDirectory() as temporary_directory:
+                temporary_root = Path(temporary_directory)
+                cache_parent = temporary_root / "tmp"
+                cache_parent.mkdir()
+                optional_module = temporary_root / "chardet.py"
+                optional_module.write_text("raise RuntimeError('must not execute')\n")
+                optional_specification = importlib.util.spec_from_file_location(
+                    "chardet", optional_module
+                )
+                real_pathfinder = client.importlib.machinery.PathFinder.find_spec
+
+                def find_spec(
+                    module_name: str,
+                    path: object = None,
+                    target: object = None,
+                ) -> object:
+                    if module_name == "chardet":
+                        return optional_specification
+                    return real_pathfinder(module_name, path, target)
+
+                with mock.patch.object(
+                    client.importlib.machinery.PathFinder,
+                    "find_spec",
+                    side_effect=find_spec,
+                ):
+                    with self.assertRaisesRegex(
+                        client.BaselineError, "optional HTTP modules are importable"
+                    ):
+                        client.load_verified_launcher_module(
+                            "minecraft_launcher_lib.command",
+                            cache_parent / "python-bytecode-cache",
+                        )
+        finally:
+            for name in client.launcher_module_names():
+                sys.modules.pop(name, None)
+            sys.modules.update(existing_launcher_modules)
+
+
+class CommandAndProcessSafetyTests(unittest.TestCase):
+    def command_fixture(
+        self, configuration: object, temporary_root: Path, scenario: str | None
+    ) -> tuple[list[str], Path, Path]:
+        root = temporary_root / "runtime"
+        launcher = client.launcher_directory(configuration, root)
+        game = client.game_directory(configuration, root)
+        java = temporary_root / "jdk" / "bin" / "java"
+        java.parent.mkdir(parents=True, exist_ok=True)
+        java.write_bytes(b"fixture")
+        game.mkdir(parents=True)
+        client.home_directory(configuration, root).mkdir()
+        client.temporary_directory(configuration, root).mkdir()
+        populate_runtime_launcher(configuration, root)
+        extraction_directory = client.native_extraction_directory(configuration, root)
+        classpath = [
+            str(launcher / Path(*PurePosixPath(relative_path).parts))
+            for relative_path in client.expected_merged_classpath_paths(
+                configuration, root
+            )
+        ]
+        command = [
+            str(java),
+            "-Duser.home=" + str(client.home_directory(configuration, root)),
+            "-Djava.io.tmpdir=" + str(client.temporary_directory(configuration, root)),
+            "-Djava.library.path=" + str(extraction_directory),
+            "-Djna.tmpdir=" + str(extraction_directory),
+            "-Dorg.lwjgl.system.SharedLibraryExtractPath="
+            + str(extraction_directory),
+            "-Dio.netty.native.workdir=" + str(extraction_directory),
+            "-cp",
+            os.pathsep.join(classpath),
+        ]
+        if scenario is not None:
+            command.append(f"-D{client.SCENARIO_PROPERTY_NAME}={scenario}")
+        command.extend(
+            [
+                "net.fabricmc.loader.impl.launch.knot.KnotClient",
+                "--gameDir",
+                str(game),
+                "--assetsDir",
+                str(launcher / "assets"),
+                "--assetIndex",
+                "17",
+                "--version",
+                client.version_id(configuration),
+                "--username",
+                "EtherologyE2E",
+                "--uuid",
+                client.offline_uuid("EtherologyE2E"),
+                "--accessToken",
+                "offline-etherology-original-baseline",
+                "--width",
+                "960",
+                "--height",
+                "540",
+            ]
+        )
+        return command, java, root
+
+    def test_launch_command_is_contained_and_scenario_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            command, java, root = self.command_fixture(
+                configuration, temporary_root, "phase0-smoke"
+            )
+            client.verify_launch_command(
+                configuration, command, java, root, "phase0-smoke"
+            )
+            command.append(f"-D{client.SCENARIO_PROPERTY_NAME}=other")
+            with self.assertRaises(client.BaselineError):
+                client.verify_launch_command(
+                    configuration, command, java, root, "phase0-smoke"
+                )
+
+    def test_launch_command_rejects_external_classpath(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            command, java, root = self.command_fixture(configuration, temporary_root, None)
+            external = temporary_root / "foreign.jar"
+            external.write_bytes(b"foreign")
+            classpath_index = command.index("-cp") + 1
+            command[classpath_index] += os.pathsep + str(external)
+            with self.assertRaises(client.BaselineError):
+                client.verify_launch_command(configuration, command, java, root)
+
+    def test_launch_command_rejects_a_second_game_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            command, java, root = self.command_fixture(
+                configuration, temporary_root, "phase0-smoke"
+            )
+            command.extend(("--gameDir", "/tmp/foreign"))
+            with self.assertRaises(client.BaselineError):
+                client.verify_launch_command(
+                    configuration, command, java, root, "phase0-smoke"
+                )
+
+    def test_process_state_rejects_external_log(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            state = {
+                "schema": 2,
+                "profile_id": client.profile_spec(configuration)["id"],
+                "pid": 123,
+                "process_group_id": 123,
+                "version_id": client.version_id(configuration),
+                "game_directory": str(client.game_directory(configuration, root)),
+                "scenario": "phase0-smoke",
+                "log": "/tmp/foreign.log",
+                "launch_attempt_sha256": "0" * 64,
+            }
+            write_json(client.process_state_path(configuration, root), state)
+            with self.assertRaises(client.BaselineError):
+                client.read_process_state(configuration, root)
+
+    def test_stale_process_state_is_never_adopted_or_unlinked(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            log_path = client.logs_directory(configuration, root) / (
+                "original-client-20260831T000000Z.log"
+            )
+            state = {
+                "schema": 2,
+                "profile_id": client.profile_spec(configuration)["id"],
+                "pid": 999999,
+                "process_group_id": 999999,
+                "version_id": client.version_id(configuration),
+                "game_directory": str(client.game_directory(configuration, root)),
+                "scenario": "phase0-smoke",
+                "log": str(log_path),
+                "launch_attempt_sha256": "0" * 64,
+            }
+            state_path = client.process_state_path(configuration, root)
+            write_json(state_path, state)
+
+            with self.assertRaisesRegex(client.BaselineError, "never adopts"):
+                client.assert_runtime_not_running(configuration, root)
+            self.assertTrue(state_path.is_file())
+
+    def test_fatal_log_marker_is_exact(self) -> None:
+        self.assertEqual(
+            client.find_fatal_log_marker("prefix A mod crashed on startup! suffix"),
+            "A mod crashed on startup!",
+        )
+        self.assertIsNone(client.find_fatal_log_marker("normal shutdown"))
+
+
+if __name__ == "__main__":
+    unittest.main()

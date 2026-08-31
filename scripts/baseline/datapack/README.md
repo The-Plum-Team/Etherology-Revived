@@ -1,9 +1,16 @@
 # Etherology 0.1.7 visual gallery datapack
 
-This datapack stages a compact, repeatable visual gallery for the published
-Etherology `1.21-0.1.7` Fabric build on Minecraft 1.21.1. Its Etherology block
-and item identifiers were checked against upstream commit
-`cfd75166248049c8f20ad1172e99603c884a551e`.
+This directory is an unprovisioned historical gallery fixture. It was designed
+to stage a compact visual gallery for Etherology `1.21-0.1.7` on Minecraft
+1.21.1, but the repository-owned baseline controller does not currently copy,
+install, enable, or execute it. The `phase0-smoke` harness creates its own fresh
+world and does not use this datapack.
+
+Do not treat this fixture or its identifiers as runtime evidence for the pinned
+published binary. It becomes an executable baseline input only after a future
+repository-owned world/harness contract explicitly pins its hash, stages it
+under `.state/runtimes/...`, and verifies the resulting behavior. There are no
+instructions here for installing it into any external launcher or user profile.
 
 The gallery has a fixed origin at `(0, 96, 0)` and occupies the inclusive
 bounding box `(0, 96, 0)` through `(58, 105, 10)`. Run the functions from the
@@ -12,39 +19,17 @@ erase and rebuild their own bay, while full setup and `gallery/clear` erase the
 complete bounding box. Use a disposable creative test world whose builds do
 not overlap that area.
 
-## Install
+## Historical function inventory
 
-The baseline launcher's `world` action provisions the validated gallery save
-with this datapack already installed, enabled, and hash-checked. The manual
-steps below are only for a different disposable reference world.
-
-Copy this directory into the isolated reference world's `datapacks` directory
-under a distinct pack name. That produces:
-
-```text
-~/Library/Application Support/ModrinthApp/profiles/Etherology E2E 1.21.1/saves/<world>/datapacks/etherology_baseline/pack.mcmeta
-```
-
-The directory containing `pack.mcmeta` must be directly below `datapacks`.
-Start the world or run `/reload`, then confirm the pack is enabled:
-
-```mcfunction
-/datapack list enabled
-```
-
-The world must run Minecraft 1.21.1, Etherology `1.21-0.1.7`, and that mod's
-required Fabric dependencies. Commands require cheats or operator permission.
-
-## Use
-
-Build or reset all five bays, then move to the fixed overview position:
+When a future owned harness adopts this fixture, its former full-gallery entry
+points are:
 
 ```mcfunction
 /function etherology_baseline:gallery/setup
 /function etherology_baseline:gallery/teleport
 ```
 
-Each bay can also be reset independently:
+Its former individual-bay entry points are:
 
 ```mcfunction
 /function etherology_baseline:gallery/decorative_worldgen
@@ -54,7 +39,8 @@ Each bay can also be reset independently:
 /function etherology_baseline:gallery/combat_equipment
 ```
 
-Remove the gallery and only the armor stands tagged by this pack:
+Its cleanup entry point removes the gallery and only armor stands tagged by the
+fixture:
 
 ```mcfunction
 /function etherology_baseline:gallery/clear

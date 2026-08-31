@@ -22,7 +22,7 @@ import ru.feytox.etherology.item.TuningMaceItem;
 import ru.feytox.etherology.item.TwoHandheldSword;
 import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
 import ru.feytox.etherology.registry.misc.EtherEnchantments;
-import ru.feytox.etherology.registry.misc.EtherSounds;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.util.delayedTask.DelayedTask;
 
@@ -154,7 +154,16 @@ public class ShockwaveUtil {
         double x = target.getX();
         double y = target.getY();
         double z = target.getZ();
-        world.playSound(null, x, y, z, EtherSounds.TUNING_MACE, attacker.getSoundCategory(), 0.5f, pitch);
+        world.playSound(
+                null,
+                x,
+                y,
+                z,
+                SharedSounds.TUNING_MACE.get(),
+                attacker.getSoundCategory(),
+                0.5f,
+                pitch
+        );
     }
 
     private static void trySchedulePeal(World world, PlayerEntity attacker, Entity target, Vec3d shockPos, double knockbackStrength) {
@@ -165,7 +174,16 @@ public class ShockwaveUtil {
 
         DelayedTask.createTaskWithMs(world, 600, () -> {
             boolean result = activatePeal((ServerWorld) world, attacker, target.getType(), shockPos, pealLevel, knockbackStrength);
-            if (result) world.playSound(null, target.getBlockPos(), EtherSounds.THUNDER_ZAP, attacker.getSoundCategory(), 1.0f, 1f);
+            if (result) {
+                world.playSound(
+                        null,
+                        target.getBlockPos(),
+                        SharedSounds.THUNDER_ZAP.get(),
+                        attacker.getSoundCategory(),
+                        1.0f,
+                        1f
+                );
+            }
         });
     }
 

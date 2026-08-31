@@ -27,7 +27,7 @@ import net.minecraft.world.WorldAccess;
 import net.minecraft.world.event.listener.GameEventListener;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.registry.block.EBlocks;
-import ru.feytox.etherology.registry.misc.EtherSounds;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.util.misc.RegistrableBlock;
 
 public class TuningFork extends FacingBlock implements RegistrableBlock, BlockEntityProvider, Waterloggable {
@@ -78,7 +78,14 @@ public class TuningFork extends FacingBlock implements RegistrableBlock, BlockEn
         world.addParticle(ParticleTypes.NOTE, pos.getX() + 0.5, pos.getY() + 1.2, pos.getZ() + 0.5, note / 24.0, 0.0, 0.0);
         if (!state.get(WATERLOGGED)) {
             float pitch = (float) Math.pow(2.0, (note - 12) / 12.0);
-            world.playSound(null, pos, EtherSounds.TUNING_FORK_TUNING, SoundCategory.BLOCKS, 0.5f, pitch);
+            world.playSound(
+                    null,
+                    pos,
+                    SharedSounds.TUNING_FORK_TUNING.get(),
+                    SoundCategory.BLOCKS,
+                    0.5f,
+                    pitch
+            );
         }
         return true;
     }

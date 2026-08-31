@@ -5,7 +5,7 @@ import net.minecraft.client.sound.MovingSoundInstance;
 import net.minecraft.client.sound.SoundInstance;
 import net.minecraft.sound.SoundCategory;
 import ru.feytox.etherology.block.brewingCauldron.BrewingCauldronBlockEntity;
-import ru.feytox.etherology.registry.misc.EtherSounds;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 
 public class BrewingCauldronSoundInstance extends MovingSoundInstance {
 
@@ -14,7 +14,7 @@ public class BrewingCauldronSoundInstance extends MovingSoundInstance {
     private float fading = 0.0f;
 
     protected BrewingCauldronSoundInstance(BrewingCauldronBlockEntity cauldron, ClientPlayerEntity player) {
-        super(EtherSounds.BUBBLES, SoundCategory.BLOCKS, SoundInstance.createRandom());
+        super(SharedSounds.BUBBLES.get(), SoundCategory.BLOCKS, SoundInstance.createRandom());
         this.cauldron = cauldron;
         this.player = player;
         attenuationType = AttenuationType.NONE;

@@ -1,22 +1,25 @@
-# Forge 1.20.1 bootstrap, storage, and channel-foundation status
+# Forge 1.20.1 bootstrap, storage, channel, and sound-registry status
 
-The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and one
-complete loader-neutral item registration vertical. Its bounded ethereal-storage vertical now
-persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
+The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and
+accepted bounded item, storage, channel, and sound-registry milestones. Its ethereal-storage
+vertical persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
 vanilla sided insertion and native Forge item-handler access, transfers Ether into canonical Glint
 state, registers a Dist-scoped Forge client screen and Gecko renderer, and has passed a packaged
-save/restart/reopen scenario in an isolated macOS client. The next bounded vertical registers the
-shared ethereal channel and block entity, applies the shared storage/pipe transfer contract,
+save/restart/reopen scenario in an isolated macOS client. The ethereal-channel vertical registers
+the shared channel and block entity, applies the shared storage/pipe transfer contract,
 preserves direction and Ether state, supports redstone gating and native Forge wall levers, and
 has passed its own packaged save/restart scenario in a fresh isolated macOS client. These runs
-accept only bounded storage parity and channel-foundation behavior, not channel cases, particles,
-loot and recipes, the wider machine/network graph, or a playable Etherology port. The lane cannot
-produce or publish a release artifact.
+accept only bounded storage parity and channel-foundation behavior. The subsequent static sound
+milestone gives the 14 canonical sound-event IDs one Common declaration owner and closes the exact
+21 packaged mono 44.1 kHz OGG files, `sounds.json` entries and attenuation values, and English
+subtitles. It does not prove native playback. Channel cases, particles, loot and recipes, the wider
+machine/network graph, most of the authoritative registry spine, and a playable Etherology port
+remain incomplete. The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
-`EtherologyBootstrap` attaches the shared block, item, block-entity, and screen-handler registries
-during `@Mod` construction, before Forge registry events run. It delegates handshake idempotence
-and failure state to `BootstrapLifecycle`. `PlatformRegistrar` supplies the loader boundary. The
+`EtherologyBootstrap` attaches the shared block, item, block-entity, screen-handler, and sound-event
+registries during `@Mod` construction, before Forge registry events run. It delegates handshake
+idempotence and failure state to `BootstrapLifecycle`. `PlatformRegistrar` supplies the loader boundary. The
 native `ForgePlatformRegistrar` listens for `FMLCommonSetupEvent` and uses `enqueueWork` so the
 handshake runs on Forge's setup work queue instead of its parallel event-dispatch thread.
 
@@ -47,25 +50,38 @@ client systems have been registered.
   storage/pipe contracts, registered channel block and block entity, persistent Ether and
   direction state, compiled fifth-tick transfer and evaporation behavior, storage endpoints,
   native Forge lever support, and the deterministic harness and visual-verifier regressions.
+- `validateForgeChannelEvidenceArchiveIntegrity` is expected to pass. It validates the immutable
+  six-file Channel archive and its capture-time provenance without comparing a later whole JAR.
 - `validateForgeChannelNetworkMilestone` is expected to pass. It adds the fresh packaged
   `ethereal-channel` run, exact save/restart state, three native framebuffers, and frozen artifact
   provenance to the positive bounded channel-foundation gate.
+- `validateForgeSoundRegistryMilestone` is expected to pass. It requires the accepted Channel
+  implementation and archive, runs the Common, Fabric, and Forge tests, and checks the Common,
+  Fabric-transformed Common, Forge-transformed Common, remapped Fabric production, and Forge
+  shadow artifacts. It accepts the exact 14 sound IDs, 21 packaged OGGs, sound manifest and
+  attenuation entries, and English subtitle closure without claiming playback.
+- `validateForgeChannelCurrentArtifactDiagnostic` is deliberately not an acceptance dependency.
+  It now fails because the later sound milestone changed the whole production JAR relative to the
+  Channel capture. That expected byte mismatch is not a Channel regression and does not establish
+  current equality.
 - `verifyForgePortGateClosed` is expected to pass. It is a diagnostic task, not an artifact gate:
   after requiring every accepted positive gate, it reports the first incomplete forward stage.
-  That stage is now the authoritative registry spine, beginning with shared sound registration.
+  That stage is now the broader authoritative registry spine; the bounded sound step is no longer
+  in its missing-condition list.
 - `validateForgeReleaseReadinessMilestone` is a permanent final backstop after every bounded
   forward gate. It fails unconditionally until the full gameplay graph and complete packaged
   native Forge client, dedicated-server, persistence, and E2E matrix are implemented and the task
-  itself is replaced by concrete acceptance checks. The bounded storage and channel runs are not
-  sufficient. Class or method-name stubs cannot open this gate.
+  itself is replaced by concrete acceptance checks. The bounded storage and Channel runs and the
+  static sound gate are not sufficient. Class or method-name stubs cannot open this gate.
 - `validateForgePortInputs`, `remapJar`, and every future `publish*` task depend on every accepted
   positive gate plus the remaining authoritative-registry, gameplay, and final-readiness
   milestones. They remain closed until full native release readiness is explicitly accepted.
 
 The diagnostic verification walks the predeclared forward milestones in order. A completed stage
-must gain its positive and native proof, while the unconditional final readiness stage remains in
-the artifact path. Neither the diagnostic task nor a removed condition may replace
-`validateForgePortInputs` merely to produce an artifact.
+must gain positive proof proportionate to its contract, and every runtime mechanic still requires
+native proof. The unconditional final readiness stage remains in the artifact path. Neither the
+diagnostic task nor a removed condition may replace `validateForgePortInputs` merely to produce an
+artifact.
 
 ## Accepted Ether item milestone
 
@@ -171,13 +187,39 @@ storage endpoints, and native Forge lever support. It does not cover channel-cas
 registration, channel particles and the client ticker, channel loot and recipe data, or the wider
 machine/network graph.
 
-## Forward fail-closed authoritative registry and sound milestone
+## Accepted bounded SharedSounds registry milestone
 
-The next forward gate returns to the authoritative registry spine. The temporary shared catalogs
-must converge into one declaration owner per canonical ID, beginning with the sound registry and
-its packaged resources, without shadowing Fabric classes or resolving suppliers during
-declaration. The broader content catalogs and the unfinished portions of the Ether graph remain
-behind that work.
+`SharedSounds` is the single Common declaration owner for these exact 14 IDs:
+`electricity_sound`, `matrix_idle_sound`, `deflect`, `bubbles`, `pouf`, `ratchet`,
+`brewing_dissolution`, `thunder_zap`, `tuning_mace`, `tuning_fork_activate`,
+`tuning_fork_tuning`, `tuning_fork_resonance`, `broadsword`, and `warp_counter`.
+Forge attaches that deferred registry during `@Mod` construction, before lifecycle events, without
+resolving its suppliers during declaration.
+
+Fabric attaches `SharedSounds` from its canonical initializer without invoking
+`EtherologyBootstrap`; all canonical sound consumers resolve the shared suppliers only at playback
+sites. Forge attaches the same owner through its Common bootstrap. The eager `EtherSounds` owner
+has been removed, while the Common JAR, both loader-transformed Common JARs, remapped Fabric
+production JAR, and Forge shadow JAR preserve exactly one `SharedSounds` owner. Thus both active
+loaders use one declaration owner without class shadowing or a dormant public supplier contract.
+
+The resource contract contains exactly 21 packaged mono 44.1 kHz OGG files locked to canonical
+SHA-256 digests. Its exact per-event `sounds.json` mapping includes the canonical ordered audio
+references and attenuation entries, and every referenced English subtitle key resolves. The Forge
+shadow entries must remain byte-identical to their canonical sources.
+`validateForgeSoundRegistryMilestone` seals those declarations and resources across the Common,
+Fabric-transform, Forge-transform, remapped Fabric-production, and Forge-shadow boundaries. No
+native sound-playback E2E was run for this static milestone; each later consumer mechanic must
+prove that it plays the expected event.
+
+## Forward fail-closed broader authoritative registry milestone
+
+The next forward gate remains the rest of the authoritative registry spine. The temporary block,
+item, block-entity, and screen-handler catalogs must converge into one active declaration owner per
+canonical ID without shadowing Fabric classes or resolving suppliers during declaration. Entity,
+enchantment, recipe, effect, event, loot, particle, tree, world-generation, and lifecycle-hook
+ownership also remains incomplete. The unfinished portions of the Ether graph stay behind that
+work.
 
 `validateForgeReleaseReadinessMilestone` remains behind the forward registry and gameplay gates
 and keeps the artifact path closed for every subsequent dedicated-server, client, persistence, and
@@ -187,8 +229,8 @@ E2E slice.
 
 - The common JAR contains component state/access contracts, the loader handshake,
   `etherology:ether`, the accepted bounded ethereal-storage vertical, and the accepted bounded
-  ethereal-channel foundation. Its temporary catalogs have not yet converged into the
-  authoritative registry spine.
+  ethereal-channel foundation. `SharedSounds` now owns the accepted Common sound declarations,
+  but the other temporary catalogs have not yet converged into the authoritative registry spine.
 - The canonical initializer remains in the Fabric production source graph. Of 352 canonical main
   Java files, 22 directly import Fabric API, Biolith, Trinkets, or Fabric Shield Lib through 34
   import statements. Transitive ownership work remains beyond that lower bound.
@@ -203,7 +245,6 @@ E2E slice.
 - The client tree has 211 Java files; 64 directly import Fabric, REI/EMI, owo, Biolith, Trinkets, or
   Fabric Shield Lib APIs and still need common-versus-loader ownership decisions.
 
-The next native slice is the authoritative registry spine, beginning with shared sound
-registration and resource closure. A release remains invalid until that gate, the deferred channel
-work, every subsequent gameplay system, dedicated-server checks, and the full native E2E matrix
-are ported and accepted.
+The next native slice is the broader authoritative registry spine after the accepted SharedSounds
+foundation. A release remains invalid until that gate, the deferred channel work, every subsequent
+gameplay system, dedicated-server checks, and the full native E2E matrix are ported and accepted.

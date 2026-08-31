@@ -13,8 +13,8 @@ import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.block.etherealChannel.EtherealChannel;
 import ru.feytox.etherology.registry.block.EBlocks;
-import ru.feytox.etherology.registry.misc.EtherSounds;
 import ru.feytox.etherology.registry.misc.EtherToolMaterials;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 
 public class StreamKeyItem extends ToolItem {
 
@@ -28,7 +28,14 @@ public class StreamKeyItem extends ToolItem {
         if (result == null) return super.useOnBlock(context);
 
         var random = context.getWorld().getRandom();
-        context.getWorld().playSound(null, context.getBlockPos(), EtherSounds.RATCHET, SoundCategory.BLOCKS, 0.8f, random.nextFloat()*0.2f+0.9f);
+        context.getWorld().playSound(
+                null,
+                context.getBlockPos(),
+                SharedSounds.RATCHET.get(),
+                SoundCategory.BLOCKS,
+                0.8f,
+                random.nextFloat() * 0.2f + 0.9f
+        );
         return result;
     }
 

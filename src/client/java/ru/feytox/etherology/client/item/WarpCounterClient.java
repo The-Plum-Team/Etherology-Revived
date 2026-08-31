@@ -16,8 +16,8 @@ import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.client.util.PseudoLivingEntity;
 import ru.feytox.etherology.magic.corruption.Corruption;
 import ru.feytox.etherology.magic.corruption.CorruptionComponent;
-import ru.feytox.etherology.registry.misc.EtherSounds;
 import ru.feytox.etherology.registry.misc.EtherologyComponents;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.util.misc.ItemStackData;
 
 @UtilityClass
@@ -67,7 +67,14 @@ public class WarpCounterClient {
         float soundChance = MathHelper.lerp(warpLevel, SOUND_MIN_CHANCE, SOUND_MAX_CHANCE);
         if (world.getRandom().nextFloat() > soundChance) return;
 
-        world.playSound(MinecraftClient.getInstance().player, holder.getBlockPos(), EtherSounds.WARP_COUNTER, SoundCategory.PLAYERS, 1.0f, 1.0f);
+        world.playSound(
+                MinecraftClient.getInstance().player,
+                holder.getBlockPos(),
+                SharedSounds.WARP_COUNTER.get(),
+                SoundCategory.PLAYERS,
+                1.0f,
+                1.0f
+        );
     }
 
     private static float getLevel(World world, BlockPos pos) {

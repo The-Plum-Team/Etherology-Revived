@@ -302,6 +302,16 @@ Even that comparison does not compare current source files; it proves only that
 the supplied profile and artifacts are byte-identical to the capture-time
 records.
 
+The Gradle tasks intentionally keep those two questions separate.
+`validateForgeChannelEvidenceArchiveIntegrity` performs the archive-only check
+and remains the accepted Channel evidence gate.
+`validateForgeChannelCurrentArtifactDiagnostic` supplies the current remapped
+JARs and profile to the stricter comparison. At the SharedSounds checkpoint the
+latter fails as expected because an unrelated production change altered the
+whole JAR after the Channel capture. That result is neither an archive failure
+nor a Channel regression, and it does not claim current equality. Establishing
+current equality requires another fresh isolated profile and native run.
+
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
 

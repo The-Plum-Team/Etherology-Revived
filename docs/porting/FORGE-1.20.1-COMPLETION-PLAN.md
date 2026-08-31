@@ -3,16 +3,19 @@
 This document is the implementation plan for turning the native Forge 1.20.1 bootstrap into a
 complete Etherology gameplay port. It is intentionally stricter than a compilation checklist:
 each slice must own a coherent mechanic, preserve the canonical registry identifiers and save
-semantics, and finish with native runtime evidence before the release gate advances.
+semantics, and finish with deterministic acceptance. Every gameplay behavior must also have native
+runtime evidence before the release gate advances.
 
-The shared Ether item, bounded Ethereal Storage vertical, and bounded Ethereal Channel foundation
-are accepted foundations, not the finished port. Storage now has canonical per-Glint Ether
-arithmetic, native Forge item-handler capability lifecycle, synchronized Gecko animation, and
+The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation, and
+bounded SharedSounds registry/resource milestone are accepted foundations, not the finished port.
+Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
+lifecycle, synchronized Gecko animation, and
 packaged save/restart/reopen proof. The channel foundation now has directed fifth-tick transfer,
 redstone gating, exact `0.2` evaporation, storage endpoints, native Forge lever support, and its own
-packaged save/restart proof. The authoritative registry spine, beginning with shared sound
-registration, is the first incomplete forward milestone. Broad content migration must still
-follow the ownership and dependency order below.
+packaged save/restart proof. SharedSounds closes the exact Common sound declarations and packaged
+resource inventory, but does not claim native playback. The broader authoritative registry spine
+is the first incomplete forward milestone. Broad content migration must still follow the ownership
+and dependency order below.
 
 ## Audit snapshot
 
@@ -37,8 +40,12 @@ canonical Fabric graph remains authoritative until each bounded slice is accepte
 
 `SharedItems`, `SharedBlocks`, and `SharedBlockEntities` are temporary catalogs used to establish
 the loader-neutral lifecycle without replacing canonical Fabric classes. They cannot remain a
-second permanent catalog for the same identifiers. Before broad content migration, converge on
-one authoritative declaration for every registry ID and attach that declaration once per loader.
+second permanent catalog for the same identifiers. `SharedSounds` is the first accepted part of
+the authoritative registry spine and the single Common declaration owner for its IDs. Forge
+attaches it before lifecycle registry events, while Fabric attaches the same owner from its
+canonical initializer. The legacy eager `EtherSounds` registry is removed. Before broad content
+migration, converge the remaining catalogs on one active declaration owner for every registry ID
+and attach that declaration once per loader.
 
 The convergence must replace eager `Registry.register` calls and eager construction through
 `RegistrableBlock` and `EBlock` with Architectury `DeferredRegister` and `RegistrySupplier`.
@@ -51,20 +58,39 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 ## Execution order
 
-### Slice 0: build and authoritative registry spine — next forward gate
+### Slice 0: build and authoritative registry spine — current forward gate
 
-This is the current forward milestone. Shared sound declarations and their resource closure are
-the first bounded step; accepting that step will not by itself complete the broader catalogs in
-this slice.
+This is the current forward milestone. Its first bounded step, shared sound declarations and exact
+resource closure, is accepted. The broader catalogs and lifecycle hooks in this slice remain the
+first incomplete work.
 
 Source owners:
 
 - Blocks: `ExtraBlocksRegistry`, `DecoBlocks`, `EBlocks`, `DevBlocks`, `EBlockFamilies`.
 - Items: `EItems`, `ToolItems`, `ArmorItems`, `DecoBlockItems`, `EItemGroups`.
-- Other registries: `EntityRegistry`, `EtherEnchantments`, `EtherSounds`, `RecipesRegistry`,
-  `ScreenHandlersRegistry`, `EffectsRegistry`, `EventsRegistry`, `LootConditions`,
+- Other registries: accepted Common `SharedSounds`, `EntityRegistry`, `EtherEnchantments`,
+  `RecipesRegistry`, `ScreenHandlersRegistry`,
+  `EffectsRegistry`, `EventsRegistry`, `LootConditions`,
   `EtherParticleTypes`, `TreesRegistry`, and `WorldGenRegistry`.
 - Eager helpers: `RegistrableBlock` and `EBlock`.
+
+Accepted bounded sound foundation:
+
+- `SharedSounds` is the single Common declaration owner for the exact 14 canonical sound-event
+  IDs. Forge attaches it before lifecycle registry events without eager supplier resolution.
+- Fabric attaches `SharedSounds` directly from its canonical initializer, and all canonical sound
+  consumers resolve its suppliers only when they need to play an event. Forge attaches the same
+  owner through `EtherologyBootstrap`.
+- The Common, Fabric-transformed Common, Forge-transformed Common, remapped Fabric production, and
+  Forge shadow artifacts preserve `SharedSounds` and exclude the removed eager `EtherSounds`
+  owner.
+- The packaged resource inventory is exactly 21 hash-locked mono 44.1 kHz OGG files, with exact
+  per-event `sounds.json` mappings and attenuation entries and complete English subtitle
+  references.
+- `validateForgeSoundRegistryMilestone` consumes the Common, Fabric, and Forge tests and all
+  declaration/production artifact boundaries plus the accepted Channel implementation and
+  immutable archive. No native
+  sound-playback E2E was run; later consumer mechanics must prove playback.
 
 Implementation:
 
@@ -86,7 +112,7 @@ Access and mixin blockers:
   narrow access transformer. The complete Fabric access widener must not be imported.
 - Block-entity builders must receive resolved blocks only after the relevant suppliers exist.
 
-Proof:
+Remaining full-slice proof:
 
 - Exact Fabric/Forge registry-ID manifest comparison.
 - Duplicate-ID and premature-supplier-resolution unit tests.
@@ -242,11 +268,12 @@ record is the
 [`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md).
 
 The bounded `validateForgeChannelNetworkMilestone` has since been accepted with its own fresh
-native evidence; the storage run was not reused as channel proof. The authoritative registry spine,
-beginning with shared sound registration, is now the first incomplete stage in the release
-dependency graph. The unconditional `validateForgeReleaseReadinessMilestone` remains behind every
-forward gate and cannot be satisfied by class or method stubs or by reusing either bounded archive.
-The release graph must never remove or relax a stage merely to allow `remapJar`.
+native evidence; the storage run was not reused as channel proof. The bounded
+`validateForgeSoundRegistryMilestone` is also accepted, so the broader authoritative registry
+spine is now the first incomplete stage in the release dependency graph. The unconditional
+`validateForgeReleaseReadinessMilestone` remains behind every forward gate and cannot be satisfied
+by class or method stubs or by reusing either bounded archive. The release graph must never remove
+or relax a stage merely to allow `remapJar`.
 
 ### Slice 4: static content and storage utilities
 
@@ -317,6 +344,12 @@ Accepted bounded proof:
   force-save, disconnect, restart, and exact persistent-state comparison. Its immutable record is
   the [`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md), which does not claim
   that later sources or rebuilt artifacts still match the capture.
+
+`validateForgeChannelEvidenceArchiveIntegrity` continues to accept that immutable capture and its
+capture-time provenance. The separate `validateForgeChannelCurrentArtifactDiagnostic` now fails
+because the later sound work changed the whole production JAR. That expected digest mismatch does
+not imply a Channel regression or prove equality for current artifacts; only another fresh
+isolated native run can establish current equality.
 
 Remaining full-slice proof:
 
@@ -625,15 +658,17 @@ The ordered forward gates advance in the same change that completes a positive m
    gate and every declared forward gate, including the unconditional final native-readiness
    backstop.
 
-Current positive gates run real Common and Forge tests/compile and inspect compiled classes; they
-do not rely solely on source/comment tokens. Compilation, deterministic bytecode structure, and
-resource presence still cannot replace native gameplay evidence. Conversely, native evidence
-cannot excuse missing deterministic unit and integration tests.
+Current positive gates run real Common, Fabric, and Forge test/compile paths and inspect compiled
+classes and loader-transformed artifacts; they do not rely solely on source/comment tokens.
+Compilation, deterministic bytecode structure, and resource presence still cannot replace native
+gameplay evidence. Conversely, native evidence cannot excuse missing deterministic unit and
+integration tests.
 
-The bounded storage and channel-foundation gates are currently positive. The authoritative
-registry spine, beginning with shared sound registration and resource closure, is the next
-fail-closed milestone. The deferred portions of the channel and machine graph remain part of the
-later full-slice acceptance rather than being inferred from the foundation run.
+The bounded storage, channel-foundation, and SharedSounds registry/resource gates are currently
+positive. The broader authoritative registry spine is the next fail-closed milestone. Sound
+playback remains owned by later consumer-mechanic evidence, and the deferred portions of the
+channel and machine graph remain part of the later full-slice acceptance rather than being
+inferred from either the Channel run or the static sound gate.
 
 The final release-readiness task intentionally fails unconditionally until all required slices
 pass, a dedicated server starts cleanly, an isolated Forge client completes the required scenario

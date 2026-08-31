@@ -98,7 +98,14 @@ public class EtherEnchantments {
         var newOwner = projectile instanceof TridentEntity ? projectile.getOwner() : target;
         newProjectile.setOwner(newOwner);
 
-        world.playSound(null, target.getBlockPos(), EtherSounds.DEFLECT, target.getSoundCategory(), 0.5f, 1.0f);
+        world.playSound(
+                null,
+                target.getBlockPos(),
+                SharedSounds.DEFLECT.get(),
+                target.getSoundCategory(),
+                0.5f,
+                1.0f
+        );
         var activeHand = target.getActiveHand();
         shield.damage(2, target, livingEntity -> livingEntity.sendToolBreakStatus(activeHand));
         return false;

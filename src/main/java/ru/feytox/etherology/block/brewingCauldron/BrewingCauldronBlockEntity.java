@@ -32,8 +32,8 @@ import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.recipes.alchemy.AlchemyRecipe;
 import ru.feytox.etherology.recipes.alchemy.AlchemyRecipeInventory;
 import ru.feytox.etherology.recipes.alchemy.AlchemyRecipeSerializer;
-import ru.feytox.etherology.registry.misc.EtherSounds;
 import ru.feytox.etherology.registry.misc.RecipesRegistry;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
 import ru.feytox.etherology.util.inventory.ListBackedInventory;
@@ -154,7 +154,14 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements L
             itemEntity.discard();
             spawnResultParticles(world, state);
             Random random = world.getRandom();
-            world.playSound(null, pos, EtherSounds.POUF, SoundCategory.BLOCKS, 1.0f, random.nextFloat()*0.2f+0.9f);
+            world.playSound(
+                    null,
+                    pos,
+                    SharedSounds.POUF.get(),
+                    SoundCategory.BLOCKS,
+                    1.0f,
+                    random.nextFloat() * 0.2f + 0.9f
+            );
             return;
         }
 
@@ -175,7 +182,14 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements L
     public void mixWater(World world) {
         StartBlockAnimS2C.sendForTracking(this, "mixing");
         scheduleMixItems();
-        world.playSound(null, pos, EtherSounds.BREWING_DISSOLUTION, SoundCategory.BLOCKS, 1.5f, world.getRandom().nextFloat()*0.2f+0.9f);
+        world.playSound(
+                null,
+                pos,
+                SharedSounds.BREWING_DISSOLUTION.get(),
+                SoundCategory.BLOCKS,
+                1.5f,
+                world.getRandom().nextFloat() * 0.2f + 0.9f
+        );
     }
 
     private void scheduleMixItems() {

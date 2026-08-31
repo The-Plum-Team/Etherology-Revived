@@ -25,6 +25,15 @@ val commonProject = project(commonProjectPath)
 evaluationDependsOn(commonProjectPath)
 val commonJar = commonProject.tasks.named<Jar>("jar")
 val commonTest = commonProject.tasks.named("test")
+val commonTransformProductionFabric =
+    commonProject.tasks.named("transformProductionFabric")
+val commonTransformProductionForge =
+    commonProject.tasks.named("transformProductionForge")
+val fabricProjectPath = requireNotNull(stonecutter.node.sibling("fabric")).hierarchy.toString()
+val fabricProject = project(fabricProjectPath)
+evaluationDependsOn(fabricProjectPath)
+val fabricTest = fabricProject.tasks.named("test")
+val fabricRemapJar = fabricProject.tasks.named<RemapJarTask>("remapJar")
 val forgeJavaRoot = rootProject.file("forge/src/main/java")
 val forgeResourcesRoot = rootProject.file("forge/src/main/resources")
 val forgeMainClasses = layout.buildDirectory.dir("classes/java/main")
@@ -56,6 +65,14 @@ val glintEtherDataClassEntry =
     "ru/feytox/etherology/item/glints/GlintEtherData.class"
 val sharedScreenHandlerRegistryClassEntry =
     "ru/feytox/etherology/registry/misc/SharedScreenHandlers.class"
+val sharedSoundRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/SharedSounds.class"
+val canonicalFabricSoundRegistryClassEntry =
+    "ru/feytox/etherology/registry/misc/EtherSounds.class"
+val canonicalFabricInitializerClassEntry =
+    "ru/feytox/etherology/Etherology.class"
+val fabricEntrypointClassEntry =
+    "ru/feytox/etherology/EtherologyFabric.class"
 val forgeEntrypointClassEntry =
     "ru/feytox/etherology/forge/EtherologyForge.class"
 val forgeClientEventsClassEntry =
@@ -144,6 +161,49 @@ val etherealChannelTextures = listOf(
 val etherealChannelResources =
     listOf(etherealChannelBlockstate, etherealChannelItemModel) +
         etherealChannelBlockModels + etherealChannelTextures
+val soundManifest =
+    rootProject.file("src/client/resources/assets/etherology/sounds.json")
+val soundDirectory =
+    rootProject.file("src/client/resources/assets/etherology/sounds")
+val canonicalSoundEventIds = setOf(
+    "electricity_sound",
+    "matrix_idle_sound",
+    "deflect",
+    "bubbles",
+    "pouf",
+    "ratchet",
+    "brewing_dissolution",
+    "thunder_zap",
+    "tuning_mace",
+    "tuning_fork_activate",
+    "tuning_fork_tuning",
+    "tuning_fork_resonance",
+    "broadsword",
+    "warp_counter",
+)
+val canonicalSoundFiles = setOf(
+    "armillary_matrix_idle_loop.ogg",
+    "brewing_dissolution_0.ogg",
+    "broadsword.ogg",
+    "bubbles_0.ogg",
+    "bubbles_1.ogg",
+    "bubbles_2.ogg",
+    "deflect.ogg",
+    "electricity_1.ogg",
+    "electricity_2.ogg",
+    "electricity_3.ogg",
+    "pouf_0.ogg",
+    "pouf_1.ogg",
+    "ratchet_0.ogg",
+    "thunder_zap_0.ogg",
+    "thunder_zap_1.ogg",
+    "thunder_zap_2.ogg",
+    "tuning_fork_activate.ogg",
+    "tuning_fork_resonance.ogg",
+    "tuning_fork_tuning.ogg",
+    "tuning_mace.ogg",
+    "warp_counter.ogg",
+)
 val forgeChannelEvidenceRoot = rootProject.file("docs/evidence/forge-1.20.1")
 val forgeChannelEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_channel_evidence.py")
@@ -1334,9 +1394,273 @@ fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> =
     missingForgeChannelImplementationMilestone(commonJarFile) +
         missingForgeChannelEvidenceMilestone()
 
+fun taskOutputJar(task: Task, description: String): File {
+    val jarFiles = task.outputs.files.files.filter { output ->
+        output.isFile && output.extension == "jar"
+    }
+    check(jarFiles.size == 1) {
+        "$description must produce exactly one JAR, found ${jarFiles.sorted()}"
+    }
+    return jarFiles.single()
+}
+
+fun missingForgeSoundRegistryMilestone(
+    commonJarFile: File,
+    fabricTransformedCommonJarFile: File,
+    forgeTransformedCommonJarFile: File,
+    fabricProductionJarFile: File,
+    forgeShadowJarFile: File,
+): List<String> {
+    val missingConditions = mutableListOf<String>()
+
+    if (!soundManifest.isFile || Files.isSymbolicLink(soundManifest.toPath())) {
+        missingConditions.add("canonical sounds.json is missing or linked")
+    }
+
+    val diskSoundFiles = if (soundDirectory.isDirectory
+        && !Files.isSymbolicLink(soundDirectory.toPath())
+    ) {
+        soundDirectory.walkTopDown()
+            .filter(File::isFile)
+            .map { sound -> sound.relativeTo(soundDirectory).invariantSeparatorsPath }
+            .toSet()
+    } else {
+        emptySet()
+    }
+    if (diskSoundFiles != canonicalSoundFiles) {
+        missingConditions.add(
+            "canonical packaged OGG inventory changed: " +
+                "expected=${canonicalSoundFiles.sorted()}, actual=${diskSoundFiles.sorted()}",
+        )
+    }
+
+    if (!englishLanguageFile.isFile || Files.isSymbolicLink(englishLanguageFile.toPath())) {
+        missingConditions.add("canonical English language file is missing or linked")
+    }
+
+    fun inspectArtifact(
+        artifact: File,
+        description: String,
+        requireSoundResources: Boolean,
+        requireFabricEntrypoint: Boolean = false,
+    ) {
+        if (!artifact.isFile || Files.isSymbolicLink(artifact.toPath())) {
+            missingConditions.add("$description is missing or linked")
+            return
+        }
+        try {
+            ZipFile(artifact).use { zip ->
+                val entryNames = zip.entries().asSequence().map { entry -> entry.name }.toList()
+                val entries = entryNames.toSet()
+                val sharedOwnerCount = entryNames.count(sharedSoundRegistryClassEntry::equals)
+                if (sharedOwnerCount != 1) {
+                    missingConditions.add(
+                        "$description must contain one shared sound registry, " +
+                            "found $sharedOwnerCount",
+                    )
+                } else {
+                    val soundEntry = requireNotNull(zip.getEntry(sharedSoundRegistryClassEntry))
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(soundEntry).use { input -> input.readAllBytes() },
+                    )
+                    val missingSoundIds = canonicalSoundEventIds - constants
+                    if (missingSoundIds.isNotEmpty()
+                        || "ru/feytox/etherology/registry/SharedDeferredRegister" !in constants
+                    ) {
+                        missingConditions.add(
+                            "$description shared sound registry lost deferred ownership or IDs: " +
+                                missingSoundIds.sorted(),
+                        )
+                    }
+                }
+                val legacyOwnerCount = entryNames.count(
+                    canonicalFabricSoundRegistryClassEntry::equals,
+                )
+                if (legacyOwnerCount != 0) {
+                    missingConditions.add(
+                        "$description contains $legacyOwnerCount legacy EtherSounds owner(s)",
+                    )
+                }
+                val soundIdOwners = mutableMapOf<String, Set<String>>()
+                val soundRegistryWriteOwners = mutableSetOf<String>()
+                entryNames.filter { entryName -> entryName.endsWith(".class") }
+                    .forEach { classEntryName ->
+                        val classEntry = requireNotNull(zip.getEntry(classEntryName))
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(classEntry).use { input -> input.readAllBytes() },
+                        )
+                        val declaredSoundIds = canonicalSoundEventIds.intersect(constants)
+                        val hasSoundEventType = listOf(
+                            "net/minecraft/sound/SoundEvent",
+                            "net/minecraft/class_3414",
+                        ).any(constants::contains)
+                        if (hasSoundEventType && declaredSoundIds.isNotEmpty()) {
+                            soundIdOwners[classEntryName] = declaredSoundIds
+                        }
+                        val hasNamedSoundRegistryReference =
+                            "SOUND_EVENT" in constants && (
+                                "net/minecraft/registry/RegistryKeys" in constants
+                                    || "net/minecraft/registry/Registries" in constants
+                            )
+                        val hasIntermediarySoundRegistryReference =
+                            "net/minecraft/class_7924" in constants
+                                && "field_41225" in constants
+                                || "net/minecraft/class_7923" in constants
+                                && "field_41172" in constants
+                        if (hasNamedSoundRegistryReference
+                            || hasIntermediarySoundRegistryReference
+                        ) {
+                            soundRegistryWriteOwners.add(classEntryName)
+                        }
+                    }
+                val expectedSoundOwner = setOf(sharedSoundRegistryClassEntry)
+                if (soundIdOwners.keys != expectedSoundOwner
+                    || soundIdOwners[sharedSoundRegistryClassEntry] != canonicalSoundEventIds
+                ) {
+                    missingConditions.add(
+                        "$description canonical sound-ID declaration owners changed: " +
+                            soundIdOwners.toSortedMap(),
+                    )
+                }
+                if (soundRegistryWriteOwners != expectedSoundOwner) {
+                    missingConditions.add(
+                        "$description sound-event registry-write owners changed: " +
+                            soundRegistryWriteOwners.sorted(),
+                    )
+                }
+                val bootstrapEntry = zip.getEntry(commonBootstrapClassEntry)
+                if (bootstrapEntry == null) {
+                    missingConditions.add("$description has no loader-neutral bootstrap")
+                } else {
+                    val constants = readClassUtf8Constants(
+                        zip.getInputStream(bootstrapEntry).use { input -> input.readAllBytes() },
+                    )
+                    if ("ru/feytox/etherology/registry/misc/SharedSounds" !in constants) {
+                        missingConditions.add(
+                            "$description bootstrap does not attach the shared sound registry",
+                        )
+                    }
+                }
+                if (requireFabricEntrypoint) {
+                    val initializerEntry = zip.getEntry(canonicalFabricInitializerClassEntry)
+                    if (initializerEntry == null) {
+                        missingConditions.add("$description has no canonical Fabric initializer")
+                    } else {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(initializerEntry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                        if ("ru/feytox/etherology/registry/misc/SharedSounds" !in constants
+                            || "ru/feytox/etherology/bootstrap/EtherologyBootstrap" in constants
+                        ) {
+                            missingConditions.add(
+                                "$description initializer does not directly own the Fabric " +
+                                    "SharedSounds attachment path",
+                            )
+                        }
+                    }
+                    val entrypointEntry = zip.getEntry(fabricEntrypointClassEntry)
+                    if (entrypointEntry == null) {
+                        missingConditions.add("$description has no Fabric entrypoint")
+                    } else {
+                        val constants = readClassUtf8Constants(
+                            zip.getInputStream(entrypointEntry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                        if ("ru/feytox/etherology/Etherology" !in constants
+                            || "ru/feytox/etherology/registry/misc/SharedSounds" in constants
+                            || "ru/feytox/etherology/bootstrap/EtherologyBootstrap" in constants
+                        ) {
+                            missingConditions.add(
+                                "$description Fabric entrypoint bypasses its canonical initializer",
+                            )
+                        }
+                    }
+                }
+                if (requireSoundResources) {
+                    val packagedSoundFiles = entries
+                        .filter { entry ->
+                            entry.startsWith("assets/etherology/sounds/")
+                                && entry.endsWith(".ogg")
+                        }
+                        .map { entry -> entry.removePrefix("assets/etherology/sounds/") }
+                        .toSet()
+                    if (packagedSoundFiles != canonicalSoundFiles) {
+                        missingConditions.add(
+                            "$description packaged OGG inventory changed: " +
+                                "expected=${canonicalSoundFiles.sorted()}, " +
+                                "actual=${packagedSoundFiles.sorted()}",
+                        )
+                    }
+                    val canonicalResources = buildMap<String, File> {
+                        put("assets/etherology/sounds.json", soundManifest)
+                        put("assets/etherology/lang/en_us.json", englishLanguageFile)
+                        canonicalSoundFiles.forEach { soundFile ->
+                            put(
+                                "assets/etherology/sounds/$soundFile",
+                                soundDirectory.resolve(soundFile),
+                            )
+                        }
+                    }
+                    canonicalResources.forEach { (entryPath, sourceFile) ->
+                        if (!sourceFile.isFile
+                            || Files.isSymbolicLink(sourceFile.toPath())
+                        ) {
+                            missingConditions.add(
+                                "canonical source for $entryPath is missing or linked",
+                            )
+                            return@forEach
+                        }
+                        val resourceEntry = zip.getEntry(entryPath)
+                        if (resourceEntry == null) {
+                            missingConditions.add("$description has no $entryPath")
+                            return@forEach
+                        }
+                        val packagedBytes = zip.getInputStream(resourceEntry).use { input ->
+                            input.readAllBytes()
+                        }
+                        if (!packagedBytes.contentEquals(sourceFile.readBytes())) {
+                            missingConditions.add(
+                                "$description $entryPath differs from its canonical source",
+                            )
+                        }
+                    }
+                }
+            }
+        } catch (exception: Exception) {
+            missingConditions.add(
+                "$description could not be inspected: " +
+                    "${exception.javaClass.simpleName}: ${exception.message}",
+            )
+        }
+    }
+
+    inspectArtifact(commonJarFile, "common JAR", false)
+    inspectArtifact(
+        fabricTransformedCommonJarFile,
+        "Fabric-transformed common JAR",
+        false,
+    )
+    inspectArtifact(
+        forgeTransformedCommonJarFile,
+        "Forge-transformed common JAR",
+        false,
+    )
+    inspectArtifact(
+        fabricProductionJarFile,
+        "Fabric remapped production JAR",
+        true,
+        true,
+    )
+    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", true)
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
-    "entity, enchantment, sound, recipe, screen, effect, event, loot, particle, tree, and " +
+    "entity, enchantment, recipe, screen, effect, event, loot, particle, tree, and " +
         "world-generation registries are not loader-neutral",
     "creative tabs, fuel, reload, lifecycle, trade, brewing, wood, sculk, and command hooks " +
         "are not accepted on both loaders",
@@ -1355,6 +1679,10 @@ fun missingForgeReleaseReadinessMilestone(): List<String> = listOf(
 fun firstIncompleteForgeMilestone(
     commonJarFile: File,
     forgeClassesDirectory: File,
+    fabricTransformedCommonJarFile: File,
+    forgeTransformedCommonJarFile: File,
+    fabricProductionJarFile: File,
+    forgeShadowJarFile: File,
 ): Pair<String, List<String>> {
     val missingStorageParity = missingForgeStorageParityMilestone(
         commonJarFile,
@@ -1367,6 +1695,17 @@ fun firstIncompleteForgeMilestone(
     val missingChannelNetwork = missingForgeChannelNetworkMilestone(commonJarFile)
     if (missingChannelNetwork.isNotEmpty()) {
         return "ethereal channel/network" to missingChannelNetwork
+    }
+
+    val missingSoundRegistry = missingForgeSoundRegistryMilestone(
+        commonJarFile,
+        fabricTransformedCommonJarFile,
+        forgeTransformedCommonJarFile,
+        fabricProductionJarFile,
+        forgeShadowJarFile,
+    )
+    if (missingSoundRegistry.isNotEmpty()) {
+        return "sound registry and resources" to missingSoundRegistry
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -1568,12 +1907,32 @@ val validateForgeChannelImplementationMilestone =
         }
     }
 
+val validateForgeChannelEvidenceArchiveIntegrity =
+    tasks.register("validateForgeChannelEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge channel archive without comparing later artifacts."
+        inputs.file(forgeChannelEvidenceVerifier)
+        inputs.dir(forgeChannelEvidenceRoot)
+            .withPropertyName("forgeChannelEvidenceRoot")
+            .optional()
+        doLast {
+            val missingConditions = missingForgeChannelEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion native ethereal-channel archive is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
 val validateForgeChannelNetworkMilestone = tasks.register("validateForgeChannelNetworkMilestone") {
     group = "verification"
     description =
         "Requires the shared directed-transfer implementation and its frozen native Forge proof."
     dependsOn(
         validateForgeChannelImplementationMilestone,
+        validateForgeChannelEvidenceArchiveIntegrity,
     )
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -1582,9 +1941,61 @@ val validateForgeChannelNetworkMilestone = tasks.register("validateForgeChannelN
         .optional()
     doLast {
         val commonJarFile = commonJar.get().archiveFile.get().asFile
-        val missingConditions = missingForgeChannelNetworkMilestone(commonJarFile)
+        val missingConditions = missingForgeChannelImplementationMilestone(commonJarFile)
         check(missingConditions.isEmpty()) {
             "Forge $minecraftVersion ethereal channel/network milestone is incomplete:\n${
+                missingConditions.joinToString("\n") { condition -> " - $condition" }
+            }"
+        }
+    }
+}
+
+val forgeShadowJar = tasks.named<ShadowJar>("shadowJar")
+val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
+    group = "verification"
+    description =
+        "Accepts the shared sound registry and its exact cross-loader packaged resources."
+    dependsOn(
+        validateForgeChannelNetworkMilestone,
+        commonJar,
+        commonTest,
+        fabricTest,
+        fabricRemapJar,
+        tasks.named("test"),
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        forgeShadowJar,
+    )
+    inputs.file(commonJar.flatMap { it.archiveFile })
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("fabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("forgeTransformedCommonJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+    inputs.files(soundManifest, englishLanguageFile)
+    inputs.dir(soundDirectory)
+    doLast {
+        val commonJarFile = commonJar.get().archiveFile.get().asFile
+        val fabricTransformedCommonJarFile = taskOutputJar(
+            commonTransformProductionFabric.get(),
+            "Fabric common production transform",
+        )
+        val forgeTransformedCommonJarFile = taskOutputJar(
+            commonTransformProductionForge.get(),
+            "Forge common production transform",
+        )
+        val fabricProductionJarFile = fabricRemapJar.get().archiveFile.get().asFile
+        val forgeShadowJarFile = forgeShadowJar.get().archiveFile.get().asFile
+        val missingConditions = missingForgeSoundRegistryMilestone(
+            commonJarFile,
+            fabricTransformedCommonJarFile,
+            forgeTransformedCommonJarFile,
+            fabricProductionJarFile,
+            forgeShadowJarFile,
+        )
+        check(missingConditions.isEmpty()) {
+            "Forge $minecraftVersion shared sound registry milestone is incomplete:\n${
                 missingConditions.joinToString("\n") { condition -> " - $condition" }
             }"
         }
@@ -1596,7 +2007,7 @@ val validateForgeAuthoritativeRegistrySpineMilestone =
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeChannelNetworkMilestone)
+        dependsOn(validateForgeSoundRegistryMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -1633,6 +2044,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeStorageParityMilestone,
         validateForgeChannelImplementationMilestone,
         validateForgeChannelNetworkMilestone,
+        validateForgeSoundRegistryMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -1641,18 +2053,18 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(
-        validateForgeBootstrapInputs,
-        validateForgeEtherItemMilestone,
-        validateForgeStorageFoundationMilestone,
-        validateForgePersistentStorageMenuCoreMilestone,
-        commonJar,
-        commonTest,
-        tasks.named("test"),
-    )
+    dependsOn(validateForgeSoundRegistryMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
+    inputs.files(soundManifest, englishLanguageFile)
+    inputs.dir(soundDirectory)
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("fabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("forgeTransformedCommonJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
     inputs.dir(forgeChannelEvidenceRoot)
         .withPropertyName("forgeChannelEvidenceRoot")
         .optional()
@@ -1661,6 +2073,16 @@ tasks.register("verifyForgePortGateClosed") {
         val firstIncompleteMilestone = firstIncompleteForgeMilestone(
             commonJarFile,
             forgeMainClasses.get().asFile,
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ),
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ),
+            fabricRemapJar.get().archiveFile.get().asFile,
+            forgeShadowJar.get().archiveFile.get().asFile,
         )
         val (milestoneName, missingConditions) = firstIncompleteMilestone
         logger.lifecycle(
@@ -1908,36 +2330,31 @@ if (minecraftVersion == "1.20.1") {
         }
     }
 
-    val validateForgeChannelEvidenceProvenance =
-        tasks.register("validateForgeChannelEvidenceProvenance") {
-            group = "verification"
-            description =
-                "Binds frozen Forge channel evidence to the current remapped test artifacts."
-            dependsOn(verifyE2eUnderTestIsolation)
-            inputs.files(forgeChannelEvidenceVerifier, forgeE2eProfileManifest)
-            inputs.file(remapE2eUnderTestJar.flatMap { it.archiveFile })
-            inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
-            inputs.dir(forgeChannelEvidenceRoot)
-                .withPropertyName("forgeChannelEvidenceRoot")
-                .optional()
+    tasks.register("validateForgeChannelCurrentArtifactDiagnostic") {
+        group = "verification"
+        description =
+            "Diagnoses whether current remapped artifacts still equal the frozen channel capture."
+        dependsOn(verifyE2eUnderTestIsolation)
+        inputs.files(forgeChannelEvidenceVerifier, forgeE2eProfileManifest)
+        inputs.file(remapE2eUnderTestJar.flatMap { it.archiveFile })
+        inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+        inputs.dir(forgeChannelEvidenceRoot)
+            .withPropertyName("forgeChannelEvidenceRoot")
+            .optional()
 
-            doLast {
-                val productionFile = remapE2eUnderTestJar.get().archiveFile.get().asFile
-                val harnessFile = remapE2eHarnessJar.get().archiveFile.get().asFile
-                val missingConditions = missingForgeChannelEvidenceMilestone(
-                    productionFile,
-                    harnessFile,
-                )
-                check(missingConditions.isEmpty()) {
-                    "Forge $minecraftVersion native ethereal-channel provenance is invalid:\n${
-                        missingConditions.joinToString("\n") { condition -> " - $condition" }
-                    }"
-                }
+        doLast {
+            val productionFile = remapE2eUnderTestJar.get().archiveFile.get().asFile
+            val harnessFile = remapE2eHarnessJar.get().archiveFile.get().asFile
+            val missingConditions = missingForgeChannelEvidenceMilestone(
+                productionFile,
+                harnessFile,
+            )
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion native ethereal-channel provenance is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
             }
         }
-
-    validateForgeChannelNetworkMilestone.configure {
-        dependsOn(validateForgeChannelEvidenceProvenance)
     }
 
     tasks.register("buildE2eHarness") {

@@ -14,8 +14,8 @@ import net.minecraft.world.event.BlockPositionSource;
 import net.minecraft.world.event.GameEvent;
 import net.minecraft.world.event.listener.GameEventListener;
 import ru.feytox.etherology.mixin.VibrationListenerAccessor;
-import ru.feytox.etherology.registry.misc.EtherSounds;
 import ru.feytox.etherology.registry.misc.EventsRegistry;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import static ru.feytox.etherology.registry.block.EBlocks.TUNING_FORK_BLOCK_ENTITY;
@@ -51,7 +51,9 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
 
         if (!state.get(TuningFork.WATERLOGGED)) {
             float pitch = (float) Math.pow(2.0, (note - 12) / 12.0);
-            SoundEvent sound = isResonance ? EtherSounds.TUNING_FORK_RESONANCE : EtherSounds.TUNING_FORK_ACTIVATE;
+            SoundEvent sound = isResonance
+                    ? SharedSounds.TUNING_FORK_RESONANCE.get()
+                    : SharedSounds.TUNING_FORK_ACTIVATE.get();
             world.playSound(null, pos, sound, SoundCategory.BLOCKS, 0.5f, pitch);
         }
 

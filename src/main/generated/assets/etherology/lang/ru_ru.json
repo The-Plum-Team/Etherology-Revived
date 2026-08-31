@@ -163,7 +163,7 @@
   "lore.etherology.primoshard": "%s",
   "lore.etherology.spill_barrel.empty": "Пусто",
   "lore.etherology.spill_barrel.filled": "Наполнена \"%s\" в объёме %dx",
-  "subtitles.etherology.armillary_matrix_work": "Армиллярная матрица шумит",
+  "subtitles.etherology.armillary_matrix_idle": "Армиллярная матрица шумит",
   "subtitles.etherology.deflect": "Отражение снаряда щитом",
   "subtitles.etherology.hammer_damage": "Удар молота",
   "subtitles.etherology.hammer_swing": "Взмах молота",

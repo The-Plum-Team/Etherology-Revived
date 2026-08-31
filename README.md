@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Ethereal Storage and Ethereal Channel foundation verticals accepted in native E2E; broader registry/network and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage and Channel native-E2E verticals plus the shared sound registry/resources are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -24,9 +24,12 @@ client, native-loader, and E2E parity gates pass. See
 [`Forge 1.20.1 completion plan`](docs/porting/FORGE-1.20.1-COMPLETION-PLAN.md),
 the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.md),
 and the bounded [Forge 1.20.1 runtime evidence](docs/evidence/forge-1.20.1/README.md).
-The next Forge forward gate is the authoritative registry spine, beginning with
-shared sound registration. The frozen evidence archives prove their captured
-artifacts only; later sources and rebuilt JARs require new isolated native runs.
+The next Forge forward gate is the remainder of the authoritative registry
+spine. Its bounded shared-sound step is complete, but no native sound-playback
+E2E is claimed yet; the mechanics that consume each sound must prove playback.
+Frozen evidence archives prove their capture-time artifacts only. Later changes,
+including the sound-registry work, leave those archives internally valid but
+require new isolated native runs before a rebuilt JAR can claim equivalence.
 
 ## About Etherology
 

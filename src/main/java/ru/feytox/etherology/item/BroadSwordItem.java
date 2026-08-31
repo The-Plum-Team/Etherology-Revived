@@ -15,7 +15,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.enums.EUseAction;
 import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
-import ru.feytox.etherology.registry.misc.EtherSounds;
+import ru.feytox.etherology.registry.misc.SharedSounds;
 import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.util.misc.DoubleModel;
 
@@ -48,7 +48,7 @@ public class BroadSwordItem extends TwoHandheldSword implements DoubleModel {
     public static SoundEvent replaceAttackSound(PlayerEntity player, SoundEvent original) {
         if (original.equals(SoundEvents.ENTITY_PLAYER_ATTACK_WEAK) || original.equals(SoundEvents.ENTITY_PLAYER_ATTACK_NODAMAGE)) return null;
         if (!BroadSwordItem.isUsing(player)) return null;
-        return EtherSounds.BROADSWORD;
+        return SharedSounds.BROADSWORD.get();
     }
 
     public static float replaceAttackSoundPitch(World world) {

@@ -41,6 +41,7 @@ public class Etherology {
         }
         initialized = true;
 
+        SharedSounds.register();
         ExtraBlocksRegistry.registerAll();
         RegistriesRegistry.registerAll();
         EItems.registerItems();
@@ -50,7 +51,6 @@ public class Etherology {
         EtherologyNetwork.registerCommonSide();
         EBlockFamilies.registerFamilies();
         DevCommands.register();
-        EtherSounds.registerAll();
         RecipesRegistry.registerAll();
         ScreenHandlersRegistry.registerServerSide();
         WorldGenRegistry.registerWorldGen();

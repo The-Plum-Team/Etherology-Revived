@@ -176,9 +176,20 @@ repeat that archival check. The frozen archive proves only its own integrity;
 later source changes and rebuilt JARs require another fresh isolated profile and
 native run before they can claim equivalence.
 
+`validateForgeChannelEvidenceArchiveIntegrity` is the positive Gradle gate for
+that immutable historical record. `validateForgeChannelCurrentArtifactDiagnostic`
+is deliberately separate: it compares the current whole production and harness
+JARs with their capture-time digests. It now fails because the unrelated
+SharedSounds milestone changed the production JAR after this capture. That
+expected whole-JAR mismatch neither invalidates the archive nor demonstrates a
+Channel regression, and it must not be described as current-artifact equality.
+Only a new isolated native run can establish equality for later artifacts.
+
 This accepts only the shared ethereal-channel foundation and its bounded
 network behavior with storage endpoints and native Forge lever support. Channel
 case interaction and registration, channel particles and the client ticker,
 channel loot and recipe data, and the wider machine/network graph remain
-deferred. The authoritative registry spine, beginning with shared sound
-registration, is the next forward gate. The Forge release gate remains closed.
+deferred. The bounded SharedSounds registry/resource milestone has since passed,
+but no native sound-playback E2E was run and this directory is not playback
+evidence. The broader authoritative registry spine is the next forward gate.
+The Forge release gate remains closed.

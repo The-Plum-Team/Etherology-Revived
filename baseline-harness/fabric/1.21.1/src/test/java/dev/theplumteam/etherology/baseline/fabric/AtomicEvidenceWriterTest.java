@@ -25,6 +25,7 @@ final class AtomicEvidenceWriterTest {
         Files.createDirectories(reports);
         Files.createDirectories(screenshots);
         EvidenceLayout layout = new EvidenceLayout(
+                ScenarioDefinitions.PHASE_ZERO,
                 scenarioRoot,
                 reports,
                 screenshots,

@@ -8,10 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 final class ScenarioSelectionTest {
 
     @Test
-    void acceptsOnlyTheExactPhaseZeroScenario() {
+    void acceptsBothExactTrackedScenarios() {
         assertEquals(
                 PhaseZeroScenario.SCENARIO_ID,
                 ScenarioSelection.resolveScenarioId(PhaseZeroScenario.SCENARIO_ID)
+        );
+        assertEquals(
+                ForestLanternScenario.SCENARIO_ID,
+                ScenarioSelection.resolveScenarioId(ForestLanternScenario.SCENARIO_ID)
         );
     }
 

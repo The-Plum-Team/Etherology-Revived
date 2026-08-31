@@ -27,7 +27,7 @@ final class AtomicEvidenceWriter {
         writeAtomically(layout.reportPath(), reportContent);
         String reportSha256 = ArtifactDigest.sha256(layout.reportPath());
         String status = passed ? "passed" : "failed";
-        String markerContent = PhaseZeroScenario.SCENARIO_ID + ":" + status + "\n"
+        String markerContent = layout.scenario().id() + ":" + status + "\n"
                 + "report_sha256:" + reportSha256 + "\n";
         writeAtomically(layout.completionMarkerPath(), markerContent);
     }

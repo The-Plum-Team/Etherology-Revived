@@ -19,7 +19,7 @@ final class EvidenceLayoutTest {
 
         EvidenceLayout layout = EvidenceLayout.resolve(
                 gameDirectory,
-                PhaseZeroScenario.SCENARIO_ID
+                ScenarioDefinitions.PHASE_ZERO
         );
         layout.requireFreshTargets();
 
@@ -37,7 +37,7 @@ final class EvidenceLayoutTest {
         Path gameDirectory = createOwnedLayout(temporaryDirectory);
         EvidenceLayout layout = EvidenceLayout.resolve(
                 gameDirectory,
-                PhaseZeroScenario.SCENARIO_ID
+                ScenarioDefinitions.PHASE_ZERO
         );
         Files.writeString(layout.reportPath(), "existing\n");
 
@@ -56,7 +56,7 @@ final class EvidenceLayoutTest {
 
         assertThrows(
                 IOException.class,
-                () -> EvidenceLayout.resolve(gameDirectory, PhaseZeroScenario.SCENARIO_ID)
+                () -> EvidenceLayout.resolve(gameDirectory, ScenarioDefinitions.PHASE_ZERO)
         );
     }
 
@@ -71,7 +71,7 @@ final class EvidenceLayoutTest {
 
         assertThrows(
                 IOException.class,
-                () -> EvidenceLayout.resolve(gameDirectory, PhaseZeroScenario.SCENARIO_ID)
+                () -> EvidenceLayout.resolve(gameDirectory, ScenarioDefinitions.PHASE_ZERO)
         );
     }
 

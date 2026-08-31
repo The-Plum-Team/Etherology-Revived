@@ -99,7 +99,7 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v2.json"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -193,6 +193,44 @@ _VERIFIED_HTTP_DISTRIBUTIONS_SHA256: str | None = None
 
 EXPECTED_ASSERTION_NAMES = (
     "fabric_mod_loaded:etherology",
+    "forest_lantern_resources_exact",
+    "registry:block:etherology:forest_lantern",
+    "registry:item:etherology:forest_lantern",
+    "registry:item:etherology:forest_lantern_crumb",
+    "forest_lantern_properties_exact",
+    "forest_lantern_default_state_exact",
+    "forest_lantern_state_count_exact",
+    "forest_lantern_state_network_ids_exact",
+    "packaged_root_jar:etherology",
+    "packaged_root_jar:etherology_original_baseline_harness",
+    "native_framebuffer_dimensions",
+    "completed_world_renders_before_capture",
+    "capture_render_ready",
+    "capture_camera_exact",
+    "native_screenshot_written",
+    "integrated_world_joined",
+    "server_arena_chunk_loaded",
+    "server_player_creative",
+    "server_forest_lantern_states_exact",
+    "client_forest_lantern_states_exact",
+    "server_forest_lantern_state_network_ids_exact",
+    "forest_lantern_shears_speed_exact",
+    "forest_lantern_immature_loot_empty",
+    "forest_lantern_mature_loot_exact",
+    "recipe:etherology:forest_lantern_crumb",
+    "recipe:etherology:forest_lantern_crumb_from_smoking",
+    "recipe:etherology:forest_lantern_crumb_from_campfire",
+    "recipe:etherology:leather",
+    "forest_lantern_jump_seed_exact",
+    "forest_lantern_jump_stepping_position_exact",
+    "forest_lantern_jump_break_exact",
+    "forest_lantern_jump_drop_exact",
+    "live_world_identity",
+    "forced_world_save",
+    "isolated_save_directory_present",
+)
+PHASE_ZERO_EXPECTED_ASSERTION_NAMES = (
+    "fabric_mod_loaded:etherology",
     "published_resources_loaded",
     "registry_preflight",
     "registry:block:etherology:brewing_cauldron",
@@ -223,6 +261,41 @@ EXPECTED_ASSERTION_NAMES = (
     "forced_world_save",
     "isolated_save_directory_present",
 )
+FOREST_LANTERN_RESOURCES = (
+    "minecraft:texts/splashes.txt",
+    "etherology:blockstates/forest_lantern.json",
+    "etherology:models/block/forest_lantern.json",
+    "etherology:models/block/forest_lantern_0.json",
+    "etherology:models/block/forest_lantern_1.json",
+    "etherology:models/block/forest_lantern_2.json",
+    "etherology:models/block/forest_lantern_3.json",
+    "etherology:models/item/forest_lantern.json",
+    "etherology:textures/block/forest_lantern.png",
+    "etherology:textures/block/forest_lantern_0.png",
+    "etherology:textures/block/forest_lantern_1.png",
+    "etherology:textures/block/forest_lantern_2.png",
+    "etherology:textures/block/forest_lantern_3.png",
+    "etherology:textures/item/forest_lantern.png",
+)
+FOREST_LANTERN_FACINGS = ("north", "east", "south", "west")
+FOREST_LANTERN_X_COORDINATES = (-12, -4, 4, 12)
+FOREST_LANTERN_RECIPE_RESULTS = {
+    "recipe:etherology:forest_lantern_crumb": (
+        "etherology:forest_lantern_crumb=minecraft:smelting"
+        "->etherology:forest_lantern_crumbx1"
+    ),
+    "recipe:etherology:forest_lantern_crumb_from_smoking": (
+        "etherology:forest_lantern_crumb_from_smoking=minecraft:smoking"
+        "->etherology:forest_lantern_crumbx1"
+    ),
+    "recipe:etherology:forest_lantern_crumb_from_campfire": (
+        "etherology:forest_lantern_crumb_from_campfire=minecraft:campfire_cooking"
+        "->etherology:forest_lantern_crumbx1"
+    ),
+    "recipe:etherology:leather": (
+        "etherology:leather=minecraft:crafting->minecraft:leatherx1"
+    ),
+}
 
 
 class BaselineError(RuntimeError):
@@ -423,6 +496,13 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         raise BaselineError("The manifest profile.id is not a stable lowercase id")
     if profile.get("runtime_directory") != profile_id:
         raise BaselineError("The runtime directory must equal the exact profile id")
+    profile_revisions = {
+        "etherology-original-fabric-1.21.1-published-0.1.7-v1": "v1",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v2": "v2",
+    }
+    profile_revision = profile_revisions.get(profile_id)
+    if profile_revision is None:
+        raise BaselineError("The original-baseline profile revision is not allowlisted")
     for field_name in (
         "game_directory",
         "launcher_directory",
@@ -707,8 +787,10 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
     harness_file_name = safe_leaf_name(
         harness.get("file_name"), "capture.harness.file_name"
     )
+    expected_harness_version = "1.0.0" if profile_revision == "v1" else "1.1.0"
     expected_harness_file_name = (
-        "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.0.0.jar"
+        "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
+        f"{expected_harness_version}.jar"
     )
     if (
         harness.get("status") != "implemented"
@@ -716,7 +798,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         or harness.get("path")
         != f"baseline-harness/fabric/1.21.1/build/libs/{expected_harness_file_name}"
         or harness.get("mod_id") != "etherology_original_baseline_harness"
-        or harness.get("version") != "1.0.0"
+        or harness.get("version") != expected_harness_version
         or harness.get("client_entrypoint")
         != "dev.theplumteam.etherology.baseline.fabric.OriginalPhaseZeroHarness"
         or harness.get("mixin_config")
@@ -743,15 +825,27 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         },
         "The capture scenario object",
     )
-    exact_scenario = {
-        "id": "phase0-smoke",
-        "report_file": "report.json",
-        "completion_marker_file": "done.marker",
-        "screenshot_file": "phase0-smoke.png",
-        "world_directory_name": "etherology-original-phase0-smoke-world",
-        "world_display_name": "Etherology Original 0.1.7 Phase 0",
-        "world_seed": 19514442935972151,
-    }
+    exact_scenario = (
+        {
+            "id": "phase0-smoke",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "phase0-smoke.png",
+            "world_directory_name": "etherology-original-phase0-smoke-world",
+            "world_display_name": "Etherology Original 0.1.7 Phase 0",
+            "world_seed": 19514442935972151,
+        }
+        if profile_revision == "v1"
+        else {
+            "id": "forest-lantern",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "forest-lantern.png",
+            "world_directory_name": "etherology-original-forest-lantern-world",
+            "world_display_name": "Etherology Original 0.1.7 Forest Lantern",
+            "world_seed": 4995697353423860023,
+        }
+    )
     for field_name, expected_value in exact_scenario.items():
         if scenario.get(field_name) != expected_value:
             raise BaselineError(
@@ -1270,6 +1364,11 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "dev/theplumteam/etherology/baseline/fabric/mixin/"
                 "GameRendererMixin.class"
             )
+            expected_jump_invoker_class = (
+                "dev/theplumteam/etherology/baseline/fabric/mixin/"
+                "PlayerEntityJumpInvoker.class"
+            )
+            expects_jump_invoker = harness["version"] == "1.1.0"
             class_entries = {
                 name
                 for name, entry in entries.items()
@@ -1278,6 +1377,10 @@ def verify_harness_artifact(configuration: Configuration) -> None:
             if (
                 expected_entrypoint_class not in class_entries
                 or expected_mixin_class not in class_entries
+                or (
+                    expects_jump_invoker
+                    and expected_jump_invoker_class not in class_entries
+                )
                 or not class_entries
                 or any(
                     not name.startswith(
@@ -1327,7 +1430,11 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "required": True,
                 "package": "dev.theplumteam.etherology.baseline.fabric.mixin",
                 "compatibilityLevel": "JAVA_21",
-                "client": ["GameRendererMixin"],
+                "client": (
+                    ["GameRendererMixin", "PlayerEntityJumpInvoker"]
+                    if expects_jump_invoker
+                    else ["GameRendererMixin"]
+                ),
                 "injectors": {"defaultRequire": 1},
             }:
                 raise BaselineError(
@@ -4944,7 +5051,7 @@ def png_dimensions(path: Path) -> tuple[int, int]:
     return image.width, image.height
 
 
-def verify_assertion_semantics(
+def verify_phase_zero_assertion_semantics(
     configuration: Configuration,
     root: Path,
     assertion: dict[str, object],
@@ -5089,6 +5196,218 @@ def verify_assertion_semantics(
             raise BaselineError("Live-world identity assertion is not exact")
 
 
+def forest_lantern_state_descriptions() -> list[str]:
+    descriptions: list[str] = []
+    for facing, x_coordinate in zip(
+        FOREST_LANTERN_FACINGS, FOREST_LANTERN_X_COORDINATES
+    ):
+        for age in range(5):
+            descriptions.append(
+                f"{x_coordinate}, 121, {age * 3}=age={age},facing={facing}"
+            )
+    return descriptions
+
+
+def verify_forest_lantern_assertion_semantics(
+    configuration: Configuration,
+    root: Path,
+    assertion: dict[str, object],
+) -> None:
+    name = str(assertion["name"])
+    expected = str(assertion["expected"])
+    actual = str(assertion["actual"])
+    if (
+        not expected
+        or not actual
+        or len(expected) > 4096
+        or len(actual) > 4096
+        or expected.casefold() == "expected"
+        or actual.casefold() == "actual"
+        or any(value in expected or value in actual for value in ("\x00", "\r", "\n"))
+    ):
+        raise BaselineError(
+            f"Original-baseline assertion {name} has placeholder or unsafe evidence"
+        )
+
+    exact_values = {
+        "fabric_mod_loaded:etherology": ("loaded", "loaded"),
+        "forest_lantern_resources_exact": (
+            "[" + ", ".join(FOREST_LANTERN_RESOURCES) + "]",
+            "[" + ", ".join(FOREST_LANTERN_RESOURCES) + "]",
+        ),
+        "registry:block:etherology:forest_lantern": ("present", "present"),
+        "registry:item:etherology:forest_lantern": ("present", "present"),
+        "registry:item:etherology:forest_lantern_crumb": ("present", "present"),
+        "forest_lantern_properties_exact": ("[age, facing]", "[age, facing]"),
+        "forest_lantern_default_state_exact": (
+            "age=4,facing=north",
+            "age=4,facing=north",
+        ),
+        "forest_lantern_state_count_exact": ("20", "20"),
+        "forest_lantern_state_network_ids_exact": (
+            "20 unique non-negative raw ids",
+            "20 unique non-negative raw ids",
+        ),
+        "native_framebuffer_dimensions": ("1920x1080", "1920x1080"),
+        "capture_render_ready": (
+            "terrain complete and all 20 Forest Lantern positions rendering-ready",
+            "ready",
+        ),
+        "integrated_world_joined": (
+            "running server and connected client",
+            "joined",
+        ),
+        "server_arena_chunk_loaded": ("full chunk", "true"),
+        "server_player_creative": ("creative", "true"),
+        "client_forest_lantern_states_exact": (
+            "all 20 exact age/facing states mirrored",
+            "mirrored",
+        ),
+        "forest_lantern_immature_loot_empty": (
+            "ages 0..3=[]",
+            "[0=[], 1=[], 2=[], 3=[]]",
+        ),
+        "forest_lantern_mature_loot_exact": (
+            "age 4=[etherology:forest_lanternx1]",
+            "4=[etherology:forest_lanternx1]",
+        ),
+        "forest_lantern_jump_seed_exact": (
+            "first vanilla world-random roll <= 0.4",
+            "seed=4096,roll=0.09789288",
+        ),
+        "forest_lantern_jump_stepping_position_exact": (
+            "player stepping position contains mature Forest Lantern",
+            "14, 120, -12",
+        ),
+        "forest_lantern_jump_break_exact": (
+            "mature Forest Lantern removed by one seeded vanilla jump",
+            "removed",
+        ),
+        "forest_lantern_jump_drop_exact": (
+            "[etherology:forest_lanternx1]",
+            "[etherology:forest_lanternx1]",
+        ),
+        "forced_world_save": ("true", "true"),
+        "isolated_save_directory_present": (
+            str(scenario_spec(configuration)["world_directory_name"]),
+            str(scenario_spec(configuration)["world_directory_name"]),
+        ),
+    }
+    if name in exact_values:
+        if (expected, actual) != exact_values[name]:
+            raise BaselineError(f"Scenario assertion {name} is not exact")
+        return
+
+    if name.startswith("packaged_root_jar:"):
+        if (expected, actual) != (
+            "one regular root JAR",
+            "one regular root JAR",
+        ):
+            raise BaselineError(f"Packaged-artifact assertion {name} is not exact")
+        return
+
+    if name == "completed_world_renders_before_capture":
+        if expected != "120" or not actual.isdecimal() or int(actual) < 120:
+            raise BaselineError("Completed-render assertion is not meaningful")
+        return
+
+    if name == "capture_camera_exact":
+        expected_camera = (
+            "first_person=true;x=0.5;y=128.0;z=-17.5;yaw=0.0;pitch=23.0;"
+            "on_ground=true;tolerance=1.0E-4"
+        )
+        number = r"[-+]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[Ee][-+]?[0-9]+)?"
+        actual_match = re.fullmatch(
+            rf"first_person=true;x=({number});y=({number});z=({number});"
+            rf"yaw=({number});pitch=({number});on_ground=true",
+            actual,
+        )
+        if expected != expected_camera or actual_match is None:
+            raise BaselineError("Capture camera-pose assertion is not exact")
+        actual_values = tuple(float(value) for value in actual_match.groups())
+        expected_values = (0.5, 128.0, -17.5, 0.0, 23.0)
+        if any(
+            abs(actual_value - expected_value) > 0.0001
+            for actual_value, expected_value in zip(actual_values, expected_values)
+        ):
+            raise BaselineError("Capture camera pose exceeds its pinned tolerance")
+        return
+
+    if name == "native_screenshot_written":
+        screenshot = screenshot_path(configuration, root)
+        if screenshot.is_symlink() or not screenshot.is_file():
+            raise BaselineError("Native-screenshot assertion has no regular PNG")
+        exact_actual = (
+            f"{screenshot.stat().st_size} bytes, sha256={sha256_file(screenshot)}"
+        )
+        if (
+            expected != "one non-empty unedited framebuffer PNG"
+            or actual != exact_actual
+        ):
+            raise BaselineError("Native-screenshot assertion is not exact")
+        return
+
+    state_descriptions = forest_lantern_state_descriptions()
+    if name == "server_forest_lantern_states_exact":
+        exact_states = "[" + ", ".join(state_descriptions) + "]"
+        if (expected, actual) != (exact_states, exact_states):
+            raise BaselineError("Server Forest Lantern state fixture is not exact")
+        return
+
+    if name == "server_forest_lantern_state_network_ids_exact":
+        if expected != "20 placed states with non-negative raw ids":
+            raise BaselineError("Placed-state network-id expectation changed")
+        pattern = r"\[" + ", ".join(
+            re.escape(description) + r"#[0-9]+" for description in state_descriptions
+        ) + r"\]"
+        if re.fullmatch(pattern, actual) is None:
+            raise BaselineError("Placed-state network-id evidence is not exact")
+        raw_ids = [int(value) for value in re.findall(r"#([0-9]+)", actual)]
+        if len(raw_ids) != 20 or len(set(raw_ids)) != 20:
+            raise BaselineError("Placed-state network ids are not unique")
+        return
+
+    if name == "forest_lantern_shears_speed_exact":
+        exact_speeds = "[" + ", ".join(
+            description + "=15.0" for description in state_descriptions
+        ) + "]"
+        if (expected, actual) != ("15.0 for all 20 states", exact_speeds):
+            raise BaselineError("Forest Lantern shears-speed evidence is not exact")
+        return
+
+    if name in FOREST_LANTERN_RECIPE_RESULTS:
+        exact_recipe = FOREST_LANTERN_RECIPE_RESULTS[name]
+        if (expected, actual) != (exact_recipe, exact_recipe):
+            raise BaselineError(f"Forest Lantern recipe assertion {name} is not exact")
+        return
+
+    if name == "live_world_identity":
+        identity = (
+            "Etherology Original 0.1.7 Forest Lantern;"
+            "4995697353423860023;minecraft:overworld"
+        )
+        if (expected, actual) != (identity, identity):
+            raise BaselineError("Live-world identity assertion is not exact")
+        return
+
+    raise BaselineError(f"Original-baseline assertion {name} has no exact semantics")
+
+
+def verify_assertion_semantics(
+    configuration: Configuration,
+    root: Path,
+    assertion: dict[str, object],
+) -> None:
+    scenario_id = str(scenario_spec(configuration)["id"])
+    if scenario_id == "phase0-smoke":
+        verify_phase_zero_assertion_semantics(configuration, root, assertion)
+        return
+    if scenario_id == "forest-lantern":
+        verify_forest_lantern_assertion_semantics(configuration, root, assertion)
+        return
+    raise BaselineError(f"No assertion contract exists for scenario {scenario_id}")
+
+
 def verify_scenario_evidence(
     configuration: Configuration, root: Path
 ) -> dict[str, object]:
@@ -5120,25 +5439,29 @@ def verify_scenario_evidence(
     report = load_json_object(
         report_path(configuration, root), "Original-baseline scenario report"
     )
+    forest_lantern_scenario = scenario["id"] == "forest-lantern"
+    expected_report_fields = {
+        "schema",
+        "reference_id",
+        "scenario",
+        "lane",
+        "status",
+        "client_ticks",
+        "lifecycle_failure",
+        "assertions",
+        "world",
+        "artifacts",
+        "screenshots",
+    }
+    if forest_lantern_scenario:
+        expected_report_fields.add("mechanics")
     require_exact_fields(
         report,
-        {
-            "schema",
-            "reference_id",
-            "scenario",
-            "lane",
-            "status",
-            "client_ticks",
-            "lifecycle_failure",
-            "assertions",
-            "world",
-            "artifacts",
-            "screenshots",
-        },
+        expected_report_fields,
         "The original-baseline scenario report",
     )
     if (
-        report.get("schema") != 1
+        report.get("schema") != (2 if forest_lantern_scenario else 1)
         or report.get("reference_id") != "published-0.1.7"
         or report.get("scenario") != scenario["id"]
         or report.get("lane") != "fabric-1.21.1-original"
@@ -5168,11 +5491,25 @@ def verify_scenario_evidence(
             )
         assertion_names.append(str(assertion["name"]))
         verify_assertion_semantics(configuration, root, assertion)
-    if tuple(assertion_names) != EXPECTED_ASSERTION_NAMES:
+    expected_assertion_names = (
+        EXPECTED_ASSERTION_NAMES
+        if forest_lantern_scenario
+        else PHASE_ZERO_EXPECTED_ASSERTION_NAMES
+    )
+    if tuple(assertion_names) != expected_assertion_names:
         raise BaselineError(
             "Original-baseline scenario report assertion order/inventory changed: "
-            f"expected={list(EXPECTED_ASSERTION_NAMES)}, actual={assertion_names}"
+            f"expected={list(expected_assertion_names)}, actual={assertion_names}"
         )
+
+    if forest_lantern_scenario and report.get("mechanics") != {
+        "fixture_state_count": 20,
+        "ages": "0,1,2,3,4",
+        "facings": "north,east,south,west",
+        "jump_probe": "seeded vanilla PlayerEntity.jump invoker",
+        "limitations": [],
+    }:
+        raise BaselineError("Original-baseline Forest Lantern mechanics record changed")
 
     world = report.get("world")
     if world != {
@@ -5296,7 +5633,11 @@ def verify_scenario_evidence(
     screenshot_sha256 = sha256_file(screenshot_file)
     screenshots_node = report.get("screenshots")
     expected_screenshot = {
-        "step": "integrated-world-fixture",
+        "step": (
+            "forest-lantern-age-facing-gallery"
+            if forest_lantern_scenario
+            else "integrated-world-fixture"
+        ),
         "file": f"screenshots/{scenario['screenshot_file']}",
         "width": framebuffer["width"],
         "height": framebuffer["height"],
@@ -5436,7 +5777,11 @@ def verify_game_lifecycle(
         )
     if "Stopping!" not in content:
         raise BaselineError("Original-baseline client did not record a normal shutdown")
-    success_marker = "Original phase0-smoke evidence published with status passed:"
+    success_marker = (
+        "Original forest-lantern evidence published with status passed:"
+        if scenario_spec(configuration)["id"] == "forest-lantern"
+        else "Original phase0-smoke evidence published with status passed:"
+    )
     if content.count(success_marker) != 1:
         raise BaselineError(
             "Original-baseline game log lacks one exact evidence-publication marker"

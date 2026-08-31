@@ -30,6 +30,9 @@ sys.modules[SPECIFICATION.name] = client
 SPECIFICATION.loader.exec_module(client)
 
 TRACKED_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v2.json"
+)
+LEGACY_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
 )
 TRACKED_EVIDENCE_ARCHIVE = (
@@ -58,11 +61,16 @@ def fabric_jar_bytes(mod_id: str, nested_mod_id: str | None = None) -> bytes:
     return output.getvalue()
 
 
-def harness_jar_bytes(*, production_link: bool = False) -> bytes:
+def harness_jar_bytes(
+    *,
+    harness_version: str = "1.1.0",
+    production_link: bool = False,
+) -> bytes:
+    jump_invoker_enabled = harness_version == "1.1.0"
     metadata = {
         "schemaVersion": 1,
         "id": "etherology_original_baseline_harness",
-        "version": "1.0.0",
+        "version": harness_version,
         "environment": "client",
         "entrypoints": {
             "client": [
@@ -87,7 +95,11 @@ def harness_jar_bytes(*, production_link: bool = False) -> bytes:
         "required": True,
         "package": "dev.theplumteam.etherology.baseline.fabric.mixin",
         "compatibilityLevel": "JAVA_21",
-        "client": ["GameRendererMixin"],
+        "client": (
+            ["GameRendererMixin", "PlayerEntityJumpInvoker"]
+            if jump_invoker_enabled
+            else ["GameRendererMixin"]
+        ),
         "injectors": {"defaultRequire": 1},
     }
     class_content = (
@@ -115,6 +127,12 @@ def harness_jar_bytes(*, production_link: bool = False) -> bytes:
             "GameRendererMixin.class",
             b"synthetic-mixin-class",
         )
+        if jump_invoker_enabled:
+            archive.writestr(
+                "dev/theplumteam/etherology/baseline/fabric/mixin/"
+                "PlayerEntityJumpInvoker.class",
+                b"synthetic-jump-invoker-class",
+            )
     return output.getvalue()
 
 
@@ -488,7 +506,10 @@ def reference_fixture(
     bundle["size"] = bundle_path.stat().st_size
     bundle["sha256"] = hashlib.sha256(bundle_path.read_bytes()).hexdigest()
     harness = manifest["capture"]["harness"]
-    harness_content = harness_jar_bytes(production_link=harness_production_link)
+    harness_content = harness_jar_bytes(
+        harness_version=str(harness["version"]),
+        production_link=harness_production_link,
+    )
     harness_path = repository / harness["path"]
     harness_path.parent.mkdir(parents=True)
     harness_path.write_bytes(harness_content)
@@ -563,6 +584,7 @@ def write_launch_attempt_fixture(configuration: object, root: Path) -> Path:
         str(launcher / Path(*PurePosixPath(relative_path).parts))
         for relative_path in client.expected_merged_classpath_paths(configuration, root)
     ]
+    scenario_id = str(client.scenario_spec(configuration)["id"])
     command = [
         str(java),
         "-Duser.home=" + str(client.home_directory(configuration, root)),
@@ -571,7 +593,7 @@ def write_launch_attempt_fixture(configuration: object, root: Path) -> Path:
         "-Djna.tmpdir=" + str(extraction_directory),
         "-Dorg.lwjgl.system.SharedLibraryExtractPath=" + str(extraction_directory),
         "-Dio.netty.native.workdir=" + str(extraction_directory),
-        f"-D{client.SCENARIO_PROPERTY_NAME}=phase0-smoke",
+        f"-D{client.SCENARIO_PROPERTY_NAME}={scenario_id}",
         "-cp",
         os.pathsep.join(classpath),
         "net.fabricmc.loader.impl.launch.knot.KnotClient",
@@ -602,7 +624,7 @@ def write_launch_attempt_fixture(configuration: object, root: Path) -> Path:
     attempt = {
         "schema": 1,
         "profile_id": client.profile_spec(configuration)["id"],
-        "scenario": "phase0-smoke",
+        "scenario": scenario_id,
         "created_at_unix_ns": time.time_ns() - 10_000_000_000,
         "manifest_sha256": client.sha256_file(configuration.manifest_path),
         "artifact_lock": {
@@ -674,16 +696,31 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
     region.mkdir()
     (region / "r.0.0.mca").write_bytes(b"region-data")
 
+    state_descriptions = client.forest_lantern_state_descriptions()
+    exact_states = "[" + ", ".join(state_descriptions) + "]"
+    placed_state_network_ids = "[" + ", ".join(
+        f"{description}#{100 + index}"
+        for index, description in enumerate(state_descriptions)
+    ) + "]"
+    exact_shears_speeds = "[" + ", ".join(
+        f"{description}=15.0" for description in state_descriptions
+    ) + "]"
+    exact_resources = "[" + ", ".join(client.FOREST_LANTERN_RESOURCES) + "]"
     assertion_values = {
         "fabric_mod_loaded:etherology": ("loaded", "loaded"),
-        "published_resources_loaded": (
-            "[minecraft:texts/splashes.txt, etherology:models/item/oculus.json]",
-            "present",
+        "forest_lantern_resources_exact": (exact_resources, exact_resources),
+        "registry:block:etherology:forest_lantern": ("present", "present"),
+        "registry:item:etherology:forest_lantern": ("present", "present"),
+        "registry:item:etherology:forest_lantern_crumb": ("present", "present"),
+        "forest_lantern_properties_exact": ("[age, facing]", "[age, facing]"),
+        "forest_lantern_default_state_exact": (
+            "age=4,facing=north",
+            "age=4,facing=north",
         ),
-        "registry_preflight": ("all phase0 registry entries present", "present"),
-        "etherology_block_states_have_network_ids": (
-            "every Etherology block state has a non-negative raw id",
-            "42 inspected; missing=[]",
+        "forest_lantern_state_count_exact": ("20", "20"),
+        "forest_lantern_state_network_ids_exact": (
+            "20 unique non-negative raw ids",
+            "20 unique non-negative raw ids",
         ),
         "packaged_root_jar:etherology": (
             "one regular root JAR",
@@ -696,13 +733,13 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
         "native_framebuffer_dimensions": ("1920x1080", "1920x1080"),
         "completed_world_renders_before_capture": ("120", "120"),
         "capture_render_ready": (
-            "terrain complete and all four fixture positions rendering-ready",
+            "terrain complete and all 20 Forest Lantern positions rendering-ready",
             "ready",
         ),
         "capture_camera_exact": (
-            "first_person=true;x=0.5;y=121.0;z=-7.5;yaw=0.0;pitch=8.0;"
+            "first_person=true;x=0.5;y=128.0;z=-17.5;yaw=0.0;pitch=23.0;"
             "on_ground=true;tolerance=1.0E-4",
-            "first_person=true;x=0.5;y=121.0;z=-7.5;yaw=0.0;pitch=8.0;"
+            "first_person=true;x=0.5;y=128.0;z=-17.5;yaw=0.0;pitch=23.0;"
             "on_ground=true",
         ),
         "native_screenshot_written": (
@@ -714,43 +751,50 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
             "running server and connected client",
             "joined",
         ),
-        "client_world_mirrors_server_fixture": (
-            "all four blocks and exact block entity types mirrored",
-            "mirrored",
-        ),
-        "client_fixture_block_entity_types_exact": (
-            "[etherology:brewing_cauldron_block_entity, "
-            "etherology:empowerment_table_block_entity, "
-            "etherology:ethereal_storage_block_entity, "
-            "etherology:armillary_sphere_block_entity]",
-            "[-3, 121, 2=etherology:brewing_cauldron_block_entity, "
-            "0, 121, 2=etherology:empowerment_table_block_entity, "
-            "3, 121, 2=etherology:ethereal_storage_block_entity, "
-            "0, 121, 5=etherology:armillary_sphere_block_entity]",
-        ),
         "server_arena_chunk_loaded": ("full chunk", "true"),
         "server_player_creative": ("creative", "true"),
-        "server_fixture_blocks_placed": (
-            "all expected identifiers",
-            "[-3, 121, 2=etherology:brewing_cauldron, "
-            "0, 121, 2=etherology:empowerment_table, "
-            "3, 121, 2=etherology:ethereal_storage, "
-            "0, 121, 5=etherology:armillary_sphere]",
+        "server_forest_lantern_states_exact": (exact_states, exact_states),
+        "client_forest_lantern_states_exact": (
+            "all 20 exact age/facing states mirrored",
+            "mirrored",
         ),
-        "server_fixture_block_entities_present": ("four block entities", "true"),
-        "server_fixture_block_entity_types_exact": (
-            "[etherology:brewing_cauldron_block_entity, "
-            "etherology:empowerment_table_block_entity, "
-            "etherology:ethereal_storage_block_entity, "
-            "etherology:armillary_sphere_block_entity]",
-            "[-3, 121, 2=etherology:brewing_cauldron_block_entity, "
-            "0, 121, 2=etherology:empowerment_table_block_entity, "
-            "3, 121, 2=etherology:ethereal_storage_block_entity, "
-            "0, 121, 5=etherology:armillary_sphere_block_entity]",
+        "server_forest_lantern_state_network_ids_exact": (
+            "20 placed states with non-negative raw ids",
+            placed_state_network_ids,
+        ),
+        "forest_lantern_shears_speed_exact": (
+            "15.0 for all 20 states",
+            exact_shears_speeds,
+        ),
+        "forest_lantern_immature_loot_empty": (
+            "ages 0..3=[]",
+            "[0=[], 1=[], 2=[], 3=[]]",
+        ),
+        "forest_lantern_mature_loot_exact": (
+            "age 4=[etherology:forest_lanternx1]",
+            "4=[etherology:forest_lanternx1]",
+        ),
+        "forest_lantern_jump_seed_exact": (
+            "first vanilla world-random roll <= 0.4",
+            "seed=4096,roll=0.09789288",
+        ),
+        "forest_lantern_jump_stepping_position_exact": (
+            "player stepping position contains mature Forest Lantern",
+            "14, 120, -12",
+        ),
+        "forest_lantern_jump_break_exact": (
+            "mature Forest Lantern removed by one seeded vanilla jump",
+            "removed",
+        ),
+        "forest_lantern_jump_drop_exact": (
+            "[etherology:forest_lanternx1]",
+            "[etherology:forest_lanternx1]",
         ),
         "live_world_identity": (
-            "Etherology Original 0.1.7 Phase 0;19514442935972151;minecraft:overworld",
-            "Etherology Original 0.1.7 Phase 0;19514442935972151;minecraft:overworld",
+            "Etherology Original 0.1.7 Forest Lantern;"
+            "4995697353423860023;minecraft:overworld",
+            "Etherology Original 0.1.7 Forest Lantern;"
+            "4995697353423860023;minecraft:overworld",
         ),
         "forced_world_save": ("true", "true"),
         "isolated_save_directory_present": (
@@ -758,9 +802,8 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
             str(scenario["world_directory_name"]),
         ),
     }
-    for name in client.EXPECTED_ASSERTION_NAMES:
-        if name.startswith("registry:"):
-            assertion_values[name] = ("present", "present")
+    for name, exact_recipe in client.FOREST_LANTERN_RECIPE_RESULTS.items():
+        assertion_values[name] = (exact_recipe, exact_recipe)
     etherology = next(
         member
         for member in client.member_specs(configuration)
@@ -768,9 +811,9 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
     )
     harness = client.harness_spec(configuration)
     report = {
-        "schema": 1,
+        "schema": 2,
         "reference_id": "published-0.1.7",
-        "scenario": "phase0-smoke",
+        "scenario": scenario["id"],
         "lane": "fabric-1.21.1-original",
         "status": "passed",
         "client_ticks": 120,
@@ -807,9 +850,16 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
                 "sha256": harness["sha256"],
             },
         ],
+        "mechanics": {
+            "fixture_state_count": 20,
+            "ages": "0,1,2,3,4",
+            "facings": "north,east,south,west",
+            "jump_probe": "seeded vanilla PlayerEntity.jump invoker",
+            "limitations": [],
+        },
         "screenshots": [
             {
-                "step": "integrated-world-fixture",
+                "step": "forest-lantern-age-facing-gallery",
                 "file": f"screenshots/{scenario['screenshot_file']}",
                 "width": framebuffer["width"],
                 "height": framebuffer["height"],
@@ -824,13 +874,13 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
     report_file = client.report_path(configuration, root)
     write_json(report_file, report)
     client.completion_marker_path(configuration, root).write_text(
-        "phase0-smoke:passed\n"
+        f"{scenario['id']}:passed\n"
         f"report_sha256:{client.sha256_file(report_file)}\n",
         encoding="utf-8",
     )
     latest_log = client.game_directory(configuration, root) / "logs" / "latest.log"
     latest_log.write_text(
-        "Original phase0-smoke evidence published with status passed: fixture\n"
+        "Original forest-lantern evidence published with status passed: fixture\n"
         "Stopping!\n",
         encoding="utf-8",
     )
@@ -853,8 +903,9 @@ def rewrite_report_and_marker(
     report_file = client.report_path(configuration, root)
     marker = client.completion_marker_path(configuration, root)
     write_json(report_file, report)
+    scenario = client.scenario_spec(configuration)
     marker.write_text(
-        "phase0-smoke:passed\n"
+        f"{scenario['id']}:passed\n"
         f"report_sha256:{client.sha256_file(report_file)}\n",
         encoding="utf-8",
     )
@@ -866,6 +917,18 @@ def rewrite_report_and_marker(
 
 
 class TrackedManifestTests(unittest.TestCase):
+    def test_consumed_v1_manifest_remains_byte_exact(self) -> None:
+        self.assertEqual(
+            hashlib.sha256(LEGACY_MANIFEST_PATH.read_bytes()).hexdigest(),
+            "89fb643d68614b977e62560f2265a1cd05407aaa37a9f47e7a6eefe47e10125f",
+        )
+        manifest = json.loads(LEGACY_MANIFEST_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(
+            manifest["profile"]["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v1",
+        )
+        self.assertEqual(manifest["capture"]["scenario"]["id"], "phase0-smoke")
+
     def test_tracked_original_evidence_archive_is_exact(self) -> None:
         archive_manifest = client.load_json_object(
             TRACKED_EVIDENCE_ARCHIVE / "archive-manifest.json",
@@ -928,7 +991,7 @@ class TrackedManifestTests(unittest.TestCase):
         client.verify_harness_artifact(configuration)
         self.assertEqual(
             client.profile_spec(configuration)["id"],
-            "etherology-original-fabric-1.21.1-published-0.1.7-v1",
+            "etherology-original-fabric-1.21.1-published-0.1.7-v2",
         )
         self.assertEqual(len(inventory), 8)
         self.assertEqual(
@@ -1307,7 +1370,7 @@ class CaptureContractTests(unittest.TestCase):
                 with mock.patch.object(client, "verify_staged_reference"):
                     with mock.patch.object(client, "resolve_java_21") as resolve_java:
                         with self.assertRaisesRegex(client.BaselineError, "overwrite"):
-                            client.check_environment(configuration, "phase0-smoke")
+                            client.check_environment(configuration, "forest-lantern")
                         resolve_java.assert_not_called()
 
     def test_preexisting_world_fails_closed(self) -> None:
@@ -2001,10 +2064,10 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
     def test_scenario_requires_exact_allowlist_entry(self) -> None:
         configuration = client.load_configuration()
         self.assertEqual(
-            client.resolve_scenario_id(configuration, "phase0-smoke"),
-            "phase0-smoke",
+            client.resolve_scenario_id(configuration, "forest-lantern"),
+            "forest-lantern",
         )
-        for scenario in (None, "", "phase0-smoke ", "../phase0-smoke", "other"):
+        for scenario in (None, "", "forest-lantern ", "../forest-lantern", "other"):
             with self.subTest(scenario=scenario):
                 with self.assertRaises(client.BaselineError):
                     client.resolve_scenario_id(configuration, scenario)
@@ -2014,7 +2077,7 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
         client.require_capture_harness(configuration)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "5554034a7535b9f324d38cb4c2c79721a8c45f507aac6e450f5d807787506d24",
+            "f5b52ccbc3b0048abac75ff5e942d7348d3000a1c9f68e5051478bb712951d7f",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:
@@ -2158,7 +2221,7 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                     configuration,
                     java,
                     root,
-                    "phase0-smoke",
+                    "forest-lantern",
                 )
             self.assertEqual(
                 command,
@@ -2170,15 +2233,15 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(temporary_root)
             command, java, root = self.command_fixture(
-                configuration, temporary_root, "phase0-smoke"
+                configuration, temporary_root, "forest-lantern"
             )
             client.verify_launch_command(
-                configuration, command, java, root, "phase0-smoke"
+                configuration, command, java, root, "forest-lantern"
             )
             command.append(f"-D{client.SCENARIO_PROPERTY_NAME}=other")
             with self.assertRaises(client.BaselineError):
                 client.verify_launch_command(
-                    configuration, command, java, root, "phase0-smoke"
+                    configuration, command, java, root, "forest-lantern"
                 )
 
     def test_launch_command_rejects_external_classpath(self) -> None:
@@ -2198,12 +2261,12 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(temporary_root)
             command, java, root = self.command_fixture(
-                configuration, temporary_root, "phase0-smoke"
+                configuration, temporary_root, "forest-lantern"
             )
             command.extend(("--gameDir", "/tmp/foreign"))
             with self.assertRaises(client.BaselineError):
                 client.verify_launch_command(
-                    configuration, command, java, root, "phase0-smoke"
+                    configuration, command, java, root, "forest-lantern"
                 )
 
     def test_process_state_rejects_external_log(self) -> None:
@@ -2218,7 +2281,7 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                 "process_group_id": 123,
                 "version_id": client.version_id(configuration),
                 "game_directory": str(client.game_directory(configuration, root)),
-                "scenario": "phase0-smoke",
+                "scenario": "forest-lantern",
                 "log": "/tmp/foreign.log",
                 "launch_attempt_sha256": "0" * 64,
             }
@@ -2241,7 +2304,7 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                 "process_group_id": 999999,
                 "version_id": client.version_id(configuration),
                 "game_directory": str(client.game_directory(configuration, root)),
-                "scenario": "phase0-smoke",
+                "scenario": "forest-lantern",
                 "log": str(log_path),
                 "launch_attempt_sha256": "0" * 64,
             }

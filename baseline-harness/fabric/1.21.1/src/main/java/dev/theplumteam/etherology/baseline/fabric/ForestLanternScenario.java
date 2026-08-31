@@ -2,26 +2,36 @@ package dev.theplumteam.etherology.baseline.fabric;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import dev.theplumteam.etherology.baseline.fabric.mixin.PlayerEntityJumpInvoker;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.world.DataPackFailureScreen;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.client.util.Window;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.registry.Registries;
 import net.minecraft.resource.DataConfiguration;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.DirectionProperty;
+import net.minecraft.state.property.IntProperty;
+import net.minecraft.state.property.Property;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.GameRules;
@@ -38,78 +48,88 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
-final class PhaseZeroScenario implements ClientScenario {
+final class ForestLanternScenario implements ClientScenario {
 
-    static final String SCENARIO_ID = "phase0-smoke";
-    static final String SCREENSHOT_FILE_NAME = "phase0-smoke.png";
-    static final String WORLD_DIRECTORY_NAME = "etherology-original-phase0-smoke-world";
+    static final String SCENARIO_ID = "forest-lantern";
+    static final String SCREENSHOT_FILE_NAME = "forest-lantern.png";
+    static final String WORLD_DIRECTORY_NAME =
+            "etherology-original-forest-lantern-world";
+    static final String WORLD_DISPLAY_NAME =
+            "Etherology Original 0.1.7 Forest Lantern";
+    static final long WORLD_SEED = 0x455448464c303137L;
+    static final ScenarioDefinition DEFINITION = ScenarioDefinitions.FOREST_LANTERN;
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("EtherologyOriginalBaselineHarness");
-    static final String WORLD_DISPLAY_NAME = "Etherology Original 0.1.7 Phase 0";
+    private static final Logger LOGGER = LoggerFactory.getLogger(
+            "EtherologyOriginalBaselineHarness"
+    );
     private static final String REFERENCE_ID = "published-0.1.7";
-    private static final String HARNESS_MOD_ID = "etherology_original_baseline_harness";
-    static final long WORLD_SEED = 0x4554484f303137L;
-    static final ScenarioDefinition DEFINITION = ScenarioDefinitions.PHASE_ZERO;
+    private static final String HARNESS_MOD_ID =
+            "etherology_original_baseline_harness";
+    private static final Identifier FOREST_LANTERN_ID = etherologyId("forest_lantern");
+    private static final Identifier FOREST_LANTERN_CRUMB_ID =
+            etherologyId("forest_lantern_crumb");
+    private static final Identifier PEACH_LOG_ID = etherologyId("peach_log");
+    private static final List<Identifier> REQUIRED_RESOURCES = List.of(
+            Identifier.of("minecraft", "texts/splashes.txt"),
+            etherologyId("blockstates/forest_lantern.json"),
+            etherologyId("models/block/forest_lantern.json"),
+            etherologyId("models/block/forest_lantern_0.json"),
+            etherologyId("models/block/forest_lantern_1.json"),
+            etherologyId("models/block/forest_lantern_2.json"),
+            etherologyId("models/block/forest_lantern_3.json"),
+            etherologyId("models/item/forest_lantern.json"),
+            etherologyId("textures/block/forest_lantern.png"),
+            etherologyId("textures/block/forest_lantern_0.png"),
+            etherologyId("textures/block/forest_lantern_1.png"),
+            etherologyId("textures/block/forest_lantern_2.png"),
+            etherologyId("textures/block/forest_lantern_3.png"),
+            etherologyId("textures/item/forest_lantern.png")
+    );
+    private static final List<RecipeExpectation> RECIPE_EXPECTATIONS = List.of(
+            recipe("forest_lantern_crumb", "minecraft:smelting", FOREST_LANTERN_CRUMB_ID),
+            recipe(
+                    "forest_lantern_crumb_from_smoking",
+                    "minecraft:smoking",
+                    FOREST_LANTERN_CRUMB_ID
+            ),
+            recipe(
+                    "forest_lantern_crumb_from_campfire",
+                    "minecraft:campfire_cooking",
+                    FOREST_LANTERN_CRUMB_ID
+            ),
+            recipe("leather", "minecraft:crafting", Identifier.ofVanilla("leather"))
+    );
+    private static final List<Direction> FACINGS = List.of(
+            Direction.NORTH,
+            Direction.EAST,
+            Direction.SOUTH,
+            Direction.WEST
+    );
+    private static final int MAX_AGE = 4;
+    private static final int EXPECTED_STATE_COUNT = 20;
     private static final int REQUIRED_COMPLETED_RENDERS = 120;
     private static final int MAXIMUM_STAGE_CLIENT_TICKS = 6000;
     private static final int ARENA_FLOOR_Y = 120;
-    private static final BlockPos CAMERA_BLOCK_POS = new BlockPos(0, ARENA_FLOOR_Y + 1, -8);
-    private static final double CAMERA_X = CAMERA_BLOCK_POS.getX() + 0.5;
-    private static final double CAMERA_Y = CAMERA_BLOCK_POS.getY();
-    private static final double CAMERA_Z = CAMERA_BLOCK_POS.getZ() + 0.5;
+    private static final int FIXTURE_Y = ARENA_FLOOR_Y + 1;
+    private static final BlockPos CAMERA_FLOOR_POS = new BlockPos(0, 127, -18);
+    private static final double CAMERA_X = CAMERA_FLOOR_POS.getX() + 0.5;
+    private static final double CAMERA_Y = CAMERA_FLOOR_POS.getY() + 1.0;
+    private static final double CAMERA_Z = CAMERA_FLOOR_POS.getZ() + 0.5;
     private static final float CAMERA_YAW = 0.0f;
-    private static final float CAMERA_PITCH = 8.0f;
+    private static final float CAMERA_PITCH = 23.0f;
     private static final double CAMERA_POSE_TOLERANCE = 0.0001;
-    private static final Identifier MINECRAFT_RESOURCE = Identifier.of(
-            "minecraft",
-            "texts/splashes.txt"
-    );
-    private static final Identifier ETHEROLOGY_RESOURCE = Identifier.of(
-            "etherology",
-            "models/item/oculus.json"
-    );
-    private static final List<PlacedBlockExpectation> PLACED_BLOCKS = List.of(
-            placedBlock(
-                    "brewing_cauldron",
-                    "brewing_cauldron_block_entity",
-                    -3,
-                    2
-            ),
-            placedBlock(
-                    "empowerment_table",
-                    "empowerment_table_block_entity",
-                    0,
-                    2
-            ),
-            placedBlock(
-                    "ethereal_storage",
-                    "ethereal_storage_block_entity",
-                    3,
-                    2
-            ),
-            placedBlock(
-                    "armillary_sphere",
-                    "armillary_sphere_block_entity",
-                    0,
-                    5
-            )
-    );
-    private static final List<Identifier> EXPECTED_BLOCK_ENTITY_TYPE_IDS = PLACED_BLOCKS.stream()
-            .map(PlacedBlockExpectation::blockEntityTypeId)
+    private static final long MAXIMUM_JUMP_SEED_SEARCH = 4097L;
+    private static final float JUMP_BREAK_CHANCE = 0.4f;
+    private static final List<StateExpectation> STATE_EXPECTATIONS =
+            createStateExpectations();
+    private static final List<BlockPos> RENDER_POSITIONS = STATE_EXPECTATIONS.stream()
+            .map(StateExpectation::position)
             .toList();
-    private static final RegistryExpectation[] REGISTRY_EXPECTATIONS = {
-            block("brewing_cauldron"),
-            block("empowerment_table"),
-            block("ethereal_storage"),
-            block("armillary_sphere"),
-            blockEntityType("brewing_cauldron_block_entity"),
-            blockEntityType("empowerment_table_block_entity"),
-            blockEntityType("ethereal_storage_block_entity"),
-            blockEntityType("armillary_sphere_block_entity")
-    };
 
     private final StableRenderCounter stableWorldRenders =
             new StableRenderCounter(REQUIRED_COMPLETED_RENDERS);
@@ -120,8 +140,8 @@ final class PhaseZeroScenario implements ClientScenario {
     private int framebufferHeight;
     private int requestedWindowWidth = -1;
     private int requestedWindowHeight = -1;
-    private boolean registryPreflightPassed;
     private boolean resourcesReady;
+    private boolean registryPreflightPassed;
     private boolean setupSubmitted;
     private boolean clientMirrorReady;
     private boolean captureRenderReady;
@@ -129,7 +149,6 @@ final class PhaseZeroScenario implements ClientScenario {
     private boolean saveSubmitted;
     private String lifecycleFailure = "";
     private EvidenceLayout evidenceLayout;
-    private BlockStateRegistrySnapshot blockStateRegistrySnapshot;
     private volatile ScreenshotResult screenshotResult;
     private volatile ServerSetupResult serverSetupResult;
     private volatile String serverSetupFailure = "";
@@ -156,7 +175,7 @@ final class PhaseZeroScenario implements ClientScenario {
                 }
             }
         } catch (RuntimeException exception) {
-            LOGGER.error("Original phase0-smoke failed in {}", stage, exception);
+            LOGGER.error("Original forest-lantern failed in {}", stage, exception);
             fail(
                     client,
                     stage + " raised " + exception.getClass().getSimpleName()
@@ -168,7 +187,8 @@ final class PhaseZeroScenario implements ClientScenario {
         if (stage != Stage.COMPLETE && stageClientTicks >= MAXIMUM_STAGE_CLIENT_TICKS) {
             fail(
                     client,
-                    "Timed out in " + stage + " after " + stageClientTicks + " client ticks"
+                    "Timed out in " + stage + " after " + stageClientTicks
+                            + " client ticks"
             );
         }
     }
@@ -183,7 +203,7 @@ final class PhaseZeroScenario implements ClientScenario {
             captureWorld(client);
         } catch (RuntimeException exception) {
             stableWorldRenders.observe(false);
-            LOGGER.error("Original phase0-smoke render callback failed", exception);
+            LOGGER.error("Original forest-lantern render callback failed", exception);
             fail(
                     client,
                     "Render callback raised " + exception.getClass().getSimpleName()
@@ -205,30 +225,24 @@ final class PhaseZeroScenario implements ClientScenario {
         }
         if (!requestExpectedFramebuffer(client)) return;
 
-        resourcesReady = client.getResourceManager().getResource(MINECRAFT_RESOURCE).isPresent()
-                && client.getResourceManager().getResource(ETHEROLOGY_RESOURCE).isPresent();
+        resourcesReady = REQUIRED_RESOURCES.stream()
+                .allMatch(identifier -> client.getResourceManager().getResource(identifier).isPresent());
         if (!resourcesReady) {
-            fail(client, "The loaded resources do not include the published Etherology artifact");
+            fail(client, "The loaded resources lack the exact Forest Lantern client assets");
+            return;
+        }
+        if (!Registries.BLOCK.containsId(FOREST_LANTERN_ID)
+                || !Registries.BLOCK.containsId(PEACH_LOG_ID)
+                || !Registries.ITEM.containsId(FOREST_LANTERN_ID)
+                || !Registries.ITEM.containsId(FOREST_LANTERN_CRUMB_ID)) {
+            fail(client, "The registries lack a required Forest Lantern fixture id");
             return;
         }
 
-        for (RegistryExpectation expectation : REGISTRY_EXPECTATIONS) {
-            if (!expectation.isPresent()) {
-                fail(
-                        client,
-                        "The registry is missing " + expectation.registryName()
-                                + " " + expectation.identifier()
-                );
-                return;
-            }
-        }
-        blockStateRegistrySnapshot = inspectEtherologyBlockStates();
-        if (!blockStateRegistrySnapshot.missingStates().isEmpty()) {
-            fail(
-                    client,
-                    "Etherology block states are missing network ids: "
-                            + blockStateRegistrySnapshot.missingStates()
-            );
+        Block forestLantern = Registries.BLOCK.get(FOREST_LANTERN_ID);
+        RegistryInspection registryInspection = inspectRegistry(forestLantern);
+        if (!registryInspection.passed()) {
+            fail(client, "Forest Lantern registry contract failed: " + registryInspection);
             return;
         }
         registryPreflightPassed = true;
@@ -255,6 +269,7 @@ final class PhaseZeroScenario implements ClientScenario {
         gameRules.get(GameRules.DO_MOB_SPAWNING).set(false, null);
         gameRules.get(GameRules.KEEP_INVENTORY).set(true, null);
         gameRules.get(GameRules.DO_IMMEDIATE_RESPAWN).set(true, null);
+        gameRules.get(GameRules.RANDOM_TICK_SPEED).set(0, null);
 
         LevelInfo levelInfo = new LevelInfo(
                 WORLD_DISPLAY_NAME,
@@ -381,7 +396,7 @@ final class PhaseZeroScenario implements ClientScenario {
         } catch (IOException exception) {
             return ScreenshotResult.failed(exception.getMessage());
         } catch (RuntimeException exception) {
-            LOGGER.error("Cannot inspect the original phase0-smoke screenshot", exception);
+            LOGGER.error("Cannot inspect the original forest-lantern screenshot", exception);
             return ScreenshotResult.failed(
                     "Screenshot inspection raised " + exception.getClass().getSimpleName()
             );
@@ -403,37 +418,79 @@ final class PhaseZeroScenario implements ClientScenario {
             world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(false, server);
             world.getGameRules().get(GameRules.DO_WEATHER_CYCLE).set(false, server);
             world.getGameRules().get(GameRules.DO_MOB_SPAWNING).set(false, server);
+            world.getGameRules().get(GameRules.RANDOM_TICK_SPEED).set(0, server);
 
             clearArena(world);
             buildArenaFloor(world);
+            Block forestLantern = Registries.BLOCK.get(FOREST_LANTERN_ID);
+            Block peachLog = Registries.BLOCK.get(PEACH_LOG_ID);
+            Item forestLanternItem = Registries.ITEM.get(FOREST_LANTERN_ID);
 
-            List<String> placedBlockIds = new ArrayList<>();
-            List<String> placedBlockEntityTypeIds = new ArrayList<>();
-            boolean allBlocksPlaced = true;
-            boolean allBlockEntitiesPresent = true;
-            boolean allBlockEntityTypesExact = true;
-            for (PlacedBlockExpectation expectation : PLACED_BLOCKS) {
-                Block block = Registries.BLOCK.get(expectation.id());
-                world.setBlockState(expectation.pos(), block.getDefaultState(), 3);
-                Identifier actualId = Registries.BLOCK.getId(
-                        world.getBlockState(expectation.pos()).getBlock()
+            List<String> placedStates = new ArrayList<>();
+            List<String> stateNetworkIds = new ArrayList<>();
+            List<String> shearsSpeeds = new ArrayList<>();
+            boolean allStatesPlaced = true;
+            boolean allStateNetworkIdsPresent = true;
+            boolean allShearsSpeedsExact = true;
+            for (StateExpectation expectation : STATE_EXPECTATIONS) {
+                BlockState expectedState = forestLanternState(
+                        forestLantern,
+                        expectation.age(),
+                        expectation.facing()
                 );
-                placedBlockIds.add(expectation.pos().toShortString() + "=" + actualId);
-                allBlocksPlaced &= expectation.id().equals(actualId);
-                BlockEntity blockEntity = world.getBlockEntity(expectation.pos());
-                allBlockEntitiesPresent &= blockEntity != null;
-                Identifier actualBlockEntityTypeId = blockEntity == null
-                        ? null
-                        : Registries.BLOCK_ENTITY_TYPE.getId(blockEntity.getType());
-                BlockEntityType<?> expectedBlockEntityType =
-                        Registries.BLOCK_ENTITY_TYPE.get(expectation.blockEntityTypeId());
-                placedBlockEntityTypeIds.add(
-                        expectation.pos().toShortString() + "=" + actualBlockEntityTypeId
-                );
-                allBlockEntityTypesExact &= blockEntity != null
-                        && blockEntity.getType() == expectedBlockEntityType
-                        && expectation.blockEntityTypeId().equals(actualBlockEntityTypeId);
+                BlockPos supportPosition = expectation.position()
+                        .offset(expectation.facing().getOpposite());
+                world.setBlockState(supportPosition, peachLog.getDefaultState(), 3);
+                world.setBlockState(expectation.position(), expectedState, 3);
+                BlockState actualState = world.getBlockState(expectation.position());
+                String description = stateDescription(expectation.position(), actualState);
+                placedStates.add(description);
+                allStatesPlaced &= actualState.equals(expectedState);
+                int rawId = Block.STATE_IDS.getRawId(actualState);
+                stateNetworkIds.add(description + "#" + rawId);
+                allStateNetworkIdsPresent &= rawId >= 0;
+                float speed = Items.SHEARS.getDefaultStack()
+                        .getMiningSpeedMultiplier(actualState);
+                shearsSpeeds.add(description + "=" + speed);
+                allShearsSpeedsExact &= Float.floatToIntBits(speed)
+                        == Float.floatToIntBits(15.0f);
             }
+
+            List<String> lootByAge = new ArrayList<>();
+            boolean immatureLootEmpty = true;
+            boolean matureLootExact = true;
+            BlockPos lootPosition = new BlockPos(14, FIXTURE_Y, -5);
+            for (int age = 0; age <= MAX_AGE; age++) {
+                BlockState state = forestLanternState(forestLantern, age, Direction.NORTH);
+                List<ItemStack> drops = Block.getDroppedStacks(
+                        state,
+                        world,
+                        lootPosition,
+                        null,
+                        player,
+                        ItemStack.EMPTY
+                );
+                List<String> dropDescriptions = itemStackDescriptions(drops);
+                lootByAge.add(age + "=" + dropDescriptions);
+                if (age < MAX_AGE) {
+                    immatureLootEmpty &= drops.isEmpty();
+                } else {
+                    matureLootExact &= drops.size() == 1
+                            && drops.getFirst().isOf(forestLanternItem)
+                            && drops.getFirst().getCount() == 1;
+                }
+            }
+
+            List<String> recipes = inspectRecipes(server);
+            boolean recipesExact = recipes.size() == RECIPE_EXPECTATIONS.size();
+
+            JumpProbeResult jumpProbe = runDeterministicJumpProbe(
+                    world,
+                    player,
+                    forestLantern,
+                    peachLog,
+                    forestLanternItem
+            );
 
             boolean playerCreative = player.changeGameMode(GameMode.CREATIVE)
                     || player.isCreative();
@@ -445,47 +502,173 @@ final class PhaseZeroScenario implements ClientScenario {
                     CAMERA_YAW,
                     CAMERA_PITCH
             );
-            player.setSpawnPoint(World.OVERWORLD, CAMERA_BLOCK_POS, CAMERA_YAW, true, false);
+            player.setSpawnPoint(
+                    World.OVERWORLD,
+                    CAMERA_FLOOR_POS.up(),
+                    CAMERA_YAW,
+                    true,
+                    false
+            );
 
             serverSetupResult = new ServerSetupResult(
                     chunkLoaded,
                     playerCreative,
-                    allBlocksPlaced,
-                    allBlockEntitiesPresent,
-                    allBlockEntityTypesExact,
-                    List.copyOf(placedBlockIds),
-                    List.copyOf(placedBlockEntityTypeIds),
+                    allStatesPlaced,
+                    allStateNetworkIdsPresent,
+                    allShearsSpeedsExact,
+                    immatureLootEmpty,
+                    matureLootExact,
+                    recipesExact,
+                    List.copyOf(placedStates),
+                    List.copyOf(stateNetworkIds),
+                    List.copyOf(shearsSpeeds),
+                    List.copyOf(lootByAge),
+                    List.copyOf(recipes),
+                    jumpProbe,
                     server.getSaveProperties().getLevelName(),
                     world.getSeed(),
                     world.getRegistryKey().getValue().toString()
             );
         } catch (RuntimeException exception) {
-            LOGGER.error("Cannot arrange the original phase0-smoke fixture", exception);
+            LOGGER.error("Cannot arrange the original forest-lantern fixture", exception);
             serverSetupFailure = exception.getClass().getSimpleName()
                     + ": " + exception.getMessage();
         }
     }
 
+    private JumpProbeResult runDeterministicJumpProbe(
+            ServerWorld world,
+            ServerPlayerEntity player,
+            Block forestLantern,
+            Block peachLog,
+            Item forestLanternItem
+    ) {
+        BlockPos standingFloor = new BlockPos(14, ARENA_FLOOR_Y, -12);
+        world.setBlockState(standingFloor, Blocks.SMOOTH_STONE.getDefaultState(), 3);
+        player.teleport(
+                world,
+                standingFloor.getX() + 0.5,
+                standingFloor.getY() + 1.0,
+                standingFloor.getZ() + 0.5,
+                0.0f,
+                0.0f
+        );
+        player.setOnGround(true);
+        BlockPos steppingPosition = player.getSteppingPos();
+        Direction facing = Direction.NORTH;
+        world.setBlockState(
+                steppingPosition.offset(facing.getOpposite()),
+                peachLog.getDefaultState(),
+                3
+        );
+        world.setBlockState(
+                steppingPosition,
+                forestLanternState(forestLantern, MAX_AGE, facing),
+                3
+        );
+        boolean steppingPositionExact = player.getSteppingPos().equals(steppingPosition)
+                && world.getBlockState(steppingPosition).isOf(forestLantern);
+
+        long seed = findBreakingSeed();
+        Random prediction = Random.create(seed);
+        float predictedRoll = prediction.nextFloat();
+        Box dropBox = new Box(steppingPosition).expand(2.0);
+        Set<UUID> existingItemIds = new HashSet<>();
+        for (ItemEntity entity : world.getEntitiesByClass(
+                ItemEntity.class,
+                dropBox,
+                entity -> true
+        )) {
+            existingItemIds.add(entity.getUuid());
+        }
+        world.getRandom().setSeed(seed);
+        ((PlayerEntityJumpInvoker) player).etherologyOriginalBaseline$invokeJump();
+
+        List<ItemStack> newDrops = new ArrayList<>();
+        for (ItemEntity entity : world.getEntitiesByClass(
+                ItemEntity.class,
+                dropBox,
+                candidate -> !existingItemIds.contains(candidate.getUuid())
+        )) {
+            newDrops.add(entity.getStack().copy());
+        }
+        boolean removed = world.getBlockState(steppingPosition).isAir();
+        boolean dropExact = newDrops.size() == 1
+                && newDrops.getFirst().isOf(forestLanternItem)
+                && newDrops.getFirst().getCount() == 1;
+        return new JumpProbeResult(
+                steppingPositionExact,
+                seed,
+                predictedRoll,
+                removed,
+                dropExact,
+                itemStackDescriptions(newDrops),
+                steppingPosition.toShortString()
+        );
+    }
+
+    private long findBreakingSeed() {
+        for (long seed = 0L; seed < MAXIMUM_JUMP_SEED_SEARCH; seed++) {
+            if (Random.create(seed).nextFloat() <= JUMP_BREAK_CHANCE) return seed;
+        }
+        throw new IllegalStateException("No deterministic Forest Lantern break seed found");
+    }
+
+    private List<String> inspectRecipes(IntegratedServer server) {
+        List<String> recipes = new ArrayList<>();
+        for (RecipeExpectation expectation : RECIPE_EXPECTATIONS) {
+            RecipeEntry<?> entry = server.getRecipeManager()
+                    .get(expectation.id())
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Missing recipe " + expectation.id()
+                    ));
+            Identifier typeId = Registries.RECIPE_TYPE.getId(entry.value().getType());
+            ItemStack result = entry.value().getResult(server.getRegistryManager());
+            Identifier resultId = Registries.ITEM.getId(result.getItem());
+            String description = entry.id() + "=" + typeId + "->" + resultId
+                    + "x" + result.getCount();
+            if (!expectation.typeId().equals(typeId)
+                    || !expectation.resultId().equals(resultId)
+                    || result.getCount() != 1) {
+                throw new IllegalStateException("Recipe contract changed: " + description);
+            }
+            recipes.add(description);
+        }
+        return recipes;
+    }
+
     private void clearArena(ServerWorld world) {
-        BlockPos start = new BlockPos(-9, ARENA_FLOOR_Y, -10);
-        BlockPos end = new BlockPos(9, ARENA_FLOOR_Y + 10, 9);
-        for (BlockPos pos : BlockPos.iterate(start, end)) {
-            world.setBlockState(pos, Blocks.AIR.getDefaultState(), 3);
+        BlockPos start = new BlockPos(-17, ARENA_FLOOR_Y, -21);
+        BlockPos end = new BlockPos(17, CAMERA_FLOOR_POS.getY() + 3, 18);
+        for (BlockPos position : BlockPos.iterate(start, end)) {
+            world.setBlockState(position, Blocks.AIR.getDefaultState(), 3);
         }
     }
 
     private void buildArenaFloor(ServerWorld world) {
-        for (int x = -9; x <= 9; x++) {
-            for (int z = -10; z <= 9; z++) {
-                Block floorBlock = (x + z) % 7 == 0
-                        ? Blocks.SEA_LANTERN
-                        : Blocks.SMOOTH_STONE;
+        for (int x = -17; x <= 17; x++) {
+            for (int z = -21; z <= 18; z++) {
+                Block block = (x + z) % 9 == 0
+                        ? Blocks.OCHRE_FROGLIGHT
+                        : Blocks.POLISHED_DEEPSLATE;
                 world.setBlockState(
                         new BlockPos(x, ARENA_FLOOR_Y, z),
-                        floorBlock.getDefaultState(),
+                        block.getDefaultState(),
                         3
                 );
             }
+        }
+        world.setBlockState(CAMERA_FLOOR_POS, Blocks.BARRIER.getDefaultState(), 3);
+        for (StateExpectation expectation : STATE_EXPECTATIONS) {
+            Block marker = switch (expectation.age()) {
+                case 0 -> Blocks.WHITE_CONCRETE;
+                case 1 -> Blocks.LIGHT_GRAY_CONCRETE;
+                case 2 -> Blocks.YELLOW_CONCRETE;
+                case 3 -> Blocks.ORANGE_CONCRETE;
+                case 4 -> Blocks.RED_CONCRETE;
+                default -> throw new IllegalStateException("Unexpected fixture age");
+            };
+            world.setBlockState(expectation.position().down(), marker.getDefaultState(), 3);
         }
     }
 
@@ -495,13 +678,18 @@ final class PhaseZeroScenario implements ClientScenario {
         if (!client.player.isCreative()) return false;
         if (client.world.getRegistryKey() != World.OVERWORLD) return false;
 
-        for (PlacedBlockExpectation expectation : PLACED_BLOCKS) {
-            Identifier actualId = Registries.BLOCK.getId(
-                    client.world.getBlockState(expectation.pos()).getBlock()
+        Block forestLantern = Registries.BLOCK.get(FOREST_LANTERN_ID);
+        for (StateExpectation expectation : STATE_EXPECTATIONS) {
+            BlockState expectedState = forestLanternState(
+                    forestLantern,
+                    expectation.age(),
+                    expectation.facing()
             );
-            if (!expectation.id().equals(actualId)) return false;
+            if (!client.world.getBlockState(expectation.position()).equals(expectedState)) {
+                return false;
+            }
         }
-        return hasExactClientBlockEntityTypes(client);
+        return true;
     }
 
     private boolean isWorldLifecycleReady(MinecraftClient client) {
@@ -538,9 +726,8 @@ final class PhaseZeroScenario implements ClientScenario {
 
     private boolean isFixtureRenderReady(MinecraftClient client) {
         if (!client.worldRenderer.isTerrainRenderComplete()) return false;
-
-        for (PlacedBlockExpectation expectation : PLACED_BLOCKS) {
-            if (!client.worldRenderer.isRenderingReady(expectation.pos())) return false;
+        for (BlockPos position : RENDER_POSITIONS) {
+            if (!client.worldRenderer.isRenderingReady(position)) return false;
         }
         return true;
     }
@@ -572,7 +759,6 @@ final class PhaseZeroScenario implements ClientScenario {
 
     private static String cameraPoseDescription(MinecraftClient client) {
         if (client.player == null) return "missing player";
-
         return "first_person=" + client.options.getPerspective().isFirstPerson()
                 + ";x=" + client.player.getX()
                 + ";y=" + client.player.getY()
@@ -580,38 +766,6 @@ final class PhaseZeroScenario implements ClientScenario {
                 + ";yaw=" + MathHelper.wrapDegrees(client.player.getYaw())
                 + ";pitch=" + client.player.getPitch()
                 + ";on_ground=" + client.player.isOnGround();
-    }
-
-    private boolean hasExactClientBlockEntityTypes(MinecraftClient client) {
-        if (client.world == null) return false;
-
-        for (PlacedBlockExpectation expectation : PLACED_BLOCKS) {
-            BlockEntity blockEntity = client.world.getBlockEntity(expectation.pos());
-            if (blockEntity == null) return false;
-
-            BlockEntityType<?> expectedType =
-                    Registries.BLOCK_ENTITY_TYPE.get(expectation.blockEntityTypeId());
-            Identifier actualTypeId = Registries.BLOCK_ENTITY_TYPE.getId(blockEntity.getType());
-            if (blockEntity.getType() != expectedType
-                    || !expectation.blockEntityTypeId().equals(actualTypeId)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private List<String> clientBlockEntityTypeIds(MinecraftClient client) {
-        List<String> typeIds = new ArrayList<>();
-        if (client.world == null) return typeIds;
-
-        for (PlacedBlockExpectation expectation : PLACED_BLOCKS) {
-            BlockEntity blockEntity = client.world.getBlockEntity(expectation.pos());
-            Identifier typeId = blockEntity == null
-                    ? null
-                    : Registries.BLOCK_ENTITY_TYPE.getId(blockEntity.getType());
-            typeIds.add(expectation.pos().toShortString() + "=" + typeId);
-        }
-        return List.copyOf(typeIds);
     }
 
     private boolean requestExpectedFramebuffer(MinecraftClient client) {
@@ -666,21 +820,82 @@ final class PhaseZeroScenario implements ClientScenario {
         return false;
     }
 
-    private BlockStateRegistrySnapshot inspectEtherologyBlockStates() {
-        int registeredStates = 0;
-        List<String> missingStates = new ArrayList<>();
-        for (Identifier blockId : Registries.BLOCK.getIds()) {
-            if (!"etherology".equals(blockId.getNamespace())) continue;
-
-            Block block = Registries.BLOCK.get(blockId);
-            for (BlockState state : block.getStateManager().getStates()) {
-                registeredStates++;
-                if (Block.STATE_IDS.getRawId(state) < 0) {
-                    missingStates.add(blockId + "=" + state);
-                }
-            }
+    private RegistryInspection inspectRegistry(Block forestLantern) {
+        Property<?> ageProperty = forestLantern.getStateManager().getProperty("age");
+        Property<?> facingProperty = forestLantern.getStateManager().getProperty("facing");
+        Set<String> propertyNames = new HashSet<>();
+        for (Property<?> property : forestLantern.getStateManager().getProperties()) {
+            propertyNames.add(property.getName());
         }
-        return new BlockStateRegistrySnapshot(registeredStates, List.copyOf(missingStates));
+        List<BlockState> states = forestLantern.getStateManager().getStates();
+        Set<Integer> rawIds = new HashSet<>();
+        boolean networkIdsExact = true;
+        for (BlockState state : states) {
+            int rawId = Block.STATE_IDS.getRawId(state);
+            networkIdsExact &= rawId >= 0;
+            rawIds.add(rawId);
+        }
+        BlockState defaultState = forestLantern.getDefaultState();
+        boolean defaultExact = ageProperty instanceof IntProperty
+                && facingProperty instanceof DirectionProperty
+                && integerPropertyValue(defaultState, (IntProperty) ageProperty) == MAX_AGE
+                && directionPropertyValue(defaultState, (DirectionProperty) facingProperty)
+                        == Direction.NORTH;
+        return new RegistryInspection(
+                propertyNames.equals(Set.of("age", "facing")),
+                defaultExact,
+                states.size() == EXPECTED_STATE_COUNT,
+                networkIdsExact && rawIds.size() == EXPECTED_STATE_COUNT,
+                propertyNames,
+                states.size(),
+                rawIds.size()
+        );
+    }
+
+    private static BlockState forestLanternState(
+            Block block,
+            int age,
+            Direction facing
+    ) {
+        Property<?> rawAge = block.getStateManager().getProperty("age");
+        Property<?> rawFacing = block.getStateManager().getProperty("facing");
+        if (!(rawAge instanceof IntProperty ageProperty)
+                || !(rawFacing instanceof DirectionProperty facingProperty)) {
+            throw new IllegalStateException("Forest Lantern age/facing properties are missing");
+        }
+        return block.getDefaultState()
+                .with(ageProperty, age)
+                .with(facingProperty, facing);
+    }
+
+    private static int integerPropertyValue(BlockState state, IntProperty property) {
+        return state.get(property);
+    }
+
+    private static Direction directionPropertyValue(
+            BlockState state,
+            DirectionProperty property
+    ) {
+        return state.get(property);
+    }
+
+    private static String stateDescription(BlockPos position, BlockState state) {
+        Property<?> rawAge = state.getBlock().getStateManager().getProperty("age");
+        Property<?> rawFacing = state.getBlock().getStateManager().getProperty("facing");
+        if (!(rawAge instanceof IntProperty ageProperty)
+                || !(rawFacing instanceof DirectionProperty facingProperty)) {
+            return position.toShortString() + "=invalid";
+        }
+        return position.toShortString() + "=age=" + state.get(ageProperty)
+                + ",facing=" + state.get(facingProperty).asString();
+    }
+
+    private static List<String> itemStackDescriptions(List<ItemStack> stacks) {
+        List<String> descriptions = new ArrayList<>();
+        for (ItemStack stack : stacks) {
+            descriptions.add(Registries.ITEM.getId(stack.getItem()) + "x" + stack.getCount());
+        }
+        return List.copyOf(descriptions);
     }
 
     private void submitSave(MinecraftClient client) {
@@ -691,13 +906,12 @@ final class PhaseZeroScenario implements ClientScenario {
             fail(client, "The integrated server stopped before the forced save");
             return;
         }
-
         saveSubmitted = true;
         server.execute(() -> {
             try {
                 saveResult = server.saveAll(false, true, true);
             } catch (RuntimeException exception) {
-                LOGGER.error("Cannot force-save the original phase0-smoke world", exception);
+                LOGGER.error("Cannot force-save the original forest-lantern world", exception);
                 saveFailure = exception.getClass().getSimpleName()
                         + ": " + exception.getMessage();
             }
@@ -707,9 +921,8 @@ final class PhaseZeroScenario implements ClientScenario {
 
     private void fail(MinecraftClient client, String failure) {
         if (stage == Stage.COMPLETE) return;
-
         lifecycleFailure = failure == null ? "Unknown lifecycle failure" : failure;
-        LOGGER.error("Original phase0-smoke lifecycle failure: {}", lifecycleFailure);
+        LOGGER.error("Original forest-lantern lifecycle failure: {}", lifecycleFailure);
         publish(client);
     }
 
@@ -729,12 +942,12 @@ final class PhaseZeroScenario implements ClientScenario {
                     reportResult.passed()
             );
             LOGGER.info(
-                    "Original phase0-smoke evidence published with status {}: {}",
+                    "Original forest-lantern evidence published with status {}: {}",
                     reportResult.passed() ? "passed" : "failed",
                     evidenceLayout.reportsDirectory()
             );
         } catch (IOException exception) {
-            LOGGER.error("Cannot atomically publish original phase0-smoke evidence", exception);
+            LOGGER.error("Cannot atomically publish original forest-lantern evidence", exception);
         } finally {
             stage = Stage.COMPLETE;
             client.scheduleStop();
@@ -743,7 +956,6 @@ final class PhaseZeroScenario implements ClientScenario {
 
     private void ensureEvidenceLayout(MinecraftClient client) throws IOException {
         if (evidenceLayout != null) return;
-
         EvidenceLayout layout = EvidenceLayout.resolve(
                 client.runDirectory.toPath(),
                 DEFINITION
@@ -759,7 +971,6 @@ final class PhaseZeroScenario implements ClientScenario {
         JsonArray assertions = new JsonArray();
         boolean passed = lifecycleFailure.isEmpty();
         boolean etherologyLoaded = FabricLoader.getInstance().isModLoaded("etherology");
-
         passed &= addAssertion(
                 assertions,
                 "fabric_mod_loaded:etherology",
@@ -769,39 +980,65 @@ final class PhaseZeroScenario implements ClientScenario {
         );
         passed &= addAssertion(
                 assertions,
-                "published_resources_loaded",
+                "forest_lantern_resources_exact",
                 resourcesReady,
-                List.of(MINECRAFT_RESOURCE, ETHEROLOGY_RESOURCE).toString(),
-                resourcesReady ? "present" : "missing"
+                REQUIRED_RESOURCES.toString(),
+                resourcesReady ? REQUIRED_RESOURCES.toString() : "missing"
         );
         passed &= addAssertion(
                 assertions,
-                "registry_preflight",
-                registryPreflightPassed,
-                "all phase0 registry entries present",
-                registryPreflightPassed ? "present" : "not completed"
+                "registry:block:etherology:forest_lantern",
+                Registries.BLOCK.containsId(FOREST_LANTERN_ID),
+                "present",
+                Registries.BLOCK.containsId(FOREST_LANTERN_ID) ? "present" : "missing"
         );
-        for (RegistryExpectation expectation : REGISTRY_EXPECTATIONS) {
-            boolean present = expectation.isPresent();
-            passed &= addAssertion(
-                    assertions,
-                    "registry:" + expectation.registryName() + ":" + expectation.identifier(),
-                    present,
-                    "present",
-                    present ? "present" : "missing"
-            );
-        }
-        BlockStateRegistrySnapshot blockStates = blockStateRegistrySnapshot;
         passed &= addAssertion(
                 assertions,
-                "etherology_block_states_have_network_ids",
-                blockStates != null && blockStates.missingStates().isEmpty(),
-                "every Etherology block state has a non-negative raw id",
-                blockStates == null
-                        ? "not inspected"
-                        : blockStates.registeredStates() + " inspected; missing="
-                                + blockStates.missingStates()
+                "registry:item:etherology:forest_lantern",
+                Registries.ITEM.containsId(FOREST_LANTERN_ID),
+                "present",
+                Registries.ITEM.containsId(FOREST_LANTERN_ID) ? "present" : "missing"
         );
+        passed &= addAssertion(
+                assertions,
+                "registry:item:etherology:forest_lantern_crumb",
+                Registries.ITEM.containsId(FOREST_LANTERN_CRUMB_ID),
+                "present",
+                Registries.ITEM.containsId(FOREST_LANTERN_CRUMB_ID) ? "present" : "missing"
+        );
+        RegistryInspection registry = inspectRegistry(Registries.BLOCK.get(FOREST_LANTERN_ID));
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_properties_exact",
+                registry.propertiesExact(),
+                "[age, facing]",
+                registry.propertyNames().stream().sorted().toList().toString()
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_default_state_exact",
+                registry.defaultStateExact(),
+                "age=4,facing=north",
+                stateDescription(
+                        BlockPos.ORIGIN,
+                        Registries.BLOCK.get(FOREST_LANTERN_ID).getDefaultState()
+                ).substring(BlockPos.ORIGIN.toShortString().length() + 1)
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_state_count_exact",
+                registry.stateCountExact(),
+                Integer.toString(EXPECTED_STATE_COUNT),
+                Integer.toString(registry.stateCount())
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_state_network_ids_exact",
+                registry.networkIdsExact(),
+                "20 unique non-negative raw ids",
+                registry.rawIdCount() + " unique non-negative raw ids"
+        );
+        passed &= registryPreflightPassed;
         for (ArtifactDigest digest : artifactDigests) {
             passed &= addAssertion(
                     assertions,
@@ -836,7 +1073,7 @@ final class PhaseZeroScenario implements ClientScenario {
                 assertions,
                 "capture_render_ready",
                 captureRenderReady,
-                "terrain complete and all four fixture positions rendering-ready",
+                "terrain complete and all 20 Forest Lantern positions rendering-ready",
                 captureRenderReady ? "ready" : "not latched"
         );
         passed &= addAssertion(
@@ -863,21 +1100,6 @@ final class PhaseZeroScenario implements ClientScenario {
                 "running server and connected client",
                 isWorldLifecycleReady(client) ? "joined" : "not joined"
         );
-        passed &= addAssertion(
-                assertions,
-                "client_world_mirrors_server_fixture",
-                clientMirrorReady,
-                "all four blocks and exact block entity types mirrored",
-                clientMirrorReady ? "mirrored" : "not mirrored"
-        );
-        boolean clientBlockEntityTypesExact = hasExactClientBlockEntityTypes(client);
-        passed &= addAssertion(
-                assertions,
-                "client_fixture_block_entity_types_exact",
-                clientBlockEntityTypesExact,
-                EXPECTED_BLOCK_ENTITY_TYPE_IDS.toString(),
-                clientBlockEntityTypeIds(client).toString()
-        );
 
         ServerSetupResult setup = serverSetupResult;
         passed &= addAssertion(
@@ -896,40 +1118,106 @@ final class PhaseZeroScenario implements ClientScenario {
         );
         passed &= addAssertion(
                 assertions,
-                "server_fixture_blocks_placed",
-                setup != null && setup.allBlocksPlaced(),
-                "all expected identifiers",
-                setup == null ? "missing setup" : setup.placedBlockIds().toString()
+                "server_forest_lantern_states_exact",
+                setup != null && setup.allStatesPlaced(),
+                expectedStateDescriptions().toString(),
+                setup == null ? "missing setup" : setup.placedStates().toString()
         );
         passed &= addAssertion(
                 assertions,
-                "server_fixture_block_entities_present",
-                setup != null && setup.allBlockEntitiesPresent(),
-                "four block entities",
-                setup == null
-                        ? "missing setup"
-                        : Boolean.toString(setup.allBlockEntitiesPresent())
+                "client_forest_lantern_states_exact",
+                clientMirrorReady,
+                "all 20 exact age/facing states mirrored",
+                clientMirrorReady ? "mirrored" : "not mirrored"
         );
         passed &= addAssertion(
                 assertions,
-                "server_fixture_block_entity_types_exact",
-                setup != null && setup.allBlockEntityTypesExact(),
-                EXPECTED_BLOCK_ENTITY_TYPE_IDS.toString(),
-                setup == null
-                        ? "missing setup"
-                        : setup.placedBlockEntityTypeIds().toString()
+                "server_forest_lantern_state_network_ids_exact",
+                setup != null && setup.allStateNetworkIdsPresent(),
+                "20 placed states with non-negative raw ids",
+                setup == null ? "missing setup" : setup.stateNetworkIds().toString()
         );
-        String liveWorldIdentity = setup == null
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_shears_speed_exact",
+                setup != null && setup.allShearsSpeedsExact(),
+                "15.0 for all 20 states",
+                setup == null ? "missing setup" : setup.shearsSpeeds().toString()
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_immature_loot_empty",
+                setup != null && setup.immatureLootEmpty(),
+                "ages 0..3=[]",
+                setup == null ? "missing setup" : setup.lootByAge().subList(0, 4).toString()
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_mature_loot_exact",
+                setup != null && setup.matureLootExact(),
+                "age 4=[etherology:forest_lanternx1]",
+                setup == null ? "missing setup" : setup.lootByAge().get(MAX_AGE)
+        );
+        for (int index = 0; index < RECIPE_EXPECTATIONS.size(); index++) {
+            RecipeExpectation expectation = RECIPE_EXPECTATIONS.get(index);
+            String expectedRecipe = expectation.id() + "=" + expectation.typeId()
+                    + "->" + expectation.resultId() + "x1";
+            String actualRecipe = setup == null || setup.recipes().size() <= index
+                    ? "missing"
+                    : setup.recipes().get(index);
+            passed &= addAssertion(
+                    assertions,
+                    "recipe:" + expectation.id(),
+                    setup != null && setup.recipesExact()
+                            && expectedRecipe.equals(actualRecipe),
+                    expectedRecipe,
+                    actualRecipe
+            );
+        }
+        JumpProbeResult jump = setup == null ? null : setup.jumpProbe();
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_jump_seed_exact",
+                jump != null && jump.predictedRoll() <= JUMP_BREAK_CHANCE,
+                "first vanilla world-random roll <= 0.4",
+                jump == null
+                        ? "missing setup"
+                        : "seed=" + jump.seed() + ",roll=" + jump.predictedRoll()
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_jump_stepping_position_exact",
+                jump != null && jump.steppingPositionExact(),
+                "player stepping position contains mature Forest Lantern",
+                jump == null ? "missing setup" : jump.steppingPosition()
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_jump_break_exact",
+                jump != null && jump.removed(),
+                "mature Forest Lantern removed by one seeded vanilla jump",
+                jump != null && jump.removed() ? "removed" : "not removed"
+        );
+        passed &= addAssertion(
+                assertions,
+                "forest_lantern_jump_drop_exact",
+                jump != null && jump.dropExact(),
+                "[etherology:forest_lanternx1]",
+                jump == null ? "missing setup" : jump.drops().toString()
+        );
+
+        String actualWorldIdentity = setup == null
                 ? "missing setup"
-                : setup.worldDisplayName() + ";" + setup.worldSeed() + ";" + setup.dimensionId();
+                : setup.worldDisplayName() + ";" + setup.worldSeed() + ";"
+                        + setup.dimensionId();
         String expectedWorldIdentity = WORLD_DISPLAY_NAME + ";" + WORLD_SEED + ";"
                 + World.OVERWORLD.getValue();
         passed &= addAssertion(
                 assertions,
                 "live_world_identity",
-                expectedWorldIdentity.equals(liveWorldIdentity),
+                expectedWorldIdentity.equals(actualWorldIdentity),
                 expectedWorldIdentity,
-                liveWorldIdentity
+                actualWorldIdentity
         );
         passed &= addAssertion(
                 assertions,
@@ -955,7 +1243,7 @@ final class PhaseZeroScenario implements ClientScenario {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 1);
+        report.addProperty("schema", 2);
         report.addProperty("reference_id", REFERENCE_ID);
         report.addProperty("scenario", SCENARIO_ID);
         report.addProperty("lane", "fabric-1.21.1-original");
@@ -972,6 +1260,14 @@ final class PhaseZeroScenario implements ClientScenario {
         world.addProperty("integrated", setup != null && client.getServer() != null);
         report.add("world", world);
 
+        JsonObject mechanics = new JsonObject();
+        mechanics.addProperty("fixture_state_count", EXPECTED_STATE_COUNT);
+        mechanics.addProperty("ages", "0,1,2,3,4");
+        mechanics.addProperty("facings", "north,east,south,west");
+        mechanics.addProperty("jump_probe", "seeded vanilla PlayerEntity.jump invoker");
+        mechanics.add("limitations", new JsonArray());
+        report.add("mechanics", mechanics);
+
         JsonArray artifacts = new JsonArray();
         for (ArtifactDigest digest : artifactDigests) {
             JsonObject artifact = new JsonObject();
@@ -987,7 +1283,7 @@ final class PhaseZeroScenario implements ClientScenario {
         JsonArray screenshots = new JsonArray();
         if (screenshot != null && screenshot.passed()) {
             JsonObject screenshotNode = new JsonObject();
-            screenshotNode.addProperty("step", "integrated-world-fixture");
+            screenshotNode.addProperty("step", "forest-lantern-age-facing-gallery");
             screenshotNode.addProperty("file", "screenshots/" + SCREENSHOT_FILE_NAME);
             screenshotNode.addProperty("width", framebufferWidth);
             screenshotNode.addProperty("height", framebufferHeight);
@@ -1026,29 +1322,39 @@ final class PhaseZeroScenario implements ClientScenario {
         return passed;
     }
 
-    private static RegistryExpectation block(String path) {
-        return new RegistryExpectation("block", Registries.BLOCK, etherologyId(path));
+    private static List<StateExpectation> createStateExpectations() {
+        List<StateExpectation> expectations = new ArrayList<>();
+        int[] xCoordinates = {-12, -4, 4, 12};
+        for (int facingIndex = 0; facingIndex < FACINGS.size(); facingIndex++) {
+            Direction facing = FACINGS.get(facingIndex);
+            for (int age = 0; age <= MAX_AGE; age++) {
+                expectations.add(new StateExpectation(
+                        age,
+                        facing,
+                        new BlockPos(xCoordinates[facingIndex], FIXTURE_Y, age * 3)
+                ));
+            }
+        }
+        return List.copyOf(expectations);
     }
 
-    private static RegistryExpectation blockEntityType(String path) {
-        return new RegistryExpectation(
-                "block_entity_type",
-                Registries.BLOCK_ENTITY_TYPE,
-                etherologyId(path)
-        );
+    private static List<String> expectedStateDescriptions() {
+        List<String> descriptions = new ArrayList<>();
+        for (StateExpectation expectation : STATE_EXPECTATIONS) {
+            descriptions.add(
+                    expectation.position().toShortString() + "=age=" + expectation.age()
+                            + ",facing=" + expectation.facing().asString()
+            );
+        }
+        return List.copyOf(descriptions);
     }
 
-    private static PlacedBlockExpectation placedBlock(
+    private static RecipeExpectation recipe(
             String path,
-            String blockEntityTypePath,
-            int x,
-            int z
+            String type,
+            Identifier result
     ) {
-        return new PlacedBlockExpectation(
-                etherologyId(path),
-                etherologyId(blockEntityTypePath),
-                new BlockPos(x, ARENA_FLOOR_Y + 1, z)
-        );
+        return new RecipeExpectation(etherologyId(path), Identifier.of(type), result);
     }
 
     private static Identifier etherologyId(String path) {
@@ -1067,10 +1373,60 @@ final class PhaseZeroScenario implements ClientScenario {
         COMPLETE
     }
 
-    private record PlacedBlockExpectation(
+    private record StateExpectation(int age, Direction facing, BlockPos position) {
+    }
+
+    private record RecipeExpectation(
             Identifier id,
-            Identifier blockEntityTypeId,
-            BlockPos pos
+            Identifier typeId,
+            Identifier resultId
+    ) {
+    }
+
+    private record RegistryInspection(
+            boolean propertiesExact,
+            boolean defaultStateExact,
+            boolean stateCountExact,
+            boolean networkIdsExact,
+            Set<String> propertyNames,
+            int stateCount,
+            int rawIdCount
+    ) {
+
+        private boolean passed() {
+            return propertiesExact && defaultStateExact && stateCountExact && networkIdsExact;
+        }
+    }
+
+    private record JumpProbeResult(
+            boolean steppingPositionExact,
+            long seed,
+            float predictedRoll,
+            boolean removed,
+            boolean dropExact,
+            List<String> drops,
+            String steppingPosition
+    ) {
+    }
+
+    private record ServerSetupResult(
+            boolean chunkLoaded,
+            boolean playerCreative,
+            boolean allStatesPlaced,
+            boolean allStateNetworkIdsPresent,
+            boolean allShearsSpeedsExact,
+            boolean immatureLootEmpty,
+            boolean matureLootExact,
+            boolean recipesExact,
+            List<String> placedStates,
+            List<String> stateNetworkIds,
+            List<String> shearsSpeeds,
+            List<String> lootByAge,
+            List<String> recipes,
+            JumpProbeResult jumpProbe,
+            String worldDisplayName,
+            long worldSeed,
+            String dimensionId
     ) {
     }
 
@@ -1084,23 +1440,6 @@ final class PhaseZeroScenario implements ClientScenario {
                     failure == null ? "unknown error" : failure
             );
         }
-    }
-
-    private record ServerSetupResult(
-            boolean chunkLoaded,
-            boolean playerCreative,
-            boolean allBlocksPlaced,
-            boolean allBlockEntitiesPresent,
-            boolean allBlockEntityTypesExact,
-            List<String> placedBlockIds,
-            List<String> placedBlockEntityTypeIds,
-            String worldDisplayName,
-            long worldSeed,
-            String dimensionId
-    ) {
-    }
-
-    private record BlockStateRegistrySnapshot(int registeredStates, List<String> missingStates) {
     }
 
     private record ReportResult(JsonObject report, boolean passed) {

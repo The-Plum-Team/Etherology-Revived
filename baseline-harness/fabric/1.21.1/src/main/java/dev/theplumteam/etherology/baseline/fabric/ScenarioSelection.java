@@ -15,19 +15,26 @@ final class ScenarioSelection {
     }
 
     static ScenarioController dispatch(String configuredScenarioId) {
-        resolveScenarioId(configuredScenarioId);
-        return new ScenarioController(new PhaseZeroScenario());
+        return switch (resolveScenarioId(configuredScenarioId)) {
+            case PhaseZeroScenario.SCENARIO_ID ->
+                    new ScenarioController(new PhaseZeroScenario());
+            case ForestLanternScenario.SCENARIO_ID ->
+                    new ScenarioController(new ForestLanternScenario());
+            default -> throw new IllegalStateException("Scenario resolution was not exhaustive");
+        };
     }
 
     static String resolveScenarioId(String configuredScenarioId) {
-        if (PhaseZeroScenario.SCENARIO_ID.equals(configuredScenarioId)) {
+        if (PhaseZeroScenario.SCENARIO_ID.equals(configuredScenarioId)
+                || ForestLanternScenario.SCENARIO_ID.equals(configuredScenarioId)) {
             return configuredScenarioId;
         }
 
         throw new IllegalArgumentException(
                 "Unsupported or missing -D" + SCENARIO_PROPERTY_NAME + " value '"
                         + configuredScenarioId + "'; expected exactly "
-                        + PhaseZeroScenario.SCENARIO_ID
+                        + PhaseZeroScenario.SCENARIO_ID + " or "
+                        + ForestLanternScenario.SCENARIO_ID
         );
     }
 }

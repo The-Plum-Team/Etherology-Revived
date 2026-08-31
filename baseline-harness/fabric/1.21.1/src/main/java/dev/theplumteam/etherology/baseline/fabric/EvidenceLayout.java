@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.util.regex.Pattern;
 
 record EvidenceLayout(
+        ScenarioDefinition scenario,
         Path scenarioRoot,
         Path reportsDirectory,
         Path screenshotsDirectory,
@@ -27,9 +28,12 @@ record EvidenceLayout(
     private static final Pattern PROFILE_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9.-]+");
     private static final Pattern SCENARIO_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
-    static EvidenceLayout resolve(Path gameDirectory, String scenarioId) throws IOException {
-        if (!SCENARIO_ID_PATTERN.matcher(scenarioId).matches()) {
-            throw new IOException("The scenario id is unsafe: " + scenarioId);
+    static EvidenceLayout resolve(
+            Path gameDirectory,
+            ScenarioDefinition scenario
+    ) throws IOException {
+        if (!SCENARIO_ID_PATTERN.matcher(scenario.id()).matches()) {
+            throw new IOException("The scenario id is unsafe: " + scenario.id());
         }
 
         Path normalizedGameDirectory = gameDirectory.toAbsolutePath().normalize();
@@ -47,16 +51,17 @@ record EvidenceLayout(
         CaptureDimensions dimensions = validateEvidenceMarker(
                 evidenceRoot.resolve(EVIDENCE_MARKER_FILE),
                 profileId,
-                scenarioId
+                scenario
         );
 
-        Path scenarioRoot = evidenceRoot.resolve(scenarioId);
+        Path scenarioRoot = evidenceRoot.resolve(scenario.id());
         Path reportsDirectory = scenarioRoot.resolve("reports");
         Path screenshotsDirectory = scenarioRoot.resolve("screenshots");
-        requireDirectory(scenarioRoot, scenarioId + " scenario root");
-        requireDirectory(reportsDirectory, scenarioId + " reports directory");
-        requireDirectory(screenshotsDirectory, scenarioId + " screenshots directory");
+        requireDirectory(scenarioRoot, scenario.id() + " scenario root");
+        requireDirectory(reportsDirectory, scenario.id() + " reports directory");
+        requireDirectory(screenshotsDirectory, scenario.id() + " screenshots directory");
         return new EvidenceLayout(
+                scenario,
                 scenarioRoot,
                 reportsDirectory,
                 screenshotsDirectory,
@@ -74,7 +79,7 @@ record EvidenceLayout(
     }
 
     Path screenshotPath() {
-        return screenshotsDirectory.resolve(PhaseZeroScenario.SCREENSHOT_FILE_NAME);
+        return screenshotsDirectory.resolve(scenario.screenshotFileName());
     }
 
     void requireFreshTargets() throws IOException {
@@ -114,7 +119,7 @@ record EvidenceLayout(
     private static CaptureDimensions validateEvidenceMarker(
             Path path,
             String profileId,
-            String scenarioId
+            ScenarioDefinition expectedScenario
     ) throws IOException {
         JsonObject marker = readObject(path, "evidence marker");
         requireInteger(marker, "schema", 1, "evidence marker");
@@ -122,31 +127,31 @@ record EvidenceLayout(
         requireString(marker, "reference_id", REFERENCE_ID, "evidence marker");
 
         JsonObject scenario = requireObject(marker, "scenario", "evidence marker");
-        requireString(scenario, "id", scenarioId, "evidence scenario");
+        requireString(scenario, "id", expectedScenario.id(), "evidence scenario");
         requireString(scenario, "report_file", "report.json", "evidence scenario");
         requireString(scenario, "completion_marker_file", "done.marker", "evidence scenario");
         requireString(
                 scenario,
                 "screenshot_file",
-                PhaseZeroScenario.SCREENSHOT_FILE_NAME,
+                expectedScenario.screenshotFileName(),
                 "evidence scenario"
         );
         requireString(
                 scenario,
                 "world_directory_name",
-                PhaseZeroScenario.WORLD_DIRECTORY_NAME,
+                expectedScenario.worldDirectoryName(),
                 "evidence scenario"
         );
         requireString(
                 scenario,
                 "world_display_name",
-                PhaseZeroScenario.WORLD_DISPLAY_NAME,
+                expectedScenario.worldDisplayName(),
                 "evidence scenario"
         );
         requireLong(
                 scenario,
                 "world_seed",
-                PhaseZeroScenario.WORLD_SEED,
+                expectedScenario.worldSeed(),
                 "evidence scenario"
         );
 

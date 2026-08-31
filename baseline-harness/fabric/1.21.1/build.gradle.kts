@@ -114,6 +114,12 @@ val validateHarnessArtifact = tasks.register("validateHarnessArtifact") {
             ) {
                 "Harness JAR has no completed-render mixin"
             }
+            check(
+                "dev/theplumteam/etherology/baseline/fabric/mixin/PlayerEntityJumpInvoker.class" in
+                    entries,
+            ) {
+                "Harness JAR has no vanilla jump invoker"
+            }
             check(classEntries.all {
                 it.startsWith("dev/theplumteam/etherology/baseline/fabric/")
             }) {
@@ -222,7 +228,10 @@ val validateHarnessArtifact = tasks.register("validateHarnessArtifact") {
                     "package" to
                         "dev.theplumteam.etherology.baseline.fabric.mixin",
                     "compatibilityLevel" to "JAVA_21",
-                    "client" to listOf("GameRendererMixin"),
+                    "client" to listOf(
+                        "GameRendererMixin",
+                        "PlayerEntityJumpInvoker",
+                    ),
                     "injectors" to mapOf("defaultRequire" to 1),
                 ),
             ) {

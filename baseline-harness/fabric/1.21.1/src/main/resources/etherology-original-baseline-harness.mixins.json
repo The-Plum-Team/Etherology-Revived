@@ -3,7 +3,8 @@
   "package": "dev.theplumteam.etherology.baseline.fabric.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "GameRendererMixin"
+    "GameRendererMixin",
+    "PlayerEntityJumpInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

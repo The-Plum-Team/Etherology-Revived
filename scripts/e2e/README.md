@@ -488,7 +488,7 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Prepared Forge 1.20.1 dedicated-server Forest Lantern probe (v16)
+## Accepted Forge 1.20.1 dedicated-server Forest Lantern probe (v16)
 
 The prior v15 identity is permanently consumed. Its native run reached save,
 reload, normal server stop, and report publication; 262 assertions passed and
@@ -496,24 +496,23 @@ four failed because the prepared oracle incorrectly expected `opaque=false`
 instead of the upstream-derived native 1.20.1 `opaque=true` state flag. No v15
 archive is accepted and v15 must never be relaunched.
 
-The active server-only profile is the fresh, repository-owned
+The active server-only profile is the consumed, repository-owned
 `etherology-e2e-forge-server-1.20.1-v16` identity. Its tracked manifest and v16
 snapshot are byte-identical at 1,184 bytes with SHA-256
 `82419a84d0bca220b5032f45fec053265ed5701594af32fd3721d02a66862332`.
-It has not been provisioned or launched. The expected schema-10 report contains
-266 ordered assertions: all v14 checks plus the exact Forest Lantern registry,
+Its native Forge run exited zero and the sealed schema-10 report passes all 266
+ordered assertions: all v14 checks plus the exact Forest Lantern registry,
 twenty states, unique non-negative server network IDs and shapes, tags, loot,
 four recipes and advancements, real
 four-facing `BlockItem` placement/support removal, shears speed `15.0` and
 effective breaking delta across all twenty states, seeded real player-jump
 retain/break/drop outcomes, real reload stability, and fresh players after
-reload. This headless contract creates no screenshots.
+reload. This headless contract creates no screenshots. The archive is
+`docs/evidence/forge-1.20.1/forest-lantern-server-v16`.
 
-Complete every static gate and commit the exact source/harness before reserving
-the one-use runtime. `validate`, the Gradle gate, and the strict Python safety
-tests do not launch Minecraft. After `run` passes its read-only preflight, the
-runner durably reserves the attempt marker before it creates the launch lock or
-starts Gradle. Treat every `run` that reaches that reservation as consuming v16:
+The recorded one-shot workflow was the following. It is provenance, not an
+instruction to relaunch v16: the durable attempt marker and sealed archive must
+continue to reject every reuse.
 
 ```bash
 ./gradlew --no-daemon --no-parallel --console=plain \
@@ -526,9 +525,9 @@ python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
   --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v16
 ```
 
-The runner does not create the tracked archive. After the runtime verifier
-passes, copy only the `evidence/forest-lantern` payload while preserving file
-modification times, then seal and verify it exactly once:
+The runner did not create the tracked archive. The accepted publication copied
+only the `evidence/forest-lantern` payload with modification times preserved,
+then sealed and verified it exactly once:
 
 ```bash
 server_capture="scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v16/evidence/forest-lantern"
@@ -541,10 +540,10 @@ python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
   --archive "$server_archive"
 ```
 
-Creating the exact archive directory blocks another provision/check/run even
-before sealing. Keep the active manifest at v16 through manifest creation. If
-the native launch fails, do not retry v16; advance the profile, snapshot,
-contract, verifier, archive destination, and tests to a fresh v17 identity.
+The exact archive directory and launch-attempt marker now block another
+provision, check, or run. The v15 historical safety task, v16 active safety
+task, strict archive verifier, and integrated Gradle archive gate all pass.
+Packaged-client Forest Lantern evidence is the next incomplete milestone.
 
 ## Historical Forge 1.20.1 dedicated-server metal-block-registry probe (v13)
 

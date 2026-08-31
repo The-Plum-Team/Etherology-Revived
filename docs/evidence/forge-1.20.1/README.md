@@ -5,6 +5,65 @@ clients and a dedicated server on the baseline Mac. Every run used a new
 repository-owned profile under `scripts/e2e/.state/`; none read, modified, or
 derived data from an external launcher profile.
 
+## Forest Lantern dedicated server (v16)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v16`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v16`
+- Scenario: `forest-lantern`
+- Tracked profile manifest: `1184` bytes, SHA-256
+  `82419a84d0bca220b5032f45fec053265ed5701594af32fd3721d02a66862332`
+- Minecraft: `1.20.1`; Forge: `47.4.9`; runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`; execution: repository-owned Loom userdev
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `10`; archive-manifest schema: `1`
+- Report status: `passed`; assertions: `266` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+
+The native run proves the exact shared Forest Lantern block/item identity and
+mapping, mature north default, all twenty age/facing states, unique non-negative
+server network IDs, exact shapes and upstream-derived block properties. In
+particular, Minecraft 1.20.1 reports `opaque=true` for the upstream
+`notSolid()` construction while the block remains non-full-cube and transparent.
+The run also verifies the hoe and deliberately empty peach-log tags, age-gated
+loot, four recipes and advancements, real four-facing `BlockItem` placement and
+support removal, shears speed and breaking delta across all twenty states, and
+seeded retain/break/drop jump outcomes. All registry, data, and mechanic checks
+remain exact after a real reload; the world saves and stops normally.
+
+The prior v15 identity is consumed and has no accepted archive. Its native run
+passed 262 assertions; four aggregate assertions failed because the prepared
+oracle incorrectly expected `opaque=false`. v16 corrected only that oracle and
+used a distinct one-shot identity.
+
+Frozen file digests:
+
+- `forest-lantern-server-v16/archive-manifest.json`:
+  `c4c0062bf821510c49c54af9664227b4ac798f25528cb901bd1640c5a2bc55bf`
+- `forest-lantern-server-v16/reports/report.json`:
+  `af7bf8ca10dfc5b34da104daa7c4f6df4d3ecbcb879e1cab7cef75e27b33913a`
+- `forest-lantern-server-v16/reports/launcher-result.json`:
+  `3c9aa1d335445fcb2e2f776f1b27527ed0f4baca87f07ef822f8d09be2ae0a2a`
+- `forest-lantern-server-v16/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `forest-lantern-server-v16/logs/latest.log`:
+  `9a7c0d69aee66897cb7766b688a487fe98bc649e45f2a708a3c320283ed3935e`
+
+Run the archive-only verifier from the repository root:
+
+```bash
+python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
+  --archive docs/evidence/forge-1.20.1/forest-lantern-server-v16
+```
+
+It reports `266 assertions` and checks the sealed five-file inventory,
+publication ordering, exact report contract, profile provenance, and server
+log. This headless proof intentionally contains no screenshots. It does not
+claim natural immature attachment while the Golden Forest graph is deferred,
+a second JVM, multiplayer, client rendering, creative-tab interaction, the
+full authoritative registry, or release readiness. Packaged-client evidence is
+the next Forest Lantern gate.
+
 ## Ethereal Storage (v7)
 
 - Profile: `etherology-e2e-forge-1.20.1-v7`

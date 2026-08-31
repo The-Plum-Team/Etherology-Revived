@@ -21,12 +21,12 @@ import forge_evidence
 
 
 SCENARIO_ID = "forest-lantern"
-PROFILE_ID = "etherology-e2e-forge-1.20.1-v12"
+PROFILE_ID = "etherology-e2e-forge-1.20.1-v13"
 ACTIVE_PROFILE_RELATIVE_PATH = "scripts/e2e/forge-1.20.1-profile.json"
-SNAPSHOT_PROFILE_RELATIVE_PATH = "scripts/e2e/forge-1.20.1-profile-v12.json"
+SNAPSHOT_PROFILE_RELATIVE_PATH = "scripts/e2e/forge-1.20.1-profile-v13.json"
 PROFILE_SIZE = 3668
-PROFILE_SHA256 = "c23a2a905e40c721cda1d45086064667aacd568489a319eef4ce30e153a2a8d7"
-ARCHIVE_DIRECTORY_NAME = "forest-lantern-v12"
+PROFILE_SHA256 = "0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6"
+ARCHIVE_DIRECTORY_NAME = "forest-lantern-v13"
 ARCHIVE_MANIFEST_NAME = forge_evidence.ARCHIVE_MANIFEST_NAME
 ARCHIVE_KIND = forge_evidence.ARCHIVE_KIND
 ARCHIVE_VERIFICATION_SCOPE = forge_evidence.ARCHIVE_VERIFICATION_SCOPE
@@ -326,7 +326,7 @@ class ForestLanternEvidenceSummary:
 
 
 def validate_active_profile(configuration: forge_client.ResolvedConfiguration) -> None:
-    """Requires the immutable v12 profile and exact Forge runtime contract."""
+    """Requires the immutable v13 profile and exact Forge runtime contract."""
 
     active_profile = configuration.repository_root / ACTIVE_PROFILE_RELATIVE_PATH
     snapshot_profile = configuration.repository_root / SNAPSHOT_PROFILE_RELATIVE_PATH
@@ -338,7 +338,7 @@ def validate_active_profile(configuration: forge_client.ResolvedConfiguration) -
         if path.stat().st_size != PROFILE_SIZE or forge_client.sha256_file(path) != PROFILE_SHA256:
             raise forge_client.E2EError(f"Forge Forest Lantern profile bytes changed: {path}")
     if active_profile.read_bytes() != snapshot_profile.read_bytes():
-        raise forge_client.E2EError("The active Forge profile differs from its v12 snapshot")
+        raise forge_client.E2EError("The active Forge profile differs from its v13 snapshot")
 
     profile = forge_client.profile_spec(configuration)
     capture = forge_client.require_object(
@@ -358,7 +358,7 @@ def validate_active_profile(configuration: forge_client.ResolvedConfiguration) -
         or (capture.get("width"), capture.get("height"))
         != EXPECTED_FRAMEBUFFER_DIMENSIONS
     ):
-        raise forge_client.E2EError("The Forge Forest Lantern v12 profile contract changed")
+        raise forge_client.E2EError("The Forge Forest Lantern v13 profile contract changed")
     for role, mod_id, file_name in EXPECTED_ARTIFACTS:
         artifact = forge_client.artifact_spec(configuration, role)
         if artifact.get("mod_id") != mod_id or artifact.get("file_name") != file_name:
@@ -1179,7 +1179,7 @@ def validate_live_evidence(
     configuration: forge_client.ResolvedConfiguration | None = None,
     runtime: Path | None = None,
 ) -> ForestLanternEvidenceSummary:
-    """Validates the exact live v12 capture without launching or changing it."""
+    """Validates the exact live v13 capture without launching or changing it."""
 
     resolved_configuration = configuration or forge_client.load_configuration()
     validate_active_profile(resolved_configuration)
@@ -1274,7 +1274,7 @@ def validate_archive_inventory(
         )
     if archive_root.name != ARCHIVE_DIRECTORY_NAME:
         raise forge_client.E2EError(
-            "Forge Forest Lantern archive directory does not identify profile v12"
+            "Forge Forest Lantern archive directory does not identify profile v13"
         )
     files: set[str] = set()
     directories: set[str] = set()
@@ -1366,7 +1366,7 @@ def build_archive_manifest(
     capture_runtime: Path,
     archive_root: Path,
 ) -> dict[str, object]:
-    """Builds a seal only from the exact live v12 capture and copied payload."""
+    """Builds a seal only from the exact live v13 capture and copied payload."""
 
     validate_active_profile(configuration)
     expected_profile_path = configuration.repository_root / ACTIVE_PROFILE_RELATIVE_PATH
@@ -1378,7 +1378,7 @@ def build_archive_manifest(
         or forge_client.sha256_file(profile_manifest_path) != PROFILE_SHA256
     ):
         raise forge_client.E2EError(
-            "Forge Forest Lantern sealing requires the exact active v12 profile"
+            "Forge Forest Lantern sealing requires the exact active v13 profile"
         )
     validate_archive_inventory(archive_root, include_manifest=False)
     if archive_root.resolve() != expected_repository_archive_root(configuration).resolve():
@@ -1395,7 +1395,7 @@ def build_archive_manifest(
         or capture_runtime.name != PROFILE_ID
     ):
         raise forge_client.E2EError(
-            "Forge Forest Lantern sealing requires the exact owned v12 runtime"
+            "Forge Forest Lantern sealing requires the exact owned v13 runtime"
         )
     forge_client.verify_runtime(configuration, capture_runtime, artifact_policy="optional")
     live_summary = validate_live_evidence(configuration, capture_runtime)
@@ -1698,7 +1698,7 @@ def validate_archive_manifest(
 def validate_archived_evidence(
     archive_root: Path,
 ) -> ForestLanternEvidenceSummary:
-    """Validates a self-contained v12 archive without consulting live state."""
+    """Validates a self-contained v13 archive without consulting live state."""
 
     validate_archive_inventory(archive_root)
     manifest = forge_evidence.require_json_object(
@@ -1739,18 +1739,18 @@ def parse_arguments() -> argparse.Namespace:
     operation.add_argument(
         "--live",
         action="store_true",
-        help="validate the repository-owned v12 capture runtime",
+        help="validate the repository-owned v13 capture runtime",
     )
     operation.add_argument(
         "--archive",
         type=Path,
-        help="validate one frozen v12 archive without live state",
+        help="validate one frozen v13 archive without live state",
     )
     operation.add_argument(
         "--create-archive-manifest",
         type=Path,
         metavar="ARCHIVE",
-        help="seal copied v12 payload from one explicit owned runtime",
+        help="seal copied v13 payload from one explicit owned runtime",
     )
     parser.add_argument(
         "--capture-runtime",
@@ -1760,7 +1760,7 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--profile-manifest",
         type=Path,
-        help="exact active v12 manifest used only while sealing",
+        help="exact active v13 manifest used only while sealing",
     )
     arguments = parser.parse_args()
     sealing = arguments.create_archive_manifest is not None

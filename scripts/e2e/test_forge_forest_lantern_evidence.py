@@ -323,11 +323,11 @@ def build_archive_manifest(
 
 
 class ActiveProfileTests(unittest.TestCase):
-    def test_active_profile_is_the_exact_v12_snapshot(self) -> None:
+    def test_active_profile_is_the_exact_v13_snapshot(self) -> None:
         configuration = forge_client.load_configuration()
         forest_evidence.validate_active_profile(configuration)
 
-    def test_rejects_a_linked_v12_snapshot(self) -> None:
+    def test_rejects_a_linked_v13_snapshot(self) -> None:
         configuration = forge_client.load_configuration()
         with tempfile.TemporaryDirectory() as temporary_directory:
             repository_root = Path(temporary_directory)

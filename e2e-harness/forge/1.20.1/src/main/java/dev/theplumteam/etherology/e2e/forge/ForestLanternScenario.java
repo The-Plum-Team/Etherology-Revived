@@ -10,7 +10,6 @@ import net.minecraft.client.gui.screen.DatapackFailureScreen;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.RenderLayers;
 import net.minecraft.client.render.model.BakedModel;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.item.BlockItem;
@@ -43,6 +42,7 @@ import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.minecraft.world.level.LevelInfo;
 import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
@@ -524,7 +524,11 @@ final class ForestLanternScenario {
                 0
         ) != client.getBakedModelManager().getMissingModel();
         ResourceDigestProbe resourceDigests = inspectResources(client);
-        boolean cutout = RenderLayers.getBlockLayer(defaultState) == RenderLayer.getCutout();
+        boolean cutout = client.getBlockRenderManager()
+                .getModel(defaultState)
+                .getRenderTypes(defaultState, Random.create(42L), ModelData.EMPTY)
+                .asList()
+                .equals(List.of(RenderLayer.getCutout()));
         boolean stateInventoryExact = stateInventory.equals(expectedStateInventory());
         boolean rawIdsExact = rawStateIds.size() == 20
                 && rawStateIds.stream().allMatch(rawId -> rawId >= 0)

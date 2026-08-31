@@ -22,7 +22,7 @@ record ForgeEvidenceLayout(
 ) {
 
     private static final String ARTIFACT_NODE = "forge-1.20.1";
-    private static final String PROFILE_ID = "etherology-e2e-forge-1.20.1-v12";
+    private static final String PROFILE_ID = "etherology-e2e-forge-1.20.1-v13";
     private static final String PROFILE_MANIFEST_PATH =
             "scripts/e2e/forge-1.20.1-profile.json";
     private static final Pattern SCENARIO_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9-]*");

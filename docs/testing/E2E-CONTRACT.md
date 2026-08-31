@@ -55,11 +55,21 @@ the report and evidence-directory identity, and `phase0-smoke` retains its exist
 report schema, assertions, screenshot names, report-first publication, and
 `done.marker`-last contract.
 
-The Forge 1.20.1 harness uses the same one-controller rule in its isolated v12
+The Forge 1.20.1 harness uses the same one-controller rule in its isolated v13
 profile. Its exact ordered scenario inventory is `ethereal-storage`, then
 `ethereal-channel`, then `forest-lantern`; an absent property defaults to
 `ethereal-storage`. An explicit id must match one of those three values without
-whitespace normalization.
+whitespace normalization. The v12 profile is permanently consumed by a native
+Forest Lantern diagnostic. Its report recorded 69 assertions: 12 passed and 57
+cascaded from one harness false negative, with zero screenshots. Production
+Forge registration was correct; the probe queried the deprecated `RenderLayers`
+map and observed solid instead of using `BakedModel#getRenderTypes`, which
+returns the exact cutout render type. v12 has no accepted archive and must not
+be relaunched. Its snapshot and repository-owned runtime remain historical.
+The active v13 profile is fresh and unprovisioned; its 3,668-byte manifest has
+SHA-256
+`0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6`.
+No v13 native result or archive is claimed yet.
 
 ## Packaged-client evidence lifecycle
 

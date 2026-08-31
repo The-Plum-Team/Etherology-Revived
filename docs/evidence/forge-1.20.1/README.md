@@ -64,6 +64,24 @@ a second JVM, multiplayer, client rendering, creative-tab interaction, the
 full authoritative registry, or release readiness. Packaged-client evidence is
 the next Forest Lantern gate.
 
+## Forest Lantern packaged-client rollover (v12 to v13)
+
+The repository-owned `etherology-e2e-forge-1.20.1-v12` profile is permanently
+consumed by its native Forest Lantern diagnostic. Its report recorded 69
+assertions: 12 passed and 57 cascaded from one harness false negative, with zero
+screenshots. Production Forge registration was correct; the probe queried the
+deprecated `RenderLayers` map and observed solid instead of using
+`BakedModel#getRenderTypes`, which returns the exact cutout render type. No v12
+archive was accepted. Its tracked 3,668-byte profile snapshot has SHA-256
+`c23a2a905e40c721cda1d45086064667aacd568489a319eef4ce30e153a2a8d7`,
+and neither that snapshot nor its repository-owned runtime may be reused.
+
+The next packaged-client attempt is bound to the fresh, unprovisioned
+`etherology-e2e-forge-1.20.1-v13` profile. Its tracked 3,668-byte manifest has
+SHA-256
+`0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6`.
+No v13 native result or evidence archive is claimed yet.
+
 ## Ethereal Storage (v7)
 
 - Profile: `etherology-e2e-forge-1.20.1-v7`

@@ -336,13 +336,19 @@ The Forge lane is a separate repository-owned profile described by
 `forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
-an external launcher profile. The current runtime is the fresh isolated
-`etherology-e2e-forge-1.20.1-v12` profile. Its exact ordered scenarios are
+an external launcher profile. The current runtime contract is the fresh isolated
+`etherology-e2e-forge-1.20.1-v13` profile. Its exact ordered scenarios are
 `ethereal-storage`, `ethereal-channel`, and `forest-lantern`; selection defaults
-to storage. The v12 profile is reserved for the Forest Lantern capture and has
-not been provisioned, staged, checked, or launched by the implementation and
-build-only workflow. The v11 profile and Channel archive remain immutable
-history.
+to storage. v13 is reserved for the next Forest Lantern capture and has not been
+provisioned, staged, checked, or launched. The v12 identity is permanently
+consumed by its one native Forest Lantern diagnostic: the report reached the
+prepared scenario with 69 assertions, but only 12 passed and 57 cascaded from
+one harness false negative before any screenshot. Production Forge registration
+was correct; the probe queried the deprecated `RenderLayers` map and observed
+solid instead of using `BakedModel#getRenderTypes`, which returns the exact
+cutout render type. No v12 archive was accepted, and its snapshot and
+repository-owned runtime remain immutable history. The v11 profile and Channel
+archive also remain immutable.
 The launcher-created runtime marker also records the tracked profile manifest's
 repository path, exact byte size, and SHA-256. Every readiness and launch action
 recomputes that descriptor and rejects a mismatched marker.
@@ -369,8 +375,9 @@ python3 -B scripts/e2e/forge_client.py status
 
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. It is never removed
-and blocks another provision, stage, check, or start for v12, including after an
-early launch failure. `status` remains available; `stop` and `stop-all-owned`
+and blocks another provision, stage, check, or start for v13, including after an
+early launch failure. v12 already has that durable marker and must never be
+relaunched. `status` remains available; `stop` and `stop-all-owned`
 are abort-only recovery commands, not part of successful capture publication.
 
 The storage scenario writes five 1920x1080 composed-framebuffer captures and one
@@ -420,16 +427,16 @@ them against that stopped owned capture, then validate the frozen archive:
 
 ```bash
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
-/bin/mkdir docs/evidence/forge-1.20.1/forest-lantern-v12
+/bin/mkdir docs/evidence/forge-1.20.1/forest-lantern-v13
 /bin/cp -pR \
-  scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v12/evidence/forest-lantern/. \
-  docs/evidence/forge-1.20.1/forest-lantern-v12/
+  scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v13/evidence/forest-lantern/. \
+  docs/evidence/forge-1.20.1/forest-lantern-v13/
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py \
-  --create-archive-manifest docs/evidence/forge-1.20.1/forest-lantern-v12 \
-  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v12 \
+  --create-archive-manifest docs/evidence/forge-1.20.1/forest-lantern-v13 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v13 \
   --profile-manifest scripts/e2e/forge-1.20.1-profile.json
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py \
-  --archive docs/evidence/forge-1.20.1/forest-lantern-v12
+  --archive docs/evidence/forge-1.20.1/forest-lantern-v13
 ```
 
 After copying the seven accepted payload files (the report, completion marker,

@@ -167,6 +167,18 @@ final class ForestLanternScenarioTest {
     }
 
     @Test
+    void scenarioQueriesTheForgeBakedModelRenderTypesForCutout() throws IOException {
+        List<String> inspectionCalls = methodCallsContaining("inspectRegistry");
+        String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
+
+        assertTrue(inspectionCalls.contains("getRenderTypes"));
+        assertTrue(inspectionCalls.contains("asList"));
+        assertTrue(inspectionCalls.contains("equals"));
+        assertFalse(inspectionCalls.contains("getBlockLayer"));
+        assertTrue(constants.contains("net/minecraftforge/client/model/data/ModelData"));
+    }
+
+    @Test
     void scenarioUsesRealBlockItemAndFullRestartPath() throws IOException {
         List<String> placementCalls = methodCallsContaining("attemptPlacement");
         List<String> disconnectCalls = methodCallsContaining("tickDisconnecting");

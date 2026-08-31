@@ -460,8 +460,10 @@ val forgeForestLanternEvidenceTest =
     rootProject.file("scripts/e2e/test_forge_forest_lantern_evidence.py")
 val forgeForestLanternProfileSnapshotV12 =
     rootProject.file("scripts/e2e/forge-1.20.1-profile-v12.json")
+val forgeForestLanternProfileSnapshotV13 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v13.json")
 val forgeForestLanternClientEvidenceArchive =
-    forgeChannelEvidenceRoot.resolve("forest-lantern-v12")
+    forgeChannelEvidenceRoot.resolve("forest-lantern-v13")
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
 apply(plugin = "dev.architectury.loom")
@@ -3551,7 +3553,7 @@ fun missingForgeForestLanternClientEvidenceMilestone(): List<String> {
         .orEmpty()
     if (archiveDirectories != listOf(forgeForestLanternClientEvidenceArchive)) {
         missingConditions.add(
-            "the exact frozen Forge Forest Lantern client-v12 evidence archive is required",
+            "the exact frozen Forge Forest Lantern client-v13 evidence archive is required",
         )
         return missingConditions
     }
@@ -5653,10 +5655,11 @@ val validateForgeForestLanternClientEvidenceArchiveIntegrity =
     tasks.register("validateForgeForestLanternClientEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge Forest Lantern packaged-client v12 archive."
+            "Validates the immutable Forge Forest Lantern packaged-client v13 archive."
         inputs.files(
             forgeForestLanternEvidenceVerifier,
             forgeForestLanternProfileSnapshotV12,
+            forgeForestLanternProfileSnapshotV13,
             forgeE2eProfileManifest,
         )
         if (forgeForestLanternClientEvidenceArchive.exists()) {
@@ -6424,6 +6427,7 @@ tasks.register("verifyForgePortGateClosed") {
         forgeForestLanternServerEvidenceVerifier,
         forgeForestLanternEvidenceVerifier,
         forgeForestLanternProfileSnapshotV12,
+        forgeForestLanternProfileSnapshotV13,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -7805,6 +7809,7 @@ if (minecraftVersion == "1.20.1") {
                 forgeE2eProfileManifest,
                 forgeChannelProfileSnapshotV11,
                 forgeForestLanternProfileSnapshotV12,
+                forgeForestLanternProfileSnapshotV13,
                 rootProject.file("scripts/e2e/forge_client.py"),
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),

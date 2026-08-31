@@ -240,6 +240,7 @@ final class SharedSoundsBytecodeTest {
                 List.of(
                         "ru/feytox/etherology/registry/block/SharedBlocks#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
+                        "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V",
                         "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",
                         "ru/feytox/etherology/registry/misc/SharedScreenHandlers#register()V",
                         SHARED_SOUNDS + "#register()V",

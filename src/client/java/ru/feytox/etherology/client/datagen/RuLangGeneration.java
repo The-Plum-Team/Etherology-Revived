@@ -23,6 +23,7 @@ import static ru.feytox.etherology.registry.block.EBlocks.*;
 import static ru.feytox.etherology.registry.item.ArmorItems.*;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
+import static ru.feytox.etherology.registry.item.SharedMaterialItems.*;
 import static ru.feytox.etherology.registry.item.ToolItems.*;
 
 public class RuLangGeneration extends FabricLanguageProvider {
@@ -64,8 +65,8 @@ public class RuLangGeneration extends FabricLanguageProvider {
 
         // azel
         builder.add(AZEL_BLOCK, "Блок азеля");
-        builder.add(AZEL_INGOT, "Слиток азеля");
-        builder.add(AZEL_NUGGET, "Кусочек азеля");
+        builder.add(AZEL_INGOT.get(), "Слиток азеля");
+        builder.add(AZEL_NUGGET.get(), "Кусочек азеля");
 
         // attrahite
         builder.add(ATTRAHITE, "Аттрахит");
@@ -73,19 +74,19 @@ public class RuLangGeneration extends FabricLanguageProvider {
         RuTranslationPart.of(builder, "аттрахитовых кирпичей")
                 .slab(ATTRAHITE_BRICK_SLAB)
                 .stairs(ATTRAHITE_BRICK_STAIRS);
-        builder.add(ATTRAHITE_BRICK, "Аттрахитовый кирпич");
-        builder.add(RAW_AZEL, "Сырой азель");
-        builder.add(ENRICHED_ATTRAHITE, "Обогащённый аттрахит");
+        builder.add(ATTRAHITE_BRICK.get(), "Аттрахитовый кирпич");
+        builder.add(RAW_AZEL.get(), "Сырой азель");
+        builder.add(ENRICHED_ATTRAHITE.get(), "Обогащённый аттрахит");
 
         // ethril
         builder.add(ETHRIL_BLOCK, "Эфриловый блок");
-        builder.add(ETHRIL_INGOT, "Эфриловый слиток");
-        builder.add(ETHRIL_NUGGET, "Эфриловый кусочек");
+        builder.add(ETHRIL_INGOT.get(), "Эфриловый слиток");
+        builder.add(ETHRIL_NUGGET.get(), "Эфриловый кусочек");
 
         // ebony
         builder.add(EBONY_BLOCK, "Эбонитовый блок");
-        builder.add(EBONY_INGOT, "Эбонитовый слиток");
-        builder.add(EBONY_NUGGET, "Эбонитовый кусочек");
+        builder.add(EBONY_INGOT.get(), "Эбонитовый слиток");
+        builder.add(EBONY_NUGGET.get(), "Эбонитовый кусочек");
 
         // beamer
         builder.add(BEAMER, "Лучевод");
@@ -139,12 +140,12 @@ public class RuLangGeneration extends FabricLanguageProvider {
 
         builder.add(EBlocks.ARCANELIGHT_DETECTOR_BLOCK, "Датчик незримого света");
 
-        builder.add(ETHEROSCOPE, "Эфироскоп");
-        builder.add(THUJA_OIL, "Хвойное масло");
+        builder.add(ETHEROSCOPE.get(), "Эфироскоп");
+        builder.add(THUJA_OIL.get(), "Хвойное масло");
         builder.add(THUJA_SEEDS, "Семена туи");
-        builder.add(BINDER, "Связующий элемент");
-        builder.add(EBONY, "Эбен");
-        builder.add(RESONATING_WAND, "Резонирующая палочка");
+        builder.add(BINDER.get(), "Связующий элемент");
+        builder.add(EBONY.get(), "Эбен");
+        builder.add(RESONATING_WAND.get(), "Резонирующая палочка");
 
         builder.add(EBlocks.CHANNEL_CASE, "Обшивка канала");
         builder.add(STREAM_KEY, "Ключ трансляции");

@@ -24,6 +24,7 @@ import static ru.feytox.etherology.registry.block.EBlocks.*;
 import static ru.feytox.etherology.registry.item.ArmorItems.*;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
+import static ru.feytox.etherology.registry.item.SharedMaterialItems.*;
 import static ru.feytox.etherology.registry.item.ToolItems.*;
 
 @UtilityClass
@@ -62,10 +63,14 @@ public class EItemGroups {
         );
         // attrahite
         etherItems.with(
-                ATTRAHITE, ATTRAHITE_BRICKS, ATTRAHITE_BRICK_SLAB, ATTRAHITE_BRICK_STAIRS, ATTRAHITE_BRICK, ENRICHED_ATTRAHITE, RAW_AZEL
+                ATTRAHITE, ATTRAHITE_BRICKS, ATTRAHITE_BRICK_SLAB, ATTRAHITE_BRICK_STAIRS,
+                ATTRAHITE_BRICK.get(), ENRICHED_ATTRAHITE.get(), RAW_AZEL.get()
         );
         // metals
-        etherItems.with(AZEL_INGOT, ETHRIL_INGOT, EBONY_INGOT, AZEL_NUGGET, ETHRIL_NUGGET, EBONY_NUGGET);
+        etherItems.with(
+                AZEL_INGOT.get(), ETHRIL_INGOT.get(), EBONY_INGOT.get(),
+                AZEL_NUGGET.get(), ETHRIL_NUGGET.get(), EBONY_NUGGET.get()
+        );
         etherItems.with(AZEL_BLOCK, ETHRIL_BLOCK, EBONY_BLOCK);
         // armor
         etherItems.with(EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS);
@@ -85,9 +90,9 @@ public class EItemGroups {
         // TODO: 12.04.2024 fix corruption bucket
         etherItems.with(
                 OCULUS, OCULAR, PRANA_VISION, PRIMOSHARD_CLOS, PRIMOSHARD_KETA, PRIMOSHARD_RELLA,
-                PRIMOSHARD_VIA, GLINT).with(fullGlint).with(THUJA_OIL, CORRUPTION_BUCKET).with(SEALS);
+                PRIMOSHARD_VIA, GLINT).with(fullGlint).with(THUJA_OIL.get(), CORRUPTION_BUCKET).with(SEALS);
         // materials
-        etherItems.with(ETHEROSCOPE, BINDER, DecoBlockItems.EBONY, RESONATING_WAND);
+        etherItems.with(ETHEROSCOPE.get(), BINDER.get(), EBONY.get(), RESONATING_WAND.get());
         // plants
         etherItems.with(FOREST_LANTERN, FOREST_LANTERN_CRUMB, LIGHTELET, BEAMER_SEEDS, THUJA_SEEDS, BEAM_FRUIT);
 

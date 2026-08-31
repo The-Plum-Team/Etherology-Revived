@@ -16,7 +16,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import ru.feytox.etherology.registry.item.DecoBlockItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 
 public class WeepingPeachLogBlock extends PillarBlock {
 
@@ -30,7 +30,7 @@ public class WeepingPeachLogBlock extends PillarBlock {
         if (!(stack.getItem() instanceof AxeItem)) return super.onUse(state, world, pos, player, hand, hit);
         if (hand.equals(Hand.MAIN_HAND) && player.getOffHandStack().isOf(Items.SHIELD) && !player.shouldCancelInteraction()) return super.onUse(state, world, pos, player, hand, hit);
         BlockPos itemPos = pos.add(hit.getSide().getVector());
-        ItemScatterer.spawn(world, itemPos.getX(), itemPos.getY(), itemPos.getZ(), DecoBlockItems.EBONY.getDefaultStack());
+        ItemScatterer.spawn(world, itemPos.getX(), itemPos.getY(), itemPos.getZ(), SharedMaterialItems.EBONY.get().getDefaultStack());
         return super.onUse(state, world, pos, player, hand, hit);
     }
 }

@@ -28,6 +28,13 @@ ARCHIVED_PHASE_ZERO_FIXTURE = (
     / "fabric-1.20.1"
     / "phase0-smoke-v20"
 )
+CURRENT_PHASE_ZERO_FIXTURE = (
+    REPOSITORY_ROOT
+    / "docs"
+    / "evidence"
+    / "fabric-1.20.1"
+    / "phase0-smoke-v21"
+)
 
 
 def png_chunk(chunk_type: bytes, content: bytes) -> bytes:
@@ -202,10 +209,25 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             summary.harness_sha256,
         )
 
+    def test_validates_the_current_v21_archive(self) -> None:
+        summary = evidence.validate_archived_scenario(CURRENT_PHASE_ZERO_FIXTURE)
+
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v21", summary.profile_id)
+        self.assertEqual(42, summary.assertion_count)
+        self.assertEqual(2, summary.screenshot_count)
+        self.assertAlmostEqual(0.9796272183641975, summary.changed_pixel_ratio)
+        self.assertEqual(
+            "287d0b67e09fadd116905a5588615fae38daf43e22af8cdf0e37546595c38d75",
+            summary.production_sha256,
+        )
+
     def test_sealing_rejects_linked_owned_state_ancestors_before_capture_access(
         self,
     ) -> None:
         self.manifest_path().unlink()
+        active_archive_root = self.archive_root.with_name("phase0-smoke-v21")
+        self.archive_root.rename(active_archive_root)
+        self.archive_root = active_archive_root
         configuration = client.load_configuration()
         linked_state_error = client.E2EError(
             "E2E state root must not be a symlink"
@@ -273,7 +295,7 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             / "docs"
             / "evidence"
             / "fabric-1.20.1"
-            / ARCHIVED_PHASE_ZERO_FIXTURE.name
+            / "phase0-smoke-v21"
         )
         archive_root.parent.mkdir(parents=True)
         self.archive_root.rename(archive_root)
@@ -300,7 +322,7 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             / "e2e"
             / ".state"
             / "runtimes"
-            / "etherology-e2e-fabric-1.20.1-v20"
+            / "etherology-e2e-fabric-1.20.1-v21"
         )
         capture_runtime.mkdir(parents=True)
         lock_error = client.E2EError(

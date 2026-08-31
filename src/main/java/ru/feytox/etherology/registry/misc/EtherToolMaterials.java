@@ -6,14 +6,14 @@ import lombok.Getter;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.item.ToolMaterials;
 import net.minecraft.recipe.Ingredient;
-import ru.feytox.etherology.registry.item.DecoBlockItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 
 @SuppressWarnings("Guava")
 public enum EtherToolMaterials implements ToolMaterial {
     ETHRIL(ToolMaterials.DIAMOND.getMiningLevel(), 1561, 8.0F, 3.0F, 10,
-            () -> Ingredient.ofItems(DecoBlockItems.ETHRIL_INGOT)),
+            () -> Ingredient.ofItems(SharedMaterialItems.ETHRIL_INGOT.get())),
     EBONY(ToolMaterials.IRON.getMiningLevel(), 320, 7, 3, 16,
-            () -> Ingredient.ofItems(DecoBlockItems.EBONY_INGOT));
+            () -> Ingredient.ofItems(SharedMaterialItems.EBONY_INGOT.get()));
 
     @Getter
     private final int miningLevel;

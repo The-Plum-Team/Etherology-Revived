@@ -1,6 +1,5 @@
 package ru.feytox.etherology.magic.staff;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -8,24 +7,27 @@ import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import org.apache.commons.lang3.EnumUtils;
 import org.jetbrains.annotations.Nullable;
-import ru.feytox.etherology.registry.item.DecoBlockItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 
 import java.util.List;
 import java.util.function.Supplier;
 
-@Getter
 @RequiredArgsConstructor
 public enum StaffMetals implements StaffPattern {
-    AZEL(DecoBlockItems.AZEL_INGOT),
-    COPPER(Items.COPPER_INGOT),
-    ETHRIL(DecoBlockItems.ETHRIL_INGOT),
-    GOLD(Items.GOLD_INGOT),
-    IRON(Items.IRON_INGOT),
-    NETHERITE(Items.NETHERITE_INGOT),
-    EBONY(DecoBlockItems.EBONY_INGOT);
+    AZEL(() -> SharedMaterialItems.AZEL_INGOT.get()),
+    COPPER(() -> Items.COPPER_INGOT),
+    ETHRIL(() -> SharedMaterialItems.ETHRIL_INGOT.get()),
+    GOLD(() -> Items.GOLD_INGOT),
+    IRON(() -> Items.IRON_INGOT),
+    NETHERITE(() -> Items.NETHERITE_INGOT),
+    EBONY(() -> SharedMaterialItems.EBONY_INGOT.get());
 
     public static final Supplier<List<? extends StaffPattern>> METALS = StaffPattern.memoize(values());
-    private final Item metalItem;
+    private final Supplier<? extends Item> metalItemSupplier;
+    /** Returns the registered ingredient item represented by this staff-metal pattern. */
+    public Item getMetalItem() {
+        return metalItemSupplier.get();
+    }
 
     @Override
     public String getName() {
@@ -44,7 +46,7 @@ public enum StaffMetals implements StaffPattern {
 
         // TODO: 29.10.2023 проверить необходимость ИЛИ просто указать требование для названий StaffMetals
         for (StaffMetals staffMetal : values()) {
-            if (metalItem.equals(staffMetal.metalItem)) return staffMetal;
+            if (metalItem.equals(staffMetal.getMetalItem())) return staffMetal;
         }
 
         return null;

@@ -41,6 +41,7 @@ import static ru.feytox.etherology.registry.item.ArmorItems.ARMOR_ITEMS;
 import static ru.feytox.etherology.registry.item.ArmorItems.PRANA_VISION;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
+import static ru.feytox.etherology.registry.item.SharedMaterialItems.*;
 import static ru.feytox.etherology.registry.item.ToolItems.*;
 
 @SuppressWarnings("SameParameterValue")
@@ -118,13 +119,23 @@ public class ModelGeneration extends FabricModelProvider {
         // warp counter
         registerMultipleModels(WARP_COUNTER, generator, 1, 15);
         // simple items
-        registerItems(generator, Models.GENERATED, AZEL_INGOT, AZEL_NUGGET, EBONY_INGOT, EBONY_NUGGET, ETHRIL_INGOT, ETHRIL_NUGGET, BEAM_FRUIT, BEAMER_SEEDS, OCULUS, OCULAR, CORRUPTION_BUCKET, THUJA_OIL, THUJA_SEEDS, ETHEROSCOPE, RAW_AZEL, ATTRAHITE_BRICK, ENRICHED_ATTRAHITE, BINDER, ETHEREAL_CHANNEL, ETHEREAL_FORK, PRANA_VISION, EBONY, FOREST_LANTERN, FOREST_LANTERN_CRUMB, PEACH_BOAT, PEACH_CHEST_BOAT);
+        registerItems(
+                generator,
+                Models.GENERATED,
+                AZEL_INGOT.get(), AZEL_NUGGET.get(), EBONY_INGOT.get(), EBONY_NUGGET.get(),
+                ETHRIL_INGOT.get(), ETHRIL_NUGGET.get(), BEAM_FRUIT, BEAMER_SEEDS,
+                OCULUS, OCULAR, CORRUPTION_BUCKET, THUJA_OIL.get(), THUJA_SEEDS,
+                ETHEROSCOPE.get(), RAW_AZEL.get(), ATTRAHITE_BRICK.get(),
+                ENRICHED_ATTRAHITE.get(), BINDER.get(), ETHEREAL_CHANNEL, ETHEREAL_FORK,
+                PRANA_VISION, EBONY.get(), FOREST_LANTERN, FOREST_LANTERN_CRUMB,
+                PEACH_BOAT, PEACH_CHEST_BOAT
+        );
         registerItems(generator, Models.GENERATED, LENSES);
         registerItems(generator, Models.GENERATED, EBlocks.SEALS);
         // handheld (swords, pickaxe etc.)
         registerItems(generator, Models.HANDHELD, EBONY_AXE, EBONY_PICKAXE, EBONY_HOE, EBONY_SHOVEL, EBONY_SWORD, STREAM_KEY, BROADSWORD);
         registerItems(generator, Models.HANDHELD, BATTLE_PICKAXES);
-        registerItems(generator, Models.HANDHELD, RESONATING_WAND);
+        registerItems(generator, Models.HANDHELD, RESONATING_WAND.get());
         // staff parts
         registerStaffParts(generator);
         // pattern tablets

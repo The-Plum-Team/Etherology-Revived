@@ -5,7 +5,7 @@ copies, registers, inspects, or launches an existing game profile. Its only
 game directory is below the ignored repository path:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20/game/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21/game/
 ```
 
 The parent runtime must contain the exact provenance marker written by this
@@ -156,14 +156,14 @@ python3 -B scripts/e2e/client.py stop-all-owned
 Minecraft screenshots are isolated at:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20/game/screenshots/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21/game/screenshots/
 ```
 
 Those native files are raw captures. `provision` also creates a fail-closed
 scenario evidence tree at:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20/evidence/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21/evidence/
   <scenario>/
     reports/
     screenshots/
@@ -197,8 +197,8 @@ runtime:
 
 ```bash
 python3 -B scripts/e2e/evidence.py \
-  --create-archive-manifest docs/evidence/fabric-1.20.1/phase0-smoke-v20 \
-  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v20 \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/phase0-smoke-v21 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21 \
   --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
 ```
 
@@ -210,7 +210,7 @@ live runtime state:
 
 ```bash
 python3 -B scripts/e2e/evidence.py \
-  --archive docs/evidence/fabric-1.20.1/phase0-smoke-v20
+  --archive docs/evidence/fabric-1.20.1/phase0-smoke-v21
 ```
 
 ## Forge 1.20.1 packaged client
@@ -335,34 +335,33 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Forge 1.20.1 dedicated-server particle-registry probe
+## Forge 1.20.1 dedicated-server material-item-registry probe
 
 The current cumulative server-only proof is the Forge 1.20.1
-`particle-registry` scenario. It runs Etherology's checked-out production
+`material-item-registry` scenario. It runs Etherology's checked-out production
 source-set output and the isolated server probe in a fresh repository-owned
 profile; it never loads the Forge client harness and never consults, adopts,
 resets, or deletes an external Minecraft profile. Its exact one-shot runtime is:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v10/
+scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v11/
   game/
-  evidence/particle-registry/
+  evidence/material-item-registry/
 ```
 
 The tracked profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete
-required and forbidden mod-ID inventories. Its size is 1190 bytes and its
+required and forbidden mod-ID inventories. Its size is 1200 bytes and its
 SHA-256 is
-`5b3def0df2aacfea5db04b92975925c25223f117941ceb576cc6b3e6616f14e4`.
-`provision` succeeds only for a brand-new target. The accepted v10 runtime is
+`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`.
+`provision` succeeds only for a brand-new target. The accepted v11 runtime is
 immutable: the next native run must increment the profile ID and use another
-fresh directory rather than reuse, clean, or replace v10.
+fresh directory rather than reuse, clean, or replace v11.
 
-The following commands are the runner workflow used for v10. Build and
-validation do not launch Minecraft. Because v10 has already been accepted,
-`provision`, `check`, and `run` may be used for another native capture only
-after advancing the tracked profile, contract, and verifier to a new ID and
-fresh runtime:
+The following commands record the v11 workflow. Build and validation do not
+launch Minecraft. Because v11 has already been accepted, `provision`, `check`,
+and `run` may be used for another native capture only after advancing the
+tracked profile, contract, and verifier to a new ID and fresh runtime:
 
 ```bash
 ./gradlew --no-daemon --no-parallel \
@@ -381,20 +380,27 @@ world and normal shutdown, and publishes `done.marker` only after the report,
 copied server log, and launcher result pass. External game profiles consulted:
 zero.
 
-The accepted fresh v10 run emitted a schema-6 report and passed all 138 ordered
-assertions. It observed exactly the 22 `SharedParticleTypes` registry IDs and
-the exact `simple`, `moving`, `electricity`, `item`, `light`, `scalable`,
-`seal`, and `spark` payload families. It checked concrete type classes,
-`shouldAlwaysSpawn = false`, codecs, parameter factories, sample effect and
-type identities, command strings, packet and codec round trips, and exact seal
-order, colors, and texture IDs. The item sample round-tripped
-`minecraft:diamond`, proving that the namespaced command parser consumes the
-full identifier.
+The accepted fresh v11 run emitted a schema-7 report and passed all 163 ordered
+assertions. It resolved these exact 14 `SharedMaterialItems` IDs:
 
-The registry/type/wire contracts matched after server-data load, at
-`ServerStartedEvent`, and after a real `reload`. The run cumulatively rechecked
-the earlier enchantment, game-event/tag, loot-condition, reloadable loot-table,
-and Ether-source map contracts. The exact lifecycle was
+```text
+etherology:attrahite_brick, etherology:azel_ingot,
+etherology:azel_nugget, etherology:binder, etherology:ebony,
+etherology:ebony_ingot, etherology:ebony_nugget,
+etherology:enriched_attrahite, etherology:etheroscope,
+etherology:ethril_ingot, etherology:ethril_nugget, etherology:raw_azel,
+etherology:resonating_wand, etherology:thuja_oil
+```
+
+Every item resolved to `net.minecraft.item.Item`. The probe required maximum
+count 16 for `enriched_attrahite` and 64 for each other entry. For a stack at
+that item's maximum count, it serialized exactly the `id` and `Count` NBT
+values, reconstructed the exact item/count, and compared a deterministic save
+representation. The same registry properties and NBT observations matched
+after server-data load, at `ServerStartedEvent`, and after a real `reload`.
+The cumulative assertions also rechecked the v10 particle, v7 enchantment,
+game-event/tag, loot-condition, reloadable loot-table, and Ether-source
+contracts. The exact lifecycle was
 `tags_updated_initial > server_started > reload_requested > tags_updated_reload > reload_command_returned > stop_requested > server_stopping > server_stopped`.
 The server saved its world, completed normal `stop(false)`, exited with code
 zero, and its copied log passed the strict marker scan. After
@@ -403,8 +409,46 @@ joins the stopped-event server thread before `System.exit` to handle the proven
 Loom-userdev non-daemon thread leak. This path is absent from the production
 mod.
 
-Validate the completed live runtime or the immutable five-file archive with
-the v10 verifier:
+Validate the completed live runtime or immutable five-file archive with the
+v11 verifier:
+
+```bash
+python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v11
+python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
+  --archive docs/evidence/forge-1.20.1/material-item-registry-server-v11
+```
+
+The archive records report SHA-256
+`f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
+server-log SHA-256
+`ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
+and archive-manifest SHA-256
+`9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
+`validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity` owns the
+archive-only check, while `validateForgeMaterialItemRegistryMilestone` combines
+the frozen native proof with exact current Common/Fabric/Forge registry,
+bytecode, bootstrap, resource, artifact, and isolation gates.
+
+This scenario is headless and creates no screenshots. Its material-item scope
+is registry properties and in-process `ItemStack` NBT round-trip/reload
+stability only. It does not give items to a player with `/give`, start a second
+JVM or restart the server, or prove Forge fuel registration, creative-tab
+placement, recipes, client rendering/gameplay, or release readiness.
+
+## Historical Forge 1.20.1 dedicated-server particle-registry probe (v10)
+
+The immutable v10 predecessor passed all 138 schema-6 assertions for the exact
+22 `SharedParticleTypes` IDs, eight payload families, concrete types, spawn
+flags, codecs, factories, command/packet/codec round trips, and seal metadata.
+It used the fresh repository-owned
+`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v11
+re-proves all of its assertions cumulatively. Its five-file archive remains
+frozen at `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not
+be recaptured with the current v11 runner.
+
+Validate only the completed historical runtime or immutable archive with the
+pinned verifier:
 
 ```bash
 python3 -B scripts/e2e/forge_server_particle_evidence_v10.py \
@@ -413,22 +457,17 @@ python3 -B scripts/e2e/forge_server_particle_evidence_v10.py \
   --archive docs/evidence/forge-1.20.1/particle-registry-server-v10
 ```
 
-The archive records report SHA-256
+The v10 archive binds profile-manifest SHA-256
+`5b3def0df2aacfea5db04b92975925c25223f117941ceb576cc6b3e6616f14e4`,
+report SHA-256
 `ab829d182e648385f6052fea469bef3a18a6a972f0baa98be6b83569897f3d75`,
 server-log SHA-256
 `44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f`,
 and archive-manifest SHA-256
 `29fddf549c4b8728911fe1d048816d0353256ef7a7e533b62d0461249c485ed1`.
-`validateForgeParticleRegistryServerEvidenceArchiveIntegrity` owns the
-archive-only check, while `validateForgeParticleRegistryMilestone` combines
-the frozen native proof with the exact current Common/Fabric/Forge registry,
-bytecode, bootstrap, artifact, and isolation gates.
-
-This scenario is headless and creates no screenshots. It proves a Loom-userdev
-dedicated-server registry/wire milestone, not a packaged Forge JAR. It neither
-installs nor exercises Forge client particle factories/renderers, emitted
-visuals, or particle-emitting gameplay mechanics. Those remain later native
-client E2E work.
+This historical headless proof creates no screenshots and does not install or
+exercise Forge client particle factories/renderers, emitted visuals, or
+particle-emitting gameplay mechanics.
 
 ## Historical Forge 1.20.1 dedicated-server enchantment-registry probe (v7)
 
@@ -452,7 +491,7 @@ server-log SHA-256
 `b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
 and archive-manifest SHA-256
 `377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
-Its accepted state is re-proved by v10, but the historical bytes remain frozen.
+Its accepted state is re-proved by v11, but the historical bytes remain frozen.
 It does not prove enchantment applicability, Peal shockwaves, projectile
 reflection, client rendering, screenshots, full combat parity, or release
 readiness.
@@ -472,12 +511,12 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
-and forbidden mod-ID inventories. The mutable runner has advanced to v10, so v6
+and forbidden mod-ID inventories. The mutable runner has advanced to v11, so v6
 must be inspected only through its immutable snapshot and verifier. It must
 never be provisioned, reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
-runner lifecycle shown above. Those mutable runner commands now target v10 and
+runner lifecycle shown above. Those mutable runner commands now target v11 and
 must not be used as instructions to recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
@@ -544,7 +583,7 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to v10. They cannot recapture v4, and v4 must not be provisioned,
+advanced to v11. They cannot recapture v4, and v4 must not be provisioned,
 reused, cleaned, or replaced. Only its immutable archive verifier remains an
 active instruction:
 
@@ -614,13 +653,17 @@ Attrahite gameplay or drop parity. This bounded run also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
-47 has no supported equivalent and remains deferred. The earlier Fabric `v20`
-client evidence predates the registry rebuild and does not claim current
-equality. The immutable v2 game-event-only archive remains historical evidence;
+47 has no supported equivalent and remains deferred. The fresh Fabric `v21`
+Phase 0 archive proves that the current packaged client artifact boots, enters
+and saves an integrated world, mirrors the fixture, and shuts down normally;
+its 42 baseline assertions do not directly exercise the 14 shared material
+items. The immutable Fabric `v20` archive remains historical. The immutable v2
+game-event-only archive remains historical evidence;
 v4 superseded it as the registry-foundation proof, and the historical v4
 verifier intentionally does not accept v2 as its active archive. The v6
 Ether-source reload and v7 enchantment-registry archives remain immutable
-historical evidence; v10 is the current cumulative dedicated-server proof.
+historical evidence; v10 is the historical particle-registry predecessor, and
+v11 is the current cumulative material-item-registry proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
@@ -633,5 +676,6 @@ python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_server_evidence.py \
   scripts/e2e/test_forge_server_reload_evidence_v6.py \
   scripts/e2e/test_forge_server_enchantment_evidence_v7.py \
-  scripts/e2e/test_forge_server_particle_evidence_v10.py
+  scripts/e2e/test_forge_server_particle_evidence_v10.py \
+  scripts/e2e/test_forge_server_material_item_evidence_v11.py
 ```

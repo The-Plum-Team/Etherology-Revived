@@ -155,7 +155,66 @@ deterministic verifier:
 Validated ether-network: 46 assertions, 2 screenshots, changed-pixel ratio 0.432843
 ```
 
-## SharedSounds current-artifact smoke (v20)
+## Shared material-item current-artifact smoke (v21)
+
+The shared material-item checkpoint moved 14 behavior-free material and tool
+items into one Common deferred owner consumed by both loaders. A completely new
+repository-owned profile reran the packaged Phase 0 scenario against the exact
+current Fabric artifact. It reached the title screen, created and joined an
+integrated world, mirrored the machine fixture, saved, and shut down normally.
+This is bounded loader/startup evidence: the scenario's 42 baseline assertions
+do not directly address the 14 item IDs, maximum counts, fuel behavior,
+creative-tab placement, recipes, or other gameplay consumers. Exact IDs,
+properties, ownership, and packaged resources are covered by the current
+cross-artifact gates. The migrated Fabric consumers compile and datagen
+completes; this archive does not individually assert their mappings or behavior.
+
+- Profile: `etherology-e2e-fabric-1.20.1-v21`
+- Profile manifest SHA-256:
+  `d6fa9ac08407128f34473add51c2f75da703c34c73ac985c7af11b024449d722`
+- Profile manifest size: `6963` bytes
+- Production JAR SHA-256:
+  `287d0b67e09fadd116905a5588615fae38daf43e22af8cdf0e37546595c38d75`
+- Harness JAR SHA-256:
+  `b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef`
+- Report status: `passed`
+- Assertions: `42` passed, `0` failed
+- Client ticks: `211`
+- Changed-pixel ratio (title to world): `0.9796272183641975`
+- Screenshot pair: native composed Minecraft framebuffers, `1920x1080`
+
+Frozen file digests:
+
+- `phase0-smoke-v21/archive-manifest.json`:
+  `b799578374bcf5e4be5ba3f9b6ac47afaeef2ccf4c208fc0ecdc1c296548ea0e`
+- `phase0-smoke-v21/reports/report.json`:
+  `ee0864a6289f8672341ca5312b762937098a8082cb69dba2164dd010fb6303cc`
+- `phase0-smoke-v21/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `phase0-smoke-v21/screenshots/phase0-smoke-title.png`:
+  `67a44ab963df404b0653b061872b33a6e3d10019e5c3cdc82e84df9a7c16ce67`
+- `phase0-smoke-v21/screenshots/phase0-smoke-world.png`:
+  `0654dc51994c4764d31891e6554db41a779d766526df2e41097f875220b92040`
+
+The live runtime and the immutable archive both passed the deterministic
+verifier:
+
+```text
+Validated phase0-smoke: 42 assertions, 2 screenshots, changed-pixel ratio 0.979627
+Production SHA-256: 287d0b67e09fadd116905a5588615fae38daf43e22af8cdf0e37546595c38d75
+Harness SHA-256: b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef
+Validated archived phase0-smoke (etherology-e2e-fabric-1.20.1-v21): 42 assertions, 2 screenshots, changed-pixel ratio 0.979627
+```
+
+The active profile and archive can be checked without consulting any external
+launcher profile:
+
+```bash
+python3 -B scripts/e2e/client.py validate
+python3 -B scripts/e2e/evidence.py --archive docs/evidence/fabric-1.20.1/phase0-smoke-v21
+```
+
+## Historical SharedSounds smoke (v20)
 
 The shared sound-registry checkpoint replaced Fabric's eager `EtherSounds`
 owner with the same deferred `SharedSounds` declaration used by Forge. A fresh

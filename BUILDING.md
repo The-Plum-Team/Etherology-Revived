@@ -22,8 +22,9 @@ moved into `common` by complete vertical slices.
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 E2E run
 in a real macOS client and integrated world. Forge has a native JavaFML entry point,
 metadata, accepted bounded Ethereal Storage and Ethereal Channel verticals, and accepted
-shared-sound, game-event, loot-condition, Ether-source reload, and enchantment-registry
-milestones. Storage and Channel have separate packaged save/restart evidence from fresh isolated
+shared-sound, game-event, loot-condition, Ether-source reload, enchantment-registry,
+particle-registry, and behavior-free material-item milestones. Storage and Channel have separate
+packaged save/restart evidence from fresh isolated
 macOS clients. `SharedSounds` owns the exact 14
 Common sound IDs, while the packaged resources close their 21 mono 44.1 kHz OGG files,
 `sounds.json` entries, attenuation values, and English subtitles. No native sound-playback E2E
@@ -48,6 +49,23 @@ copied loader-specific implementation or default-data shadow.
 those two entries in the singular `minecraft:non_treasure` tag. Fabric's
 retained `EtherEnchantments` class owns gameplay policy only, not registration.
 
+`SharedParticleTypes` owns the exact 22 Common particle declarations and their
+server payload/codec/wire contracts. `SharedMaterialItems` owns the following
+14 behavior-free item declarations on both loaders:
+
+```text
+etheroscope, thuja_oil, azel_ingot, azel_nugget, ethril_ingot,
+ethril_nugget, ebony_ingot, ebony_nugget, enriched_attrahite, raw_azel,
+attrahite_brick, binder, ebony, resonating_wand
+```
+
+All 14 have the vanilla `Item` runtime class. `enriched_attrahite` has maximum
+count 16; every other item has maximum count 64. The static material-item gate
+checks exact Common ownership and IDs, lazy supplier use, one attachment per
+loader, removal of the former eager fields, and byte-exact models, textures,
+and English names in the relevant Common, transformed, Fabric, and Forge
+artifacts.
+
 The historical registry-foundation artifact checks are paired with a fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v4` Loom-userdev run on a real Java 17, Forge 47.4.9
 dedicated server. The headless `registry-foundation` scenario passed 39 of 39 ordered assertions
@@ -57,36 +75,55 @@ synthetic table returned
 `[minecraft:diamond, minecraft:gold_ingot, minecraft:stone]` for Fortune I, including the mixed
 `0.99 + 0.01` condition. The server saved the world, completed normal `stop(false)`, exited zero,
 and logged no `ERROR` or `FATAL` marker. The historical v2 game-event archive remains frozen, but
-v4 superseded it as the registry-foundation proof. The canonical Attrahite resource remains Fabric-only because
-its items are not ported; this synthetic result proves the condition and serializer, not Attrahite
+v4 superseded it as the registry-foundation proof. The canonical Attrahite block/drop graph
+remains Fabric-only because the full block and item set is not ported; this synthetic result
+proves the condition and serializer, not Attrahite
 gameplay or drop parity. No screenshots or native sound-playback evidence are claimed. The earlier
-Fabric `v20` packaged client evidence predates this registry rebuild and does not prove current
-Fabric-artifact equality.
+Fabric `v20` packaged client archive remains historical.
+
+The current Fabric artifact was also exercised in the fresh repository-owned
+`etherology-e2e-fabric-1.20.1-v21` profile after the shared material-item
+rebuild. Its packaged Phase 0 smoke passed 42 of 42 ordered assertions, ran for
+211 client ticks, captured two native 1920x1080 screenshots with a
+`0.9796272183641975` changed-pixel ratio, entered and saved an integrated world,
+and shut down normally. The immutable archive is `phase0-smoke-v21`; its
+profile-manifest SHA-256 is
+`d6fa9ac08407128f34473add51c2f75da703c34c73ac985c7af11b024449d722`
+and its production-JAR SHA-256 is
+`287d0b67e09fadd116905a5588615fae38daf43e22af8cdf0e37546595c38d75`.
+This bounded client smoke does not directly exercise the 14 material IDs or
+their fuel, creative-tab, recipe, or other gameplay consumers; exact current
+cross-loader ownership, IDs, properties, and resources are covered by the
+static artifact gates. The migrated Fabric consumers compile and datagen
+completes, but their individual mappings and behavior remain outside this
+bounded native scenario.
 
 The current cumulative server proof is the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v7` `enchantment-registry` run. Its schema-5
-report passed 95 of 95 assertions on a real Java 17 Forge 47.4.9 dedicated
-server. It observed only `etherology:peal` and `etherology:reflection` in the
-Etherology enchantment namespace, their exact concrete classes, levels and
-powers, and exact membership in `minecraft:non_treasure`. Registry identity,
-properties, and tag membership were unchanged at server start and after a real
-`reload`. The cumulative contract also re-proved the game-event, loot-condition,
-and exact initial/reloaded Ether-source states from the historical v6 run. The
-server saved the world, stopped normally, exited zero, and logged no `ERROR`,
-`FATAL`, or client-startup marker. This headless scenario produced no
-screenshots. Its immutable archive is `enchantment-registry-server-v7`, with
-profile-manifest SHA-256
-`36b0f67d7ef55cd8e34aac92dd4e5866e17d5be4ffa91987793c913dd60f5773`,
+`etherology-e2e-forge-server-1.20.1-v11` `material-item-registry` run. Its
+schema-7 report passed 163 of 163 ordered assertions on a real Java 17 Forge
+47.4.9 dedicated server. It resolved the 14 exact IDs, their vanilla `Item`
+runtime class and maximum counts, and exact `ItemStack` NBT ID/count/key round
+trips after server-data load. Registry properties and NBT observations were
+unchanged at server start and after a real `reload`. The cumulative contract
+also re-proved the particle, enchantment, game-event/tag, loot-condition, and
+exact initial/reloaded Ether-source states. The server saved the world, stopped
+normally, exited zero, and logged no fatal, forbidden client-startup, or
+unexpected client-class marker. This headless scenario produced no
+screenshots. Its immutable archive is `material-item-registry-server-v11`,
+with profile-manifest SHA-256
+`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`,
 report SHA-256
-`1f5209c53fab524db662e7e7ef8ba044ba773fc9800dc3d3086e840093dc5aef`,
+`f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
 server-log SHA-256
-`b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
+`ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
 and archive-manifest SHA-256
-`377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
-It does not prove enchantment applicability, Peal shockwave behavior,
-projectile reflection, client visuals, full combat parity, the full registry,
-or release readiness. The v6 Ether-source archive remains immutable historical
-evidence. The release artifact remains deliberately blocked on the rest of the
+`9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
+This proves registry properties and in-process `ItemStack` NBT
+round-trip/reload stability only. It does not prove player `/give`, a second
+JVM or server restart, Forge fuel registration, creative-tab placement,
+recipes, client gameplay, or release readiness. The v6 Ether-source, v7
+enchantment, and v10 particle archives remain immutable historical evidence.
+The release artifact remains deliberately blocked on the rest of the
 authoritative registry spine and the remaining gameplay and native-readiness
 work.
 
@@ -128,23 +165,24 @@ Compile and test every accepted bounded Forge milestone without claiming a relea
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:validateForgeEnchantmentRegistryMilestone \
-  :forge:1.20.1:validateForgeEnchantmentRegistryServerEvidenceArchiveIntegrity \
+  :forge:1.20.1:validateForgeMaterialItemRegistryMilestone \
+  :forge:1.20.1:validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeChannelEvidenceArchiveIntegrity \
   :forge:1.20.1:verifyE2eUnderTestIsolation \
   :forge:1.20.1:verifyForgePortGateClosed
 ```
 
-The combined positive enchantment-registry task includes the accepted sound,
-game-event, loot-condition, registry-foundation, and Ether-source tasks; static
-registry/resource/probe checks; the historical v4 and v6 archives; and the
-current v7 enchantment-registry archive. It exercises Common, Fabric, and Forge
-tests, both transformed Common artifacts, the Fabric development and remapped
-production JARs, and the Forge shadow JAR. It proves exact declaration
-multiplicity and ownership, loader bootstrap paths, absence of eager duplicate
-registration, and byte-exact packaged tags. The inherited sound gate still does
-not run or claim native playback, and the enchantment gate does not infer
-applicability or combat behavior from registry state.
+The combined positive material-item task includes the accepted sound,
+game-event, loot-condition, registry-foundation, Ether-source, enchantment,
+and particle tasks; static registry/resource/probe checks; every frozen
+predecessor archive; and the current v11 material-item archive. It exercises
+Common, Fabric, and Forge tests, both transformed Common artifacts, the Fabric
+development and remapped production JARs, and the Forge shadow JAR. It proves
+the exact 14 declarations, sole ownership, lazy supplier lifecycle, loader
+bootstrap paths, absence of the former eager fields, and byte-exact packaged
+models, textures, and English names. Native v11 adds only server registry
+properties and `ItemStack` NBT round-trip/reload evidence; it does not infer
+fuel, creative-tab, recipe, or client gameplay from that state.
 
 `verifyRegistryFoundationServerProbe` builds and validates the isolated server-only probe, its Java 17 Loom
 run configuration, and its separation from production artifacts. It deliberately does not launch
@@ -152,12 +190,12 @@ Minecraft. The under-test isolation task verifies the two explicit client-test a
 is the blocked release artifact. The final task is diagnostic only: it reports the broader
 authoritative registry spine as the first incomplete forward milestone.
 
-## Forge dedicated-server enchantment-registry proof
+## Forge dedicated-server material-item-registry proof
 
-The native enchantment-registry proof is a one-shot run in a new
+The native material-item-registry proof is a one-shot run in a new
 repository-owned profile. `provision` refuses every existing target rather than
-adopting, deleting, or resetting it. The accepted v7 runtime is immutable. The
-commands below record the accepted v7 workflow; `validate` and both verifier
+adopting, deleting, or resetting it. The accepted v11 runtime is immutable. The
+commands below record the accepted v11 workflow; `validate` and both verifier
 commands remain safe, but do not invoke `provision`, `check`, or `run` again
 until every profile, contract, directory, and verifier literal has been
 advanced to a fresh version.
@@ -167,29 +205,58 @@ python3 -B scripts/e2e/forge_server.py validate
 python3 -B scripts/e2e/forge_server.py provision
 python3 -B scripts/e2e/forge_server.py check
 python3 -B scripts/e2e/forge_server.py run
-python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v7
-python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
-  --archive docs/evidence/forge-1.20.1/enchantment-registry-server-v7
+python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v11
+python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
+  --archive docs/evidence/forge-1.20.1/material-item-registry-server-v11
 ```
 
 The runner invokes the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task under `caffeinate`, with a
 JDK 21-or-newer Gradle host and Java 17 dedicated server. It independently
-bounds the process and server logs, validates all 95 ordered assertions and the
+bounds the process and server logs, validates all 163 ordered assertions and the
 full mod inventory, requires a saved world, normal Forge lifecycle, no crash
 report, no fatal/client marker, and exit code zero, and publishes its done
-marker last. Report schema 5 records the exact enchantment registry, classes,
-level/power properties, singular non-treasure tag, real reload stability, and
-the cumulative prior registry/Ether-source states. The probe records
+marker last. Report schema 7 records the 14 exact material-item IDs, vanilla
+runtime class, maximum counts, `ItemStack` NBT ID/count/keys, exact in-process
+round trips, real reload stability, and the cumulative prior registry and
+Ether-source states. The probe records
 `ServerStoppedEvent` and atomically publishes its report before scheduling a
 probe-only terminator. That narrow workaround joins the actual stopped-event
 server thread before `System.exit` and prevents a proven Loom-userdev
 non-daemon thread leak from hanging Gradle; it is not production mod behavior.
-This is a headless registry/tag/loot-condition/Ether-source/enchantment proof,
-so screenshots are neither produced nor claimed. It does not prove
-enchantment applicability, Peal shockwaves, projectile reflection, client
-visuals, full combat, the full authoritative registry, or release readiness.
+This is a headless registry-properties and `ItemStack` NBT
+round-trip/reload proof, so screenshots are neither produced nor claimed. It
+does not execute player `/give`, a second JVM or server restart, Forge fuel
+registration, creative-tab placement, recipes, or client gameplay. It also
+does not prove the full authoritative registry or release readiness.
+
+### Historical v10 particle-registry proof
+
+The immutable `particle-registry-server-v10` archive remains the accepted
+historical proof for the exact 22 shared particle declarations and their
+server-side type/factory/codec/wire/seal contracts. Its schema-6 report contains
+138 passing assertions, all of which are re-proved cumulatively by v11.
+Validate it only through the pinned historical verifier; never provision or
+reuse the v10 runtime:
+
+```shell
+python3 -B scripts/e2e/forge_server_particle_evidence_v10.py \
+  --archive docs/evidence/forge-1.20.1/particle-registry-server-v10
+```
+
+### Historical v7 enchantment-registry proof
+
+The immutable `enchantment-registry-server-v7` archive remains the accepted
+historical proof for exact Peal and Reflection registry properties and
+non-treasure tag membership. Its schema-5 report contains 95 passing
+assertions, which are re-proved cumulatively by v11. Validate it only through
+its pinned verifier:
+
+```shell
+python3 -B scripts/e2e/forge_server_enchantment_evidence_v7.py \
+  --archive docs/evidence/forge-1.20.1/enchantment-registry-server-v7
+```
 
 ### Historical v6 Ether-source reload proof
 

@@ -44,6 +44,7 @@ import static ru.feytox.etherology.registry.block.EBlocks.*;
 import static ru.feytox.etherology.registry.item.ArmorItems.*;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
+import static ru.feytox.etherology.registry.item.SharedMaterialItems.*;
 import static ru.feytox.etherology.registry.item.ToolItems.*;
 
 public class RecipeGeneration extends FabricRecipeProvider {
@@ -58,21 +59,21 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 new NamespacedRecipeJsonProvider(provider, getRecipeIdentifier(provider.getRecipeId())));
 
         // azel
-        offerMaterialBlock(exporter, AZEL_INGOT, AZEL_BLOCK);
-        offerMaterialNugget(exporter, AZEL_NUGGET, AZEL_INGOT);
-        CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(ATTRAHITE), MISC, ATTRAHITE_BRICK, 0.1F, 200).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(BUILDING_BLOCKS, ATTRAHITE_BRICKS).input('#', ATTRAHITE_BRICK).pattern("##").pattern("##").criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, RAW_AZEL).input('#', ENRICHED_ATTRAHITE).input('C', CALCITE).pattern("#C").pattern("C#").criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
-        CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(RAW_AZEL), MISC, AZEL_INGOT, 0.3F, 200).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
-        CookingRecipeJsonBuilder.createBlasting(Ingredient.ofItems(RAW_AZEL), MISC, AZEL_INGOT, 0.3F, 100).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter, getBlastingItemPath(AZEL_INGOT));
+        offerMaterialBlock(exporter, AZEL_INGOT.get(), AZEL_BLOCK);
+        offerMaterialNugget(exporter, AZEL_NUGGET.get(), AZEL_INGOT.get());
+        CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(ATTRAHITE), MISC, ATTRAHITE_BRICK.get(), 0.1F, 200).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(BUILDING_BLOCKS, ATTRAHITE_BRICKS).input('#', ATTRAHITE_BRICK.get()).pattern("##").pattern("##").criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, RAW_AZEL.get()).input('#', ENRICHED_ATTRAHITE.get()).input('C', CALCITE).pattern("#C").pattern("C#").criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
+        CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(RAW_AZEL.get()), MISC, AZEL_INGOT.get(), 0.3F, 200).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
+        CookingRecipeJsonBuilder.createBlasting(Ingredient.ofItems(RAW_AZEL.get()), MISC, AZEL_INGOT.get(), 0.3F, 100).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter, getBlastingItemPath(AZEL_INGOT.get()));
 
         // ethril
-        offerMaterialBlock(exporter, ETHRIL_INGOT, ETHRIL_BLOCK);
-        offerMaterialNugget(exporter, ETHRIL_NUGGET, ETHRIL_INGOT);
+        offerMaterialBlock(exporter, ETHRIL_INGOT.get(), ETHRIL_BLOCK);
+        offerMaterialNugget(exporter, ETHRIL_NUGGET.get(), ETHRIL_INGOT.get());
 
         // ebony
-        offerMaterialBlock(exporter, EBONY_INGOT, EBONY_BLOCK);
-        offerMaterialNugget(exporter, EBONY_NUGGET, EBONY_INGOT);
+        offerMaterialBlock(exporter, EBONY_INGOT.get(), EBONY_BLOCK);
+        offerMaterialNugget(exporter, EBONY_NUGGET.get(), EBONY_INGOT.get());
 
         // forest lantern
         CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(FOREST_LANTERN), FOOD, FOREST_LANTERN_CRUMB, 0.35f, 200).criterion(has(FOREST_LANTERN), from(FOREST_LANTERN)).offerTo(exporter);
@@ -105,7 +106,7 @@ public class RecipeGeneration extends FabricRecipeProvider {
         ShapedRecipeJsonBuilder.create(REDSTONE, REPEATER).input('#', REDSTONE_TORCH).input('X', Items.REDSTONE).input('I', SLITHERITE).pattern("#X#").pattern("III").criterion(has(REDSTONE_TORCH), from(REDSTONE_TORCH)).offerTo(exporter);
         ShapedRecipeJsonBuilder.create(DECORATIONS, STONECUTTER).input('I', Items.IRON_INGOT).input('#', SLITHERITE).pattern(" I ").pattern("###").criterion(has(SLITHERITE), from(SLITHERITE)).offerTo(exporter);
 
-        ShapelessRecipeJsonBuilder.create(MISC, THUJA_OIL, 2).input(THUJA_SEEDS).criterion(has(THUJA_SEEDS), from(THUJA_SEEDS)).offerTo(exporter);
+        ShapelessRecipeJsonBuilder.create(MISC, THUJA_OIL.get(), 2).input(THUJA_SEEDS).criterion(has(THUJA_SEEDS), from(THUJA_SEEDS)).offerTo(exporter);
         ShapelessRecipeJsonBuilder.create(MISC, BEAMER_SEEDS, 3).input(BEAM_FRUIT).criterion(has(BEAM_FRUIT), from(BEAM_FRUIT)).offerTo(exporter);
 
         // NOTE: complicated crafts = more than 1 line for recipe
@@ -115,27 +116,27 @@ public class RecipeGeneration extends FabricRecipeProvider {
         // TODO: 28.02.2024 try replace to c:stick etc
         // TODO: 28.02.2024 criterion
         registerPicks(exporter);
-        ShapedRecipeJsonBuilder.create(TOOLS, STREAM_KEY).input('N', Items.IRON_NUGGET).input('T', EBONY_INGOT).input('I', Items.STICK)
+        ShapedRecipeJsonBuilder.create(TOOLS, STREAM_KEY).input('N', Items.IRON_NUGGET).input('T', EBONY_INGOT.get()).input('I', Items.STICK)
                 .pattern("N")
                 .pattern("T")
-                .pattern("I").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(TOOLS, TUNING_MACE).input('W', RESONATING_WAND).input('I', Items.STICK).input('S', Items.IRON_INGOT)
+                .pattern("I").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(TOOLS, TUNING_MACE).input('W', RESONATING_WAND.get()).input('I', Items.STICK).input('S', Items.IRON_INGOT)
                 .pattern("W W")
                 .pattern("WSW")
-                .pattern(" I ").criterion(has(RESONATING_WAND), from(RESONATING_WAND)).offerTo(exporter);
+                .pattern(" I ").criterion(has(RESONATING_WAND.get()), from(RESONATING_WAND.get())).offerTo(exporter);
 
         // ebony vanilla items
-        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_HELMET).input('X', EBONY_INGOT).pattern("XXX").pattern("X X").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_CHESTPLATE).input('X', EBONY_INGOT).pattern("X X").pattern("XXX").pattern("XXX").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_LEGGINGS).input('X', EBONY_INGOT).pattern("XXX").pattern("X X").pattern("X X").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_BOOTS).input('X', EBONY_INGOT).pattern("X X").pattern("X X").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_AXE).input('#', Items.STICK).input('X', EBONY_INGOT).pattern("XX").pattern("X#").pattern(" #").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_PICKAXE).input('#', Items.STICK).input('X', EBONY_INGOT).pattern("XXX").pattern(" # ").pattern(" # ").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_HOE).input('#', Items.STICK).input('X', EBONY_INGOT).pattern("XX").pattern(" #").pattern(" #").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_SHOVEL).input('#', Items.STICK).input('X', EBONY_INGOT).pattern("X").pattern("#").pattern("#").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_SWORD).input('#', Items.STICK).input('X', EBONY_INGOT).pattern("X").pattern("X").pattern("#").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS, EBONY_AXE, EBONY_PICKAXE, EBONY_HOE, EBONY_SHOVEL, EBONY_SWORD), MISC, EBONY_NUGGET, 0.1f, 200).criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter, getSmeltingItemPath(EBONY_NUGGET));
-        CookingRecipeJsonBuilder.createBlasting(Ingredient.ofItems(EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS, EBONY_AXE, EBONY_PICKAXE, EBONY_HOE, EBONY_SHOVEL, EBONY_SWORD), MISC, EBONY_NUGGET, 0.1f, 100).criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter, getBlastingItemPath(EBONY_NUGGET));
+        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_HELMET).input('X', EBONY_INGOT.get()).pattern("XXX").pattern("X X").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_CHESTPLATE).input('X', EBONY_INGOT.get()).pattern("X X").pattern("XXX").pattern("XXX").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_LEGGINGS).input('X', EBONY_INGOT.get()).pattern("XXX").pattern("X X").pattern("X X").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.COMBAT, EBONY_BOOTS).input('X', EBONY_INGOT.get()).pattern("X X").pattern("X X").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_AXE).input('#', Items.STICK).input('X', EBONY_INGOT.get()).pattern("XX").pattern("X#").pattern(" #").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_PICKAXE).input('#', Items.STICK).input('X', EBONY_INGOT.get()).pattern("XXX").pattern(" # ").pattern(" # ").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_HOE).input('#', Items.STICK).input('X', EBONY_INGOT.get()).pattern("XX").pattern(" #").pattern(" #").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_SHOVEL).input('#', Items.STICK).input('X', EBONY_INGOT.get()).pattern("X").pattern("#").pattern("#").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(RecipeCategory.TOOLS, EBONY_SWORD).input('#', Items.STICK).input('X', EBONY_INGOT.get()).pattern("X").pattern("X").pattern("#").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS, EBONY_AXE, EBONY_PICKAXE, EBONY_HOE, EBONY_SHOVEL, EBONY_SWORD), MISC, EBONY_NUGGET.get(), 0.1f, 200).criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter, getSmeltingItemPath(EBONY_NUGGET.get()));
+        CookingRecipeJsonBuilder.createBlasting(Ingredient.ofItems(EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS, EBONY_AXE, EBONY_PICKAXE, EBONY_HOE, EBONY_SHOVEL, EBONY_SWORD), MISC, EBONY_NUGGET.get(), 0.1f, 100).criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter, getBlastingItemPath(EBONY_NUGGET.get()));
 
         // jug
         ShapedRecipeJsonBuilder.create(MISC, CLAY_JUG).input('#', CLAY)
@@ -153,10 +154,10 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 .pattern("GGG")
                 .pattern("AAA")
                 .pattern("PPP").criterion(has(Items.AMETHYST_SHARD), from(Items.AMETHYST_SHARD)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, BREWING_CAULDRON).input('#', Items.IRON_INGOT).input('I', Items.STICK).input('C', AZEL_NUGGET)
+        ShapedRecipeJsonBuilder.create(MISC, BREWING_CAULDRON).input('#', Items.IRON_INGOT).input('I', Items.STICK).input('C', AZEL_NUGGET.get())
                 .pattern("#I#")
                 .pattern("#C#")
-                .pattern(" # ").criterion(has(AZEL_INGOT), from(AZEL_INGOT)).offerTo(exporter);
+                .pattern(" # ").criterion(has(AZEL_INGOT.get()), from(AZEL_INGOT.get())).offerTo(exporter);
         ShapedRecipeJsonBuilder.create(MISC, CRATE).input('C', Items.IRON_NUGGET).input('S', ItemTags.WOODEN_SLABS).input('#', ItemTags.PLANKS)
                 .pattern("CSC")
                 .pattern("#S#").criterion("has_planks", conditionsFromTag(ItemTags.PLANKS)).offerTo(exporter);
@@ -168,14 +169,14 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 .pattern("S")
                 .pattern("#")
                 .pattern("S").criterion(has(SLITHERITE), from(SLITHERITE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(TOOLS, WARP_COUNTER).input('R', Items.REDSTONE).input('#', EBONY_INGOT)
+        ShapedRecipeJsonBuilder.create(TOOLS, WARP_COUNTER).input('R', Items.REDSTONE).input('#', EBONY_INGOT.get())
                 .pattern(" # ")
                 .pattern("#R#")
-                .pattern(" # ").criterion(has(EBONY_INGOT), from(EBONY_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, CHANNEL_CASE, 4).input('I', Items.IRON_INGOT).input('W', ItemTags.PLANKS).input('T', THUJA_OIL)
+                .pattern(" # ").criterion(has(EBONY_INGOT.get()), from(EBONY_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, CHANNEL_CASE, 4).input('I', Items.IRON_INGOT).input('W', ItemTags.PLANKS).input('T', THUJA_OIL.get())
                 .pattern("IWI")
                 .pattern("WTW")
-                .pattern("IWI").criterion(has(THUJA_OIL), from(THUJA_OIL)).offerTo(exporter);
+                .pattern("IWI").criterion(has(THUJA_OIL.get()), from(THUJA_OIL.get())).offerTo(exporter);
         ShapedRecipeJsonBuilder.create(MISC, Items.LEATHER).input('S', Items.STRING).input('F', FOREST_LANTERN)
                 .pattern("SFS")
                 .pattern(" F ")
@@ -186,44 +187,44 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 .pattern("##").criterion(has(Items.AMETHYST_SHARD), from(Items.AMETHYST_SHARD)).offerTo(exporter);
 
         // "hard" recipes
-        ShapedRecipeJsonBuilder.create(MISC, SPINNER).input('C', Items.IRON_NUGGET).input('I', Items.IRON_INGOT).input('S', EItemTags.SEDIMENTARY_STONES).input('#', SMOOTH_STONE).input('E', ETHEROSCOPE)
+        ShapedRecipeJsonBuilder.create(MISC, SPINNER).input('C', Items.IRON_NUGGET).input('I', Items.IRON_INGOT).input('S', EItemTags.SEDIMENTARY_STONES).input('#', SMOOTH_STONE).input('E', ETHEROSCOPE.get())
                 .pattern("CIC")
                 .pattern("ISI")
-                .pattern("#E#").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_CHANNEL, 2).input('O', THUJA_OIL).input('T', EBONY_INGOT).input('E', ETHEROSCOPE).input('C', Items.IRON_NUGGET)
+                .pattern("#E#").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_CHANNEL, 2).input('O', THUJA_OIL.get()).input('T', EBONY_INGOT.get()).input('E', ETHEROSCOPE.get()).input('C', Items.IRON_NUGGET)
                 .pattern(" O ")
                 .pattern("TET")
-                .pattern(" C ").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_FORK).input('C', ETHEREAL_CHANNEL).input('I', Items.IRON_INGOT).input('E', ETHEROSCOPE)
+                .pattern(" C ").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_FORK).input('C', ETHEREAL_CHANNEL).input('I', Items.IRON_INGOT).input('E', ETHEROSCOPE.get())
                 .pattern(" C ")
                 .pattern("IEI")
-                .pattern(" C ").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_FURNACE).input('I', Items.IRON_INGOT).input('A', AZEL_INGOT).input('B', Items.BLAZE_POWDER).input('C', AZEL_NUGGET).input('E', ETHEROSCOPE)
+                .pattern(" C ").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_FURNACE).input('I', Items.IRON_INGOT).input('A', AZEL_INGOT.get()).input('B', Items.BLAZE_POWDER).input('C', AZEL_NUGGET.get()).input('E', ETHEROSCOPE.get())
                 .pattern("IAI")
                 .pattern("IBI")
-                .pattern("CEC").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_SOCKET).input('#', IRON_BARS).input('S', STONE).input('E', ETHEROSCOPE)
+                .pattern("CEC").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_SOCKET).input('#', IRON_BARS).input('S', STONE).input('E', ETHEROSCOPE.get())
                 .pattern(" # ")
-                .pattern("SES").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, SEDIMENTARY_STONE).input('S', STONE).input('A', AZEL_INGOT).input('R', Items.REDSTONE)
+                .pattern("SES").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, SEDIMENTARY_STONE).input('S', STONE).input('A', AZEL_INGOT.get()).input('R', Items.REDSTONE)
                 .pattern("SSS")
                 .pattern("SAS")
-                .pattern("SRS").criterion(has(AZEL_INGOT), from(AZEL_INGOT)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_STORAGE).input('T', EBONY_INGOT).input('N', Items.IRON_NUGGET).input('G', GLINT).input('C', ItemTags.STONE_CRAFTING_MATERIALS).input('E', ETHEROSCOPE)
+                .pattern("SRS").criterion(has(AZEL_INGOT.get()), from(AZEL_INGOT.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(MISC, ETHEREAL_STORAGE).input('T', EBONY_INGOT.get()).input('N', Items.IRON_NUGGET).input('G', GLINT).input('C', ItemTags.STONE_CRAFTING_MATERIALS).input('E', ETHEROSCOPE.get())
                 .pattern("TTT")
                 .pattern("NGN")
-                .pattern("CEC").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
+                .pattern("CEC").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
         ShapedRecipeJsonBuilder.create(MISC, JEWELRY_TABLE).input('C', ItemTags.STONE_CRAFTING_MATERIALS).input('I', Items.IRON_INGOT).input('D', DROPPER).input('E', ETHEREAL_CHANNEL)
                 .pattern("CIC")
                 .pattern("CDC")
                 .pattern("CEC").criterion(has(ETHEREAL_CHANNEL), from(ETHEREAL_CHANNEL)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(MISC, LEVITATOR).input('#', ItemTags.LOGS).input('N', Items.IRON_NUGGET).input('F', Items.RABBIT_HIDE).input('L', REDSTONE_LENS).input('E', ETHEROSCOPE)
+        ShapedRecipeJsonBuilder.create(MISC, LEVITATOR).input('#', ItemTags.LOGS).input('N', Items.IRON_NUGGET).input('F', Items.RABBIT_HIDE).input('L', REDSTONE_LENS).input('E', ETHEROSCOPE.get())
                 .pattern("#N#")
                 .pattern("FLF")
-                .pattern("#E#").criterion(has(ETHEROSCOPE), from(ETHEROSCOPE)).offerTo(exporter);
-        ShapedRecipeJsonBuilder.create(REDSTONE, TUNING_FORK, 2).input('#', ItemTags.PLANKS).input('R', Items.REDSTONE).input('I', RESONATING_WAND)
+                .pattern("#E#").criterion(has(ETHEROSCOPE.get()), from(ETHEROSCOPE.get())).offerTo(exporter);
+        ShapedRecipeJsonBuilder.create(REDSTONE, TUNING_FORK, 2).input('#', ItemTags.PLANKS).input('R', Items.REDSTONE).input('I', RESONATING_WAND.get())
                 .pattern("IRI")
-                .pattern(" # ").criterion(has(RESONATING_WAND), from(RESONATING_WAND)).offerTo(exporter);
+                .pattern(" # ").criterion(has(RESONATING_WAND.get()), from(RESONATING_WAND.get())).offerTo(exporter);
 
         // Etherology recipe types
 
@@ -232,13 +233,13 @@ public class RecipeGeneration extends FabricRecipeProvider {
         MatrixRecipeBuilder.create(Items.IRON_INGOT, ExtraBlocksRegistry.PEACH_PLANKS, 3.0f, PLANTA, ALCHEMA, STRALFA).offerTo(exporter, "test_armillary");
 
         // brewing
-        AlchemyRecipeBuilder.create(RAW_AZEL, BINDER).add(MEMO, 6).add(SOCE, 4).add(FELKA, 4).offerTo(exporter);
-        AlchemyRecipeBuilder.create(EBONY, EBONY_INGOT).add(TALO, 3).add(FLIMA, 2).offerTo(exporter);
+        AlchemyRecipeBuilder.create(RAW_AZEL.get(), BINDER.get()).add(MEMO, 6).add(SOCE, 4).add(FELKA, 4).offerTo(exporter);
+        AlchemyRecipeBuilder.create(EBONY.get(), EBONY_INGOT.get()).add(TALO, 3).add(FLIMA, 2).offerTo(exporter);
         AlchemyRecipeBuilder.create(CALCITE, GLINT).add(ETHA, 3).add(MORA, 5).add(AREA, 4).offerTo(exporter);
         AlchemyRecipeBuilder.create(SLITHERITE, UNADJUSTED_LENS).add(FRADO, 5).add(VIBRA, 3).add(HENDALL, 5).offerTo(exporter);
 
         // empowerment
-        EmpowerRecipeBuilder.create(ETHEROSCOPE).via(1).keta(2).input('A', AZEL_INGOT).input('Q', Items.QUARTZ).input('R', Items.REDSTONE)
+        EmpowerRecipeBuilder.create(ETHEROSCOPE.get()).via(1).keta(2).input('A', AZEL_INGOT.get()).input('Q', Items.QUARTZ).input('R', Items.REDSTONE)
                 .pattern("   ")
                 .pattern("AQA")
                 .pattern(" R ").offerTo(exporter);
@@ -250,11 +251,11 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 .pattern(" L ")
                 .pattern("OGO")
                 .pattern("   ").offerTo(exporter);
-        EmpowerRecipeBuilder.create(RESONATING_WAND, 2).rella(2).keta(1).input('I', Items.IRON_INGOT).input('S', Items.ECHO_SHARD)
+        EmpowerRecipeBuilder.create(RESONATING_WAND.get(), 2).rella(2).keta(1).input('I', Items.IRON_INGOT).input('S', Items.ECHO_SHARD)
                 .pattern(" I ")
                 .pattern(" S ")
                 .pattern(" I ").offerTo(exporter);
-        EmpowerRecipeBuilder.create(SAMOVAR_BLOCK).rella(1).keta(2).input('#', EBONY_INGOT).input('H', Items.HEART_OF_THE_SEA).input('B', Items.BLAZE_POWDER)
+        EmpowerRecipeBuilder.create(SAMOVAR_BLOCK).rella(1).keta(2).input('#', EBONY_INGOT.get()).input('H', Items.HEART_OF_THE_SEA).input('B', Items.BLAZE_POWDER)
                 .pattern(" # ")
                 .pattern("#H#")
                 .pattern(" B ").offerTo(exporter);
@@ -348,7 +349,7 @@ public class RecipeGeneration extends FabricRecipeProvider {
             StaffMaterial core = StaffMaterial.valueOf(woodType.toUpperCase());
             ComponentTypes.STAFF.apply(staffStack, StaffComponent.DEFAULT, component ->
                     component.setPartInfo(new StaffPartInfo(StaffPart.CORE, core, StaffPattern.EMPTY)));
-            EmpowerRecipeBuilder.create(staffStack).clos(4).keta(6).via(6).input('I', Items.IRON_INGOT).input('B', BINDER).input('W', log)
+            EmpowerRecipeBuilder.create(staffStack).clos(4).keta(6).via(6).input('I', Items.IRON_INGOT).input('B', BINDER.get()).input('W', log)
                     .pattern(" I ")
                     .pattern("WBW")
                     .pattern(" B ").offerTo(exporter, getItemPath(STAFF) + "_" + woodType);

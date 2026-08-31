@@ -93,6 +93,10 @@ public final class RegistryFoundationServerProbe {
     private ParticleProbeState initialParticleState = ParticleProbeState.missing();
     private ParticleProbeState reloadedParticleState = ParticleProbeState.missing();
     private ParticleProbeState serverStartedParticleState = ParticleProbeState.missing();
+    private MaterialItemProbeState initialMaterialItemState = MaterialItemProbeState.missing();
+    private MaterialItemProbeState reloadedMaterialItemState = MaterialItemProbeState.missing();
+    private MaterialItemProbeState serverStartedMaterialItemState =
+            MaterialItemProbeState.missing();
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
@@ -126,9 +130,11 @@ public final class RegistryFoundationServerProbe {
     private boolean lootConditionCapturedAfterServerDataLoad;
     private boolean enchantmentsCapturedAfterServerDataLoad;
     private boolean particlesCapturedAfterServerDataLoad;
+    private boolean materialItemsCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
     private boolean serverStartedParticlesRechecked;
+    private boolean serverStartedMaterialItemsRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
     private boolean reloadCompleted;
@@ -144,6 +150,9 @@ public final class RegistryFoundationServerProbe {
     private boolean particleRegistryStableAfterReload;
     private boolean particleTypeContractStableAfterReload;
     private boolean particleWireContractStableAfterReload;
+    private boolean materialItemRegistryStableAfterReload;
+    private boolean materialItemPropertiesStableAfterReload;
+    private boolean materialItemStackNbtStableAfterReload;
     private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
@@ -204,6 +213,7 @@ public final class RegistryFoundationServerProbe {
             initialEtherSourceState = EtherSourceProbeState.capture();
             initialEnchantmentState = EnchantmentProbeState.capture();
             initialParticleState = ParticleProbeState.capture();
+            initialMaterialItemState = MaterialItemProbeState.capture();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
         }
@@ -214,6 +224,7 @@ public final class RegistryFoundationServerProbe {
         reloadedEtherSourceState = EtherSourceProbeState.capture();
         reloadedEnchantmentState = EnchantmentProbeState.capture();
         reloadedParticleState = ParticleProbeState.capture();
+        reloadedMaterialItemState = MaterialItemProbeState.capture();
         reloadTagsObserved = tagUpdateCount == 2 && startedServer != null && reloadRequested;
         GameEvent reloadedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
         registryStableAfterReload = reloadTagsObserved
@@ -252,6 +263,12 @@ public final class RegistryFoundationServerProbe {
                 && initialParticleState.hasSameTypeContract(reloadedParticleState);
         particleWireContractStableAfterReload = reloadTagsObserved
                 && initialParticleState.hasSameWireContract(reloadedParticleState);
+        materialItemRegistryStableAfterReload = reloadTagsObserved
+                && initialMaterialItemState.hasSameRegistry(reloadedMaterialItemState);
+        materialItemPropertiesStableAfterReload = reloadTagsObserved
+                && initialMaterialItemState.hasSameProperties(reloadedMaterialItemState);
+        materialItemStackNbtStableAfterReload = reloadTagsObserved
+                && initialMaterialItemState.hasSameStackNbt(reloadedMaterialItemState);
         LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
@@ -274,6 +291,9 @@ public final class RegistryFoundationServerProbe {
                 && initialParticleState.hasExactRegistry()
                 && initialParticleState.hasExactTypeContract()
                 && initialParticleState.hasExactWireContract();
+        materialItemsCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialMaterialItemState.hasExactRegistry()
+                && initialMaterialItemState.hasExactContract();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
@@ -332,6 +352,9 @@ public final class RegistryFoundationServerProbe {
         serverStartedParticlesRechecked = initialParticleState.sameStateAtServerStarted(
                 serverStartedParticleState
         );
+        serverStartedMaterialItemState = MaterialItemProbeState.capture();
+        serverStartedMaterialItemsRechecked = initialMaterialItemState
+                .sameStateAtServerStarted(serverStartedMaterialItemState);
 
         try {
             ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
@@ -736,6 +759,77 @@ public final class RegistryFoundationServerProbe {
                 "particle_wire_contract_stable_after_reload",
                 particleWireContractStableAfterReload
         );
+        MaterialItemProbeState.EXPECTED_ITEM_IDS.forEach(id -> addAssertion(
+                assertions,
+                "registry:item:" + id,
+                "present",
+                presentState(
+                        initialMaterialItemState.entries().containsKey(id)
+                                && initialMaterialItemState.entries()
+                                .get(id)
+                                .itemIdentity() != null
+                )
+        ));
+        addAssertion(
+                assertions,
+                "registry:material_item_ids_exact",
+                String.join(",", MaterialItemProbeState.EXPECTED_ITEM_IDS),
+                String.join(",", initialMaterialItemState.materialItemIds())
+        );
+        addAssertion(
+                assertions,
+                "material_item_capture_error",
+                "none",
+                errorState(initialMaterialItemState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "material_item_runtime_class_exact",
+                MaterialItemProbeState.VANILLA_ITEM_CLASS,
+                initialMaterialItemState.runtimeClassSummary()
+        );
+        addAssertion(
+                assertions,
+                "material_item_max_counts_exact",
+                MaterialItemProbeState.expectedCanonicalMaxCounts(),
+                initialMaterialItemState.canonicalMaxCounts()
+        );
+        addBooleanAssertion(
+                assertions,
+                "material_item_stack_nbt_round_trips_exact",
+                initialMaterialItemState.hasExactStackNbtRoundTrips()
+        );
+        addAssertion(
+                assertions,
+                "material_item_save_representations_exact",
+                MaterialItemProbeState.expectedCanonicalSaveRepresentations(),
+                initialMaterialItemState.canonicalSaveRepresentations()
+        );
+        addBooleanAssertion(
+                assertions,
+                "material_items_captured_after_server_data_load",
+                materialItemsCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_material_items_rechecked",
+                serverStartedMaterialItemsRechecked
+        );
+        addBooleanAssertion(
+                assertions,
+                "material_item_registry_stable_after_reload",
+                materialItemRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "material_item_properties_stable_after_reload",
+                materialItemPropertiesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "material_item_stack_nbt_stable_after_reload",
+                materialItemStackNbtStableAfterReload
+        );
         addAssertion(
                 assertions,
                 "registry:loot_condition:etherology:random_chance_with_fortune",
@@ -1036,7 +1130,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 6);
+        report.addProperty("schema", 7);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -1052,6 +1146,7 @@ public final class RegistryFoundationServerProbe {
         report.add("registry", buildRegistry());
         report.add("enchantments", buildEnchantments());
         report.add("particles", buildParticles());
+        report.add("material_items", buildMaterialItems());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
         report.add("reload", buildReload());
@@ -1240,6 +1335,56 @@ public final class RegistryFoundationServerProbe {
         return particles;
     }
 
+    private JsonObject buildMaterialItems() {
+        JsonObject materialItems = new JsonObject();
+        materialItems.addProperty(
+                "registry_id",
+                MaterialItemProbeState.ITEM_REGISTRY_ID
+        );
+        materialItems.addProperty(
+                "capture_error",
+                initialMaterialItemState.captureError()
+        );
+        materialItems.add(
+                "material_item_ids",
+                buildStringArray(initialMaterialItemState.materialItemIds())
+        );
+        materialItems.addProperty(
+                "vanilla_item_class",
+                MaterialItemProbeState.VANILLA_ITEM_CLASS
+        );
+        materialItems.addProperty(
+                "max_counts",
+                initialMaterialItemState.canonicalMaxCounts()
+        );
+        materialItems.addProperty(
+                "save_representations",
+                initialMaterialItemState.canonicalSaveRepresentations()
+        );
+        JsonObject entries = new JsonObject();
+        initialMaterialItemState.entries().forEach((id, entry) ->
+                entries.add(id, buildMaterialItem(entry))
+        );
+        materialItems.add("entries", entries);
+        materialItems.addProperty(
+                "same_state_at_server_started",
+                serverStartedMaterialItemsRechecked
+        );
+        materialItems.addProperty(
+                "registry_stable_after_reload",
+                materialItemRegistryStableAfterReload
+        );
+        materialItems.addProperty(
+                "properties_stable_after_reload",
+                materialItemPropertiesStableAfterReload
+        );
+        materialItems.addProperty(
+                "stack_nbt_stable_after_reload",
+                materialItemStackNbtStableAfterReload
+        );
+        return materialItems;
+    }
+
     private JsonObject buildLootCondition() {
         JsonObject lootCondition = new JsonObject();
         lootCondition.addProperty(
@@ -1349,6 +1494,18 @@ public final class RegistryFoundationServerProbe {
         reload.addProperty(
                 "particle_wire_contract_stable",
                 particleWireContractStableAfterReload
+        );
+        reload.addProperty(
+                "material_item_registry_stable",
+                materialItemRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "material_item_properties_stable",
+                materialItemPropertiesStableAfterReload
+        );
+        reload.addProperty(
+                "material_item_stack_nbt_stable",
+                materialItemStackNbtStableAfterReload
         );
         reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
         return reload;
@@ -1464,6 +1621,21 @@ public final class RegistryFoundationServerProbe {
                 entry.codecRoundTripExact()
         );
         return particle;
+    }
+
+    private static JsonObject buildMaterialItem(
+            MaterialItemProbeState.MaterialItemEntry entry
+    ) {
+        JsonObject materialItem = new JsonObject();
+        materialItem.addProperty("id", entry.id());
+        materialItem.addProperty("runtime_class", entry.runtimeClass());
+        materialItem.addProperty("max_count", entry.maxCount());
+        materialItem.addProperty("serialized_id", entry.serializedId());
+        materialItem.addProperty("serialized_count", entry.serializedCount());
+        materialItem.add("serialized_keys", buildStringArray(entry.serializedKeys()));
+        materialItem.addProperty("round_trip_exact", entry.roundTripExact());
+        materialItem.addProperty("save_representation", entry.saveRepresentation());
+        return materialItem;
     }
 
     private static JsonObject buildSealType(

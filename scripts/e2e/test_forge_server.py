@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 6,
+        "schema": 7,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -142,6 +142,21 @@ def valid_report() -> dict[str, object]:
             "type_contract_stable_after_reload": True,
             "wire_contract_stable_after_reload": True,
         },
+        "material_items": {
+            "registry_id": forge_server.MATERIAL_ITEM_REGISTRY_ID,
+            "capture_error": "",
+            "material_item_ids": list(forge_server.MATERIAL_ITEM_IDS),
+            "vanilla_item_class": forge_server.MATERIAL_ITEM_CLASS,
+            "max_counts": forge_server.MATERIAL_ITEM_CANONICAL_MAX_COUNTS,
+            "save_representations": (
+                forge_server.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
+            ),
+            "entries": copy.deepcopy(forge_server.MATERIAL_ITEMS),
+            "same_state_at_server_started": True,
+            "registry_stable_after_reload": True,
+            "properties_stable_after_reload": True,
+            "stack_nbt_stable_after_reload": True,
+        },
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
             "condition_id": "etherology:random_chance_with_fortune",
@@ -201,6 +216,9 @@ def valid_report() -> dict[str, object]:
             "particle_registry_stable": True,
             "particle_type_contract_stable": True,
             "particle_wire_contract_stable": True,
+            "material_item_registry_stable": True,
+            "material_item_properties_stable": True,
+            "material_item_stack_nbt_stable": True,
             "stop_requested_after_completion": True,
         },
         "tags": {
@@ -258,7 +276,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v10",
+            "etherology-e2e-forge-server-1.20.1-v11",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -587,7 +605,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(138, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(163, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -598,6 +616,58 @@ class ProbeReportTests(unittest.TestCase):
         self.assertEqual(
             ">".join(forge_server.EXPECTED_LIFECYCLE),
             forge_server.EXPECTED_ASSERTION_VALUES[-1],
+        )
+
+    def test_material_item_assertions_are_exact_and_probe_ordered(self) -> None:
+        expected_names = (
+            *(f"registry:item:{identifier}" for identifier in forge_server.MATERIAL_ITEM_IDS),
+            "registry:material_item_ids_exact",
+            "material_item_capture_error",
+            "material_item_runtime_class_exact",
+            "material_item_max_counts_exact",
+            "material_item_stack_nbt_round_trips_exact",
+            "material_item_save_representations_exact",
+            "material_items_captured_after_server_data_load",
+            "server_started_material_items_rechecked",
+            "material_item_registry_stable_after_reload",
+            "material_item_properties_stable_after_reload",
+            "material_item_stack_nbt_stable_after_reload",
+        )
+        expected_values = (
+            *("present" for _identifier in forge_server.MATERIAL_ITEM_IDS),
+            ",".join(forge_server.MATERIAL_ITEM_IDS),
+            "none",
+            forge_server.MATERIAL_ITEM_CLASS,
+            forge_server.MATERIAL_ITEM_CANONICAL_MAX_COUNTS,
+            "true",
+            forge_server.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS,
+            *("true" for _check in range(5)),
+        )
+        insertion_index = (
+            forge_server.EXPECTED_ASSERTION_NAMES.index(
+                "particle_wire_contract_stable_after_reload"
+            )
+            + 1
+        )
+
+        self.assertEqual(25, len(expected_names))
+        self.assertEqual(
+            expected_names,
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index:insertion_index + len(expected_names)
+            ],
+        )
+        self.assertEqual(
+            expected_values,
+            forge_server.EXPECTED_ASSERTION_VALUES[
+                insertion_index:insertion_index + len(expected_values)
+            ],
+        )
+        self.assertEqual(
+            "registry:loot_condition:etherology:random_chance_with_fortune",
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index + len(expected_names)
+            ],
         )
 
     def test_each_forbidden_mod_requires_an_explicit_false_result(self) -> None:
@@ -678,6 +748,39 @@ class ProbeReportTests(unittest.TestCase):
             "particle reload instability": lambda report: report[
                 "reload"
             ].__setitem__("particle_wire_contract_stable", False),
+            "wrong material item registry": lambda report: report[
+                "material_items"
+            ].__setitem__("registry_id", "minecraft:block"),
+            "missing material item id": lambda report: report[
+                "material_items"
+            ]["material_item_ids"].remove("etherology:thuja_oil"),
+            "wrong material item class": lambda report: report[
+                "material_items"
+            ]["entries"]["etherology:etheroscope"].__setitem__(
+                "runtime_class",
+                "wrong.Item",
+            ),
+            "wrong enriched attrahite count": lambda report: report[
+                "material_items"
+            ]["entries"]["etherology:enriched_attrahite"].__setitem__(
+                "max_count",
+                64,
+            ),
+            "wrong material stack NBT keys": lambda report: report[
+                "material_items"
+            ]["entries"]["etherology:binder"].__setitem__(
+                "serialized_keys",
+                ["id"],
+            ),
+            "failed material stack round trip": lambda report: report[
+                "material_items"
+            ]["entries"]["etherology:ebony"].__setitem__(
+                "round_trip_exact",
+                False,
+            ),
+            "material item reload instability": lambda report: report[
+                "reload"
+            ].__setitem__("material_item_stack_nbt_stable", False),
             "integer loot identity": lambda report: report["loot_condition"].__setitem__(
                 "same_state_at_server_started", 1
             ),

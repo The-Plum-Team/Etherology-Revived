@@ -178,7 +178,10 @@ def temporary_artifact_stage():
 class ConfigurationTests(unittest.TestCase):
     def test_manifest_resolves_exact_fabric_release_lane(self) -> None:
         configuration = client.load_configuration()
+        profile = client.profile_spec(configuration)
 
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v21", profile["id"])
+        self.assertEqual(profile["id"], profile["runtime_directory"])
         self.assertEqual("fabric-1.20.1", configuration.artifact_lane["artifact_node"])
         self.assertEqual("1.20.1", configuration.runtime_lane["runtime_version"])
         self.assertEqual("0.17.3", configuration.runtime_lane["loader_version"])
@@ -187,6 +190,18 @@ class ConfigurationTests(unittest.TestCase):
         launch = client.require_object(configuration.manifest, "launch")
         resolution = client.require_object(launch, "resolution")
         self.assertEqual({"width": 960, "height": 540}, resolution)
+
+    def test_active_profile_matches_v21_and_preserves_v20_snapshot(self) -> None:
+        active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
+        v20_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v20.json"
+        v21_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v21.json"
+
+        self.assertEqual(active_profile.read_bytes(), v21_profile.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v20_profile.read_bytes())
+        self.assertEqual(
+            "etherology-e2e-fabric-1.20.1-v20",
+            json.loads(v20_profile.read_text(encoding="utf-8"))["profile"]["id"],
+        )
 
     def test_capture_dimensions_are_independent_from_logical_window_size(self) -> None:
         configuration = client.load_configuration()

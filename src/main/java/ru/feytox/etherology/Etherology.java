@@ -20,6 +20,7 @@ import ru.feytox.etherology.registry.block.ExtraBlocksRegistry;
 import ru.feytox.etherology.registry.entity.EntityRegistry;
 import ru.feytox.etherology.registry.item.EItemGroups;
 import ru.feytox.etherology.registry.item.EItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.misc.*;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 import ru.feytox.etherology.util.delayedTask.ServerTaskManager;
@@ -47,6 +48,7 @@ public class Etherology {
         FabricGameEventHooks.registerSculkSensorFrequency();
         ExtraBlocksRegistry.registerAll();
         RegistriesRegistry.registerAll();
+        SharedMaterialItems.register();
         EItems.registerItems();
         EtherEnchantments.registerAll();
         EBlocks.registerAll();

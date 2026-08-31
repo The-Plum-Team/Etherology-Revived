@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -26,7 +26,8 @@ the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.m
 and the bounded [Forge 1.20.1 runtime evidence](docs/evidence/forge-1.20.1/README.md).
 The next Forge forward gate is the remainder of the authoritative registry
 spine. Its bounded shared-sound, game-event, loot-condition, enchantment,
-particle, and Ether-source reload-listener steps are complete.
+particle, behavior-free material-item, and Ether-source reload-listener steps
+are complete.
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`, whose internal ID is
 `etherology_resonance` and whose range is 16. Both loaders package exact
@@ -55,34 +56,55 @@ canonical codecs and command/packet formats, the seal order/colors/textures,
 and `shouldAlwaysSpawn = false` across both loaders. The item payload parser
 accepts namespaced IDs such as `minecraft:diamond`.
 
-The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
-fresh repository-owned `etherology-e2e-forge-server-1.20.1-v10` profile and a
-real `reload` command. Report schema 6 passed all 138 ordered assertions. It
-reproved the earlier game-event, loot-condition, Ether-source, and enchantment
-states, then proved the exact particle registry, payload factory, codec,
-command, packet, and seal contracts at data load, server start, and after the
-reload. The server saved the world, stopped normally, exited with code zero,
-and logged no fatal, forbidden client-startup, or unexpected client-class
-marker. Because this was a headless
-dedicated-server scenario, it produced no screenshots. The immutable archive
-is [`particle-registry-server-v10`](docs/evidence/forge-1.20.1/particle-registry-server-v10),
-with profile-manifest SHA-256
-`5b3def0df2aacfea5db04b92975925c25223f117941ceb576cc6b3e6616f14e4`,
-report SHA-256
-`ab829d182e648385f6052fea469bef3a18a6a972f0baa98be6b83569897f3d75`,
-server-log SHA-256
-`44db5078f575b7f561728652371bc857affff52f6a19ead6290653b906b1609f`,
-and archive-manifest SHA-256
-`29fddf549c4b8728911fe1d048816d0353256ef7a7e533b62d0461249c485ed1`.
-The v6 Ether-source and v7 enchantment archives remain historical evidence;
-their accepted state is included in and superseded by this cumulative v10 run.
+`SharedMaterialItems` is the sole Common deferred owner of these 14
+behavior-free items:
 
-This bounded proof does not register Forge client particle factories or prove
-particle rendering, enchantment applicability, Peal's shockwave behavior,
-projectile reflection, client visuals or screenshots, furnace or machine
-consumption, the wider Ether network, the full authoritative registry, native
-sound playback, Forge custom sculk-frequency behavior, Attrahite drops, combat
-parity, or release readiness.
+```text
+etheroscope, thuja_oil, azel_ingot, azel_nugget, ethril_ingot,
+ethril_nugget, ebony_ingot, ebony_nugget, enriched_attrahite, raw_azel,
+attrahite_brick, binder, ebony, resonating_wand
+```
+
+Both loaders attach that same catalog without eager supplier resolution.
+Every entry has the vanilla `Item` runtime class; `enriched_attrahite` has a
+maximum stack count of 16 and the other 13 have a maximum stack count of 64.
+The static gate checks the exact owner, fields, IDs, loader attachments,
+absence of the former eager fields, and byte-exact models, textures, and
+English names across the Common and loader artifacts.
+
+The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
+fresh repository-owned `etherology-e2e-forge-server-1.20.1-v11` profile and
+the `material-item-registry` scenario with a real `reload` command. Report
+schema 7 passed all 163 ordered assertions. It re-proved the earlier
+game-event, loot-condition, Ether-source, enchantment, and particle states,
+then resolved all 14 material items after server-data load, at server start,
+and after reload. It checked their exact IDs, vanilla `Item` class, maximum
+stack counts, and exact `ItemStack` NBT ID/count/key round trips. The server
+saved the world, stopped normally, exited with code zero, and logged no fatal,
+forbidden client-startup, or unexpected client-class marker. Because this was
+a headless dedicated-server scenario, it produced no screenshots. The
+immutable archive is
+[`material-item-registry-server-v11`](docs/evidence/forge-1.20.1/material-item-registry-server-v11),
+with profile-manifest SHA-256
+`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`,
+report SHA-256
+`f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
+server-log SHA-256
+`ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
+and archive-manifest SHA-256
+`9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
+The v6 Ether-source, v7 enchantment, and v10 particle archives remain immutable
+historical evidence; their accepted states are included in and superseded by
+this cumulative v11 run.
+
+This bounded material-item proof is limited to registry properties and
+`ItemStack` NBT round-trip/reload stability in one server process. It did not
+give items to a player with `/give`, launch a second JVM or restart the server,
+or prove Forge fuel registration, creative-tab placement, recipes, client
+rendering/gameplay, furnace or machine consumption, the wider Ether network,
+the full authoritative registry, or release readiness. The inherited particle,
+enchantment, sound, sculk-frequency, Attrahite-drop, and combat caveats also
+remain.
 
 The historical registry foundation has both exact cross-loader artifact gates and a real
 Java 17 Forge 47.4.9 dedicated-server run in the fresh repository-owned
@@ -96,15 +118,23 @@ sorted outputs were `[minecraft:gold_ingot, minecraft:stone]` for an empty tool 
 zero, and contained no `ERROR` or `FATAL` marker. This server-only proof creates
 no screenshots.
 
-The canonical Attrahite loot-table resource remains Fabric-only because its
-items have not been ported. The synthetic table proves the shared condition and
+The canonical Attrahite block/drop graph remains Fabric-only because the full
+block and item set has not been ported. The synthetic table proves the shared condition and
 serializer, not Attrahite gameplay or drop parity. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
 archive superseded it as the registry-foundation proof and is now retained
-alongside the current v10 cumulative particle-registry proof and historical v7
-enchantment-registry and v6 Ether-source reload proofs. Native sound playback and Forge's custom sculk frequency remain
-deferred. The earlier Fabric `v20` packaged client evidence predates this
-registry rebuild and does not claim equality with the current Fabric artifact.
+alongside the current v11 cumulative material-item proof and historical v10
+particle-registry, v7 enchantment-registry, and v6 Ether-source reload proofs.
+Native sound playback and Forge's custom sculk frequency remain
+deferred. The fresh repository-owned Fabric
+`etherology-e2e-fabric-1.20.1-v21` profile ran the current packaged artifact
+after the shared material-item rebuild: its Phase 0 smoke passed 42 of 42
+assertions, captured two native 1920x1080 screenshots, and is frozen in
+[`phase0-smoke-v21`](docs/evidence/fabric-1.20.1/phase0-smoke-v21). That bounded
+client run proves current-artifact startup, integrated-world entry, fixture
+mirroring, save, and normal shutdown; the exact 14 material IDs and properties
+are enforced by the cross-artifact registry tests rather than direct client
+gameplay assertions. The earlier Fabric `v20` archive remains historical.
 Frozen archives preserve capture-time observations and payload integrity; the
 current-artifact gates are separate. Every later rebuilt JAR needs another
 isolated native run before it can claim equivalent runtime evidence.

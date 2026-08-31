@@ -11,7 +11,7 @@ import net.minecraft.registry.tag.TagKey;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.data.EBlockTags;
 import ru.feytox.etherology.data.EItemTags;
-import ru.feytox.etherology.registry.item.DecoBlockItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -55,7 +55,11 @@ public class ItemTagGeneration extends FabricTagProvider.ItemTagProvider {
 
         copy(EBlockTags.PEACH_LOGS, EItemTags.PEACH_LOGS);
         copy(EBlockTags.SEDIMENTARY_STONES, EItemTags.SEDIMENTARY_STONES);
-        addItems(BEACON_PAYMENT_ITEMS, DecoBlockItems.EBONY_INGOT, DecoBlockItems.ETHRIL_INGOT);
+        addItems(
+                BEACON_PAYMENT_ITEMS,
+                SharedMaterialItems.EBONY_INGOT.get(),
+                SharedMaterialItems.ETHRIL_INGOT.get()
+        );
 
         addItems(EItemTags.TUNING_MACES, TUNING_MACE);
         addItems(EItemTags.IRON_SHIELDS, IRON_SHIELD);

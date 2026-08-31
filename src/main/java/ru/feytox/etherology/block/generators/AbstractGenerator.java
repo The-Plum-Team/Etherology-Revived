@@ -23,7 +23,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.magic.seal.EssenceConsumer;
-import ru.feytox.etherology.registry.item.EItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.util.misc.RegistrableBlock;
 
 
@@ -58,7 +58,7 @@ public abstract class AbstractGenerator extends FacingBlock implements Registrab
     public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         ItemStack stack = player.getStackInHand(hand);
         if (world.isClient || !state.get(STALLED)) return ActionResult.PASS;
-        if (!stack.isOf(EItems.THUJA_OIL)) return ActionResult.FAIL;
+        if (!stack.isOf(SharedMaterialItems.THUJA_OIL.get())) return ActionResult.FAIL;
 
         if (world.getBlockEntity(pos) instanceof AbstractGeneratorBlockEntity generator) {
             stack.decrement(1);

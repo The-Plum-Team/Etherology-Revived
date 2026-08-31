@@ -14,7 +14,9 @@ public final class EbonyArmorMaterial implements ArmorMaterial {
 
     public static final EbonyArmorMaterial INSTANCE = new EbonyArmorMaterial();
 
-    private final Supplier<Ingredient> repairIngredient = Suppliers.memoize(() -> Ingredient.ofItems(DecoBlockItems.EBONY_INGOT));
+    private final Supplier<Ingredient> repairIngredient = Suppliers.memoize(
+            () -> Ingredient.ofItems(SharedMaterialItems.EBONY_INGOT.get())
+    );
 
     private EbonyArmorMaterial() {}
 

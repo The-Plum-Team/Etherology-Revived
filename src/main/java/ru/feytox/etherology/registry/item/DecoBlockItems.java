@@ -21,31 +21,6 @@ public class DecoBlockItems {
     public static final Item BEAM_FRUIT = registerAliasedBlockItem("beam_fruit", DecoBlocks.BEAMER);
     public static final Item THUJA_SEEDS = registerAliasedBlockItem("thuja_seeds", DecoBlocks.THUJA);
 
-    // metals
-    public static final Item AZEL_INGOT = registerSimpleItem("azel_ingot");
-    public static final Item AZEL_NUGGET = registerSimpleItem("azel_nugget");
-    public static final Item ETHRIL_INGOT = registerSimpleItem("ethril_ingot");
-    public static final Item ETHRIL_NUGGET = registerSimpleItem("ethril_nugget");
-    public static final Item EBONY_INGOT = registerSimpleItem("ebony_ingot");
-    public static final Item EBONY_NUGGET = registerSimpleItem("ebony_nugget");
-
-    // attrahite
-    public static final Item ENRICHED_ATTRAHITE = registerSimpleItem("enriched_attrahite", new Item.Settings().maxCount(16));
-    public static final Item RAW_AZEL = registerSimpleItem("raw_azel");
-    public static final Item ATTRAHITE_BRICK = registerSimpleItem("attrahite_brick");
-
-    public static final Item BINDER = registerSimpleItem("binder");
-    public static final Item EBONY = registerSimpleItem("ebony");
-    public static final Item RESONATING_WAND = registerSimpleItem("resonating_wand");
-
-    private static Item registerSimpleItem(String id) {
-        return registerSimpleItem(id, new Item.Settings());
-    }
-
-    private static Item registerSimpleItem(String id, Item.Settings settings) {
-        return Registry.register(Registries.ITEM, EIdentifier.of(id), new Item(settings));
-    }
-
     private static Item registerBlockItem(BlockItem blockItem) {
         blockItem.appendBlocks(Item.BLOCK_ITEMS, blockItem);
         return Registry.register(Registries.ITEM, Registries.BLOCK.getId(blockItem.getBlock()), blockItem);

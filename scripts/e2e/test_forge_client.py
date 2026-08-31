@@ -191,7 +191,7 @@ class ConfigurationTests(unittest.TestCase):
 
         self.assertEqual("etherology-e2e-forge-1.20.1-v11", profile["id"])
         self.assertNotEqual(
-            "etherology-e2e-fabric-1.20.1-v20", profile["runtime_directory"]
+            "etherology-e2e-fabric-1.20.1-v21", profile["runtime_directory"]
         )
         self.assertEqual(
             forge_client.STATE_ROOT / "runtimes" / profile["runtime_directory"],
@@ -227,7 +227,7 @@ class ConfigurationTests(unittest.TestCase):
         scenario_table = contract.split(
             "## Loader-specific bounded scenarios",
             1,
-        )[1].split("## Screenshot contract", 1)[0]
+        )[1].split("### Headless dedicated-server bounded scenarios", 1)[0]
         contract_scenarios = [
             line.split("`", 2)[1]
             for line in scenario_table.splitlines()

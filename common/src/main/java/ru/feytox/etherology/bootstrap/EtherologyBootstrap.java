@@ -3,6 +3,7 @@ package ru.feytox.etherology.bootstrap;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.block.SharedBlocks;
 import ru.feytox.etherology.registry.item.SharedItems;
+import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.misc.ResourceReloaders;
 import ru.feytox.etherology.registry.misc.SharedEnchantments;
 import ru.feytox.etherology.registry.misc.SharedGameEvents;
@@ -34,6 +35,7 @@ public final class EtherologyBootstrap {
     public static void initialize(PlatformRegistrar registrar) {
         SharedBlocks.register();
         SharedItems.register();
+        SharedMaterialItems.register();
         SharedBlockEntities.register();
         SharedScreenHandlers.register();
         SharedSounds.register();

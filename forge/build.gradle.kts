@@ -352,6 +352,17 @@ val forgeParticleRegistryServerEvidenceTest =
 val forgeServerContractV10 = rootProject.file("scripts/e2e/forge_server_contract_v10.py")
 val forgeServerProfileSnapshotV10 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v10.json")
+val forgeMaterialItemRegistryServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "material-item-registry-server-v11",
+    )
+val forgeMaterialItemRegistryServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_material_item_evidence_v11.py")
+val forgeMaterialItemRegistryServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_material_item_evidence_v11.py")
+val forgeServerContractV11 = rootProject.file("scripts/e2e/forge_server_contract_v11.py")
+val forgeServerProfileSnapshotV11 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v11.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -2955,6 +2966,67 @@ fun missingForgeParticleRegistryServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeMaterialItemRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeMaterialItemRegistryServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeMaterialItemRegistryServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge material-item-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("material-item-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeMaterialItemRegistryServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge material-item-registry server-v11 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeMaterialItemRegistryServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeMaterialItemRegistryServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge material-item-registry server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge material-item-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, recipe, screen, effect, loot, tree, and " +
@@ -3072,6 +3144,13 @@ fun firstIncompleteForgeMilestone(
     if (missingParticleRegistryServerEvidence.isNotEmpty()) {
         return "particle-registry dedicated-server evidence" to
             missingParticleRegistryServerEvidence
+    }
+
+    val missingMaterialItemRegistryServerEvidence =
+        missingForgeMaterialItemRegistryServerEvidenceMilestone()
+    if (missingMaterialItemRegistryServerEvidence.isNotEmpty()) {
+        return "material-item registry dedicated-server evidence" to
+            missingMaterialItemRegistryServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -3323,6 +3402,7 @@ tasks.named<Test>("test").configure {
     exclude("**/EtherSourceReloadResourcesTest.class")
     exclude("**/EnchantmentRegistryResourcesTest.class")
     exclude("**/ParticleRegistryResourcesTest.class")
+    exclude("**/MaterialItemRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -3713,6 +3793,89 @@ val particleRegistryTest = tasks.register<Test>("particleRegistryTest") {
     }
 }
 
+val materialItemRegistryTest = tasks.register<Test>("materialItemRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader material-item ownership and packaged-asset tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.MaterialItemRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("materialItemCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("materialItemFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("materialItemForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("materialItemFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("materialItemFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("materialItemForgeShadowJar")
+    inputs.files(
+        rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+            include("*.json")
+        },
+    ).withPropertyName("canonicalGeneratedItemModels")
+    inputs.files(
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/item") {
+            include("*.png")
+        },
+    ).withPropertyName("canonicalItemTextures")
+    inputs.file(englishLanguageFile)
+        .withPropertyName("materialItemEnglishLanguage")
+    doFirst {
+        systemProperty(
+            "etherology.materialItems.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.materialItems.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.materialItems.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.materialItems.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.materialItems.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.materialItems.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.materialItems.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
 val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
     group = "verification"
     description =
@@ -3876,7 +4039,28 @@ val forgeParticleRegistryServerSafetyTest =
     tasks.register<Exec>("forgeParticleRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge particle-registry runner and v10 verifier safety tests."
+            "Runs the historical Forge particle-registry v10 verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_particle_evidence_v10.py",
+        )
+        inputs.files(
+            forgeServerContractV10,
+            forgeServerProfileSnapshotV10,
+            forgeParticleRegistryServerEvidenceVerifier,
+            forgeParticleRegistryServerEvidenceTest,
+        )
+    }
+
+val forgeMaterialItemRegistryServerSafetyTest =
+    tasks.register<Exec>("forgeMaterialItemRegistryServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge material-item runner and v11 verifier safety tests."
         workingDir(rootProject.projectDir)
         commandLine(
             "python3",
@@ -3884,15 +4068,15 @@ val forgeParticleRegistryServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_particle_evidence_v10.py",
+            "scripts/e2e/test_forge_server_material_item_evidence_v11.py",
         )
         inputs.files(
-            forgeServerContractV10,
-            forgeServerProfileSnapshotV10,
+            forgeServerContractV11,
+            forgeServerProfileSnapshotV11,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
-            forgeParticleRegistryServerEvidenceVerifier,
-            forgeParticleRegistryServerEvidenceTest,
+            forgeMaterialItemRegistryServerEvidenceVerifier,
+            forgeMaterialItemRegistryServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
@@ -3901,10 +4085,10 @@ val forgeParticleRegistryServerSafetyTest =
         )
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
-        ).withPropertyName("forgeParticleRegistryServerProbeSources")
+        ).withPropertyName("forgeMaterialItemRegistryServerProbeSources")
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
-        ).withPropertyName("forgeParticleRegistryServerProbeTests")
+        ).withPropertyName("forgeMaterialItemRegistryServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -3997,6 +4181,32 @@ val validateForgeParticleRegistryServerEvidenceArchiveIntegrity =
                 missingForgeParticleRegistryServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion particle-registry server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge material-item-registry server-v11 archive."
+        dependsOn(forgeMaterialItemRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV11,
+            forgeServerProfileSnapshotV11,
+            forgeMaterialItemRegistryServerEvidenceVerifier,
+        )
+        if (forgeMaterialItemRegistryServerEvidenceArchive.exists()) {
+            inputs.dir(forgeMaterialItemRegistryServerEvidenceArchive)
+                .withPropertyName("forgeMaterialItemRegistryServerEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeMaterialItemRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion material-item-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -4399,12 +4609,62 @@ val validateForgeParticleRegistryMilestone =
         )
     }
 
+val validateForgeMaterialItemRegistryStaticMilestone =
+    tasks.register("validateForgeMaterialItemRegistryStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the bounded shared material-item catalog and exact packaged assets."
+        dependsOn(
+            validateForgeParticleRegistryMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            materialItemRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("materialItemFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("materialItemForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+                include("*.json")
+            },
+        ).withPropertyName("canonicalGeneratedItemModels")
+        inputs.files(
+            rootProject.fileTree("src/client/resources/assets/etherology/textures/item") {
+                include("*.png")
+            },
+        ).withPropertyName("canonicalItemTextures")
+        inputs.file(englishLanguageFile)
+    }
+
+val validateForgeMaterialItemRegistryMilestone =
+    tasks.register("validateForgeMaterialItemRegistryMilestone") {
+        group = "verification"
+        description =
+            "Accepts shared material items with their frozen native Forge registry proof."
+        dependsOn(
+            validateForgeMaterialItemRegistryStaticMilestone,
+            validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeParticleRegistryMilestone)
+        dependsOn(validateForgeMaterialItemRegistryMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -4448,6 +4708,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeEtherSourceReloadMilestone,
         validateForgeEnchantmentRegistryMilestone,
         validateForgeParticleRegistryMilestone,
+        validateForgeMaterialItemRegistryMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -4456,7 +4717,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeParticleRegistryStaticMilestone)
+    dependsOn(validateForgeMaterialItemRegistryStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -4484,6 +4745,9 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV10,
         forgeServerProfileSnapshotV10,
         forgeParticleRegistryServerEvidenceVerifier,
+        forgeServerContractV11,
+        forgeServerProfileSnapshotV11,
+        forgeMaterialItemRegistryServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -4497,6 +4761,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeParticleRegistryServerEvidenceArchive.exists()) {
         inputs.dir(forgeParticleRegistryServerEvidenceArchive)
             .withPropertyName("forgeParticleRegistryServerEvidenceArchive")
+    }
+    if (forgeMaterialItemRegistryServerEvidenceArchive.exists()) {
+        inputs.dir(forgeMaterialItemRegistryServerEvidenceArchive)
+            .withPropertyName("forgeMaterialItemRegistryServerEvidenceArchive")
     }
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -4626,7 +4894,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 particle-registry server probe")
+            displayName.set("Etherology Forge 1.20.1 material-item server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -4707,8 +4975,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v10",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v10",
+                "id" to "etherology-e2e-forge-server-1.20.1-v11",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v11",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -4728,14 +4996,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "particle-registry",
+                "scenario" to "material-item-registry",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "particle-registry",
+                "scenario_directory" to "material-item-registry",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -4905,6 +5173,9 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "MaterialItemProbeState\$MaterialItemEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/" +
                         "ParticleProbeState\$ParticleEntry.class",
                     "dev/theplumteam/etherology/e2e/server/" +
@@ -5129,6 +5400,49 @@ if (minecraftVersion == "1.20.1") {
                         (requiredParticleStateConstants - particleStateConstants).sorted()
                 }
 
+                val materialItemStateEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState.class",
+                    ),
+                )
+                val materialItemStateConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(materialItemStateEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredMaterialItemStateConstants = setOf(
+                    "minecraft:item",
+                    "etherology:attrahite_brick",
+                    "etherology:azel_ingot",
+                    "etherology:azel_nugget",
+                    "etherology:binder",
+                    "etherology:ebony",
+                    "etherology:ebony_ingot",
+                    "etherology:ebony_nugget",
+                    "etherology:enriched_attrahite",
+                    "etherology:etheroscope",
+                    "etherology:ethril_ingot",
+                    "etherology:ethril_nugget",
+                    "etherology:raw_azel",
+                    "etherology:resonating_wand",
+                    "etherology:thuja_oil",
+                    "net/minecraft/item/Item",
+                    "net/minecraft/item/ItemStack",
+                    "writeNbt",
+                    "fromNbt",
+                    "Count",
+                    "id",
+                )
+                check(
+                    requiredMaterialItemStateConstants.all(
+                        materialItemStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its material-item registry contract: " +
+                        (requiredMaterialItemStateConstants - materialItemStateConstants)
+                            .sorted()
+                }
+
                 val reloadResourceDigests = mapOf(
                     "probe-inputs/ether-source-reload-pack/pack.mcmeta" to
                         "0ba7dc05c7ce2955fab716f5c4a2a1ca9cde1da6ed0a06b0f06b937c11b69e00",
@@ -5226,6 +5540,18 @@ if (minecraftVersion == "1.20.1") {
                     "particle_registry_stable_after_reload",
                     "particle_type_contract_stable_after_reload",
                     "particle_wire_contract_stable_after_reload",
+                    "material_items",
+                    "registry:material_item_ids_exact",
+                    "material_item_capture_error",
+                    "material_item_runtime_class_exact",
+                    "material_item_max_counts_exact",
+                    "material_item_stack_nbt_round_trips_exact",
+                    "material_item_save_representations_exact",
+                    "material_items_captured_after_server_data_load",
+                    "server_started_material_items_rechecked",
+                    "material_item_registry_stable_after_reload",
+                    "material_item_properties_stable_after_reload",
+                    "material_item_stack_nbt_stable_after_reload",
                     "loot_condition",
                     "registry:loot_condition:etherology:random_chance_with_fortune",
                     "registry:loot_condition_etherology_ids_exact",
@@ -5268,6 +5594,7 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState",
                     "dev/theplumteam/etherology/e2e/server/ParticleProbeState",
+                    "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
@@ -5367,10 +5694,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 particle-registry server probe."
+                "Builds and validates the Forge 1.20.1 material-item server probe."
             dependsOn(
-                validateForgeParticleRegistryStaticMilestone,
-                forgeParticleRegistryServerSafetyTest,
+                validateForgeMaterialItemRegistryStaticMilestone,
+                forgeMaterialItemRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,

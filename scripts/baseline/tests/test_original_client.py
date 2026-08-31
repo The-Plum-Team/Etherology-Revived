@@ -30,13 +30,16 @@ sys.modules[SPECIFICATION.name] = client
 SPECIFICATION.loader.exec_module(client)
 
 TRACKED_MANIFEST_PATH = (
-    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v3.json"
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v4.json"
 )
 LEGACY_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
 )
 LEGACY_FOREST_LANTERN_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v2.json"
+)
+LEGACY_ATTRAHITE_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v3.json"
 )
 TRACKED_EVIDENCE_ARCHIVE = (
     BASELINE_DIRECTORY.parents[1]
@@ -52,7 +55,7 @@ TRACKED_FOREST_LANTERN_EVIDENCE_ARCHIVE = (
     / "original-1.21.1"
     / "forest-lantern-v2"
 )
-ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME = "attrahite-block-registry-v3"
+ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME = "attrahite-block-registry-v4"
 
 
 def fabric_jar_bytes(mod_id: str, nested_mod_id: str | None = None) -> bytes:
@@ -708,16 +711,16 @@ def write_passing_evidence(configuration: object, root: Path) -> None:
     (region / "r.0.0.mca").write_bytes(b"region-data")
 
     registry_descriptions = (
-        "etherology:attrahite=block_class:net.minecraft.block.Block,"
-        "item_class:net.minecraft.item.BlockItem,default:{},states:1,raw_ids:1",
-        "etherology:attrahite_bricks=block_class:net.minecraft.block.Block,"
-        "item_class:net.minecraft.item.BlockItem,default:{},states:1,raw_ids:1",
-        "etherology:attrahite_brick_slab=block_class:net.minecraft.block.SlabBlock,"
-        "item_class:net.minecraft.item.BlockItem,"
+        "etherology:attrahite=block_class:net.minecraft.class_2248,"
+        "item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1",
+        "etherology:attrahite_bricks=block_class:net.minecraft.class_2248,"
+        "item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1",
+        "etherology:attrahite_brick_slab=block_class:net.minecraft.class_2482,"
+        "item_class:net.minecraft.class_1747,"
         "default:{type=bottom, waterlogged=false},states:6,raw_ids:6",
         "etherology:attrahite_brick_stairs="
-        "block_class:net.minecraft.block.StairsBlock,"
-        "item_class:net.minecraft.item.BlockItem,"
+        "block_class:net.minecraft.class_2510,"
+        "item_class:net.minecraft.class_1747,"
         "default:{facing=north, half=bottom, shape=straight, waterlogged=false},"
         "states:80,raw_ids:80",
     )
@@ -1001,6 +1004,43 @@ class TrackedManifestTests(unittest.TestCase):
         )
         self.assertEqual(manifest["capture"]["scenario"]["id"], "forest-lantern")
 
+    def test_consumed_v3_manifest_remains_byte_exact_and_v4_is_fresh(self) -> None:
+        self.assertEqual(
+            len(LEGACY_ATTRAHITE_MANIFEST_PATH.read_bytes()),
+            10309,
+        )
+        self.assertEqual(
+            hashlib.sha256(LEGACY_ATTRAHITE_MANIFEST_PATH.read_bytes()).hexdigest(),
+            "457b069d3aecc9f83667026544e8734aadbb7285510cbd3279a0d0435a898aa3",
+        )
+        consumed_manifest = json.loads(
+            LEGACY_ATTRAHITE_MANIFEST_PATH.read_text(encoding="utf-8")
+        )
+        fresh_manifest = json.loads(
+            TRACKED_MANIFEST_PATH.read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            consumed_manifest["profile"]["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v3",
+        )
+        self.assertEqual(
+            fresh_manifest["profile"]["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v4",
+        )
+        self.assertNotEqual(
+            consumed_manifest["profile"]["runtime_directory"],
+            fresh_manifest["profile"]["runtime_directory"],
+        )
+        self.assertEqual(
+            consumed_manifest["capture"],
+            fresh_manifest["capture"],
+        )
+        self.assertEqual(len(TRACKED_MANIFEST_PATH.read_bytes()), 10309)
+        self.assertEqual(
+            hashlib.sha256(TRACKED_MANIFEST_PATH.read_bytes()).hexdigest(),
+            "6f6f84c0c33f4f269dd37d5876f22423cef188b1d49fa873dc1a953870f5bdb0",
+        )
+
     def test_tracked_original_evidence_archive_is_exact(self) -> None:
         archive_manifest = client.load_json_object(
             TRACKED_EVIDENCE_ARCHIVE / "archive-manifest.json",
@@ -1153,7 +1193,7 @@ class TrackedManifestTests(unittest.TestCase):
         client.verify_harness_artifact(configuration)
         self.assertEqual(
             client.profile_spec(configuration)["id"],
-            "etherology-original-fabric-1.21.1-published-0.1.7-v3",
+            "etherology-original-fabric-1.21.1-published-0.1.7-v4",
         )
         self.assertEqual(
             client.scenario_spec(configuration)["id"],
@@ -1162,7 +1202,7 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertEqual(len(client.EXPECTED_ASSERTION_NAMES), 49)
         self.assertEqual(
             ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME,
-            "attrahite-block-registry-v3",
+            "attrahite-block-registry-v4",
         )
         self.assertEqual(len(inventory), 8)
         self.assertEqual(
@@ -1597,6 +1637,31 @@ class CaptureContractTests(unittest.TestCase):
                     "files": [],
                 },
             )
+
+    def test_machine_verifier_rejects_named_attrahite_class_aliases(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            write_passing_evidence(configuration, root)
+            report = client.load_json_object(
+                client.report_path(configuration, root), "fixture report"
+            )
+            assertion = next(
+                value
+                for value in report["assertions"]
+                if value["name"] == "attrahite_block_classes_exact"
+            )
+            assertion["actual"] = assertion["actual"].replace(
+                "net.minecraft.class_2248",
+                "net.minecraft.block.Block",
+            )
+            rewrite_report_and_marker(configuration, root, report)
+
+            with self.assertRaisesRegex(
+                client.BaselineError, "registry description changed"
+            ):
+                client.verify_scenario_evidence(configuration, root)
 
     def test_successful_run_record_binds_mutable_skin_cache(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

@@ -99,7 +99,7 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v3.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v4.json"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -626,6 +626,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v1": "v1",
         "etherology-original-fabric-1.21.1-published-0.1.7-v2": "v2",
         "etherology-original-fabric-1.21.1-published-0.1.7-v3": "v3",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v4": "v4",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -918,6 +919,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v1": "1.0.0",
         "v2": "1.1.0",
         "v3": "1.2.0",
+        "v4": "1.2.0",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -976,6 +978,17 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_seed": 4995697353423860023,
         },
         "v3": {
+            "id": "attrahite-block-registry",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "attrahite-block-registry.png",
+            "world_directory_name": (
+                "etherology-original-attrahite-block-registry-world"
+            ),
+            "world_display_name": "Etherology Original 0.1.7 Attrahite Blocks",
+            "world_seed": 4995697332085600305,
+        },
+        "v4": {
             "id": "attrahite-block-registry",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -5659,10 +5672,10 @@ def validate_attrahite_registry_description(value: str) -> None:
         value, "Attrahite registry description"
     )
     expected_classes = (
-        "net.minecraft.block.Block",
-        "net.minecraft.block.Block",
-        "net.minecraft.block.SlabBlock",
-        "net.minecraft.block.StairsBlock",
+        "net.minecraft.class_2248",
+        "net.minecraft.class_2248",
+        "net.minecraft.class_2482",
+        "net.minecraft.class_2510",
     )
     for index, entry in enumerate(entries):
         match = re.fullmatch(
@@ -5684,7 +5697,7 @@ def validate_attrahite_registry_description(value: str) -> None:
         if (
             block_id != ATTRAHITE_BLOCK_IDS[index]
             or block_class != expected_classes[index]
-            or item_class != "net.minecraft.item.BlockItem"
+            or item_class != "net.minecraft.class_1747"
             or parse_java_string_map(
                 properties, "Attrahite registry default state"
             )

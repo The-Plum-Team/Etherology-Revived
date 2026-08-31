@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded Forge 1.20.1 material-item probe in isolated state."""
+"""Run the bounded Forge 1.20.1 metal-block probe in isolated state."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
-import forge_server_contract_v11 as contract_v11
+import forge_server_contract_v13 as contract_v13
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -33,9 +33,9 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v11.PROFILE_ID
-SCENARIO_ID = contract_v11.SCENARIO_ID
-TASK_PATH = contract_v11.TASK_PATH
+PROFILE_ID = contract_v13.PROFILE_ID
+SCENARIO_ID = contract_v13.SCENARIO_ID
+TASK_PATH = contract_v13.TASK_PATH
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -46,47 +46,64 @@ PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 MAXIMUM_SERVER_LOG_SIZE = 48 * 1024 * 1024
 COMPLETION_MARKER_CONTENT = b"complete\n"
-REQUIRED_MOD_IDS = contract_v11.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v11.FORBIDDEN_MOD_IDS
-RELOAD_PACK_DIRECTORY = contract_v11.RELOAD_PACK_DIRECTORY
-RELOAD_PACK_ENABLED_NAME = contract_v11.RELOAD_PACK_ENABLED_NAME
-RELOAD_PACK_RESOURCES = contract_v11.RELOAD_PACK_RESOURCES
-ETHER_SOURCE_LISTENER_CLASS = contract_v11.ETHER_SOURCE_LISTENER_CLASS
-ENCHANTMENT_REGISTRY_ID = contract_v11.ENCHANTMENT_REGISTRY_ID
-NON_TREASURE_TAG_ID = contract_v11.NON_TREASURE_TAG_ID
-ENCHANTMENT_IDS = contract_v11.ENCHANTMENT_IDS
-ENCHANTMENTS = contract_v11.ENCHANTMENTS
-PARTICLE_REGISTRY_ID = contract_v11.PARTICLE_REGISTRY_ID
-FEY_PARTICLE_TYPE_CLASS = contract_v11.FEY_PARTICLE_TYPE_CLASS
-PARTICLE_IDS = contract_v11.PARTICLE_IDS
-PARTICLE_PAYLOAD_FAMILIES = contract_v11.PARTICLE_PAYLOAD_FAMILIES
-PARTICLES = contract_v11.PARTICLES
-SEAL_TYPE_ORDER = contract_v11.SEAL_TYPE_ORDER
-SEAL_TYPES = contract_v11.SEAL_TYPES
-MATERIAL_ITEM_REGISTRY_ID = contract_v11.MATERIAL_ITEM_REGISTRY_ID
-MATERIAL_ITEM_CLASS = contract_v11.MATERIAL_ITEM_CLASS
-MATERIAL_ITEM_NBT_KEYS = contract_v11.MATERIAL_ITEM_NBT_KEYS
-MATERIAL_ITEM_MAX_COUNTS = contract_v11.MATERIAL_ITEM_MAX_COUNTS
-MATERIAL_ITEM_IDS = contract_v11.MATERIAL_ITEM_IDS
-MATERIAL_ITEMS = contract_v11.MATERIAL_ITEMS
+REQUIRED_MOD_IDS = contract_v13.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v13.FORBIDDEN_MOD_IDS
+RELOAD_PACK_DIRECTORY = contract_v13.RELOAD_PACK_DIRECTORY
+RELOAD_PACK_ENABLED_NAME = contract_v13.RELOAD_PACK_ENABLED_NAME
+RELOAD_PACK_RESOURCES = contract_v13.RELOAD_PACK_RESOURCES
+ETHER_SOURCE_LISTENER_CLASS = contract_v13.ETHER_SOURCE_LISTENER_CLASS
+ENCHANTMENT_REGISTRY_ID = contract_v13.ENCHANTMENT_REGISTRY_ID
+NON_TREASURE_TAG_ID = contract_v13.NON_TREASURE_TAG_ID
+ENCHANTMENT_IDS = contract_v13.ENCHANTMENT_IDS
+ENCHANTMENTS = contract_v13.ENCHANTMENTS
+PARTICLE_REGISTRY_ID = contract_v13.PARTICLE_REGISTRY_ID
+FEY_PARTICLE_TYPE_CLASS = contract_v13.FEY_PARTICLE_TYPE_CLASS
+PARTICLE_IDS = contract_v13.PARTICLE_IDS
+PARTICLE_PAYLOAD_FAMILIES = contract_v13.PARTICLE_PAYLOAD_FAMILIES
+PARTICLES = contract_v13.PARTICLES
+SEAL_TYPE_ORDER = contract_v13.SEAL_TYPE_ORDER
+SEAL_TYPES = contract_v13.SEAL_TYPES
+MATERIAL_ITEM_REGISTRY_ID = contract_v13.MATERIAL_ITEM_REGISTRY_ID
+MATERIAL_ITEM_CLASS = contract_v13.MATERIAL_ITEM_CLASS
+MATERIAL_ITEM_NBT_KEYS = contract_v13.MATERIAL_ITEM_NBT_KEYS
+MATERIAL_ITEM_MAX_COUNTS = contract_v13.MATERIAL_ITEM_MAX_COUNTS
+MATERIAL_ITEM_IDS = contract_v13.MATERIAL_ITEM_IDS
+MATERIAL_ITEMS = contract_v13.MATERIAL_ITEMS
 MATERIAL_ITEM_CANONICAL_MAX_COUNTS = (
-    contract_v11.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
+    contract_v13.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
 )
 MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v11.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v13.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
 )
-INITIAL_ETHER_SOURCE_ENTRIES = contract_v11.INITIAL_ETHER_SOURCE_ENTRIES
-RELOADED_ETHER_SOURCE_ENTRIES = contract_v11.RELOADED_ETHER_SOURCE_ENTRIES
-canonical_ether_source_entries = contract_v11.canonical_ether_source_entries
-EXPECTED_LIFECYCLE = contract_v11.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v11.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v11.EXPECTED_ASSERTION_VALUES
-PROBE_LOG_PHASES = contract_v11.PROBE_LOG_PHASES
-SERVER_LOG_TOKENS = contract_v11.SERVER_LOG_TOKENS
-CLIENT_LOG_MARKERS = contract_v11.CLIENT_LOG_MARKERS
-CLIENT_CLASS_PATTERN = contract_v11.CLIENT_CLASS_PATTERN
+METAL_BLOCK_REGISTRY_ID = contract_v13.METAL_BLOCK_REGISTRY_ID
+METAL_BLOCK_ITEM_REGISTRY_ID = contract_v13.METAL_BLOCK_ITEM_REGISTRY_ID
+METAL_BLOCK_CLASS = contract_v13.METAL_BLOCK_CLASS
+BLOCK_ITEM_CLASS = contract_v13.BLOCK_ITEM_CLASS
+METAL_BLOCK_NBT_KEYS = contract_v13.METAL_BLOCK_NBT_KEYS
+METAL_BLOCK_SPECS = contract_v13.METAL_BLOCK_SPECS
+METAL_BLOCK_IDS = contract_v13.METAL_BLOCK_IDS
+METAL_BLOCKS = contract_v13.METAL_BLOCKS
+METAL_BLOCK_CANONICAL_PROPERTIES = contract_v13.METAL_BLOCK_CANONICAL_PROPERTIES
+METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS = (
+    contract_v13.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
+)
+METAL_BLOCK_PLACEMENT_POSITIONS = contract_v13.METAL_BLOCK_PLACEMENT_POSITIONS
+METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS = (
+    contract_v13.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
+)
+METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v13.METAL_BLOCK_CANONICAL_PLACED_IDS
+INITIAL_ETHER_SOURCE_ENTRIES = contract_v13.INITIAL_ETHER_SOURCE_ENTRIES
+RELOADED_ETHER_SOURCE_ENTRIES = contract_v13.RELOADED_ETHER_SOURCE_ENTRIES
+canonical_ether_source_entries = contract_v13.canonical_ether_source_entries
+EXPECTED_LIFECYCLE = contract_v13.EXPECTED_LIFECYCLE
+EXPECTED_ASSERTION_NAMES = contract_v13.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v13.EXPECTED_ASSERTION_VALUES
+PROBE_LOG_PHASES = contract_v13.PROBE_LOG_PHASES
+SERVER_LOG_TOKENS = contract_v13.SERVER_LOG_TOKENS
+CLIENT_LOG_MARKERS = contract_v13.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v13.CLIENT_CLASS_PATTERN
 ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
-    contract_v11.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+    contract_v13.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
 )
 FATAL_SERVER_LOG_MARKERS = (
     "A mod crashed on startup!",
@@ -340,12 +357,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v11.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v13.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v11.PROFILE_MANIFEST_SHA256
+        != contract_v13.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v11 contract"
+            "The dedicated-server profile bytes differ from the immutable v13 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -875,16 +892,16 @@ def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v11 contract."""
+    """Validates a probe report through the immutable profile-v13 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v11.validate_probe_report(
+        contract_v13.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v11.V11ContractError as exception:
+    except contract_v13.V13ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 

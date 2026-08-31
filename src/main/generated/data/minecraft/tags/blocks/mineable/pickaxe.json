@@ -1,65 +1,230 @@
 {
   "replace": false,
   "values": [
-    "etherology:attrahite_brick_slab",
-    "etherology:attrahite_brick_stairs",
-    "etherology:attrahite_bricks",
-    "etherology:polished_slitherite",
-    "etherology:slitherite",
-    "etherology:slitherite_slab",
-    "etherology:slitherite_stairs",
-    "etherology:slitherite_wall",
-    "etherology:chiseled_polished_slitherite",
-    "etherology:polished_slitherite",
-    "etherology:polished_slitherite_button",
-    "etherology:polished_slitherite_pressure_plate",
-    "etherology:polished_slitherite_slab",
-    "etherology:polished_slitherite_stairs",
-    "etherology:polished_slitherite_wall",
-    "etherology:chiseled_polished_slitherite_bricks",
-    "etherology:cracked_polished_slitherite_bricks",
-    "etherology:polished_slitherite_brick_slab",
-    "etherology:polished_slitherite_brick_stairs",
-    "etherology:polished_slitherite_brick_wall",
-    "etherology:polished_slitherite_bricks",
-    "etherology:chiseled_polished_slitherite",
-    "etherology:chiseled_polished_slitherite_bricks",
-    "etherology:cracked_polished_slitherite_bricks",
-    "etherology:pedestal",
-    "etherology:jug",
-    "etherology:clay_jug",
-    "etherology:armillary_sphere",
-    "etherology:jewelry_table",
-    "etherology:sedimentary_stone",
-    "etherology:sedimentary_stone_keta_low",
-    "etherology:sedimentary_stone_keta_medium",
-    "etherology:sedimentary_stone_keta_high",
-    "etherology:sedimentary_stone_keta_full",
-    "etherology:sedimentary_stone_rella_low",
-    "etherology:sedimentary_stone_rella_medium",
-    "etherology:sedimentary_stone_rella_high",
-    "etherology:sedimentary_stone_rella_full",
-    "etherology:sedimentary_stone_via_low",
-    "etherology:sedimentary_stone_via_medium",
-    "etherology:sedimentary_stone_via_high",
-    "etherology:sedimentary_stone_via_full",
-    "etherology:sedimentary_stone_clos_low",
-    "etherology:sedimentary_stone_clos_medium",
-    "etherology:sedimentary_stone_clos_high",
-    "etherology:sedimentary_stone_clos_full",
-    "etherology:brewing_cauldron",
+    {
+      "id": "etherology:attrahite_brick_slab",
+      "required": false
+    },
+    {
+      "id": "etherology:attrahite_brick_stairs",
+      "required": false
+    },
+    {
+      "id": "etherology:attrahite_bricks",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite",
+      "required": false
+    },
+    {
+      "id": "etherology:slitherite",
+      "required": false
+    },
+    {
+      "id": "etherology:slitherite_slab",
+      "required": false
+    },
+    {
+      "id": "etherology:slitherite_stairs",
+      "required": false
+    },
+    {
+      "id": "etherology:slitherite_wall",
+      "required": false
+    },
+    {
+      "id": "etherology:chiseled_polished_slitherite",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_button",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_pressure_plate",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_slab",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_stairs",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_wall",
+      "required": false
+    },
+    {
+      "id": "etherology:chiseled_polished_slitherite_bricks",
+      "required": false
+    },
+    {
+      "id": "etherology:cracked_polished_slitherite_bricks",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_brick_slab",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_brick_stairs",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_brick_wall",
+      "required": false
+    },
+    {
+      "id": "etherology:polished_slitherite_bricks",
+      "required": false
+    },
+    {
+      "id": "etherology:chiseled_polished_slitherite",
+      "required": false
+    },
+    {
+      "id": "etherology:chiseled_polished_slitherite_bricks",
+      "required": false
+    },
+    {
+      "id": "etherology:cracked_polished_slitherite_bricks",
+      "required": false
+    },
+    {
+      "id": "etherology:pedestal",
+      "required": false
+    },
+    {
+      "id": "etherology:jug",
+      "required": false
+    },
+    {
+      "id": "etherology:clay_jug",
+      "required": false
+    },
+    {
+      "id": "etherology:armillary_sphere",
+      "required": false
+    },
+    {
+      "id": "etherology:jewelry_table",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_keta_low",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_keta_medium",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_keta_high",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_keta_full",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_rella_low",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_rella_medium",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_rella_high",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_rella_full",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_via_low",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_via_medium",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_via_high",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_via_full",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_clos_low",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_clos_medium",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_clos_high",
+      "required": false
+    },
+    {
+      "id": "etherology:sedimentary_stone_clos_full",
+      "required": false
+    },
     "etherology:ethereal_storage",
     "etherology:ethereal_channel",
-    "etherology:ethereal_fork",
-    "etherology:ethereal_socket",
-    "etherology:ethereal_furnace",
-    "etherology:spinner",
-    "etherology:samovar",
-    "etherology:attrahite",
-    "etherology:tuning_fork",
+    {
+      "id": "etherology:brewing_cauldron",
+      "required": false
+    },
+    {
+      "id": "etherology:ethereal_fork",
+      "required": false
+    },
+    {
+      "id": "etherology:ethereal_socket",
+      "required": false
+    },
+    {
+      "id": "etherology:ethereal_furnace",
+      "required": false
+    },
+    {
+      "id": "etherology:spinner",
+      "required": false
+    },
+    {
+      "id": "etherology:samovar",
+      "required": false
+    },
+    {
+      "id": "etherology:attrahite",
+      "required": false
+    },
+    {
+      "id": "etherology:tuning_fork",
+      "required": false
+    },
     "etherology:azel_block",
     "etherology:ebony_block",
     "etherology:ethril_block",
-    "etherology:metronome"
+    {
+      "id": "etherology:metronome",
+      "required": false
+    }
   ]
 }

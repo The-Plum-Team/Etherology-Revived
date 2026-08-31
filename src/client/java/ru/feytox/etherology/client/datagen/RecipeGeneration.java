@@ -41,6 +41,7 @@ import static net.minecraft.recipe.book.RecipeCategory.*;
 import static ru.feytox.etherology.magic.aspects.Aspect.*;
 import static ru.feytox.etherology.registry.block.DecoBlocks.*;
 import static ru.feytox.etherology.registry.block.EBlocks.*;
+import static ru.feytox.etherology.registry.block.SharedMetalBlocks.*;
 import static ru.feytox.etherology.registry.item.ArmorItems.*;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
@@ -59,7 +60,7 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 new NamespacedRecipeJsonProvider(provider, getRecipeIdentifier(provider.getRecipeId())));
 
         // azel
-        offerMaterialBlock(exporter, AZEL_INGOT.get(), AZEL_BLOCK);
+        offerMaterialBlock(exporter, AZEL_INGOT.get(), AZEL_BLOCK.get());
         offerMaterialNugget(exporter, AZEL_NUGGET.get(), AZEL_INGOT.get());
         CookingRecipeJsonBuilder.createSmelting(Ingredient.ofItems(ATTRAHITE), MISC, ATTRAHITE_BRICK.get(), 0.1F, 200).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
         ShapedRecipeJsonBuilder.create(BUILDING_BLOCKS, ATTRAHITE_BRICKS).input('#', ATTRAHITE_BRICK.get()).pattern("##").pattern("##").criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter);
@@ -68,11 +69,11 @@ public class RecipeGeneration extends FabricRecipeProvider {
         CookingRecipeJsonBuilder.createBlasting(Ingredient.ofItems(RAW_AZEL.get()), MISC, AZEL_INGOT.get(), 0.3F, 100).criterion(has(ATTRAHITE), from(ATTRAHITE)).offerTo(exporter, getBlastingItemPath(AZEL_INGOT.get()));
 
         // ethril
-        offerMaterialBlock(exporter, ETHRIL_INGOT.get(), ETHRIL_BLOCK);
+        offerMaterialBlock(exporter, ETHRIL_INGOT.get(), ETHRIL_BLOCK.get());
         offerMaterialNugget(exporter, ETHRIL_NUGGET.get(), ETHRIL_INGOT.get());
 
         // ebony
-        offerMaterialBlock(exporter, EBONY_INGOT.get(), EBONY_BLOCK);
+        offerMaterialBlock(exporter, EBONY_INGOT.get(), EBONY_BLOCK.get());
         offerMaterialNugget(exporter, EBONY_NUGGET.get(), EBONY_INGOT.get());
 
         // forest lantern

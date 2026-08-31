@@ -25,6 +25,7 @@ import static ru.feytox.etherology.registry.item.ArmorItems.*;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
 import static ru.feytox.etherology.registry.item.SharedMaterialItems.*;
+import static ru.feytox.etherology.registry.item.SharedMetalBlockItems.*;
 import static ru.feytox.etherology.registry.item.ToolItems.*;
 
 @UtilityClass
@@ -71,7 +72,9 @@ public class EItemGroups {
                 AZEL_INGOT.get(), ETHRIL_INGOT.get(), EBONY_INGOT.get(),
                 AZEL_NUGGET.get(), ETHRIL_NUGGET.get(), EBONY_NUGGET.get()
         );
-        etherItems.with(AZEL_BLOCK, ETHRIL_BLOCK, EBONY_BLOCK);
+        etherItems.with(
+                AZEL_BLOCK_ITEM.get(), ETHRIL_BLOCK_ITEM.get(), EBONY_BLOCK_ITEM.get()
+        );
         // armor
         etherItems.with(EBONY_HELMET, EBONY_CHESTPLATE, EBONY_LEGGINGS, EBONY_BOOTS);
         // tools

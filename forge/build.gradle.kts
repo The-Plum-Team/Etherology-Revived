@@ -49,9 +49,24 @@ val canonicalGameEventTagEntries = setOf(
 val canonicalEnchantmentTagEntry =
     "data/minecraft/tags/enchantment/non_treasure.json"
 val commonEtherSourceDataEntry = "etherology/ether_sources/default.json"
+val canonicalMetalBlockDataEntries = setOf(
+    "etherology/loot_tables/blocks/azel_block.json",
+    "etherology/loot_tables/blocks/ethril_block.json",
+    "etherology/loot_tables/blocks/ebony_block.json",
+    "etherology/recipes/azel_block.json",
+    "etherology/recipes/azel_ingot_from_azel_block.json",
+    "etherology/recipes/ethril_block.json",
+    "etherology/recipes/ethril_ingot_from_ethril_block.json",
+    "etherology/recipes/ebony_block.json",
+    "etherology/recipes/ebony_ingot_from_ebony_block.json",
+    "minecraft/tags/blocks/mineable/pickaxe.json",
+    "minecraft/tags/blocks/needs_iron_tool.json",
+    "minecraft/tags/blocks/beacon_base_blocks.json",
+)
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
-) + (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
+) + canonicalMetalBlockDataEntries +
+    (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
     acceptedForgeDirectDataEntries + commonEtherSourceDataEntry
@@ -363,6 +378,24 @@ val forgeMaterialItemRegistryServerEvidenceTest =
 val forgeServerContractV11 = rootProject.file("scripts/e2e/forge_server_contract_v11.py")
 val forgeServerProfileSnapshotV11 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v11.json")
+val forgeMetalBlockRegistryServerEvidenceVerifierV12 =
+    rootProject.file("scripts/e2e/forge_server_metal_block_evidence_v12.py")
+val forgeMetalBlockRegistryServerEvidenceTestV12 =
+    rootProject.file("scripts/e2e/test_forge_server_metal_block_evidence_v12.py")
+val forgeServerContractV12 = rootProject.file("scripts/e2e/forge_server_contract_v12.py")
+val forgeServerProfileSnapshotV12 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v12.json")
+val forgeMetalBlockRegistryServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "metal-block-registry-server-v13",
+    )
+val forgeMetalBlockRegistryServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_metal_block_evidence_v13.py")
+val forgeMetalBlockRegistryServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_metal_block_evidence_v13.py")
+val forgeServerContractV13 = rootProject.file("scripts/e2e/forge_server_contract_v13.py")
+val forgeServerProfileSnapshotV13 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v13.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -438,6 +471,20 @@ sourceSets {
             )
             include("assets/**")
             include("data/etherology/loot_tables/blocks/ethereal_storage.json")
+            include(
+                "data/etherology/loot_tables/blocks/azel_block.json",
+                "data/etherology/loot_tables/blocks/ethril_block.json",
+                "data/etherology/loot_tables/blocks/ebony_block.json",
+                "data/etherology/recipes/azel_block.json",
+                "data/etherology/recipes/azel_ingot_from_azel_block.json",
+                "data/etherology/recipes/ethril_block.json",
+                "data/etherology/recipes/ethril_ingot_from_ethril_block.json",
+                "data/etherology/recipes/ebony_block.json",
+                "data/etherology/recipes/ebony_ingot_from_ebony_block.json",
+                "data/minecraft/tags/blocks/mineable/pickaxe.json",
+                "data/minecraft/tags/blocks/needs_iron_tool.json",
+                "data/minecraft/tags/blocks/beacon_base_blocks.json",
+            )
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
             include(canonicalEnchantmentTagEntry)
             include("META-INF/**")
@@ -3027,6 +3074,67 @@ fun missingForgeMaterialItemRegistryServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeMetalBlockRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeMetalBlockRegistryServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeMetalBlockRegistryServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge metal-block-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("metal-block-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeMetalBlockRegistryServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge metal-block-registry server-v13 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeMetalBlockRegistryServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeMetalBlockRegistryServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge metal-block-registry server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge metal-block-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, recipe, screen, effect, loot, tree, and " +
@@ -3151,6 +3259,13 @@ fun firstIncompleteForgeMilestone(
     if (missingMaterialItemRegistryServerEvidence.isNotEmpty()) {
         return "material-item registry dedicated-server evidence" to
             missingMaterialItemRegistryServerEvidence
+    }
+
+    val missingMetalBlockRegistryServerEvidence =
+        missingForgeMetalBlockRegistryServerEvidenceMilestone()
+    if (missingMetalBlockRegistryServerEvidence.isNotEmpty()) {
+        return "metal-block registry dedicated-server evidence" to
+            missingMetalBlockRegistryServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -3403,6 +3518,7 @@ tasks.named<Test>("test").configure {
     exclude("**/EnchantmentRegistryResourcesTest.class")
     exclude("**/ParticleRegistryResourcesTest.class")
     exclude("**/MaterialItemRegistryResourcesTest.class")
+    exclude("**/MetalBlockRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -3876,6 +3992,117 @@ val materialItemRegistryTest = tasks.register<Test>("materialItemRegistryTest") 
     }
 }
 
+val metalBlockRegistryTest = tasks.register<Test>("metalBlockRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader metal-block ownership and packaged-resource tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.MetalBlockRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("metalBlockCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("metalBlockFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("metalBlockForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("metalBlockFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("metalBlockFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("metalBlockForgeShadowJar")
+    inputs.files(
+        rootProject.fileTree("src/main/generated/assets/etherology") {
+            include(
+                "blockstates/azel_block.json",
+                "blockstates/ethril_block.json",
+                "blockstates/ebony_block.json",
+                "models/block/azel_block.json",
+                "models/block/ethril_block.json",
+                "models/block/ebony_block.json",
+                "models/item/azel_block.json",
+                "models/item/ethril_block.json",
+                "models/item/ebony_block.json",
+            )
+        },
+    ).withPropertyName("canonicalGeneratedMetalBlockAssets")
+    inputs.files(
+        rootProject.fileTree("src/main/generated/data") {
+            include(
+                "etherology/loot_tables/blocks/azel_block.json",
+                "etherology/loot_tables/blocks/ethril_block.json",
+                "etherology/loot_tables/blocks/ebony_block.json",
+                "etherology/recipes/azel_block.json",
+                "etherology/recipes/azel_ingot_from_azel_block.json",
+                "etherology/recipes/ethril_block.json",
+                "etherology/recipes/ethril_ingot_from_ethril_block.json",
+                "etherology/recipes/ebony_block.json",
+                "etherology/recipes/ebony_ingot_from_ebony_block.json",
+                "minecraft/tags/blocks/mineable/pickaxe.json",
+                "minecraft/tags/blocks/needs_iron_tool.json",
+                "minecraft/tags/blocks/beacon_base_blocks.json",
+            )
+        },
+    ).withPropertyName("canonicalGeneratedMetalBlockData")
+    inputs.files(
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/block") {
+            include("azel_block.png", "ethril_block.png", "ebony_block.png")
+        },
+    ).withPropertyName("canonicalMetalBlockTextures")
+    inputs.file(englishLanguageFile)
+        .withPropertyName("metalBlockEnglishLanguage")
+    doFirst {
+        systemProperty(
+            "etherology.metalBlocks.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.metalBlocks.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.metalBlocks.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.metalBlocks.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.metalBlocks.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.metalBlocks.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.metalBlocks.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
 val validateForgeSoundRegistryMilestone = tasks.register("validateForgeSoundRegistryMilestone") {
     group = "verification"
     description =
@@ -4060,7 +4287,50 @@ val forgeMaterialItemRegistryServerSafetyTest =
     tasks.register<Exec>("forgeMaterialItemRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge material-item runner and v11 verifier safety tests."
+            "Runs the historical Forge material-item-registry v11 verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_material_item_evidence_v11.py",
+        )
+        inputs.files(
+            forgeServerContractV11,
+            forgeServerProfileSnapshotV11,
+            forgeMaterialItemRegistryServerEvidenceVerifier,
+            forgeMaterialItemRegistryServerEvidenceTest,
+        )
+    }
+
+val forgeMetalBlockRegistryServerV12SafetyTest =
+    tasks.register<Exec>("forgeMetalBlockRegistryServerV12SafetyTest") {
+        group = "verification"
+        description =
+            "Runs the consumed Forge metal-block-registry v12 verifier safety tests."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_metal_block_evidence_v12.py",
+        )
+        inputs.files(
+            forgeServerContractV12,
+            forgeServerProfileSnapshotV12,
+            forgeMetalBlockRegistryServerEvidenceVerifierV12,
+            forgeMetalBlockRegistryServerEvidenceTestV12,
+        )
+    }
+
+val forgeMetalBlockRegistryServerSafetyTest =
+    tasks.register<Exec>("forgeMetalBlockRegistryServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge metal-block runner and v13 verifier safety tests."
+        dependsOn(forgeMetalBlockRegistryServerV12SafetyTest)
         workingDir(rootProject.projectDir)
         commandLine(
             "python3",
@@ -4068,15 +4338,15 @@ val forgeMaterialItemRegistryServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_material_item_evidence_v11.py",
+            "scripts/e2e/test_forge_server_metal_block_evidence_v13.py",
         )
         inputs.files(
-            forgeServerContractV11,
-            forgeServerProfileSnapshotV11,
+            forgeServerContractV13,
+            forgeServerProfileSnapshotV13,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
-            forgeMaterialItemRegistryServerEvidenceVerifier,
-            forgeMaterialItemRegistryServerEvidenceTest,
+            forgeMetalBlockRegistryServerEvidenceVerifier,
+            forgeMetalBlockRegistryServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
@@ -4085,10 +4355,10 @@ val forgeMaterialItemRegistryServerSafetyTest =
         )
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
-        ).withPropertyName("forgeMaterialItemRegistryServerProbeSources")
+        ).withPropertyName("forgeMetalBlockRegistryServerProbeSources")
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
-        ).withPropertyName("forgeMaterialItemRegistryServerProbeTests")
+        ).withPropertyName("forgeMetalBlockRegistryServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -4207,6 +4477,32 @@ val validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity =
                 missingForgeMaterialItemRegistryServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion material-item-registry server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge metal-block-registry server-v13 archive."
+        dependsOn(forgeMetalBlockRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV13,
+            forgeServerProfileSnapshotV13,
+            forgeMetalBlockRegistryServerEvidenceVerifier,
+        )
+        if (forgeMetalBlockRegistryServerEvidenceArchive.exists()) {
+            inputs.dir(forgeMetalBlockRegistryServerEvidenceArchive)
+                .withPropertyName("forgeMetalBlockRegistryServerEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeMetalBlockRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion metal-block-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -4659,12 +4955,84 @@ val validateForgeMaterialItemRegistryMilestone =
         )
     }
 
+val validateForgeMetalBlockRegistryStaticMilestone =
+    tasks.register("validateForgeMetalBlockRegistryStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the bounded shared metal blocks, BlockItems, and exact resources."
+        dependsOn(
+            validateForgeMaterialItemRegistryMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            metalBlockRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("metalBlockFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("metalBlockForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree("src/main/generated") {
+                include(
+                    "assets/etherology/blockstates/azel_block.json",
+                    "assets/etherology/blockstates/ethril_block.json",
+                    "assets/etherology/blockstates/ebony_block.json",
+                    "assets/etherology/models/block/azel_block.json",
+                    "assets/etherology/models/block/ethril_block.json",
+                    "assets/etherology/models/block/ebony_block.json",
+                    "assets/etherology/models/item/azel_block.json",
+                    "assets/etherology/models/item/ethril_block.json",
+                    "assets/etherology/models/item/ebony_block.json",
+                    "data/etherology/loot_tables/blocks/azel_block.json",
+                    "data/etherology/loot_tables/blocks/ethril_block.json",
+                    "data/etherology/loot_tables/blocks/ebony_block.json",
+                    "data/etherology/recipes/azel_block.json",
+                    "data/etherology/recipes/azel_ingot_from_azel_block.json",
+                    "data/etherology/recipes/ethril_block.json",
+                    "data/etherology/recipes/ethril_ingot_from_ethril_block.json",
+                    "data/etherology/recipes/ebony_block.json",
+                    "data/etherology/recipes/ebony_ingot_from_ebony_block.json",
+                    "data/minecraft/tags/blocks/mineable/pickaxe.json",
+                    "data/minecraft/tags/blocks/needs_iron_tool.json",
+                    "data/minecraft/tags/blocks/beacon_base_blocks.json",
+                )
+            },
+        ).withPropertyName("canonicalMetalBlockGeneratedResources")
+        inputs.files(
+            rootProject.fileTree("src/client/resources/assets/etherology/textures/block") {
+                include("azel_block.png", "ethril_block.png", "ebony_block.png")
+            },
+        ).withPropertyName("canonicalMetalBlockTextures")
+        inputs.file(englishLanguageFile)
+    }
+
+val validateForgeMetalBlockRegistryMilestone =
+    tasks.register("validateForgeMetalBlockRegistryMilestone") {
+        group = "verification"
+        description =
+            "Combines current static metal-block checks with immutable capture-time Forge proof."
+        dependsOn(
+            validateForgeMetalBlockRegistryStaticMilestone,
+            validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeMaterialItemRegistryMilestone)
+        dependsOn(validateForgeMetalBlockRegistryMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -4709,6 +5077,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeEnchantmentRegistryMilestone,
         validateForgeParticleRegistryMilestone,
         validateForgeMaterialItemRegistryMilestone,
+        validateForgeMetalBlockRegistryMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -4717,7 +5086,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeMaterialItemRegistryStaticMilestone)
+    dependsOn(validateForgeMetalBlockRegistryStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -4748,6 +5117,12 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV11,
         forgeServerProfileSnapshotV11,
         forgeMaterialItemRegistryServerEvidenceVerifier,
+        forgeServerContractV12,
+        forgeServerProfileSnapshotV12,
+        forgeMetalBlockRegistryServerEvidenceVerifierV12,
+        forgeServerContractV13,
+        forgeServerProfileSnapshotV13,
+        forgeMetalBlockRegistryServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -4765,6 +5140,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeMaterialItemRegistryServerEvidenceArchive.exists()) {
         inputs.dir(forgeMaterialItemRegistryServerEvidenceArchive)
             .withPropertyName("forgeMaterialItemRegistryServerEvidenceArchive")
+    }
+    if (forgeMetalBlockRegistryServerEvidenceArchive.exists()) {
+        inputs.dir(forgeMetalBlockRegistryServerEvidenceArchive)
+            .withPropertyName("forgeMetalBlockRegistryServerEvidenceArchive")
     }
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -4894,7 +5273,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 material-item server probe")
+            displayName.set("Etherology Forge 1.20.1 metal-block server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -4975,8 +5354,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v11",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v11",
+                "id" to "etherology-e2e-forge-server-1.20.1-v13",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v13",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -4996,14 +5375,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "material-item-registry",
+                "scenario" to "metal-block-registry",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "material-item-registry",
+                "scenario_directory" to "metal-block-registry",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -5176,6 +5555,13 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/" +
                         "MaterialItemProbeState\$MaterialItemEntry.class",
                     "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "MetalBlockProbeState\$MetalBlockEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "MetalBlockProbeState\$MetalBlockPlacementState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "MetalBlockProbeState\$MetalBlockSpec.class",
+                    "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/" +
                         "ParticleProbeState\$ParticleEntry.class",
                     "dev/theplumteam/etherology/e2e/server/" +
@@ -5443,6 +5829,59 @@ if (minecraftVersion == "1.20.1") {
                             .sorted()
                 }
 
+                val metalBlockStateEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState.class",
+                    ),
+                )
+                val metalBlockStateConstants = readClassUtf8Constants(
+                    probeZip.getInputStream(metalBlockStateEntry).use { input ->
+                        input.readAllBytes()
+                    },
+                )
+                val requiredMetalBlockStateConstants = setOf(
+                    "minecraft:block",
+                    "minecraft:item",
+                    "etherology:azel_block",
+                    "etherology:ebony_block",
+                    "etherology:ethril_block",
+                    "net/minecraft/block/Block",
+                    "net/minecraft/block/BlockState",
+                    "net/minecraft/item/BlockItem",
+                    "net/minecraft/item/ItemStack",
+                    "net/minecraft/nbt/NbtCompound",
+                    "setBlockState",
+                    "getBlock",
+                    "getBlockFromItem",
+                    "asItem",
+                    "getHardness",
+                    "getBlastResistance",
+                    "getMapColor",
+                    "getSoundGroup",
+                    "isToolRequired",
+                    "getLuminance",
+                    "isOpaque",
+                    "isFullCube",
+                    "isIn",
+                    "PICKAXE_MINEABLE",
+                    "NEEDS_IRON_TOOL",
+                    "BEACON_BASE_BLOCKS",
+                    "METAL",
+                    "writeNbt",
+                    "fromNbt",
+                    "Count",
+                    "id",
+                )
+                check(
+                    requiredMetalBlockStateConstants.all(
+                        metalBlockStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its metal-block registry contract: " +
+                        (requiredMetalBlockStateConstants - metalBlockStateConstants)
+                            .sorted()
+                }
+
                 val reloadResourceDigests = mapOf(
                     "probe-inputs/ether-source-reload-pack/pack.mcmeta" to
                         "0ba7dc05c7ce2955fab716f5c4a2a1ca9cde1da6ed0a06b0f06b937c11b69e00",
@@ -5552,6 +5991,26 @@ if (minecraftVersion == "1.20.1") {
                     "material_item_registry_stable_after_reload",
                     "material_item_properties_stable_after_reload",
                     "material_item_stack_nbt_stable_after_reload",
+                    "metal_blocks",
+                    "registry:metal_block_ids_exact",
+                    "registry:metal_block_item_ids_exact",
+                    "metal_block_capture_error",
+                    "metal_block_runtime_classes_exact",
+                    "metal_block_item_mappings_exact",
+                    "metal_block_properties_exact",
+                    "metal_block_tags_exact",
+                    "metal_block_stack_nbt_round_trips_exact",
+                    "metal_block_save_representations_exact",
+                    "metal_blocks_captured_after_server_data_load",
+                    "server_started_metal_blocks_rechecked",
+                    "metal_block_placement_positions_exact",
+                    "metal_block_placed_ids_exact",
+                    "metal_block_placement_exact",
+                    "metal_block_registry_stable_after_reload",
+                    "metal_block_properties_stable_after_reload",
+                    "metal_block_tags_stable_after_reload",
+                    "metal_block_stack_nbt_stable_after_reload",
+                    "metal_block_placement_stable_after_reload",
                     "loot_condition",
                     "registry:loot_condition:etherology:random_chance_with_fortune",
                     "registry:loot_condition_etherology_ids_exact",
@@ -5595,6 +6054,7 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState",
                     "dev/theplumteam/etherology/e2e/server/ParticleProbeState",
                     "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState",
+                    "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
@@ -5694,10 +6154,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 material-item server probe."
+                "Builds and validates the Forge 1.20.1 metal-block server probe."
             dependsOn(
-                validateForgeMaterialItemRegistryStaticMilestone,
-                forgeMaterialItemRegistryServerSafetyTest,
+                validateForgeMetalBlockRegistryStaticMilestone,
+                forgeMetalBlockRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,

@@ -138,26 +138,33 @@ not replace any standard scenario or establish complete loader readiness.
 | `ether-source-reload` | `forge-1.20.1` | Bounded dedicated-server data-reload vertical in a fresh repository-owned Loom-userdev profile: Common is the sole listener/default-data owner; exact initial 23-entry map with corrected `etherology:primoshard_rella = 4` and `minecraft:redstone = 2`; a real `reload` command with an enabled probe pack; exact reloaded 24-entry map with `minecraft:redstone = 9.5` and added `minecraft:diamond = 13`; stable game-event registry and tags; stable loot-condition registry and evaluated behavior while the probe `LootTable` instance is replaced; world save, normal stop, exit code zero, and no `ERROR` or `FATAL` marker. This headless scenario requires no screenshots and does not satisfy furnace/machine consumption, the wider Ether network, the full authoritative registry, sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness. |
 | `enchantment-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: Common owns exactly `etherology:peal` and `etherology:reflection` through `ru.feytox.etherology.registry.misc.PealEnchantment` and `ru.feytox.etherology.registry.misc.ReflectionEnchantment`; Peal has maximum level 3, minimum powers `1, 12, 23`, and maximum powers `21, 32, 43`; Reflection has maximum level 1, minimum power `1`, and maximum power `21`; both are the only Etherology entries in the singular `minecraft:non_treasure` tag; exact registry identities, properties, and tag membership remain stable at server start and through a real `reload`; the previously accepted game-event, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and does not prove enchantment applicability, Peal shockwaves, projectile reflection, client visuals, complete combat parity, the full authoritative registry, or release readiness. |
 | `particle-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: `SharedParticleTypes` owns the exact 22 canonical IDs; exact type classes, eight payload families, `shouldAlwaysSpawn = false`, codecs, parameter factories, sample command strings, packet/codec round trips, and seal order/colors/textures are captured without error and remain stable at server start and through a real `reload`; the item parser accepts namespaced IDs; all earlier enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and does not install or exercise Forge client particle factories/renderers, emitted visuals, gameplay consumers, the full authoritative registry, or release readiness. |
-| `material-item-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload proof in a fresh repository-owned Loom-userdev profile: `SharedMaterialItems` owns exactly `etheroscope`, `thuja_oil`, `azel_ingot`, `azel_nugget`, `ethril_ingot`, `ethril_nugget`, `ebony_ingot`, `ebony_nugget`, `enriched_attrahite`, `raw_azel`, `attrahite_brick`, `binder`, `ebony`, and `resonating_wand`; all resolve to vanilla `Item`, `enriched_attrahite` has maximum count 16, and the other 13 have maximum count 64; exact `ItemStack` NBT ID/count/key round trips and deterministic save representations remain stable at server start and through a real `reload`; all historical particle, enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and proves registry properties and in-process `ItemStack` NBT round-trip/reload evidence only. It does not execute player `/give`, a second JVM or restart, Forge fuel registration, creative-tab placement, recipes, client gameplay, the full authoritative registry, or release readiness. |
+| `material-item-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: `SharedMaterialItems` owns exactly `etheroscope`, `thuja_oil`, `azel_ingot`, `azel_nugget`, `ethril_ingot`, `ethril_nugget`, `ebony_ingot`, `ebony_nugget`, `enriched_attrahite`, `raw_azel`, `attrahite_brick`, `binder`, `ebony`, and `resonating_wand`; all resolve to vanilla `Item`, `enriched_attrahite` has maximum count 16, and the other 13 have maximum count 64; exact `ItemStack` NBT ID/count/key round trips and deterministic save representations remain stable at server start and through a real `reload`; all historical particle, enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and proves registry properties and in-process `ItemStack` NBT round-trip/reload evidence only. It does not execute player `/give`, a second JVM or restart, Forge fuel registration, creative-tab placement, recipes, client gameplay, the full authoritative registry, or release readiness. |
+| `metal-block-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload proof in a fresh repository-owned Loom-userdev profile: `SharedMetalBlocks` and `SharedMetalBlockItems` own exactly `azel_block`, `ethril_block`, and `ebony_block` as vanilla `Block` instances and mapped `BlockItem`s; exact runtime classes/mappings, vanilla-copy properties, selected pickaxe/iron-tool/beacon tags, and maximum-count stack NBT remain stable at server start and through a real `reload`; the three blocks are placed directly at bounded server-world positions and the exact placed IDs remain stable through reload; all historical material-item, particle, enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots. It does not prove a second JVM or restart persistence, player `/give` or player placement, mining/drop behavior, beacon activation, recipe execution, creative-tab interaction, client rendering, the full authoritative registry, or release readiness. |
 
-The current accepted cumulative record is `material-item-registry` report
-schema 7 with 163 of 163 passing assertions in
-`docs/evidence/forge-1.20.1/material-item-registry-server-v11`. It binds
+The current accepted cumulative record is `metal-block-registry` report
+schema 8 with 188 of 188 passing assertions in
+`docs/evidence/forge-1.20.1/metal-block-registry-server-v13`. It binds
 profile-manifest SHA-256
-`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`,
+`c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`,
 report SHA-256
-`f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
+`b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`,
 server-log SHA-256
-`ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
+`f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`,
 and archive-manifest SHA-256
-`9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
+`0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
 The v6 `ether-source-reload`, v7 `enchantment-registry`, and v10
-`particle-registry` archives remain immutable historical evidence; their
-accepted states are included in and superseded by the cumulative v11 runtime
-proof. This Loom-userdev record binds the checked-out
-source-set execution, not a packaged Forge JAR. Frozen archives prove
-capture-time integrity; current-source or rebuilt-artifact identity still
-requires a new isolated native run.
+`particle-registry` archives remain immutable historical evidence. The v11
+`material-item-registry` archive is the immediate historical predecessor; all
+accepted states are included in and superseded by the cumulative v13 runtime
+proof. The v12 metal-block profile was consumed by a failed diagnostic tag-load
+run and has no accepted archive. In the two tag files packaged by this bounded
+Forge slice—`mineable/pickaxe` and `needs_iron_tool`—still-unported IDs were
+then made optional before the fresh v13 capture; `needs_stone_tool` remains
+unchanged and outside the slice. This Loom-userdev record captures observations
+from an execution of the then-checked-out source set; it binds neither exact
+source bytes nor a packaged Forge JAR. Frozen archives prove capture-time
+integrity; current-source or rebuilt-artifact identity still requires a new
+isolated native run.
 
 ## Screenshot contract
 

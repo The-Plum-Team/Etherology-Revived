@@ -1,0 +1,18 @@
+{
+  "exit_code": 0,
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v13",
+  "profile_manifest": {
+    "relative_path": "scripts/e2e/forge-server-1.20.1-profile.json",
+    "sha256": "c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11",
+    "size": 1196
+  },
+  "scenario": "metal-block-registry",
+  "schema": 1,
+  "server_log": {
+    "relative_path": "logs/latest.log",
+    "sha256": "f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4",
+    "size": 18010
+  },
+  "task_path": ":forge:1.20.1:runRegistryFoundationServerProbe",
+  "timed_out": false
+}

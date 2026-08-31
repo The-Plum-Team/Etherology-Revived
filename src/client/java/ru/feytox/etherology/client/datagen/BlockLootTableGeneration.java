@@ -23,6 +23,9 @@ import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_CHANNEL;
 import static ru.feytox.etherology.registry.block.EBlocks.SEALS;
 import static ru.feytox.etherology.registry.block.EBlocks.SEDIMENTARY_STONES;
 import static ru.feytox.etherology.registry.block.EBlocks.SPILL_BARREL;
+import static ru.feytox.etherology.registry.block.SharedMetalBlocks.AZEL_BLOCK;
+import static ru.feytox.etherology.registry.block.SharedMetalBlocks.EBONY_BLOCK;
+import static ru.feytox.etherology.registry.block.SharedMetalBlocks.ETHRIL_BLOCK;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.THUJA_SEEDS;
 import static ru.feytox.etherology.registry.item.SharedMaterialItems.ENRICHED_ATTRAHITE;
 
@@ -48,6 +51,9 @@ public class BlockLootTableGeneration extends FabricBlockLootTableProvider {
         addDrop(PEACH_WALL_HANGING_SIGN, DecoBlockItems.PEACH_HANGING_SIGN);
         addDrop(PEACH_LEAVES, leavesDrops(PEACH_LEAVES, PEACH_SAPLING, SAPLING_DROP_CHANCE));
         addDrop(WEEPING_PEACH_LOG, drops(WEEPING_PEACH_LOG, PEACH_LOG));
+        addDrop(AZEL_BLOCK.get());
+        addDrop(ETHRIL_BLOCK.get());
+        addDrop(EBONY_BLOCK.get());
 
         addDrop(ATTRAHITE, dropsWithSilkTouch(ATTRAHITE, applyExplosionDecay(ATTRAHITE, ItemEntry.builder(ENRICHED_ATTRAHITE.get()).conditionally(RandomChanceWithFortuneCondition.builder(0.05F, 0.05F)))));
         generateChannelDrop();

@@ -239,6 +239,8 @@ final class SharedSoundsBytecodeTest {
         assertEquals(
                 List.of(
                         "ru/feytox/etherology/registry/block/SharedBlocks#register()V",
+                        "ru/feytox/etherology/registry/block/SharedMetalBlocks#register()V",
+                        "ru/feytox/etherology/registry/item/SharedMetalBlockItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V",
                         "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",

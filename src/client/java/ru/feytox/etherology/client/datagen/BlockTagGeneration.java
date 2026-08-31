@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.minecraft.block.Block;
 import net.minecraft.data.family.BlockFamily;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.registry.tag.TagKey;
@@ -12,6 +13,7 @@ import ru.feytox.etherology.data.EBlockTags;
 import ru.feytox.etherology.registry.block.DecoBlocks;
 import ru.feytox.etherology.registry.block.EBlockFamilies;
 import ru.feytox.etherology.registry.block.ExtraBlocksRegistry;
+import ru.feytox.etherology.registry.block.SharedMetalBlocks;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,7 +36,7 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
         addBlocks(BlockTags.STONE_BRICKS, DecoBlocks.POLISHED_SLITHERITE_BRICKS, DecoBlocks.CHISELED_POLISHED_SLITHERITE_BRICKS, DecoBlocks.CRACKED_POLISHED_SLITHERITE_BRICKS);
 
         // stone families
-        addAllBlocks(BlockTags.PICKAXE_MINEABLE, STONE_FAMILIES);
+        addAllOptionalBlocks(BlockTags.PICKAXE_MINEABLE, STONE_FAMILIES);
         addVariant(BlockTags.SLABS, BlockFamily.Variant.SLAB, STONE_FAMILIES);
         addVariant(BlockTags.STAIRS, BlockFamily.Variant.STAIRS, STONE_FAMILIES);
         addVariant(BlockTags.WALLS, BlockFamily.Variant.WALL, STONE_FAMILIES);
@@ -67,16 +69,29 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
         addBlocks(BlockTags.SAPLINGS, DecoBlocks.PEACH_SAPLING);
         addBlocks(BlockTags.REPLACEABLE_BY_TREES, DecoBlocks.THUJA, DecoBlocks.THUJA_PLANT, DecoBlocks.LIGHTELET);
 
-        addBlocks(BlockTags.BEACON_BASE_BLOCKS, DecoBlocks.EBONY_BLOCK, DecoBlocks.ETHRIL_BLOCK);
+        addBlocks(
+                BlockTags.BEACON_BASE_BLOCKS,
+                SharedMetalBlocks.EBONY_BLOCK.get(),
+                SharedMetalBlocks.ETHRIL_BLOCK.get()
+        );
 
+        Block[] sharedStonePick = {ETHEREAL_STORAGE, ETHEREAL_CHANNEL};
         Block[] needsStonePick = {BREWING_CAULDRON, ETHEREAL_STORAGE, ETHEREAL_CHANNEL, ETHEREAL_FORK, ETHEREAL_SOCKET, ETHEREAL_FURNACE, SPINNER, SAMOVAR_BLOCK, DecoBlocks.ATTRAHITE, TUNING_FORK};
-        Block[] needsIronPick = {DecoBlocks.AZEL_BLOCK, DecoBlocks.EBONY_BLOCK, DecoBlocks.ETHRIL_BLOCK, METRONOME};
-        addBlocks(BlockTags.PICKAXE_MINEABLE, PEDESTAL_BLOCK, JUG, CLAY_JUG, ARMILLARY_SPHERE, JEWELRY_TABLE);
-        addBlocks(BlockTags.PICKAXE_MINEABLE, SEDIMENTARY_STONES);
-        addBlocks(BlockTags.PICKAXE_MINEABLE, needsStonePick);
-        addBlocks(BlockTags.PICKAXE_MINEABLE, needsIronPick);
+        Block[] deferredStonePick = {BREWING_CAULDRON, ETHEREAL_FORK, ETHEREAL_SOCKET, ETHEREAL_FURNACE, SPINNER, SAMOVAR_BLOCK, DecoBlocks.ATTRAHITE, TUNING_FORK};
+        Block[] sharedIronPick = {
+                SharedMetalBlocks.AZEL_BLOCK.get(),
+                SharedMetalBlocks.EBONY_BLOCK.get(),
+                SharedMetalBlocks.ETHRIL_BLOCK.get()
+        };
+        addOptionalBlocks(BlockTags.PICKAXE_MINEABLE, PEDESTAL_BLOCK, JUG, CLAY_JUG, ARMILLARY_SPHERE, JEWELRY_TABLE);
+        addOptionalBlocks(BlockTags.PICKAXE_MINEABLE, SEDIMENTARY_STONES);
+        addBlocks(BlockTags.PICKAXE_MINEABLE, sharedStonePick);
+        addOptionalBlocks(BlockTags.PICKAXE_MINEABLE, deferredStonePick);
+        addBlocks(BlockTags.PICKAXE_MINEABLE, sharedIronPick);
+        addOptionalBlocks(BlockTags.PICKAXE_MINEABLE, METRONOME);
         addBlocks(BlockTags.NEEDS_STONE_TOOL, needsStonePick);
-        addBlocks(BlockTags.NEEDS_IRON_TOOL, needsIronPick);
+        addBlocks(BlockTags.NEEDS_IRON_TOOL, sharedIronPick);
+        addOptionalBlocks(BlockTags.NEEDS_IRON_TOOL, METRONOME);
 
         addAllBlocks(BlockTags.AXE_MINEABLE, PEACH);
         addBlocks(BlockTags.AXE_MINEABLE, ARCANELIGHT_DETECTOR_BLOCK, FURNITURE_SLAB, CLOSET_SLAB, SHELF_SLAB, EMPOWERMENT_TABLE, SPILL_BARREL, CRATE, LEVITATOR, INVENTOR_TABLE, CHANNEL_CASE, DecoBlocks.LIGHTELET);
@@ -89,6 +104,12 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
 
     private void addBlocks(TagKey<Block> tagKey, Block... blocks) {
         getOrCreateTagBuilder(tagKey).add(blocks);
+    }
+
+    private void addOptionalBlocks(TagKey<Block> tagKey, Block... blocks) {
+        val builder = getOrCreateTagBuilder(tagKey);
+        Arrays.stream(blocks).forEach(block ->
+                Registries.BLOCK.getKey(block).ifPresent(builder::addOptional));
     }
 
     @SafeVarargs
@@ -104,6 +125,15 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
         }
         Block[] blocksArray = allBlocks.toArray(new Block[0]);
         addBlocks(tagKey, blocksArray);
+    }
+
+    private void addAllOptionalBlocks(TagKey<Block> tagKey, BlockFamily... blockFamilies) {
+        List<Block> allBlocks = new ArrayList<>();
+        for (BlockFamily blockFamily : blockFamilies) {
+            allBlocks.addAll(EBlockFamilies.getBlocks(blockFamily));
+        }
+        Block[] blocksArray = allBlocks.toArray(new Block[0]);
+        addOptionalBlocks(tagKey, blocksArray);
     }
 
     private void addVariant(TagKey<Block> tagKey, BlockFamily.Variant variant, BlockFamily... blockFamilies) {

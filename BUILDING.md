@@ -23,7 +23,7 @@ Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 E2E ru
 in a real macOS client and integrated world. Forge has a native JavaFML entry point,
 metadata, accepted bounded Ethereal Storage and Ethereal Channel verticals, and accepted
 shared-sound, game-event, loot-condition, Ether-source reload, enchantment-registry,
-particle-registry, and behavior-free material-item milestones. Storage and Channel have separate
+particle-registry, behavior-free material-item, and behavior-free metal-block milestones. Storage and Channel have separate
 packaged save/restart evidence from fresh isolated
 macOS clients. `SharedSounds` owns the exact 14
 Common sound IDs, while the packaged resources close their 21 mono 44.1 kHz OGG files,
@@ -66,6 +66,17 @@ loader, removal of the former eager fields, and byte-exact models, textures,
 and English names in the relevant Common, transformed, Fabric, and Forge
 artifacts.
 
+`SharedMetalBlocks` owns exactly `azel_block`, `ethril_block`, and
+`ebony_block`; `SharedMetalBlockItems` owns the three corresponding placeable
+`BlockItem` declarations. The static gate checks exact Common ownership,
+deferred registration/attachment order, block-to-item mappings, vanilla-copy
+settings, packaged models/textures/names, self-drop tables, compression and
+decompression recipes, and selected mining/beacon tags across both loaders.
+In the two tag files packaged by this bounded Forge slice—`mineable/pickaxe`
+and `needs_iron_tool`—still-unported IDs are optional while the three accepted
+metal-block IDs remain required. `needs_stone_tool` is unchanged and outside
+this Forge resource slice.
+
 The historical registry-foundation artifact checks are paired with a fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v4` Loom-userdev run on a real Java 17, Forge 47.4.9
 dedicated server. The headless `registry-foundation` scenario passed 39 of 39 ordered assertions
@@ -81,7 +92,7 @@ proves the condition and serializer, not Attrahite
 gameplay or drop parity. No screenshots or native sound-playback evidence are claimed. The earlier
 Fabric `v20` packaged client archive remains historical.
 
-The current Fabric artifact was also exercised in the fresh repository-owned
+The packaged Fabric artifact at the material-item checkpoint was exercised in the fresh repository-owned
 `etherology-e2e-fabric-1.20.1-v21` profile after the shared material-item
 rebuild. Its packaged Phase 0 smoke passed 42 of 42 ordered assertions, ran for
 211 client ticks, captured two native 1920x1080 screenshots with a
@@ -96,33 +107,39 @@ their fuel, creative-tab, recipe, or other gameplay consumers; exact current
 cross-loader ownership, IDs, properties, and resources are covered by the
 static artifact gates. The migrated Fabric consumers compile and datagen
 completes, but their individual mappings and behavior remain outside this
-bounded native scenario.
+bounded native scenario. It predates the later metal-block rebuild and does not
+prove current client rendering or interaction for those blocks.
 
 The current cumulative server proof is the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v11` `material-item-registry` run. Its
-schema-7 report passed 163 of 163 ordered assertions on a real Java 17 Forge
-47.4.9 dedicated server. It resolved the 14 exact IDs, their vanilla `Item`
-runtime class and maximum counts, and exact `ItemStack` NBT ID/count/key round
-trips after server-data load. Registry properties and NBT observations were
-unchanged at server start and after a real `reload`. The cumulative contract
-also re-proved the particle, enchantment, game-event/tag, loot-condition, and
-exact initial/reloaded Ether-source states. The server saved the world, stopped
-normally, exited zero, and logged no fatal, forbidden client-startup, or
-unexpected client-class marker. This headless scenario produced no
-screenshots. Its immutable archive is `material-item-registry-server-v11`,
+`etherology-e2e-forge-server-1.20.1-v13` `metal-block-registry` run. Its
+schema-8 report passed 188 of 188 ordered assertions on a real Java 17 Forge
+47.4.9 dedicated server. It resolved the three exact shared blocks and three
+corresponding `BlockItem`s, verified their runtime classes/mappings,
+properties, selected tags, and exact maximum-count stack NBT, and placed them
+directly at three bounded world positions. Registry, property, tag, NBT, and
+placed-block observations were unchanged after a real `reload`. The cumulative
+contract also re-proved the v11 material-item and earlier registry/reload
+states. The world saved, the server stopped normally, the launcher exited
+zero, and the copied log passed the verifier. This headless scenario produced
+no screenshots. Its immutable archive is `metal-block-registry-server-v13`,
 with profile-manifest SHA-256
-`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`,
+`c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`,
 report SHA-256
-`f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
+`b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`,
 server-log SHA-256
-`ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
+`f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`,
 and archive-manifest SHA-256
-`9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
-This proves registry properties and in-process `ItemStack` NBT
-round-trip/reload stability only. It does not prove player `/give`, a second
-JVM or server restart, Forge fuel registration, creative-tab placement,
-recipes, client gameplay, or release readiness. The v6 Ether-source, v7
-enchantment, and v10 particle archives remain immutable historical evidence.
+`0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
+This proves only the bounded registry/classes/mappings/properties/selected-tag,
+in-process NBT, direct world-placement-through-reload, and normal save/stop
+contract. It does not prove restart persistence, player `/give` or placement,
+mining/drop behavior, beacon activation, recipe execution, creative tabs,
+client rendering, or release readiness. The v6 Ether-source, v7 enchantment,
+v10 particle, and v11 material-item archives remain immutable historical
+evidence. The consumed v12 diagnostic profile is not accepted evidence.
+The immutable v13 archive proves capture-time Loom-userdev observations and
+payload integrity only; it does not compare or cryptographically bind later
+sources or rebuilt JARs. Current static artifact checks are a separate boundary.
 The release artifact remains deliberately blocked on the rest of the
 authoritative registry spine and the remaining gameplay and native-readiness
 work.
@@ -165,24 +182,26 @@ Compile and test every accepted bounded Forge milestone without claiming a relea
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:validateForgeMaterialItemRegistryMilestone \
-  :forge:1.20.1:validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity \
+  :forge:1.20.1:validateForgeMetalBlockRegistryMilestone \
+  :forge:1.20.1:validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeChannelEvidenceArchiveIntegrity \
   :forge:1.20.1:verifyE2eUnderTestIsolation \
   :forge:1.20.1:verifyForgePortGateClosed
 ```
 
-The combined positive material-item task includes the accepted sound,
+The combined positive metal-block task includes the accepted sound,
 game-event, loot-condition, registry-foundation, Ether-source, enchantment,
 and particle tasks; static registry/resource/probe checks; every frozen
-predecessor archive; and the current v11 material-item archive. It exercises
+predecessor archive; and the current v13 metal-block archive. It exercises
 Common, Fabric, and Forge tests, both transformed Common artifacts, the Fabric
 development and remapped production JARs, and the Forge shadow JAR. It proves
-the exact 14 declarations, sole ownership, lazy supplier lifecycle, loader
-bootstrap paths, absence of the former eager fields, and byte-exact packaged
-models, textures, and English names. Native v11 adds only server registry
-properties and `ItemStack` NBT round-trip/reload evidence; it does not infer
-fuel, creative-tab, recipe, or client gameplay from that state.
+the inherited exact 14 material-item declarations and the three exact block
+plus three exact block-item declarations, sole ownership, lazy supplier
+lifecycle, loader bootstrap paths, absence of the former eager fields, and
+exact packaged resources. Native v13 adds only the bounded server registry,
+property/tag/NBT, direct world-placement-through-reload, and save/stop proof;
+it does not infer player, mining, beacon, recipe, creative-tab, or client
+behavior from that state.
 
 `verifyRegistryFoundationServerProbe` builds and validates the isolated server-only probe, its Java 17 Loom
 run configuration, and its separation from production artifacts. It deliberately does not launch
@@ -190,12 +209,12 @@ Minecraft. The under-test isolation task verifies the two explicit client-test a
 is the blocked release artifact. The final task is diagnostic only: it reports the broader
 authoritative registry spine as the first incomplete forward milestone.
 
-## Forge dedicated-server material-item-registry proof
+## Forge dedicated-server metal-block-registry proof
 
-The native material-item-registry proof is a one-shot run in a new
+The native metal-block-registry proof is a one-shot run in a new
 repository-owned profile. `provision` refuses every existing target rather than
-adopting, deleting, or resetting it. The accepted v11 runtime is immutable. The
-commands below record the accepted v11 workflow; `validate` and both verifier
+adopting, deleting, or resetting it. The accepted v13 runtime is immutable. The
+commands below record the accepted v13 workflow; `validate` and both verifier
 commands remain safe, but do not invoke `provision`, `check`, or `run` again
 until every profile, contract, directory, and verifier literal has been
 advanced to a fresh version.
@@ -205,38 +224,44 @@ python3 -B scripts/e2e/forge_server.py validate
 python3 -B scripts/e2e/forge_server.py provision
 python3 -B scripts/e2e/forge_server.py check
 python3 -B scripts/e2e/forge_server.py run
-python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v11
-python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
-  --archive docs/evidence/forge-1.20.1/material-item-registry-server-v11
+python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v13
+python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
+  --archive docs/evidence/forge-1.20.1/metal-block-registry-server-v13
 ```
 
 The runner invokes the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task under `caffeinate`, with a
 JDK 21-or-newer Gradle host and Java 17 dedicated server. It independently
-bounds the process and server logs, validates all 163 ordered assertions and the
+bounds the process and server logs, validates all 188 ordered assertions and the
 full mod inventory, requires a saved world, normal Forge lifecycle, no crash
 report, no fatal/client marker, and exit code zero, and publishes its done
-marker last. Report schema 7 records the 14 exact material-item IDs, vanilla
-runtime class, maximum counts, `ItemStack` NBT ID/count/keys, exact in-process
-round trips, real reload stability, and the cumulative prior registry and
-Ether-source states. The probe records
+marker last. Report schema 8 records the three exact metal block and block-item
+IDs, vanilla runtime classes and mappings, hardness/blast/map-color and other
+block properties, selected mining/beacon tags, maximum-count `ItemStack` NBT,
+direct placement at three bounded world positions, real reload stability, and
+the cumulative prior registry and Ether-source states. The probe records
 `ServerStoppedEvent` and atomically publishes its report before scheduling a
 probe-only terminator. That narrow workaround joins the actual stopped-event
 server thread before `System.exit` and prevents a proven Loom-userdev
 non-daemon thread leak from hanging Gradle; it is not production mod behavior.
-This is a headless registry-properties and `ItemStack` NBT
-round-trip/reload proof, so screenshots are neither produced nor claimed. It
-does not execute player `/give`, a second JVM or server restart, Forge fuel
-registration, creative-tab placement, recipes, or client gameplay. It also
-does not prove the full authoritative registry or release readiness.
+This is a headless bounded registry/property/tag/NBT and direct
+world-placement-through-reload proof, so screenshots are neither produced nor
+claimed. It does not execute player `/give` or player placement, a second JVM
+or server restart, mining/drop behavior, beacon activation, recipe execution,
+creative-tab interaction, or client rendering. It also does not prove the full
+authoritative registry or release readiness. The v12 profile was consumed by a
+failed diagnostic launch whose tag-load errors exposed required unported
+references in the two tag files packaged by this Forge slice. Those references
+are now optional, while `needs_stone_tool` remains unchanged and outside the
+slice; v12 has no accepted archive, and v13 used a fresh runtime after the fix.
 
 ### Historical v10 particle-registry proof
 
 The immutable `particle-registry-server-v10` archive remains the accepted
 historical proof for the exact 22 shared particle declarations and their
 server-side type/factory/codec/wire/seal contracts. Its schema-6 report contains
-138 passing assertions, all of which are re-proved cumulatively by v11.
+138 passing assertions, all of which are re-proved cumulatively by v13.
 Validate it only through the pinned historical verifier; never provision or
 reuse the v10 runtime:
 
@@ -250,7 +275,7 @@ python3 -B scripts/e2e/forge_server_particle_evidence_v10.py \
 The immutable `enchantment-registry-server-v7` archive remains the accepted
 historical proof for exact Peal and Reflection registry properties and
 non-treasure tag membership. Its schema-5 report contains 95 passing
-assertions, which are re-proved cumulatively by v11. Validate it only through
+assertions, which are re-proved cumulatively by v13. Validate it only through
 its pinned verifier:
 
 ```shell

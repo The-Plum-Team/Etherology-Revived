@@ -194,11 +194,123 @@ SharedEnchantments registry foundation has since passed. The exact shared
 particle registry and server-side wire contract have also passed, but no native
 sound-playback, enchantment-gameplay, or particle-rendering E2E was run. The
 14 behavior-free material items and their bounded server registry/NBT contract
-have passed as well. The
+have passed as well. The three behavior-free metal blocks, their corresponding
+block items, and their bounded server registry/property/tag/NBT/placement
+contract have now passed. The
 broader authoritative registry spine is the next forward gate. The Forge
 release gate remains closed.
 
-## Current material-item-registry dedicated server (v11)
+## Current metal-block-registry dedicated server (v13)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v13`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v13`
+- Scenario: `metal-block-registry`
+- Tracked profile manifest SHA-256:
+  `c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`
+- Tracked profile manifest size: `1196` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: fresh repository-owned Loom-userdev dedicated server
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `8`; archive-manifest schema: `1`
+- Report status: `passed`
+- Assertions: `188` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`
+
+`SharedMetalBlocks` is the sole Common deferred block owner and
+`SharedMetalBlockItems` is the sole Common deferred item owner for exactly:
+
+```text
+etherology:azel_block, etherology:ebony_block, etherology:ethril_block
+```
+
+The static gate verifies the exact declarations, attachment order, absence of
+the former eager `DecoBlocks` fields, correct block-to-item map enrollment, and
+packaged models, textures, English names, self-drop tables, compression and
+decompression recipes, and selected tags across the Common and loader
+artifacts. In the two tag files packaged by this bounded Forge slice—
+`mineable/pickaxe` and `needs_iron_tool`—still-unported IDs use
+`required: false`, while the three accepted metal-block IDs remain required.
+`needs_stone_tool` is unchanged and outside this Forge resource slice. This
+optionality fix prevents the partial Forge catalog from failing data load
+without pretending the unported blocks exist.
+
+The native server resolved every block as `net.minecraft.block.Block` and
+every corresponding item as `net.minecraft.item.BlockItem`, with exact
+block-item and `Block.asItem()` mappings. Azel had hardness `5`, blast
+resistance `6`, and lapis-blue map color; ethril had hardness `3`, blast
+resistance `6`, and gold map color; ebony had hardness `5`, blast resistance
+`6`, and orange map color. All three used the metal sound group, required the
+correct tool, had zero luminance, were opaque full cubes, had maximum item
+count 64, were pickaxe-mineable, and required an iron-tier tool. Only ethril
+and ebony were members of the beacon-base tag. Maximum-count stacks serialized
+exactly the `id` and `Count` keys and round-tripped to the same items/counts.
+
+The probe directly placed azel, ebony, and ethril at `8,200,8`, `9,200,8`, and
+`10,200,8`. Those exact placed IDs, along with registry identities, mappings,
+properties, selected tags, and stack NBT, remained stable after a real
+`reload`. The report cumulatively re-proved the v11 material-item, v10 particle,
+v7 enchantment, game-event/tag, loot-condition, and Ether-source contracts. The
+exact lifecycle was `tags_updated_initial`, `server_started`,
+`reload_requested`, `tags_updated_reload`, `reload_command_returned`,
+`stop_requested`, `server_stopping`, and `server_stopped`. The world saved,
+normal `stop(false)` completed, the launcher exited zero, and the copied log
+passed the strict verifier scan.
+
+Frozen file digests:
+
+- `metal-block-registry-server-v13/archive-manifest.json`:
+  `0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`
+- `metal-block-registry-server-v13/reports/report.json`:
+  `b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`
+- `metal-block-registry-server-v13/reports/launcher-result.json`:
+  `ef3c7b162687acff8d919292b482585aa6859918a186c133f96028d6114be54f`
+- `metal-block-registry-server-v13/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `metal-block-registry-server-v13/logs/latest.log`:
+  `f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`
+
+Validate the five-file archive without the ignored live runtime:
+
+```bash
+python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
+  --archive docs/evidence/forge-1.20.1/metal-block-registry-server-v13
+```
+
+```text
+Validated archived metal-block-registry for etherology-e2e-forge-server-1.20.1-v13: 188 assertions
+Server log SHA-256: f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+`validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity` validates the
+immutable archive and pinned v13 runner/verifier contract.
+`validateForgeMetalBlockRegistryMilestone` combines it with current static,
+bytecode, resource, bootstrap, artifact, and isolation checks. The archive
+proves capture-time integrity; current-source or rebuilt-artifact equality
+requires another isolated native run.
+
+This headless evidence proves only exact registry/classes/mappings/properties,
+selected tags, in-process stack NBT, direct server-world placement through
+reload, and normal save/stop. It creates no screenshots and does not prove a
+second JVM or restart persistence, player `/give` or player placement,
+mining/drop behavior, beacon activation, recipe execution, creative-tab
+interaction, client rendering, the full authoritative registry, a complete
+port, or release readiness.
+
+The v12 profile was consumed by a failed diagnostic launch that exposed
+required unported references in the packaged `mineable/pickaxe` and
+`needs_iron_tool` files. It was not sealed or accepted as an archive.
+`needs_stone_tool` remains unchanged and outside this Forge resource slice.
+The optional-reference fix was followed by the separate fresh v13 run
+documented above.
+
+## Historical material-item-registry dedicated server (v11)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v11`
 - Runtime directory:
@@ -651,17 +763,18 @@ The canonical Attrahite resource remains Fabric-only because its items are not
 ported. The synthetic table proves the shared condition and serializer, not
 Attrahite gameplay or drop parity. Native sound playback, Forge's unsupported
 custom sculk frequency, the full authoritative registry spine, and the broader
-gameplay/native E2E matrix remain deferred. The fresh Fabric `v21` Phase 0
-archive exercises the current packaged client artifact after the shared
-material-item rebuild, but its 42 baseline assertions do not directly test the
-14 material IDs or their gameplay consumers. Fabric `v20` remains an immutable
-historical archive.
+gameplay/native E2E matrix remain deferred. The Fabric `v21` Phase 0 archive
+exercises the packaged client artifact at the shared material-item checkpoint,
+but its 42 baseline assertions do not directly test the 14 material IDs or
+their gameplay consumers. It predates the metal-block rebuild and is not
+current client rendering evidence for those blocks. Fabric `v20` remains an
+immutable historical archive.
 
 ## Historical shared game-event dedicated server (v2)
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v10 particle-registry archive is the current
+registry-foundation proof. The v13 metal-block archive is the current
 cumulative dedicated-server proof. No current acceptance task or verifier
 treats v2 as the active archive.
 
@@ -746,4 +859,5 @@ closed on the broader authoritative registry spine. The v4 section above is
 the superseding registry-foundation proof; v6 is the historical Ether-source
 reload proof, v7 is the historical enchantment-registry proof, and v10 is the
 historical particle-registry proof. The v11 material-item archive is the
-current cumulative dedicated-server proof.
+immediate historical predecessor; v13 is the current cumulative
+metal-block-registry proof.

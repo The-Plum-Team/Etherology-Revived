@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item/metal-block registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -27,7 +27,8 @@ and the bounded [Forge 1.20.1 runtime evidence](docs/evidence/forge-1.20.1/READM
 The next Forge forward gate is the remainder of the authoritative registry
 spine. Its bounded shared-sound, game-event, loot-condition, enchantment,
 particle, behavior-free material-item, and Ether-source reload-listener steps
-are complete.
+are complete. The three behavior-free metal blocks and their placeable block
+items are complete as another bounded step.
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`, whose internal ID is
 `etherology_resonance` and whose range is 16. Both loaders package exact
@@ -72,39 +73,55 @@ The static gate checks the exact owner, fields, IDs, loader attachments,
 absence of the former eager fields, and byte-exact models, textures, and
 English names across the Common and loader artifacts.
 
-The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
-fresh repository-owned `etherology-e2e-forge-server-1.20.1-v11` profile and
-the `material-item-registry` scenario with a real `reload` command. Report
-schema 7 passed all 163 ordered assertions. It re-proved the earlier
-game-event, loot-condition, Ether-source, enchantment, and particle states,
-then resolved all 14 material items after server-data load, at server start,
-and after reload. It checked their exact IDs, vanilla `Item` class, maximum
-stack counts, and exact `ItemStack` NBT ID/count/key round trips. The server
-saved the world, stopped normally, exited with code zero, and logged no fatal,
-forbidden client-startup, or unexpected client-class marker. Because this was
-a headless dedicated-server scenario, it produced no screenshots. The
-immutable archive is
-[`material-item-registry-server-v11`](docs/evidence/forge-1.20.1/material-item-registry-server-v11),
-with profile-manifest SHA-256
-`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`,
-report SHA-256
-`f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
-server-log SHA-256
-`ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
-and archive-manifest SHA-256
-`9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
-The v6 Ether-source, v7 enchantment, and v10 particle archives remain immutable
-historical evidence; their accepted states are included in and superseded by
-this cumulative v11 run.
+`SharedMetalBlocks` and `SharedMetalBlockItems` are the sole Common deferred
+owners of `etherology:azel_block`, `etherology:ethril_block`, and
+`etherology:ebony_block` as three vanilla `Block` instances and their exact
+`BlockItem` mappings. Azel copies iron-block settings and uses
+`MapColor.LAPIS_BLUE`; ethril copies gold-block settings; ebony copies
+diamond-block settings and uses `MapColor.ORANGE`. All three require the
+correct tool, use the metal sound group, are pickaxe-mineable and require an
+iron-tier tool; only ethril and ebony are beacon bases. In the two tag files
+packaged by this bounded Forge slice—`mineable/pickaxe` and
+`needs_iron_tool`—still-unported IDs are optional while the three accepted
+metal-block IDs remain required. `needs_stone_tool` is unchanged and outside
+this Forge resource slice.
 
-This bounded material-item proof is limited to registry properties and
-`ItemStack` NBT round-trip/reload stability in one server process. It did not
-give items to a player with `/give`, launch a second JVM or restart the server,
-or prove Forge fuel registration, creative-tab placement, recipes, client
-rendering/gameplay, furnace or machine consumption, the wider Ether network,
-the full authoritative registry, or release readiness. The inherited particle,
-enchantment, sound, sculk-frequency, Attrahite-drop, and combat caveats also
-remain.
+The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
+fresh repository-owned `etherology-e2e-forge-server-1.20.1-v13` profile and
+the `metal-block-registry` scenario with a real `reload` command. Report
+schema 8 passed all 188 ordered assertions. It cumulatively re-proved the
+material-item and earlier registry/reload states, then checked the three exact
+block and block-item IDs, runtime classes and mappings, block properties,
+selected mining/beacon tags, and exact maximum-count `ItemStack` NBT round
+trips. It placed the blocks directly in the bounded server world at
+`8,200,8`, `9,200,8`, and `10,200,8` and observed the same exact block IDs
+after reload. The world then saved, the server stopped normally, and the
+launcher exited with code zero. Because this was a headless dedicated-server
+scenario, it produced no screenshots. The immutable archive is
+[`metal-block-registry-server-v13`](docs/evidence/forge-1.20.1/metal-block-registry-server-v13),
+with profile-manifest SHA-256
+`c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`,
+report SHA-256
+`b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`,
+server-log SHA-256
+`f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`,
+and archive-manifest SHA-256
+`0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
+The v6 Ether-source, v7 enchantment, and v10 particle archives remain immutable
+historical evidence. The v11 material-item archive is the immediate historical
+predecessor; all of their accepted states are re-proved by this cumulative v13
+run. The v12 profile was consumed by a failed diagnostic launch that exposed
+required unported references in those two packaged tag files; it was never
+accepted or archived.
+
+This bounded proof is limited to exact registry/classes/mappings/properties,
+selected tags, in-process `ItemStack` NBT, direct server-world placement through
+reload, and normal save/stop in one process. It did not launch a second JVM or
+prove restart persistence, player `/give` or player placement, mining/drop
+behavior, beacon activation, recipe execution, creative-tab placement, client
+rendering/gameplay, the full authoritative registry, or release readiness. The
+inherited particle, enchantment, sound, sculk-frequency, Attrahite-drop, and
+combat caveats also remain.
 
 The historical registry foundation has both exact cross-loader artifact gates and a real
 Java 17 Forge 47.4.9 dedicated-server run in the fresh repository-owned
@@ -123,20 +140,24 @@ block and item set has not been ported. The synthetic table proves the shared co
 serializer, not Attrahite gameplay or drop parity. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
 archive superseded it as the registry-foundation proof and is now retained
-alongside the current v11 cumulative material-item proof and historical v10
-particle-registry, v7 enchantment-registry, and v6 Ether-source reload proofs.
+alongside the current v13 cumulative metal-block proof, historical v11
+material-item proof, and historical v10 particle-registry, v7
+enchantment-registry, and v6 Ether-source reload proofs.
 Native sound playback and Forge's custom sculk frequency remain
-deferred. The fresh repository-owned Fabric
-`etherology-e2e-fabric-1.20.1-v21` profile ran the current packaged artifact
-after the shared material-item rebuild: its Phase 0 smoke passed 42 of 42
+deferred. The repository-owned Fabric
+`etherology-e2e-fabric-1.20.1-v21` profile ran the packaged artifact at the
+shared material-item checkpoint: its Phase 0 smoke passed 42 of 42
 assertions, captured two native 1920x1080 screenshots, and is frozen in
 [`phase0-smoke-v21`](docs/evidence/fabric-1.20.1/phase0-smoke-v21). That bounded
-client run proves current-artifact startup, integrated-world entry, fixture
+client run proves capture-time packaged-artifact startup, integrated-world entry, fixture
 mirroring, save, and normal shutdown; the exact 14 material IDs and properties
 are enforced by the cross-artifact registry tests rather than direct client
 gameplay assertions. The earlier Fabric `v20` archive remains historical.
+The later metal-block rebuild has no corresponding packaged-client capture, so
+v21 does not prove current client rendering or interaction for these blocks.
 Frozen archives preserve capture-time observations and payload integrity; the
-current-artifact gates are separate. Every later rebuilt JAR needs another
+v13 archive does not compare or cryptographically bind later sources or rebuilt
+JARs, and the current-artifact static gates are separate. Every later rebuilt JAR needs another
 isolated native run before it can claim equivalent runtime evidence.
 
 ## About Etherology

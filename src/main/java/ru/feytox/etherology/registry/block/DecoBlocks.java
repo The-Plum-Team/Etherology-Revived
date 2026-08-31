@@ -90,11 +90,6 @@ public class DecoBlocks {
     public static final Block POTTED_THUJA = register("potted_thuja", createFlowerPotBlock(THUJA)).withoutItem();
     public static final Block POTTED_PEACH_SAPLING = register("potted_peach_sapling", createFlowerPotBlock(PEACH_SAPLING)).withoutItem();
 
-    // metals
-    public static final Block AZEL_BLOCK = registerSimple("azel_block", copy(IRON_BLOCK).mapColor(MapColor.LAPIS_BLUE)).withItem();
-    public static final Block ETHRIL_BLOCK = registerSimple("ethril_block", copy(GOLD_BLOCK)).withItem();
-    public static final Block EBONY_BLOCK = registerSimple("ebony_block", copy(DIAMOND_BLOCK).mapColor(MapColor.ORANGE)).withItem();
-
     // attrahite
     public static final Block ATTRAHITE = registerSimple("attrahite", copy(STONE).sounds(BlockSoundGroup.GILDED_BLACKSTONE)).withItem(false);
     public static final Block ATTRAHITE_BRICKS = registerSimple("attrahite_bricks", copy(STONE_BRICKS)).withItem();

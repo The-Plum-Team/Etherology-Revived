@@ -20,6 +20,7 @@ import java.nio.file.Path;
 
 import static ru.feytox.etherology.registry.block.DecoBlocks.*;
 import static ru.feytox.etherology.registry.block.EBlocks.*;
+import static ru.feytox.etherology.registry.block.SharedMetalBlocks.*;
 import static ru.feytox.etherology.registry.item.ArmorItems.*;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.*;
 import static ru.feytox.etherology.registry.item.EItems.*;
@@ -64,7 +65,7 @@ public class RuLangGeneration extends FabricLanguageProvider {
         builder.add(CRACKED_POLISHED_SLITHERITE_BRICKS, "Потрескавшиеся полированные слизеритовые кирпичи");
 
         // azel
-        builder.add(AZEL_BLOCK, "Блок азеля");
+        builder.add(AZEL_BLOCK.get(), "Блок азеля");
         builder.add(AZEL_INGOT.get(), "Слиток азеля");
         builder.add(AZEL_NUGGET.get(), "Кусочек азеля");
 
@@ -79,12 +80,12 @@ public class RuLangGeneration extends FabricLanguageProvider {
         builder.add(ENRICHED_ATTRAHITE.get(), "Обогащённый аттрахит");
 
         // ethril
-        builder.add(ETHRIL_BLOCK, "Эфриловый блок");
+        builder.add(ETHRIL_BLOCK.get(), "Эфриловый блок");
         builder.add(ETHRIL_INGOT.get(), "Эфриловый слиток");
         builder.add(ETHRIL_NUGGET.get(), "Эфриловый кусочек");
 
         // ebony
-        builder.add(EBONY_BLOCK, "Эбонитовый блок");
+        builder.add(EBONY_BLOCK.get(), "Эбонитовый блок");
         builder.add(EBONY_INGOT.get(), "Эбонитовый слиток");
         builder.add(EBONY_NUGGET.get(), "Эбонитовый кусочек");
 

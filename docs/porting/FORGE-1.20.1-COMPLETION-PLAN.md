@@ -9,7 +9,7 @@ runtime evidence before the release gate advances.
 The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation,
 bounded SharedSounds registry/resource milestone, bounded SharedGameEvents/SharedLootConditions
 registry/server foundation, bounded Common Ether-source reload path, and bounded
-SharedEnchantments, SharedParticleTypes, and SharedMaterialItems registry/server milestones are
+SharedEnchantments, SharedParticleTypes, SharedMaterialItems, and SharedMetalBlocks registry/server milestones are
 accepted, not the finished port.
 Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
 lifecycle, synchronized Gecko animation, and
@@ -20,7 +20,7 @@ resource inventory, but does not claim native playback. SharedGameEvents closes 
 resonance declaration and both vanilla listening tags. SharedLootConditions closes the sole
 deferred `random_chance_with_fortune` declaration and serializer. One real Forge dedicated-server
 registry-foundation proof covers both registries. A separate real reload proof covers the
-Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v11
+Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v13
 server record. SharedEnchantments closes the two canonical enchantment declarations, concrete
 types, and exact non-treasure tag on both loaders; enchanting applicability and the Peal/reflection
 combat mechanics are not part of that acceptance. SharedParticleTypes closes the exact 22 particle
@@ -29,7 +29,12 @@ particle-emitting mechanics are not part of that acceptance. SharedMaterialItems
 behavior-free item declarations, their exact packaged assets/names, registry properties, and
 in-process `ItemStack` NBT round-trip/reload stability. Player `/give`, a second JVM/restart,
 Forge fuel registration, creative-tab placement, recipes, and client gameplay are not part of
-that acceptance. The broader authoritative registry spine is still the first incomplete forward
+that acceptance. SharedMetalBlocks and SharedMetalBlockItems close exactly `azel_block`,
+`ethril_block`, and `ebony_block` as behavior-free blocks and their mapped block items. Their
+bounded server proof covers registry/classes/mappings/properties, selected tags, stack NBT, direct
+world placement through reload, and normal save/stop; it does not prove restart persistence,
+player `/give` or placement, mining/drop behavior, beacon activation, recipe execution, creative
+tabs, or client rendering. The broader authoritative registry spine is still the first incomplete forward
 milestone. Broad content migration must follow the ownership and dependency order below.
 
 ## Audit snapshot
@@ -59,13 +64,15 @@ canonical Fabric graph remains authoritative until each bounded slice is accepte
 `SharedItems`, `SharedBlocks`, and `SharedBlockEntities` are temporary catalogs used to establish
 the loader-neutral lifecycle without replacing canonical Fabric classes. They cannot remain a
 second permanent catalog for the same identifiers. `SharedSounds`, `SharedGameEvents`,
-`SharedLootConditions`, `SharedEnchantments`, `SharedParticleTypes`, and `SharedMaterialItems` are
+`SharedLootConditions`, `SharedEnchantments`, `SharedParticleTypes`, `SharedMaterialItems`,
+`SharedMetalBlocks`, and `SharedMetalBlockItems` are
 the accepted parts of the authoritative registry spine and the single Common declaration owners
 for their IDs. Forge attaches them before
 lifecycle registry events, while Fabric attaches the same owners from its canonical initializer.
 The legacy eager `EtherSounds`, `EventsRegistry`, `LootConditions`, and `EtherParticleTypes`
 owners are removed, the accepted material fields are removed from `EItems` and `DecoBlockItems`,
-and the legacy concrete enchantment and particle-effect classes moved to Common. Fabric's
+and the legacy concrete enchantment and particle-effect classes moved to Common. The three former
+eager metal-block fields are removed from `DecoBlocks`. Fabric's
 `EtherEnchantments` remains only a
 policy/gameplay consumer of `SharedEnchantments`, not another registry owner. Before broad content
 migration, converge the remaining catalogs on one active
@@ -91,14 +98,15 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 ### Slice 0: build and authoritative registry spine — current forward gate
 
 This is the current forward milestone. Its bounded shared-sound, game-event, loot-condition,
-Ether-source reload, enchantment-registry, particle-registry, and behavior-free material-item
-steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
+Ether-source reload, enchantment-registry, particle-registry, behavior-free material-item, and
+behavior-free metal-block steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
 incomplete work.
 
 Source owners:
 
-- Blocks: `ExtraBlocksRegistry`, `DecoBlocks`, `EBlocks`, `DevBlocks`, `EBlockFamilies`.
-- Items: accepted Common `SharedMaterialItems`; the remaining `EItems`, `ToolItems`, `ArmorItems`,
+- Blocks: accepted Common `SharedMetalBlocks`; remaining `ExtraBlocksRegistry`, `DecoBlocks`,
+  `EBlocks`, `DevBlocks`, and `EBlockFamilies` declarations and behavior.
+- Items: accepted Common `SharedMaterialItems` and `SharedMetalBlockItems`; the remaining `EItems`, `ToolItems`, `ArmorItems`,
   `DecoBlockItems`, and `EItemGroups` declarations and behavior.
 - Other registries: accepted Common `SharedSounds`, `SharedGameEvents`,
   `SharedLootConditions`, `SharedEnchantments`, and `SharedParticleTypes`; remaining
@@ -169,10 +177,11 @@ Accepted bounded game-event and loot-condition foundation:
 - This is a headless registry proof, so it produces no screenshots. It does not satisfy native
   sound playback, Forge's deferred custom sculk frequency, or the full-catalog placement/save
   smoke. The immutable v2 game-event archive remains historical evidence; v4 superseded it as the
-  registry-foundation proof. The fresh repository-owned Fabric `v21` Phase 0 smoke exercises the
-  current packaged client artifact after the shared material-item rebuild and passed 42 of 42
+  registry-foundation proof. The repository-owned Fabric `v21` Phase 0 smoke exercised the
+  packaged client artifact at the shared material-item checkpoint and passed 42 of 42
   baseline assertions. It does not directly exercise those 14 material IDs or their gameplay
-  consumers; the exact current cross-loader declarations remain a static artifact proof. Fabric
+  consumers and predates the metal-block rebuild; current cross-loader declarations remain a
+  static artifact proof, with no current metal-block client-rendering capture. Fabric
   `v20` remains an immutable historical archive.
 
 Accepted bounded Ether-source reload foundation:
@@ -196,8 +205,8 @@ Accepted bounded Ether-source reload foundation:
   and archive-manifest SHA-256
   `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
 - The v6 archive remains immutable historical evidence for the Ether-source slice. The cumulative
-  v7 enchantment-registry and v10 particle-registry archives below are historical; v11 is the
-  current dedicated-server proof.
+  v7 enchantment-registry, v10 particle-registry, and v11 material-item archives below are
+  historical; v13 is the current cumulative dedicated-server proof.
 - It does not prove furnace or machine consumption, the wider Ether network, the full registry,
   native sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness.
 
@@ -315,6 +324,40 @@ Accepted bounded material-item-registry milestone:
   round-trip/reload stability. It does not execute player `/give`, a second JVM or server restart,
   Forge fuel registration, creative-tab placement, recipes, client rendering/gameplay, or the
   remaining consumer mechanics.
+
+Accepted bounded metal-block-registry milestone:
+
+- `SharedMetalBlocks` and `SharedMetalBlockItems` are the sole Common deferred declaration owners
+  for exactly `azel_block`, `ethril_block`, and `ebony_block` as vanilla `Block` instances and
+  corresponding mapped `BlockItem`s. The former eager `DecoBlocks` fields are absent.
+- The static gate checks exact settings, deferred attachment order, block-item map enrollment, and
+  packaged models/textures/names, self-drop tables, compression/decompression recipes, and selected
+  mining/beacon tags across the Common and loader artifacts. In the `mineable/pickaxe` and
+  `needs_iron_tool` files packaged by this bounded Forge slice, still-unported IDs are optional
+  while the three accepted metal-block IDs remain required. `needs_stone_tool` is unchanged and
+  outside this Forge resource slice.
+- `validateForgeMetalBlockRegistryMilestone` combines that current-artifact proof with the
+  immutable capture-time
+  [`metal-block-registry-server-v13`](../evidence/forge-1.20.1/metal-block-registry-server-v13)
+  archive. A fresh repository-owned `etherology-e2e-forge-server-1.20.1-v13` Java 17 Forge 47.4.9
+  dedicated server ran report schema 8 with all 188 ordered assertions passing and launcher exit
+  code zero.
+- The v13 run checked exact block/item classes and mappings, properties, selected tags, and stack
+  NBT, directly placed the three exact block IDs at bounded world positions, and proved those
+  observations stable through a real `reload`. The world saved and the server stopped normally.
+  Its cumulative assertions re-proved v11 and the earlier registry/reload contracts.
+- The archive binds profile-manifest SHA-256
+  `c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`, report SHA-256
+  `b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`, server-log SHA-256
+  `f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`, and archive-manifest
+  SHA-256 `0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
+- The v12 profile was consumed by a failed tag-load diagnostic and has no accepted archive. After
+  the optional-reference fix, v13 used a distinct fresh runtime.
+- This bounded proof does not establish restart persistence, player `/give` or player placement,
+  mining/drop behavior, beacon activation, recipe execution, creative-tab interaction, client
+  rendering, the complete port, or release readiness. The archive proves capture-time userdev
+  observations and payload integrity only; it does not cryptographically bind later sources or
+  rebuilt JARs.
 
 Implementation:
 
@@ -497,8 +540,8 @@ record is the
 The bounded `validateForgeChannelNetworkMilestone` has since been accepted with its own fresh
 native evidence; the storage run was not reused as channel proof. The bounded
 `validateForgeSoundRegistryMilestone`, SharedGameEvents/SharedLootConditions registry-foundation,
-Ether-source reload, SharedEnchantments, SharedParticleTypes, and SharedMaterialItems registry
-milestones are also accepted, so the broader authoritative registry spine is now the first
+Ether-source reload, SharedEnchantments, SharedParticleTypes, SharedMaterialItems, and
+SharedMetalBlocks registry milestones are also accepted, so the broader authoritative registry spine is now the first
 incomplete stage in the release dependency graph.
 The unconditional
 `validateForgeReleaseReadinessMilestone` remains behind every forward gate and cannot be satisfied
@@ -565,7 +608,8 @@ Accepted bounded proof:
 - One Common listener/default-data owner, exact 23-entry startup data, and exact 24-entry result
   after a real Forge `reload` override/addition, frozen by the historical schema-4, 72-assertion
   v6 record and re-proved cumulatively by the historical schema-5, 95-assertion v7 and schema-6,
-  138-assertion v10 records plus the current schema-7, 163-assertion v11 record. Registry
+  138-assertion v10 and schema-7, 163-assertion v11 records plus the current schema-8,
+  188-assertion v13 record. Registry
   and tags remain stable; loot-condition registry and evaluated behavior remain stable while the
   probe loot-table instance is replaced.
 - Shared Ether storage/pipe contracts, exact `ethereal_channel` block and block-entity IDs, storage
@@ -905,15 +949,23 @@ integration tests.
 
 The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents,
 SharedLootConditions, Ether-source reload, SharedEnchantments, SharedParticleTypes, and
-SharedMaterialItems registry gates are currently positive. The v4 registry-foundation, v6
-Ether-source, v7 enchantment, and v10 particle archives remain historical evidence. The current
-v11 proof is a fresh schema-7 Forge 47.4.9 dedicated-server run with 163 of 163 cumulative
-assertions. It adds the exact 14 behavior-free material IDs, vanilla runtime classes, maximum
-counts, and reload-stable in-process `ItemStack` NBT round trips to the prior particle,
-enchantment, registry/tag/loot, and exact startup/reloaded Ether-source contracts. It saved,
-followed the exact lifecycle, stopped normally, exited zero, and produced a clean server log. It
-remains narrower than player `/give`, second-JVM restart persistence, Forge fuel/creative/recipe
-integration, client gameplay, full-catalog placement/save, and combat acceptance. The broader
+SharedMaterialItems, SharedMetalBlocks, and SharedMetalBlockItems registry gates are currently
+positive. The v4 registry-foundation, v6 Ether-source, v7 enchantment, v10 particle, and v11
+material-item archives remain historical evidence. The current v13 proof is a fresh schema-8
+Forge 47.4.9 dedicated-server run with 188 of 188 cumulative assertions. It adds the exact three
+metal block and block-item IDs, classes/mappings, properties, selected tags, stack NBT, and direct
+bounded world placement through reload to the prior material-item, particle, enchantment,
+registry/tag/loot, and exact startup/reloaded Ether-source contracts. It saved, followed the exact
+lifecycle, stopped normally, exited zero, and produced a verifier-accepted server log. The v12
+diagnostic profile was consumed by required unported references in the packaged
+`mineable/pickaxe` and `needs_iron_tool` files; those references are now optional, while
+`needs_stone_tool` is unchanged and outside this Forge resource slice. v12 was never accepted or
+archived. The v13 proof
+remains narrower than restart persistence, player `/give` or player placement, mining/drop
+behavior, beacon activation, recipe execution, creative-tab interaction, client rendering,
+full-catalog placement/save, and combat acceptance. Its archive records capture-time userdev
+observations and payload integrity; it does not cryptographically bind later sources or rebuilt
+JARs. The broader
 authoritative registry spine is the next fail-closed milestone. Enchanting applicability,
 Peal shockwave behavior, projectile reflection, particle factories/rendering and emitted visuals,
 client screenshots, full combat, sound

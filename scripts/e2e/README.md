@@ -13,6 +13,14 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
+The tracked v21 profile and its accepted runtime have already been consumed and
+are immutable. The lifecycle commands below document the harness, but
+`provision`, `stage`, `check`, `start`, `stop`, evidence collection, and archive
+creation must not be run against the v21 literals. Before another native launch,
+advance the profile ID, runtime directory, snapshots, tests, and archive target
+to one new unused version. Configuration validation and validation of the frozen
+v21 archive remain safe.
+
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
 Fabric mod id, and version property. The script cross-checks those properties
@@ -190,10 +198,11 @@ screenshots, world, and logs before copying evidence into `docs/evidence`:
 python3 -B scripts/e2e/evidence.py --scenario phase0-smoke
 ```
 
-For a new accepted Phase 0 capture, copy only its report, completion marker,
-and two report-named screenshots into the corresponding versioned repository
-archive. Seal that archive once from the exact tracked profile and exact owned
-runtime:
+After first advancing every profile/runtime/archive literal to a new unused
+version, copy only the new accepted Phase 0 report, completion marker, and two
+report-named screenshots into that version's repository archive. Seal the new
+archive once from its exact tracked profile and exact owned runtime. The v21
+command below records the historical accepted workflow and must not be rerun:
 
 ```bash
 python3 -B scripts/e2e/evidence.py \
@@ -335,31 +344,31 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Forge 1.20.1 dedicated-server material-item-registry probe
+## Forge 1.20.1 dedicated-server metal-block-registry probe
 
 The current cumulative server-only proof is the Forge 1.20.1
-`material-item-registry` scenario. It runs Etherology's checked-out production
+`metal-block-registry` scenario. It runs Etherology's checked-out production
 source-set output and the isolated server probe in a fresh repository-owned
 profile; it never loads the Forge client harness and never consults, adopts,
 resets, or deletes an external Minecraft profile. Its exact one-shot runtime is:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v11/
+scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v13/
   game/
-  evidence/material-item-registry/
+  evidence/metal-block-registry/
 ```
 
 The tracked profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete
-required and forbidden mod-ID inventories. Its size is 1200 bytes and its
+required and forbidden mod-ID inventories. Its size is 1196 bytes and its
 SHA-256 is
-`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`.
-`provision` succeeds only for a brand-new target. The accepted v11 runtime is
+`c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`.
+`provision` succeeds only for a brand-new target. The accepted v13 runtime is
 immutable: the next native run must increment the profile ID and use another
-fresh directory rather than reuse, clean, or replace v11.
+fresh directory rather than reuse, clean, or replace v13.
 
-The following commands record the v11 workflow. Build and validation do not
-launch Minecraft. Because v11 has already been accepted, `provision`, `check`,
+The following commands record the v13 workflow. Build and validation do not
+launch Minecraft. Because v13 has already been accepted, `provision`, `check`,
 and `run` may be used for another native capture only after advancing the
 tracked profile, contract, and verifier to a new ID and fresh runtime:
 
@@ -380,27 +389,26 @@ world and normal shutdown, and publishes `done.marker` only after the report,
 copied server log, and launcher result pass. External game profiles consulted:
 zero.
 
-The accepted fresh v11 run emitted a schema-7 report and passed all 163 ordered
-assertions. It resolved these exact 14 `SharedMaterialItems` IDs:
+The accepted fresh v13 run emitted a schema-8 report and passed all 188 ordered
+assertions. `SharedMetalBlocks` and `SharedMetalBlockItems` supplied these exact
+block and item IDs:
 
 ```text
-etherology:attrahite_brick, etherology:azel_ingot,
-etherology:azel_nugget, etherology:binder, etherology:ebony,
-etherology:ebony_ingot, etherology:ebony_nugget,
-etherology:enriched_attrahite, etherology:etheroscope,
-etherology:ethril_ingot, etherology:ethril_nugget, etherology:raw_azel,
-etherology:resonating_wand, etherology:thuja_oil
+etherology:azel_block, etherology:ebony_block, etherology:ethril_block
 ```
 
-Every item resolved to `net.minecraft.item.Item`. The probe required maximum
-count 16 for `enriched_attrahite` and 64 for each other entry. For a stack at
-that item's maximum count, it serialized exactly the `id` and `Count` NBT
-values, reconstructed the exact item/count, and compared a deterministic save
-representation. The same registry properties and NBT observations matched
-after server-data load, at `ServerStartedEvent`, and after a real `reload`.
-The cumulative assertions also rechecked the v10 particle, v7 enchantment,
-game-event/tag, loot-condition, reloadable loot-table, and Ether-source
-contracts. The exact lifecycle was
+Every block resolved to `net.minecraft.block.Block`, every corresponding item
+resolved to `net.minecraft.item.BlockItem`, and each item mapped back to the
+exact block with maximum count 64. The probe checked exact hardness, blast
+resistance, map color, metal sound, tool requirement, luminance, opacity, and
+full-cube properties. All three entries were pickaxe-mineable and required an
+iron-tier tool; ethril and ebony, but not azel, were beacon bases. It checked
+exact `id` and `Count` NBT round trips, then directly placed azel, ebony, and
+ethril at `8,200,8`, `9,200,8`, and `10,200,8`. Registry, properties, selected
+tags, stack NBT, and exact placed block IDs remained stable after a real
+`reload`. The cumulative assertions also rechecked the v11 material-item, v10
+particle, v7 enchantment, game-event/tag, loot-condition, reloadable loot-table,
+and Ether-source contracts. The exact lifecycle was
 `tags_updated_initial > server_started > reload_requested > tags_updated_reload > reload_command_returned > stop_requested > server_stopping > server_stopped`.
 The server saved its world, completed normal `stop(false)`, exited with code
 zero, and its copied log passed the strict marker scan. After
@@ -410,31 +418,66 @@ Loom-userdev non-daemon thread leak. This path is absent from the production
 mod.
 
 Validate the completed live runtime or immutable five-file archive with the
-v11 verifier:
+v13 verifier:
 
 ```bash
-python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v11
+python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v13
+python3 -B scripts/e2e/forge_server_metal_block_evidence_v13.py \
+  --archive docs/evidence/forge-1.20.1/metal-block-registry-server-v13
+```
+
+The archive records report SHA-256
+`b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`,
+server-log SHA-256
+`f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`,
+and archive-manifest SHA-256
+`0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
+`validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity` owns the
+archive-only check, while `validateForgeMetalBlockRegistryMilestone` combines
+the frozen native proof with exact current Common/Fabric/Forge registry,
+bytecode, bootstrap, resource, artifact, and isolation gates.
+Those are separate proof boundaries: the immutable v13 archive validates
+capture-time Loom-userdev observations and payload integrity, but does not
+compare or cryptographically bind later sources or rebuilt JARs.
+
+This scenario is headless and creates no screenshots. Its exact bounded scope
+is registry/classes/mappings/properties, selected tags, in-process stack NBT,
+direct server-world placement through reload, and normal save/stop. It does not
+prove restart persistence, player `/give` or player placement, mining/drop
+behavior, beacon activation, recipe execution, creative-tab interaction,
+client rendering, the complete port, or release readiness.
+
+The v12 profile was consumed by a failed diagnostic launch: the generated
+`mineable/pickaxe` and `needs_iron_tool` files packaged by this bounded Forge
+slice still treated unported Etherology IDs as required, so Forge reported
+tag-load errors. Those unported IDs are now optional while the three accepted
+metal-block IDs remain required. `needs_stone_tool` is unchanged and outside
+this Forge resource slice. No v12 archive was accepted; the successful proof
+was captured in the separate fresh v13 runtime.
+
+## Historical Forge 1.20.1 dedicated-server material-item-registry probe (v11)
+
+The immutable v11 predecessor passed all 163 schema-7 assertions for the exact
+14 `SharedMaterialItems` IDs, vanilla runtime classes, maximum counts, and
+in-process `ItemStack` NBT round trips through a real reload. The current v13
+record re-proves those assertions cumulatively. Validate the frozen v11 archive
+only with its pinned verifier:
+
+```bash
 python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
   --archive docs/evidence/forge-1.20.1/material-item-registry-server-v11
 ```
 
-The archive records report SHA-256
+The v11 archive binds profile-manifest SHA-256
+`63ee2c8707f276cc87df2e0b162b2f3174e1fe1b3d689b26135298154ed1b171`,
+report SHA-256
 `f3cc85b8514704f6c789e5abbdb835ede8aea062f5bae5b7ade0ab20da26bd4f`,
 server-log SHA-256
 `ee447e0dbf8a5c823f51a20bdeb2f115b6baa7ac58d9db15535fc50f6d8cc4f4`,
 and archive-manifest SHA-256
 `9f5ff60298d9066e92c3f3e8ff6e5ab97fba5b35369f6ed09e1359bed7afe347`.
-`validateForgeMaterialItemRegistryServerEvidenceArchiveIntegrity` owns the
-archive-only check, while `validateForgeMaterialItemRegistryMilestone` combines
-the frozen native proof with exact current Common/Fabric/Forge registry,
-bytecode, bootstrap, resource, artifact, and isolation gates.
-
-This scenario is headless and creates no screenshots. Its material-item scope
-is registry properties and in-process `ItemStack` NBT round-trip/reload
-stability only. It does not give items to a player with `/give`, start a second
-JVM or restart the server, or prove Forge fuel registration, creative-tab
-placement, recipes, client rendering/gameplay, or release readiness.
+It proves only its capture-time material-item contract and remains immutable.
 
 ## Historical Forge 1.20.1 dedicated-server particle-registry probe (v10)
 
@@ -442,10 +485,10 @@ The immutable v10 predecessor passed all 138 schema-6 assertions for the exact
 22 `SharedParticleTypes` IDs, eight payload families, concrete types, spawn
 flags, codecs, factories, command/packet/codec round trips, and seal metadata.
 It used the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v11
+`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v13
 re-proves all of its assertions cumulatively. Its five-file archive remains
 frozen at `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not
-be recaptured with the current v11 runner.
+be recaptured with the current v13 runner.
 
 Validate only the completed historical runtime or immutable archive with the
 pinned verifier:
@@ -491,7 +534,7 @@ server-log SHA-256
 `b4be8474c32062765fc5915993d28fe209315354a5b139ccf8478b1cacbbb12c`,
 and archive-manifest SHA-256
 `377acc9241417a169ac2f9dbe1f555d5918509a486daf40d89533de4d414feec`.
-Its accepted state is re-proved by v11, but the historical bytes remain frozen.
+Its accepted state is re-proved by v13, but the historical bytes remain frozen.
 It does not prove enchantment applicability, Peal shockwaves, projectile
 reflection, client rendering, screenshots, full combat parity, or release
 readiness.
@@ -511,12 +554,12 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
-and forbidden mod-ID inventories. The mutable runner has advanced to v11, so v6
+and forbidden mod-ID inventories. The mutable runner has advanced to v13, so v6
 must be inspected only through its immutable snapshot and verifier. It must
 never be provisioned, reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
-runner lifecycle shown above. Those mutable runner commands now target v11 and
+runner lifecycle shown above. Those mutable runner commands now target v13 and
 must not be used as instructions to recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
@@ -583,7 +626,7 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to v11. They cannot recapture v4, and v4 must not be provisioned,
+advanced to v13. They cannot recapture v4, and v4 must not be provisioned,
 reused, cleaned, or replaced. Only its immutable archive verifier remains an
 active instruction:
 
@@ -653,17 +696,19 @@ Attrahite gameplay or drop parity. This bounded run also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
-47 has no supported equivalent and remains deferred. The fresh Fabric `v21`
-Phase 0 archive proves that the current packaged client artifact boots, enters
+47 has no supported equivalent and remains deferred. The Fabric `v21`
+Phase 0 archive proves that the packaged client artifact at the material-item checkpoint boots, enters
 and saves an integrated world, mirrors the fixture, and shuts down normally;
 its 42 baseline assertions do not directly exercise the 14 shared material
-items. The immutable Fabric `v20` archive remains historical. The immutable v2
+items. It predates the metal-block rebuild and is not current client-rendering
+evidence for those blocks. The immutable Fabric `v20` archive remains historical. The immutable v2
 game-event-only archive remains historical evidence;
 v4 superseded it as the registry-foundation proof, and the historical v4
 verifier intentionally does not accept v2 as its active archive. The v6
 Ether-source reload and v7 enchantment-registry archives remain immutable
 historical evidence; v10 is the historical particle-registry predecessor, and
-v11 is the current cumulative material-item-registry proof.
+v11 is the historical material-item predecessor, and v13 is the current
+cumulative metal-block-registry proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
@@ -677,5 +722,7 @@ python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_server_reload_evidence_v6.py \
   scripts/e2e/test_forge_server_enchantment_evidence_v7.py \
   scripts/e2e/test_forge_server_particle_evidence_v10.py \
-  scripts/e2e/test_forge_server_material_item_evidence_v11.py
+  scripts/e2e/test_forge_server_material_item_evidence_v11.py \
+  scripts/e2e/test_forge_server_metal_block_evidence_v12.py \
+  scripts/e2e/test_forge_server_metal_block_evidence_v13.py
 ```

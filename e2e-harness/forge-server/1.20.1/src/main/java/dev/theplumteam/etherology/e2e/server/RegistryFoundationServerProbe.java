@@ -97,6 +97,14 @@ public final class RegistryFoundationServerProbe {
     private MaterialItemProbeState reloadedMaterialItemState = MaterialItemProbeState.missing();
     private MaterialItemProbeState serverStartedMaterialItemState =
             MaterialItemProbeState.missing();
+    private MetalBlockProbeState initialMetalBlockState = MetalBlockProbeState.missing();
+    private MetalBlockProbeState reloadedMetalBlockState = MetalBlockProbeState.missing();
+    private MetalBlockProbeState serverStartedMetalBlockState =
+            MetalBlockProbeState.missing();
+    private MetalBlockProbeState.MetalBlockPlacementState initialMetalBlockPlacement =
+            MetalBlockProbeState.MetalBlockPlacementState.missing();
+    private MetalBlockProbeState.MetalBlockPlacementState reloadedMetalBlockPlacement =
+            MetalBlockProbeState.MetalBlockPlacementState.missing();
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
@@ -131,10 +139,12 @@ public final class RegistryFoundationServerProbe {
     private boolean enchantmentsCapturedAfterServerDataLoad;
     private boolean particlesCapturedAfterServerDataLoad;
     private boolean materialItemsCapturedAfterServerDataLoad;
+    private boolean metalBlocksCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
     private boolean serverStartedParticlesRechecked;
     private boolean serverStartedMaterialItemsRechecked;
+    private boolean serverStartedMetalBlocksRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
     private boolean reloadCompleted;
@@ -153,6 +163,11 @@ public final class RegistryFoundationServerProbe {
     private boolean materialItemRegistryStableAfterReload;
     private boolean materialItemPropertiesStableAfterReload;
     private boolean materialItemStackNbtStableAfterReload;
+    private boolean metalBlockRegistryStableAfterReload;
+    private boolean metalBlockPropertiesStableAfterReload;
+    private boolean metalBlockTagsStableAfterReload;
+    private boolean metalBlockStackNbtStableAfterReload;
+    private boolean metalBlockPlacementStableAfterReload;
     private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
@@ -214,6 +229,7 @@ public final class RegistryFoundationServerProbe {
             initialEnchantmentState = EnchantmentProbeState.capture();
             initialParticleState = ParticleProbeState.capture();
             initialMaterialItemState = MaterialItemProbeState.capture();
+            initialMetalBlockState = MetalBlockProbeState.capture();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
         }
@@ -225,6 +241,7 @@ public final class RegistryFoundationServerProbe {
         reloadedEnchantmentState = EnchantmentProbeState.capture();
         reloadedParticleState = ParticleProbeState.capture();
         reloadedMaterialItemState = MaterialItemProbeState.capture();
+        reloadedMetalBlockState = MetalBlockProbeState.capture();
         reloadTagsObserved = tagUpdateCount == 2 && startedServer != null && reloadRequested;
         GameEvent reloadedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
         registryStableAfterReload = reloadTagsObserved
@@ -269,6 +286,20 @@ public final class RegistryFoundationServerProbe {
                 && initialMaterialItemState.hasSameProperties(reloadedMaterialItemState);
         materialItemStackNbtStableAfterReload = reloadTagsObserved
                 && initialMaterialItemState.hasSameStackNbt(reloadedMaterialItemState);
+        metalBlockRegistryStableAfterReload = reloadTagsObserved
+                && initialMetalBlockState.hasSameRegistry(reloadedMetalBlockState);
+        metalBlockPropertiesStableAfterReload = reloadTagsObserved
+                && initialMetalBlockState.hasSameProperties(reloadedMetalBlockState);
+        metalBlockTagsStableAfterReload = reloadTagsObserved
+                && initialMetalBlockState.hasSameTags(reloadedMetalBlockState);
+        metalBlockStackNbtStableAfterReload = reloadTagsObserved
+                && initialMetalBlockState.hasSameStackNbt(reloadedMetalBlockState);
+        reloadedMetalBlockPlacement = startedServer == null
+                ? MetalBlockProbeState.MetalBlockPlacementState.missing()
+                : MetalBlockProbeState.capturePlacement(startedServer.getOverworld());
+        metalBlockPlacementStableAfterReload = reloadTagsObserved
+                && initialMetalBlockPlacement.samePlacement(reloadedMetalBlockPlacement)
+                && reloadedMetalBlockPlacement.hasExactPlacement();
         LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
@@ -294,6 +325,9 @@ public final class RegistryFoundationServerProbe {
         materialItemsCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialMaterialItemState.hasExactRegistry()
                 && initialMaterialItemState.hasExactContract();
+        metalBlocksCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialMetalBlockState.hasExactRegistry()
+                && initialMetalBlockState.hasExactContract();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
@@ -355,6 +389,12 @@ public final class RegistryFoundationServerProbe {
         serverStartedMaterialItemState = MaterialItemProbeState.capture();
         serverStartedMaterialItemsRechecked = initialMaterialItemState
                 .sameStateAtServerStarted(serverStartedMaterialItemState);
+        serverStartedMetalBlockState = MetalBlockProbeState.capture();
+        serverStartedMetalBlocksRechecked = initialMetalBlockState
+                .sameStateAtServerStarted(serverStartedMetalBlockState);
+        initialMetalBlockPlacement = MetalBlockProbeState.placeIn(
+                event.getServer().getOverworld()
+        );
 
         try {
             ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
@@ -830,6 +870,126 @@ public final class RegistryFoundationServerProbe {
                 "material_item_stack_nbt_stable_after_reload",
                 materialItemStackNbtStableAfterReload
         );
+        MetalBlockProbeState.EXPECTED_BLOCK_IDS.forEach(id -> {
+            MetalBlockProbeState.MetalBlockEntry entry =
+                    initialMetalBlockState.entries().get(id);
+            addAssertion(
+                    assertions,
+                    "registry:block:" + id,
+                    "present",
+                    presentState(entry != null && entry.blockIdentity() != null)
+            );
+            addAssertion(
+                    assertions,
+                    "registry:block_item:" + id,
+                    "present",
+                    presentState(entry != null && entry.itemIdentity() != null)
+            );
+        });
+        addAssertion(
+                assertions,
+                "registry:metal_block_ids_exact",
+                String.join(",", MetalBlockProbeState.EXPECTED_BLOCK_IDS),
+                String.join(",", initialMetalBlockState.metalBlockIds())
+        );
+        addAssertion(
+                assertions,
+                "registry:metal_block_item_ids_exact",
+                String.join(",", MetalBlockProbeState.EXPECTED_BLOCK_IDS),
+                String.join(",", initialMetalBlockState.metalBlockItemIds())
+        );
+        addAssertion(
+                assertions,
+                "metal_block_capture_error",
+                "none",
+                errorState(initialMetalBlockState.captureError())
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_runtime_classes_exact",
+                initialMetalBlockState.hasExactRuntimeClasses()
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_item_mappings_exact",
+                initialMetalBlockState.hasExactBlockItemMappings()
+        );
+        addAssertion(
+                assertions,
+                "metal_block_properties_exact",
+                MetalBlockProbeState.expectedCanonicalProperties(),
+                initialMetalBlockState.canonicalProperties()
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_tags_exact",
+                initialMetalBlockState.hasExactTagMemberships()
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_stack_nbt_round_trips_exact",
+                initialMetalBlockState.hasExactStackNbtRoundTrips()
+        );
+        addAssertion(
+                assertions,
+                "metal_block_save_representations_exact",
+                MetalBlockProbeState.expectedCanonicalSaveRepresentations(),
+                initialMetalBlockState.canonicalSaveRepresentations()
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_blocks_captured_after_server_data_load",
+                metalBlocksCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_metal_blocks_rechecked",
+                serverStartedMetalBlocksRechecked
+        );
+        addAssertion(
+                assertions,
+                "metal_block_placement_positions_exact",
+                MetalBlockProbeState.MetalBlockPlacementState
+                        .expectedCanonicalPositions(),
+                initialMetalBlockPlacement.canonicalPositions()
+        );
+        addAssertion(
+                assertions,
+                "metal_block_placed_ids_exact",
+                MetalBlockProbeState.MetalBlockPlacementState
+                        .expectedCanonicalPlacedBlockIds(),
+                initialMetalBlockPlacement.canonicalPlacedBlockIds()
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_placement_exact",
+                initialMetalBlockPlacement.hasExactPlacement()
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_registry_stable_after_reload",
+                metalBlockRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_properties_stable_after_reload",
+                metalBlockPropertiesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_tags_stable_after_reload",
+                metalBlockTagsStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_stack_nbt_stable_after_reload",
+                metalBlockStackNbtStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "metal_block_placement_stable_after_reload",
+                metalBlockPlacementStableAfterReload
+        );
         addAssertion(
                 assertions,
                 "registry:loot_condition:etherology:random_chance_with_fortune",
@@ -1130,7 +1290,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 7);
+        report.addProperty("schema", 8);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -1147,6 +1307,7 @@ public final class RegistryFoundationServerProbe {
         report.add("enchantments", buildEnchantments());
         report.add("particles", buildParticles());
         report.add("material_items", buildMaterialItems());
+        report.add("metal_blocks", buildMetalBlocks());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
         report.add("reload", buildReload());
@@ -1385,6 +1546,82 @@ public final class RegistryFoundationServerProbe {
         return materialItems;
     }
 
+    private JsonObject buildMetalBlocks() {
+        JsonObject metalBlocks = new JsonObject();
+        metalBlocks.addProperty(
+                "block_registry_id",
+                MetalBlockProbeState.BLOCK_REGISTRY_ID
+        );
+        metalBlocks.addProperty(
+                "item_registry_id",
+                MetalBlockProbeState.ITEM_REGISTRY_ID
+        );
+        metalBlocks.addProperty("capture_error", initialMetalBlockState.captureError());
+        metalBlocks.add(
+                "metal_block_ids",
+                buildStringArray(initialMetalBlockState.metalBlockIds())
+        );
+        metalBlocks.add(
+                "metal_block_item_ids",
+                buildStringArray(initialMetalBlockState.metalBlockItemIds())
+        );
+        metalBlocks.addProperty(
+                "vanilla_block_class",
+                MetalBlockProbeState.VANILLA_BLOCK_CLASS
+        );
+        metalBlocks.addProperty(
+                "block_item_class",
+                MetalBlockProbeState.BLOCK_ITEM_CLASS
+        );
+        metalBlocks.addProperty(
+                "properties",
+                initialMetalBlockState.canonicalProperties()
+        );
+        metalBlocks.addProperty(
+                "save_representations",
+                initialMetalBlockState.canonicalSaveRepresentations()
+        );
+        JsonObject entries = new JsonObject();
+        initialMetalBlockState.entries().forEach((id, entry) ->
+                entries.add(id, buildMetalBlock(entry))
+        );
+        metalBlocks.add("entries", entries);
+        JsonObject placement = new JsonObject();
+        placement.addProperty("capture_error", initialMetalBlockPlacement.captureError());
+        placement.add("positions", buildStringMap(initialMetalBlockPlacement.positions()));
+        placement.add(
+                "placed_block_ids",
+                buildStringMap(initialMetalBlockPlacement.placedBlockIds())
+        );
+        placement.addProperty("exact", initialMetalBlockPlacement.hasExactPlacement());
+        placement.addProperty(
+                "stable_after_reload",
+                metalBlockPlacementStableAfterReload
+        );
+        metalBlocks.add("placement", placement);
+        metalBlocks.addProperty(
+                "same_state_at_server_started",
+                serverStartedMetalBlocksRechecked
+        );
+        metalBlocks.addProperty(
+                "registry_stable_after_reload",
+                metalBlockRegistryStableAfterReload
+        );
+        metalBlocks.addProperty(
+                "properties_stable_after_reload",
+                metalBlockPropertiesStableAfterReload
+        );
+        metalBlocks.addProperty(
+                "tags_stable_after_reload",
+                metalBlockTagsStableAfterReload
+        );
+        metalBlocks.addProperty(
+                "stack_nbt_stable_after_reload",
+                metalBlockStackNbtStableAfterReload
+        );
+        return metalBlocks;
+    }
+
     private JsonObject buildLootCondition() {
         JsonObject lootCondition = new JsonObject();
         lootCondition.addProperty(
@@ -1506,6 +1743,26 @@ public final class RegistryFoundationServerProbe {
         reload.addProperty(
                 "material_item_stack_nbt_stable",
                 materialItemStackNbtStableAfterReload
+        );
+        reload.addProperty(
+                "metal_block_registry_stable",
+                metalBlockRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "metal_block_properties_stable",
+                metalBlockPropertiesStableAfterReload
+        );
+        reload.addProperty(
+                "metal_block_tags_stable",
+                metalBlockTagsStableAfterReload
+        );
+        reload.addProperty(
+                "metal_block_stack_nbt_stable",
+                metalBlockStackNbtStableAfterReload
+        );
+        reload.addProperty(
+                "metal_block_placement_stable",
+                metalBlockPlacementStableAfterReload
         );
         reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
         return reload;
@@ -1638,6 +1895,43 @@ public final class RegistryFoundationServerProbe {
         return materialItem;
     }
 
+    private static JsonObject buildMetalBlock(
+            MetalBlockProbeState.MetalBlockEntry entry
+    ) {
+        JsonObject metalBlock = new JsonObject();
+        metalBlock.addProperty("block_id", entry.blockId());
+        metalBlock.addProperty("item_id", entry.itemId());
+        metalBlock.addProperty("block_class", entry.blockClass());
+        metalBlock.addProperty("item_class", entry.itemClass());
+        metalBlock.addProperty("block_item", entry.blockItem());
+        metalBlock.addProperty(
+                "block_item_maps_to_block",
+                entry.blockItemMapsToBlock()
+        );
+        metalBlock.addProperty(
+                "block_as_item_matches",
+                entry.blockAsItemMatches()
+        );
+        metalBlock.addProperty("hardness", entry.hardness());
+        metalBlock.addProperty("blast_resistance", entry.blastResistance());
+        metalBlock.addProperty("map_color_id", entry.mapColorId());
+        metalBlock.addProperty("metal_sound_group", entry.metalSoundGroup());
+        metalBlock.addProperty("tool_required", entry.toolRequired());
+        metalBlock.addProperty("luminance", entry.luminance());
+        metalBlock.addProperty("opaque", entry.opaque());
+        metalBlock.addProperty("full_cube", entry.fullCube());
+        metalBlock.addProperty("pickaxe_mineable", entry.pickaxeMineable());
+        metalBlock.addProperty("needs_iron_tool", entry.needsIronTool());
+        metalBlock.addProperty("beacon_base", entry.beaconBase());
+        metalBlock.addProperty("max_count", entry.maxCount());
+        metalBlock.addProperty("serialized_id", entry.serializedId());
+        metalBlock.addProperty("serialized_count", entry.serializedCount());
+        metalBlock.add("serialized_keys", buildStringArray(entry.serializedKeys()));
+        metalBlock.addProperty("round_trip_exact", entry.roundTripExact());
+        metalBlock.addProperty("save_representation", entry.saveRepresentation());
+        return metalBlock;
+    }
+
     private static JsonObject buildSealType(
             ParticleProbeState.SealTypeEntry entry
     ) {
@@ -1728,6 +2022,12 @@ public final class RegistryFoundationServerProbe {
         JsonArray array = new JsonArray();
         values.forEach(array::add);
         return array;
+    }
+
+    private static JsonObject buildStringMap(Map<String, String> values) {
+        JsonObject object = new JsonObject();
+        values.forEach(object::addProperty);
+        return object;
     }
 
     private static JsonArray buildIntegerArray(List<Integer> values) {

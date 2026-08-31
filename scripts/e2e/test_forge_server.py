@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 7,
+        "schema": 8,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -157,6 +157,37 @@ def valid_report() -> dict[str, object]:
             "properties_stable_after_reload": True,
             "stack_nbt_stable_after_reload": True,
         },
+        "metal_blocks": {
+            "block_registry_id": forge_server.METAL_BLOCK_REGISTRY_ID,
+            "item_registry_id": forge_server.METAL_BLOCK_ITEM_REGISTRY_ID,
+            "capture_error": "",
+            "metal_block_ids": list(forge_server.METAL_BLOCK_IDS),
+            "metal_block_item_ids": list(forge_server.METAL_BLOCK_IDS),
+            "vanilla_block_class": forge_server.METAL_BLOCK_CLASS,
+            "block_item_class": forge_server.BLOCK_ITEM_CLASS,
+            "properties": forge_server.METAL_BLOCK_CANONICAL_PROPERTIES,
+            "save_representations": (
+                forge_server.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
+            ),
+            "entries": copy.deepcopy(forge_server.METAL_BLOCKS),
+            "placement": {
+                "capture_error": "",
+                "positions": copy.deepcopy(
+                    forge_server.METAL_BLOCK_PLACEMENT_POSITIONS
+                ),
+                "placed_block_ids": {
+                    identifier: identifier
+                    for identifier in forge_server.METAL_BLOCK_IDS
+                },
+                "exact": True,
+                "stable_after_reload": True,
+            },
+            "same_state_at_server_started": True,
+            "registry_stable_after_reload": True,
+            "properties_stable_after_reload": True,
+            "tags_stable_after_reload": True,
+            "stack_nbt_stable_after_reload": True,
+        },
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
             "condition_id": "etherology:random_chance_with_fortune",
@@ -219,6 +250,11 @@ def valid_report() -> dict[str, object]:
             "material_item_registry_stable": True,
             "material_item_properties_stable": True,
             "material_item_stack_nbt_stable": True,
+            "metal_block_registry_stable": True,
+            "metal_block_properties_stable": True,
+            "metal_block_tags_stable": True,
+            "metal_block_stack_nbt_stable": True,
+            "metal_block_placement_stable": True,
             "stop_requested_after_completion": True,
         },
         "tags": {
@@ -276,7 +312,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v11",
+            "etherology-e2e-forge-server-1.20.1-v13",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -300,6 +336,25 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotIn("quickskin", configuration.manifest["required_mod_ids"])
         self.assertIn(
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
+        )
+
+    def test_active_profile_matches_v13_snapshot_and_preserves_v12(self) -> None:
+        active = forge_server.MANIFEST_PATH.read_bytes()
+        v13_snapshot = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v13.json"
+        ).read_bytes()
+        v12_snapshot_path = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v12.json"
+        )
+        v12_snapshot = v12_snapshot_path.read_bytes()
+
+        self.assertEqual(v13_snapshot, active)
+        self.assertNotEqual(v12_snapshot, active)
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v12",
+            json.loads(v12_snapshot)["profile"]["id"],
         )
 
     def test_profile_must_be_loaded_from_tracked_path(self) -> None:
@@ -605,7 +660,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(163, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(188, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -646,6 +701,80 @@ class ProbeReportTests(unittest.TestCase):
         insertion_index = (
             forge_server.EXPECTED_ASSERTION_NAMES.index(
                 "particle_wire_contract_stable_after_reload"
+            )
+            + 1
+        )
+
+        self.assertEqual(25, len(expected_names))
+        self.assertEqual(
+            expected_names,
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index:insertion_index + len(expected_names)
+            ],
+        )
+        self.assertEqual(
+            expected_values,
+            forge_server.EXPECTED_ASSERTION_VALUES[
+                insertion_index:insertion_index + len(expected_values)
+            ],
+        )
+        self.assertEqual(
+            "registry:block:etherology:azel_block",
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index + len(expected_names)
+            ],
+        )
+
+    def test_metal_block_assertions_are_exact_and_probe_ordered(self) -> None:
+        expected_names = (
+            *(
+                assertion_name
+                for identifier in forge_server.METAL_BLOCK_IDS
+                for assertion_name in (
+                    f"registry:block:{identifier}",
+                    f"registry:block_item:{identifier}",
+                )
+            ),
+            "registry:metal_block_ids_exact",
+            "registry:metal_block_item_ids_exact",
+            "metal_block_capture_error",
+            "metal_block_runtime_classes_exact",
+            "metal_block_item_mappings_exact",
+            "metal_block_properties_exact",
+            "metal_block_tags_exact",
+            "metal_block_stack_nbt_round_trips_exact",
+            "metal_block_save_representations_exact",
+            "metal_blocks_captured_after_server_data_load",
+            "server_started_metal_blocks_rechecked",
+            "metal_block_placement_positions_exact",
+            "metal_block_placed_ids_exact",
+            "metal_block_placement_exact",
+            "metal_block_registry_stable_after_reload",
+            "metal_block_properties_stable_after_reload",
+            "metal_block_tags_stable_after_reload",
+            "metal_block_stack_nbt_stable_after_reload",
+            "metal_block_placement_stable_after_reload",
+        )
+        expected_values = (
+            *("present" for _entry in range(len(forge_server.METAL_BLOCK_IDS) * 2)),
+            ",".join(forge_server.METAL_BLOCK_IDS),
+            ",".join(forge_server.METAL_BLOCK_IDS),
+            "none",
+            "true",
+            "true",
+            forge_server.METAL_BLOCK_CANONICAL_PROPERTIES,
+            "true",
+            "true",
+            forge_server.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS,
+            "true",
+            "true",
+            forge_server.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS,
+            forge_server.METAL_BLOCK_CANONICAL_PLACED_IDS,
+            *("true" for _check in range(6)),
+        )
+        insertion_index = (
+            forge_server.EXPECTED_ASSERTION_NAMES.index(
+                "material_item_stack_nbt_stable_after_reload"
             )
             + 1
         )
@@ -781,6 +910,51 @@ class ProbeReportTests(unittest.TestCase):
             "material item reload instability": lambda report: report[
                 "reload"
             ].__setitem__("material_item_stack_nbt_stable", False),
+            "wrong metal block registry": lambda report: report[
+                "metal_blocks"
+            ].__setitem__("block_registry_id", "minecraft:item"),
+            "missing metal block id": lambda report: report[
+                "metal_blocks"
+            ]["metal_block_ids"].remove("etherology:azel_block"),
+            "wrong metal block class": lambda report: report[
+                "metal_blocks"
+            ]["entries"]["etherology:ethril_block"].__setitem__(
+                "block_class",
+                "wrong.Block",
+            ),
+            "wrong metal block mapping": lambda report: report[
+                "metal_blocks"
+            ]["entries"]["etherology:azel_block"].__setitem__(
+                "block_item_maps_to_block",
+                False,
+            ),
+            "wrong metal block hardness": lambda report: report[
+                "metal_blocks"
+            ]["entries"]["etherology:ethril_block"].__setitem__(
+                "hardness",
+                5.0,
+            ),
+            "wrong metal block beacon tag": lambda report: report[
+                "metal_blocks"
+            ]["entries"]["etherology:azel_block"].__setitem__(
+                "beacon_base",
+                True,
+            ),
+            "wrong metal BlockItem NBT": lambda report: report[
+                "metal_blocks"
+            ]["entries"]["etherology:ebony_block"].__setitem__(
+                "serialized_count",
+                1,
+            ),
+            "wrong metal block placement": lambda report: report[
+                "metal_blocks"
+            ]["placement"]["placed_block_ids"].__setitem__(
+                "etherology:azel_block",
+                "minecraft:air",
+            ),
+            "metal block reload instability": lambda report: report[
+                "reload"
+            ].__setitem__("metal_block_placement_stable", False),
             "integer loot identity": lambda report: report["loot_condition"].__setitem__(
                 "same_state_at_server_started", 1
             ),

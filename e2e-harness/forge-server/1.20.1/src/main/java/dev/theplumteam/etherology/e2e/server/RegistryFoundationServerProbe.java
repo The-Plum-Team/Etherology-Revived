@@ -97,6 +97,17 @@ public final class RegistryFoundationServerProbe {
     private MaterialItemProbeState reloadedMaterialItemState = MaterialItemProbeState.missing();
     private MaterialItemProbeState serverStartedMaterialItemState =
             MaterialItemProbeState.missing();
+    private FoodItemProbeState initialFoodItemState = FoodItemProbeState.missing();
+    private FoodItemProbeState reloadedFoodItemState = FoodItemProbeState.missing();
+    private FoodItemProbeState serverStartedFoodItemState = FoodItemProbeState.missing();
+    private FoodItemProbeState.FoodConsumptionState serverStartedFoodConsumption =
+            FoodItemProbeState.FoodConsumptionState.missing(
+                    FoodItemProbeState.ConsumptionPhase.SERVER_STARTED
+            );
+    private FoodItemProbeState.FoodConsumptionState reloadedFoodConsumption =
+            FoodItemProbeState.FoodConsumptionState.missing(
+                    FoodItemProbeState.ConsumptionPhase.RELOADED
+            );
     private MetalBlockProbeState initialMetalBlockState = MetalBlockProbeState.missing();
     private MetalBlockProbeState reloadedMetalBlockState = MetalBlockProbeState.missing();
     private MetalBlockProbeState serverStartedMetalBlockState =
@@ -139,11 +150,13 @@ public final class RegistryFoundationServerProbe {
     private boolean enchantmentsCapturedAfterServerDataLoad;
     private boolean particlesCapturedAfterServerDataLoad;
     private boolean materialItemsCapturedAfterServerDataLoad;
+    private boolean foodItemsCapturedAfterServerDataLoad;
     private boolean metalBlocksCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
     private boolean serverStartedParticlesRechecked;
     private boolean serverStartedMaterialItemsRechecked;
+    private boolean serverStartedFoodItemsRechecked;
     private boolean serverStartedMetalBlocksRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
@@ -163,6 +176,11 @@ public final class RegistryFoundationServerProbe {
     private boolean materialItemRegistryStableAfterReload;
     private boolean materialItemPropertiesStableAfterReload;
     private boolean materialItemStackNbtStableAfterReload;
+    private boolean foodItemRegistryStableAfterReload;
+    private boolean foodItemPropertiesStableAfterReload;
+    private boolean foodItemStackNbtStableAfterReload;
+    private boolean foodConsumptionFreshPlayerAfterReload;
+    private boolean foodConsumptionStableAfterReload;
     private boolean metalBlockRegistryStableAfterReload;
     private boolean metalBlockPropertiesStableAfterReload;
     private boolean metalBlockTagsStableAfterReload;
@@ -229,6 +247,7 @@ public final class RegistryFoundationServerProbe {
             initialEnchantmentState = EnchantmentProbeState.capture();
             initialParticleState = ParticleProbeState.capture();
             initialMaterialItemState = MaterialItemProbeState.capture();
+            initialFoodItemState = FoodItemProbeState.capture();
             initialMetalBlockState = MetalBlockProbeState.capture();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
@@ -241,7 +260,16 @@ public final class RegistryFoundationServerProbe {
         reloadedEnchantmentState = EnchantmentProbeState.capture();
         reloadedParticleState = ParticleProbeState.capture();
         reloadedMaterialItemState = MaterialItemProbeState.capture();
+        reloadedFoodItemState = FoodItemProbeState.capture();
         reloadedMetalBlockState = MetalBlockProbeState.capture();
+        reloadedFoodConsumption = startedServer == null
+                ? FoodItemProbeState.FoodConsumptionState.missing(
+                        FoodItemProbeState.ConsumptionPhase.RELOADED
+                )
+                : FoodItemProbeState.FoodConsumptionState.consume(
+                        startedServer,
+                        FoodItemProbeState.ConsumptionPhase.RELOADED
+                );
         reloadTagsObserved = tagUpdateCount == 2 && startedServer != null && reloadRequested;
         GameEvent reloadedEvent = Registries.GAME_EVENT.getOrEmpty(EVENT_ID).orElse(null);
         registryStableAfterReload = reloadTagsObserved
@@ -286,6 +314,21 @@ public final class RegistryFoundationServerProbe {
                 && initialMaterialItemState.hasSameProperties(reloadedMaterialItemState);
         materialItemStackNbtStableAfterReload = reloadTagsObserved
                 && initialMaterialItemState.hasSameStackNbt(reloadedMaterialItemState);
+        foodItemRegistryStableAfterReload = reloadTagsObserved
+                && initialFoodItemState.hasSameRegistry(reloadedFoodItemState);
+        foodItemPropertiesStableAfterReload = reloadTagsObserved
+                && initialFoodItemState.hasSameProperties(reloadedFoodItemState);
+        foodItemStackNbtStableAfterReload = reloadTagsObserved
+                && initialFoodItemState.hasSameStackNbt(reloadedFoodItemState);
+        foodConsumptionFreshPlayerAfterReload = reloadTagsObserved
+                && reloadedFoodConsumption.isFreshPlayerComparedWith(
+                        serverStartedFoodConsumption
+                );
+        foodConsumptionStableAfterReload = reloadTagsObserved
+                && serverStartedFoodConsumption.hasExactConsumption()
+                && reloadedFoodConsumption.hasExactConsumption()
+                && serverStartedFoodConsumption.hasSameOutcome(reloadedFoodConsumption)
+                && foodConsumptionFreshPlayerAfterReload;
         metalBlockRegistryStableAfterReload = reloadTagsObserved
                 && initialMetalBlockState.hasSameRegistry(reloadedMetalBlockState);
         metalBlockPropertiesStableAfterReload = reloadTagsObserved
@@ -325,6 +368,9 @@ public final class RegistryFoundationServerProbe {
         materialItemsCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialMaterialItemState.hasExactRegistry()
                 && initialMaterialItemState.hasExactContract();
+        foodItemsCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialFoodItemState.hasExactRegistry()
+                && initialFoodItemState.hasExactContract();
         metalBlocksCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialMetalBlockState.hasExactRegistry()
                 && initialMetalBlockState.hasExactContract();
@@ -389,6 +435,13 @@ public final class RegistryFoundationServerProbe {
         serverStartedMaterialItemState = MaterialItemProbeState.capture();
         serverStartedMaterialItemsRechecked = initialMaterialItemState
                 .sameStateAtServerStarted(serverStartedMaterialItemState);
+        serverStartedFoodItemState = FoodItemProbeState.capture();
+        serverStartedFoodItemsRechecked = initialFoodItemState
+                .sameStateAtServerStarted(serverStartedFoodItemState);
+        serverStartedFoodConsumption = FoodItemProbeState.FoodConsumptionState.consume(
+                event.getServer(),
+                FoodItemProbeState.ConsumptionPhase.SERVER_STARTED
+        );
         serverStartedMetalBlockState = MetalBlockProbeState.capture();
         serverStartedMetalBlocksRechecked = initialMetalBlockState
                 .sameStateAtServerStarted(serverStartedMetalBlockState);
@@ -992,6 +1045,187 @@ public final class RegistryFoundationServerProbe {
         );
         addAssertion(
                 assertions,
+                "registry:item:" + FoodItemProbeState.ITEM_ID,
+                "present",
+                presentState(
+                        initialFoodItemState.entries()
+                                .getOrDefault(
+                                        FoodItemProbeState.ITEM_ID,
+                                        FoodItemProbeState.FoodItemEntry.failed()
+                                )
+                                .itemIdentity() != null
+                )
+        );
+        addAssertion(
+                assertions,
+                "registry:food_item_ids_exact",
+                String.join(",", FoodItemProbeState.EXPECTED_ITEM_IDS),
+                String.join(",", initialFoodItemState.foodItemIds())
+        );
+        addAssertion(
+                assertions,
+                "food_item_capture_error",
+                "none",
+                errorState(initialFoodItemState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "food_item_runtime_class_exact",
+                FoodItemProbeState.VANILLA_ITEM_CLASS,
+                initialFoodItemState.runtimeClassSummary()
+        );
+        addAssertion(
+                assertions,
+                "food_item_properties_exact",
+                FoodItemProbeState.expectedCanonicalProperties(),
+                initialFoodItemState.canonicalProperties()
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_item_stack_nbt_round_trip_exact",
+                initialFoodItemState.hasExactStackNbtRoundTrip()
+        );
+        addAssertion(
+                assertions,
+                "food_item_save_representation_exact",
+                FoodItemProbeState.expectedCanonicalSaveRepresentations(),
+                initialFoodItemState.canonicalSaveRepresentations()
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_item_contract_exact",
+                initialFoodItemState.hasExactContract()
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_items_captured_after_server_data_load",
+                foodItemsCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_food_items_rechecked",
+                serverStartedFoodItemsRechecked
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_item_registry_stable_after_reload",
+                foodItemRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_item_properties_stable_after_reload",
+                foodItemPropertiesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_item_stack_nbt_stable_after_reload",
+                foodItemStackNbtStableAfterReload
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_capture_error",
+                "none",
+                errorState(serverStartedFoodConsumption.captureError())
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_player_class",
+                FoodItemProbeState.FoodConsumptionState.PLAYER_CLASS,
+                serverStartedFoodConsumption.playerClass()
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_player_uuid",
+                FoodItemProbeState.ConsumptionPhase.SERVER_STARTED.uuid().toString(),
+                serverStartedFoodConsumption.playerUuid()
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_player_name",
+                FoodItemProbeState.ConsumptionPhase.SERVER_STARTED.playerName(),
+                serverStartedFoodConsumption.playerName()
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_item_id",
+                FoodItemProbeState.ITEM_ID,
+                serverStartedFoodConsumption.itemId()
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_result_item_id",
+                FoodItemProbeState.ITEM_ID,
+                serverStartedFoodConsumption.resultItemId()
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_initial_hunger",
+                "10",
+                Integer.toString(serverStartedFoodConsumption.initialHunger())
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_initial_saturation",
+                "0.0",
+                Float.toString(serverStartedFoodConsumption.initialSaturation())
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_initial_stack_count",
+                "2",
+                Integer.toString(serverStartedFoodConsumption.initialStackCount())
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_result_hunger",
+                "13",
+                Integer.toString(serverStartedFoodConsumption.resultHunger())
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_result_saturation",
+                "12.0",
+                Float.toString(serverStartedFoodConsumption.resultSaturation())
+        );
+        addAssertion(
+                assertions,
+                "server_started_food_consumption_result_stack_count",
+                "1",
+                Integer.toString(serverStartedFoodConsumption.resultStackCount())
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_food_consumption_same_stack_instance",
+                serverStartedFoodConsumption.sameStackInstance()
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_food_consumption_exact",
+                serverStartedFoodConsumption.hasExactConsumption()
+        );
+        addAssertion(
+                assertions,
+                "reloaded_food_consumption_capture_error",
+                "none",
+                errorState(reloadedFoodConsumption.captureError())
+        );
+        addBooleanAssertion(
+                assertions,
+                "reloaded_food_consumption_exact",
+                reloadedFoodConsumption.hasExactConsumption()
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_consumption_fresh_player_after_reload",
+                foodConsumptionFreshPlayerAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "food_consumption_stable_after_reload",
+                foodConsumptionStableAfterReload
+        );
+        addAssertion(
+                assertions,
                 "registry:loot_condition:etherology:random_chance_with_fortune",
                 "present",
                 presentState(lootConditionState.conditionTypeIdentity() != null)
@@ -1290,7 +1524,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 8);
+        report.addProperty("schema", 9);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -1307,6 +1541,8 @@ public final class RegistryFoundationServerProbe {
         report.add("enchantments", buildEnchantments());
         report.add("particles", buildParticles());
         report.add("material_items", buildMaterialItems());
+        report.add("food_items", buildFoodItems());
+        report.add("food_consumption", buildFoodConsumption());
         report.add("metal_blocks", buildMetalBlocks());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
@@ -1546,6 +1782,71 @@ public final class RegistryFoundationServerProbe {
         return materialItems;
     }
 
+    private JsonObject buildFoodItems() {
+        JsonObject foodItems = new JsonObject();
+        foodItems.addProperty("registry_id", FoodItemProbeState.ITEM_REGISTRY_ID);
+        foodItems.addProperty("capture_error", initialFoodItemState.captureError());
+        foodItems.add(
+                "food_item_ids",
+                buildStringArray(initialFoodItemState.foodItemIds())
+        );
+        foodItems.addProperty(
+                "vanilla_item_class",
+                FoodItemProbeState.VANILLA_ITEM_CLASS
+        );
+        foodItems.addProperty(
+                "properties",
+                initialFoodItemState.canonicalProperties()
+        );
+        foodItems.addProperty(
+                "save_representations",
+                initialFoodItemState.canonicalSaveRepresentations()
+        );
+        JsonObject entries = new JsonObject();
+        initialFoodItemState.entries().forEach((id, entry) ->
+                entries.add(id, buildFoodItem(entry))
+        );
+        foodItems.add("entries", entries);
+        foodItems.addProperty(
+                "same_state_at_server_started",
+                serverStartedFoodItemsRechecked
+        );
+        foodItems.addProperty(
+                "registry_stable_after_reload",
+                foodItemRegistryStableAfterReload
+        );
+        foodItems.addProperty(
+                "properties_stable_after_reload",
+                foodItemPropertiesStableAfterReload
+        );
+        foodItems.addProperty(
+                "stack_nbt_stable_after_reload",
+                foodItemStackNbtStableAfterReload
+        );
+        return foodItems;
+    }
+
+    private JsonObject buildFoodConsumption() {
+        JsonObject foodConsumption = new JsonObject();
+        foodConsumption.add(
+                "server_started",
+                buildFoodConsumptionCapture(serverStartedFoodConsumption)
+        );
+        foodConsumption.add(
+                "reloaded",
+                buildFoodConsumptionCapture(reloadedFoodConsumption)
+        );
+        foodConsumption.addProperty(
+                "fresh_player_after_reload",
+                foodConsumptionFreshPlayerAfterReload
+        );
+        foodConsumption.addProperty(
+                "stable_after_reload",
+                foodConsumptionStableAfterReload
+        );
+        return foodConsumption;
+    }
+
     private JsonObject buildMetalBlocks() {
         JsonObject metalBlocks = new JsonObject();
         metalBlocks.addProperty(
@@ -1745,6 +2046,22 @@ public final class RegistryFoundationServerProbe {
                 materialItemStackNbtStableAfterReload
         );
         reload.addProperty(
+                "food_item_registry_stable",
+                foodItemRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "food_item_properties_stable",
+                foodItemPropertiesStableAfterReload
+        );
+        reload.addProperty(
+                "food_item_stack_nbt_stable",
+                foodItemStackNbtStableAfterReload
+        );
+        reload.addProperty(
+                "food_consumption_stable",
+                foodConsumptionStableAfterReload
+        );
+        reload.addProperty(
                 "metal_block_registry_stable",
                 metalBlockRegistryStableAfterReload
         );
@@ -1893,6 +2210,47 @@ public final class RegistryFoundationServerProbe {
         materialItem.addProperty("round_trip_exact", entry.roundTripExact());
         materialItem.addProperty("save_representation", entry.saveRepresentation());
         return materialItem;
+    }
+
+    private static JsonObject buildFoodItem(FoodItemProbeState.FoodItemEntry entry) {
+        JsonObject foodItem = new JsonObject();
+        foodItem.addProperty("id", entry.id());
+        foodItem.addProperty("runtime_class", entry.runtimeClass());
+        foodItem.addProperty("max_count", entry.maxCount());
+        foodItem.addProperty("is_food", entry.food());
+        foodItem.addProperty("hunger", entry.hunger());
+        foodItem.addProperty("saturation_modifier", entry.saturationModifier());
+        foodItem.addProperty("always_edible", entry.alwaysEdible());
+        foodItem.addProperty("status_effect_count", entry.statusEffectCount());
+        foodItem.addProperty("has_recipe_remainder", entry.hasRecipeRemainder());
+        foodItem.addProperty("recipe_remainder_id", entry.recipeRemainderId());
+        foodItem.addProperty("serialized_id", entry.serializedId());
+        foodItem.addProperty("serialized_count", entry.serializedCount());
+        foodItem.add("serialized_keys", buildStringArray(entry.serializedKeys()));
+        foodItem.addProperty("round_trip_exact", entry.roundTripExact());
+        foodItem.addProperty("save_representation", entry.saveRepresentation());
+        return foodItem;
+    }
+
+    private static JsonObject buildFoodConsumptionCapture(
+            FoodItemProbeState.FoodConsumptionState state
+    ) {
+        JsonObject capture = new JsonObject();
+        capture.addProperty("capture_error", state.captureError());
+        capture.addProperty("player_class", state.playerClass());
+        capture.addProperty("player_uuid", state.playerUuid());
+        capture.addProperty("player_name", state.playerName());
+        capture.addProperty("item_id", state.itemId());
+        capture.addProperty("result_item_id", state.resultItemId());
+        capture.addProperty("initial_hunger", state.initialHunger());
+        capture.addProperty("initial_saturation", state.initialSaturation());
+        capture.addProperty("initial_stack_count", state.initialStackCount());
+        capture.addProperty("result_hunger", state.resultHunger());
+        capture.addProperty("result_saturation", state.resultSaturation());
+        capture.addProperty("result_stack_count", state.resultStackCount());
+        capture.addProperty("same_stack_instance", state.sameStackInstance());
+        capture.addProperty("exact", state.hasExactConsumption());
+        return capture;
     }
 
     private static JsonObject buildMetalBlock(

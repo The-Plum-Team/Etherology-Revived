@@ -1,5 +1,6 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.architectury.plugin.ArchitectPluginExtension
+import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
 import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
@@ -12,7 +13,10 @@ import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
+import java.nio.file.LinkOption
+import java.nio.file.Path
 import java.security.MessageDigest
+import java.util.Comparator
 import java.util.zip.ZipFile
 
 plugins {
@@ -396,6 +400,17 @@ val forgeMetalBlockRegistryServerEvidenceTest =
 val forgeServerContractV13 = rootProject.file("scripts/e2e/forge_server_contract_v13.py")
 val forgeServerProfileSnapshotV13 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v13.json")
+val forgeFoodItemRegistryServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "food-item-registry-server-v14",
+    )
+val forgeFoodItemRegistryServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_food_item_evidence_v14.py")
+val forgeFoodItemRegistryServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_food_item_evidence_v14.py")
+val forgeServerContractV14 = rootProject.file("scripts/e2e/forge_server_contract_v14.py")
+val forgeServerProfileSnapshotV14 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v14.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -414,6 +429,151 @@ apply(plugin = "com.gradleup.shadow")
 
 fun Project.versionProperty(base: String): String =
     rootProject.property("${base}_${minecraftVersion.replace(".", "_")}") as String
+
+enum class ServerProbeSafetyInterlockFailureKind {
+    SEALED_ARCHIVE,
+    RUN_TOKEN,
+    RUN_LOCK_MISSING_OR_LINKED,
+    RUN_LOCK_INVALID,
+    PROFILE_MARKER_MISSING_OR_LINKED,
+    PROFILE_MARKER_MALFORMED,
+    PROFILE_MARKER_MISMATCH,
+    EVIDENCE_DIRECTORY_INVALID,
+}
+
+data class ServerProbeSafetyInterlockFailure(
+    val kind: ServerProbeSafetyInterlockFailureKind,
+    val message: String,
+)
+
+data class ServerProbeSafetyInterlockSpec(
+    val sealedArchive: File,
+    val runToken: String?,
+    val runLock: File,
+    val profileMarker: File,
+    val profileId: String,
+    val managedBy: String,
+    val taskPath: String,
+    val scenarioId: String,
+    val evidenceDirectories: List<File>,
+)
+
+fun serverProbeSafetyInterlockFailure(
+    spec: ServerProbeSafetyInterlockSpec,
+): ServerProbeSafetyInterlockFailure? {
+    if (spec.sealedArchive.exists()
+        || Files.isSymbolicLink(spec.sealedArchive.toPath())
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.SEALED_ARCHIVE,
+            "The dedicated-server probe profile already has sealed evidence and is consumed: " +
+                spec.sealedArchive.absolutePath,
+        )
+    }
+
+    val runToken = spec.runToken
+    if (runToken == null || !Regex("[0-9a-f]{64}").matches(runToken)) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_TOKEN,
+            "The dedicated-server probe runner safety-interlock token is missing or malformed",
+        )
+    }
+    if (!spec.runLock.isFile || Files.isSymbolicLink(spec.runLock.toPath())) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_LOCK_MISSING_OR_LINKED,
+            "The dedicated-server probe runner safety-interlock lock is missing or linked",
+        )
+    }
+    val runLockLines = try {
+        spec.runLock.readLines(StandardCharsets.UTF_8)
+    } catch (_: Exception) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
+            "The dedicated-server probe runner safety-interlock lock is invalid",
+        )
+    }
+    if (runLockLines.size != 2
+        || !Regex("pid=[1-9][0-9]*").matches(runLockLines[0])
+        || runLockLines[1] != "token=$runToken"
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
+            "The dedicated-server probe runner safety-interlock lock is invalid",
+        )
+    }
+
+    if (!spec.profileMarker.isFile
+        || Files.isSymbolicLink(spec.profileMarker.toPath())
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MISSING_OR_LINKED,
+            "The dedicated-server probe profile marker is missing or linked",
+        )
+    }
+    val runtimeMarker = try {
+        JsonSlurper().parse(spec.profileMarker)
+    } catch (_: Exception) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MALFORMED,
+            "The dedicated-server probe runtime marker is malformed",
+        )
+    }
+    if (runtimeMarker !is Map<*, *>) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MALFORMED,
+            "The dedicated-server probe runtime marker is malformed",
+        )
+    }
+    val markerLaunch = runtimeMarker["launch"]
+    if (runtimeMarker["schema"] != 1
+        || runtimeMarker["profile_id"] != spec.profileId
+        || runtimeMarker["managed_by"] != spec.managedBy
+        || markerLaunch != mapOf(
+            "task_path" to spec.taskPath,
+            "scenario" to spec.scenarioId,
+        )
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MISMATCH,
+            "The dedicated-server probe runtime marker does not match the active profile",
+        )
+    }
+
+    if (spec.evidenceDirectories.any { directory ->
+        !directory.isDirectory
+            || Files.isSymbolicLink(directory.toPath())
+            || directory.listFiles()?.isEmpty() != true
+    }) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.EVIDENCE_DIRECTORY_INVALID,
+            "The dedicated-server probe evidence directory is not pristine",
+        )
+    }
+    return null
+}
+
+fun deleteServerProbeSafetyInterlockFixture(
+    fixtureRoot: Path,
+    allowedTemporaryRoot: Path,
+) {
+    val normalizedFixtureRoot = fixtureRoot.toAbsolutePath().normalize()
+    val normalizedTemporaryRoot = allowedTemporaryRoot.toAbsolutePath().normalize()
+    check(
+        normalizedFixtureRoot != normalizedTemporaryRoot
+            && normalizedFixtureRoot.startsWith(normalizedTemporaryRoot),
+    ) {
+        "Refusing to clean a server-probe safety-interlock fixture outside build/tmp: " +
+            normalizedFixtureRoot
+    }
+    if (!Files.exists(normalizedFixtureRoot, LinkOption.NOFOLLOW_LINKS)) {
+        return
+    }
+    Files.walk(normalizedFixtureRoot).use { paths ->
+        paths.sorted(Comparator.reverseOrder()).forEach { path ->
+            Files.delete(path)
+        }
+    }
+}
 
 group = rootProject.property("maven_group") as String
 version = rootProject.property("mod_version") as String
@@ -3135,6 +3295,67 @@ fun missingForgeMetalBlockRegistryServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeFoodItemRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeFoodItemRegistryServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeFoodItemRegistryServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge food-item-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("food-item-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeFoodItemRegistryServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge food-item-registry server-v14 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeFoodItemRegistryServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeFoodItemRegistryServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge food-item-registry server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge food-item-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, recipe, screen, effect, loot, tree, and " +
@@ -3266,6 +3487,13 @@ fun firstIncompleteForgeMilestone(
     if (missingMetalBlockRegistryServerEvidence.isNotEmpty()) {
         return "metal-block registry dedicated-server evidence" to
             missingMetalBlockRegistryServerEvidence
+    }
+
+    val missingFoodItemRegistryServerEvidence =
+        missingForgeFoodItemRegistryServerEvidenceMilestone()
+    if (missingFoodItemRegistryServerEvidence.isNotEmpty()) {
+        return "food-item registry dedicated-server evidence" to
+            missingFoodItemRegistryServerEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -3518,6 +3746,7 @@ tasks.named<Test>("test").configure {
     exclude("**/EnchantmentRegistryResourcesTest.class")
     exclude("**/ParticleRegistryResourcesTest.class")
     exclude("**/MaterialItemRegistryResourcesTest.class")
+    exclude("**/FoodItemRegistryResourcesTest.class")
     exclude("**/MetalBlockRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
@@ -3992,6 +4221,104 @@ val materialItemRegistryTest = tasks.register<Test>("materialItemRegistryTest") 
     }
 }
 
+val foodItemRegistryTest = tasks.register<Test>("foodItemRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader food-item ownership and packaged-resource tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.FoodItemRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("foodItemCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("foodItemFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("foodItemForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("foodItemFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("foodItemFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("foodItemForgeShadowJar")
+    inputs.file(
+        rootProject.file(
+            "src/main/generated/assets/etherology/models/item/forest_lantern_crumb.json",
+        ),
+    ).withPropertyName("canonicalForestLanternCrumbModel")
+    inputs.file(
+        rootProject.file(
+            "src/client/resources/assets/etherology/textures/item/forest_lantern_crumb.png",
+        ),
+    ).withPropertyName("canonicalForestLanternCrumbTexture")
+    inputs.file(englishLanguageFile)
+        .withPropertyName("foodItemEnglishLanguage")
+    inputs.file(
+        rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+    ).withPropertyName("foodItemRussianLanguage")
+    inputs.files(
+        rootProject.fileTree("src/main/generated/data/etherology") {
+            include(
+                "recipes/forest_lantern_crumb.json",
+                "recipes/forest_lantern_crumb_from_campfire.json",
+                "recipes/forest_lantern_crumb_from_smoking.json",
+                "advancements/recipes/food/forest_lantern_crumb.json",
+                "advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
+                "advancements/recipes/food/forest_lantern_crumb_from_smoking.json",
+            )
+        },
+    ).withPropertyName("deferredForestLanternCrumbCookingData")
+    doFirst {
+        systemProperty(
+            "etherology.foodItems.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.foodItems.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.foodItems.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.foodItems.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.foodItems.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.foodItems.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.foodItems.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
 val metalBlockRegistryTest = tasks.register<Test>("metalBlockRegistryTest") {
     group = "verification"
     description =
@@ -4329,7 +4656,7 @@ val forgeMetalBlockRegistryServerSafetyTest =
     tasks.register<Exec>("forgeMetalBlockRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge metal-block runner and v13 verifier safety tests."
+            "Runs the historical Forge metal-block-registry v13 verifier safety tests."
         dependsOn(forgeMetalBlockRegistryServerV12SafetyTest)
         workingDir(rootProject.projectDir)
         commandLine(
@@ -4337,16 +4664,281 @@ val forgeMetalBlockRegistryServerSafetyTest =
             "-B",
             "-m",
             "unittest",
-            "scripts/e2e/test_forge_server.py",
             "scripts/e2e/test_forge_server_metal_block_evidence_v13.py",
         )
         inputs.files(
             forgeServerContractV13,
             forgeServerProfileSnapshotV13,
-            forgeRegistryFoundationServerRunner,
-            forgeRegistryFoundationServerRunnerTest,
             forgeMetalBlockRegistryServerEvidenceVerifier,
             forgeMetalBlockRegistryServerEvidenceTest,
+        )
+    }
+
+val serverProbeSafetyInterlockTest =
+    tasks.register("serverProbeSafetyInterlockTest") {
+        group = "verification"
+        description =
+            "Executable-tests the Forge server runner safety interlock without launching Minecraft."
+
+        doLast {
+            val allowedTemporaryRoot = layout.buildDirectory.dir("tmp")
+                .get()
+                .asFile
+                .toPath()
+            val fixtureRoot = temporaryDir.toPath()
+            val validToken = "a".repeat(64)
+            val mismatchedToken = "b".repeat(64)
+            val expectedProfileId = "etherology-server-probe-fixture-v1"
+            val expectedManagedBy = "scripts/e2e/forge_server.py"
+            val expectedTaskPath =
+                ":forge:1.20.1:runRegistryFoundationServerProbe"
+            val expectedScenarioId = "safety-interlock-fixture"
+
+            fun writeMarker(path: Path, profileId: String = expectedProfileId) {
+                val marker = mapOf(
+                    "schema" to 1,
+                    "profile_id" to profileId,
+                    "managed_by" to expectedManagedBy,
+                    "launch" to mapOf(
+                        "task_path" to expectedTaskPath,
+                        "scenario" to expectedScenarioId,
+                    ),
+                )
+                path.toFile().writeText(
+                    JsonOutput.prettyPrint(JsonOutput.toJson(marker)) + "\n",
+                    StandardCharsets.UTF_8,
+                )
+            }
+
+            fun validFixture(): ServerProbeSafetyInterlockSpec {
+                deleteServerProbeSafetyInterlockFixture(
+                    fixtureRoot,
+                    allowedTemporaryRoot,
+                )
+                Files.createDirectories(fixtureRoot)
+                val runLock = fixtureRoot.resolve("run.lock").toFile()
+                runLock.writeText(
+                    "pid=12345\ntoken=$validToken\n",
+                    StandardCharsets.UTF_8,
+                )
+                val profileMarker = fixtureRoot.resolve("runtime/profile-marker.json")
+                Files.createDirectories(profileMarker.parent)
+                writeMarker(profileMarker)
+                val evidenceRoot = fixtureRoot.resolve("runtime/evidence")
+                val evidenceDirectories = listOf(
+                    evidenceRoot.resolve("reports").toFile(),
+                    evidenceRoot.resolve("logs").toFile(),
+                )
+                evidenceDirectories.forEach { directory ->
+                    Files.createDirectories(directory.toPath())
+                }
+                return ServerProbeSafetyInterlockSpec(
+                    sealedArchive = fixtureRoot.resolve("sealed-archive").toFile(),
+                    runToken = validToken,
+                    runLock = runLock,
+                    profileMarker = profileMarker.toFile(),
+                    profileId = expectedProfileId,
+                    managedBy = expectedManagedBy,
+                    taskPath = expectedTaskPath,
+                    scenarioId = expectedScenarioId,
+                    evidenceDirectories = evidenceDirectories,
+                )
+            }
+
+            fun requireFailure(
+                description: String,
+                expectedKind: ServerProbeSafetyInterlockFailureKind,
+                spec: ServerProbeSafetyInterlockSpec,
+            ) {
+                val failure = serverProbeSafetyInterlockFailure(spec)
+                check(failure?.kind == expectedKind) {
+                    "$description: expected $expectedKind, got " +
+                        (failure?.kind?.toString() ?: "accepted")
+                }
+            }
+
+            try {
+                var spec = validFixture()
+                Files.createDirectories(spec.sealedArchive.toPath())
+                requireFailure(
+                    "sealed archive",
+                    ServerProbeSafetyInterlockFailureKind.SEALED_ARCHIVE,
+                    spec,
+                )
+
+                spec = validFixture().copy(runToken = null)
+                requireFailure(
+                    "missing token",
+                    ServerProbeSafetyInterlockFailureKind.RUN_TOKEN,
+                    spec,
+                )
+
+                spec = validFixture().copy(runToken = "not-a-token")
+                requireFailure(
+                    "malformed token",
+                    ServerProbeSafetyInterlockFailureKind.RUN_TOKEN,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.runLock.toPath())
+                requireFailure(
+                    "missing lock",
+                    ServerProbeSafetyInterlockFailureKind.RUN_LOCK_MISSING_OR_LINKED,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.runLock.toPath())
+                val linkedLockTarget = fixtureRoot.resolve("linked-lock-target")
+                Files.writeString(
+                    linkedLockTarget,
+                    "pid=12345\ntoken=$validToken\n",
+                    StandardCharsets.UTF_8,
+                )
+                Files.createSymbolicLink(spec.runLock.toPath(), linkedLockTarget)
+                requireFailure(
+                    "linked lock",
+                    ServerProbeSafetyInterlockFailureKind.RUN_LOCK_MISSING_OR_LINKED,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.runLock.writeText(
+                    "pid=0\ntoken=$validToken\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "malformed lock",
+                    ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.runLock.writeText(
+                    "pid=12345\ntoken=$mismatchedToken\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "mismatched token and lock",
+                    ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.profileMarker.toPath())
+                requireFailure(
+                    "missing marker",
+                    ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MISSING_OR_LINKED,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.profileMarker.toPath())
+                val linkedMarkerTarget = fixtureRoot.resolve("linked-marker-target.json")
+                writeMarker(linkedMarkerTarget)
+                Files.createSymbolicLink(
+                    spec.profileMarker.toPath(),
+                    linkedMarkerTarget,
+                )
+                requireFailure(
+                    "linked marker",
+                    ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MISSING_OR_LINKED,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.profileMarker.writeText("{\n", StandardCharsets.UTF_8)
+                requireFailure(
+                    "malformed marker",
+                    ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MALFORMED,
+                    spec,
+                )
+
+                spec = validFixture()
+                writeMarker(spec.profileMarker.toPath(), "another-profile")
+                requireFailure(
+                    "mismatched marker",
+                    ServerProbeSafetyInterlockFailureKind.PROFILE_MARKER_MISMATCH,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.evidenceDirectories[0].toPath())
+                requireFailure(
+                    "missing evidence directory",
+                    ServerProbeSafetyInterlockFailureKind.EVIDENCE_DIRECTORY_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.evidenceDirectories[1].toPath())
+                val linkedEvidenceTarget = fixtureRoot.resolve("linked-evidence-target")
+                Files.createDirectories(linkedEvidenceTarget)
+                Files.createSymbolicLink(
+                    spec.evidenceDirectories[1].toPath(),
+                    linkedEvidenceTarget,
+                )
+                requireFailure(
+                    "linked evidence directory",
+                    ServerProbeSafetyInterlockFailureKind.EVIDENCE_DIRECTORY_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.writeString(
+                    spec.evidenceDirectories[0].toPath().resolve("unexpected.txt"),
+                    "unexpected\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "non-pristine evidence directory",
+                    ServerProbeSafetyInterlockFailureKind.EVIDENCE_DIRECTORY_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                check(serverProbeSafetyInterlockFailure(spec) == null) {
+                    "The all-valid server-probe safety-interlock fixture was rejected"
+                }
+                logger.lifecycle(
+                    "Validated 15 Forge server-probe safety-interlock fixture cases without " +
+                        "launching Minecraft.",
+                )
+            } finally {
+                deleteServerProbeSafetyInterlockFixture(
+                    fixtureRoot,
+                    allowedTemporaryRoot,
+                )
+            }
+        }
+    }
+
+val forgeFoodItemRegistryServerSafetyTest =
+    tasks.register<Exec>("forgeFoodItemRegistryServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge food-item runner and v14 verifier safety tests."
+        dependsOn(
+            forgeMetalBlockRegistryServerSafetyTest,
+            serverProbeSafetyInterlockTest,
+        )
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server.py",
+            "scripts/e2e/test_forge_server_food_item_evidence_v14.py",
+        )
+        inputs.files(
+            forgeServerContractV14,
+            forgeServerProfileSnapshotV14,
+            forgeRegistryFoundationServerRunner,
+            forgeRegistryFoundationServerRunnerTest,
+            forgeFoodItemRegistryServerEvidenceVerifier,
+            forgeFoodItemRegistryServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
@@ -4355,10 +4947,10 @@ val forgeMetalBlockRegistryServerSafetyTest =
         )
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
-        ).withPropertyName("forgeMetalBlockRegistryServerProbeSources")
+        ).withPropertyName("forgeFoodItemRegistryServerProbeSources")
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
-        ).withPropertyName("forgeMetalBlockRegistryServerProbeTests")
+        ).withPropertyName("forgeFoodItemRegistryServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -4503,6 +5095,32 @@ val validateForgeMetalBlockRegistryServerEvidenceArchiveIntegrity =
                 missingForgeMetalBlockRegistryServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion metal-block-registry server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeFoodItemRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeFoodItemRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge food-item-registry server-v14 archive."
+        dependsOn(forgeFoodItemRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV14,
+            forgeServerProfileSnapshotV14,
+            forgeFoodItemRegistryServerEvidenceVerifier,
+        )
+        if (forgeFoodItemRegistryServerEvidenceArchive.exists()) {
+            inputs.dir(forgeFoodItemRegistryServerEvidenceArchive)
+                .withPropertyName("forgeFoodItemRegistryServerEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeFoodItemRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion food-item-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -5027,12 +5645,78 @@ val validateForgeMetalBlockRegistryMilestone =
         )
     }
 
+val validateForgeFoodItemRegistryStaticMilestone =
+    tasks.register("validateForgeFoodItemRegistryStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the bounded shared food item and exact packaged resources."
+        dependsOn(
+            validateForgeMetalBlockRegistryMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            foodItemRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("foodItemFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("foodItemForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.file(
+            rootProject.file(
+                "src/main/generated/assets/etherology/models/item/forest_lantern_crumb.json",
+            ),
+        ).withPropertyName("canonicalForestLanternCrumbModel")
+        inputs.file(
+            rootProject.file(
+                "src/client/resources/assets/etherology/textures/item/forest_lantern_crumb.png",
+            ),
+        ).withPropertyName("canonicalForestLanternCrumbTexture")
+        inputs.file(englishLanguageFile)
+            .withPropertyName("foodItemEnglishLanguage")
+        inputs.file(
+            rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+        ).withPropertyName("foodItemRussianLanguage")
+        inputs.files(
+            rootProject.fileTree("src/main/generated/data/etherology") {
+                include(
+                    "recipes/forest_lantern_crumb.json",
+                    "recipes/forest_lantern_crumb_from_campfire.json",
+                    "recipes/forest_lantern_crumb_from_smoking.json",
+                    "advancements/recipes/food/forest_lantern_crumb.json",
+                    "advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
+                    "advancements/recipes/food/forest_lantern_crumb_from_smoking.json",
+                )
+            },
+        ).withPropertyName("deferredForestLanternCrumbCookingData")
+    }
+
+val validateForgeFoodItemRegistryMilestone =
+    tasks.register("validateForgeFoodItemRegistryMilestone") {
+        group = "verification"
+        description =
+            "Combines exact static food-item checks with immutable native Forge proof."
+        dependsOn(
+            validateForgeFoodItemRegistryStaticMilestone,
+            validateForgeFoodItemRegistryServerEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeMetalBlockRegistryMilestone)
+        dependsOn(validateForgeFoodItemRegistryMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -5078,6 +5762,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeParticleRegistryMilestone,
         validateForgeMaterialItemRegistryMilestone,
         validateForgeMetalBlockRegistryMilestone,
+        validateForgeFoodItemRegistryMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -5086,7 +5771,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeMetalBlockRegistryStaticMilestone)
+    dependsOn(validateForgeFoodItemRegistryStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -5123,6 +5808,9 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV13,
         forgeServerProfileSnapshotV13,
         forgeMetalBlockRegistryServerEvidenceVerifier,
+        forgeServerContractV14,
+        forgeServerProfileSnapshotV14,
+        forgeFoodItemRegistryServerEvidenceVerifier,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -5144,6 +5832,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeMetalBlockRegistryServerEvidenceArchive.exists()) {
         inputs.dir(forgeMetalBlockRegistryServerEvidenceArchive)
             .withPropertyName("forgeMetalBlockRegistryServerEvidenceArchive")
+    }
+    if (forgeFoodItemRegistryServerEvidenceArchive.exists()) {
+        inputs.dir(forgeFoodItemRegistryServerEvidenceArchive)
+            .withPropertyName("forgeFoodItemRegistryServerEvidenceArchive")
     }
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -5216,6 +5908,12 @@ if (minecraftVersion == "1.20.1") {
     val serverProbeGameDirectoryName =
         serverProbeProfileIdentity.getValue("game_directory").toString()
     val serverProbeScenarioId = serverProbeLaunch.getValue("scenario").toString()
+    val serverProbeProfileVersion = requireNotNull(
+        Regex(".*-(v[1-9][0-9]*)").matchEntire(serverProbeProfileId)
+            ?.groupValues?.get(1),
+    ) {
+        "The dedicated-server probe profile has no safe archive version"
+    }
     @Suppress("UNCHECKED_CAST")
     val serverProbeForbiddenModIds =
         (serverProbeProfile.getValue("forbidden_mod_ids") as List<Any>)
@@ -5223,6 +5921,16 @@ if (minecraftVersion == "1.20.1") {
     val serverProbeGameDirectory = rootProject.file(
         "scripts/e2e/.state/runtimes/$serverProbeRuntimeDirectory/" +
             serverProbeGameDirectoryName,
+    )
+    val serverProbeRuntimeDirectoryRoot = serverProbeGameDirectory.parentFile
+    val serverProbeProfileMarker = serverProbeRuntimeDirectoryRoot.resolve(
+        ".etherology-forge-server-e2e-profile.json",
+    )
+    val serverProbeRunLock = rootProject.file(
+        "scripts/e2e/.state/$serverProbeProfileId-run.lock",
+    )
+    val serverProbeSealedArchive = forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "$serverProbeScenarioId-server-$serverProbeProfileVersion",
     )
     val serverProbeEvidenceRoot = rootProject.file(
         "scripts/e2e/.state/runtimes/$serverProbeRuntimeDirectory/" +
@@ -5273,7 +5981,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 metal-block server probe")
+            displayName.set("Etherology Forge 1.20.1 food-item server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -5354,8 +6062,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v13",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v13",
+                "id" to "etherology-e2e-forge-server-1.20.1-v14",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v14",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -5375,14 +6083,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "metal-block-registry",
+                "scenario" to "food-item-registry",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "metal-block-registry",
+                "scenario_directory" to "food-item-registry",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -5551,6 +6259,13 @@ if (minecraftVersion == "1.20.1") {
                 check(probeClassEntries == setOf(
                     "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "FoodItemProbeState\$ConsumptionPhase.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "FoodItemProbeState\$FoodConsumptionState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "FoodItemProbeState\$FoodItemEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/FoodItemProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/" +
                         "MaterialItemProbeState\$MaterialItemEntry.class",
@@ -5829,6 +6544,62 @@ if (minecraftVersion == "1.20.1") {
                             .sorted()
                 }
 
+                val foodItemStateClassEntries = setOf(
+                    "dev/theplumteam/etherology/e2e/server/FoodItemProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "FoodItemProbeState\$ConsumptionPhase.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "FoodItemProbeState\$FoodConsumptionState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "FoodItemProbeState\$FoodItemEntry.class",
+                )
+                val foodItemStateConstants = foodItemStateClassEntries.flatMap { entryName ->
+                    val entry = requireNotNull(probeZip.getEntry(entryName))
+                    readClassUtf8Constants(
+                        probeZip.getInputStream(entry).use { input -> input.readAllBytes() },
+                    )
+                }.toSet()
+                val requiredFoodItemStateConstants = setOf(
+                    "minecraft:item",
+                    "etherology:forest_lantern_crumb",
+                    "net/minecraft/item/Item",
+                    "net/minecraft/item/ItemStack",
+                    "net/minecraft/item/FoodComponent",
+                    "net/minecraft/server/network/ServerPlayerEntity",
+                    "com/mojang/authlib/GameProfile",
+                    "00000000-0000-0000-0000-00000000e214",
+                    "00000000-0000-0000-0000-00000000e215",
+                    "EtherFoodStart",
+                    "EtherFoodReload",
+                    "getFoodComponent",
+                    "getHunger",
+                    "getSaturationModifier",
+                    "isAlwaysEdible",
+                    "getStatusEffects",
+                    "hasRecipeRemainder",
+                    "getRecipeRemainder",
+                    "finishUsing",
+                    "getHungerManager",
+                    "setFoodLevel",
+                    "setSaturationLevel",
+                    "setExhaustion",
+                    "getFoodLevel",
+                    "getSaturationLevel",
+                    "writeNbt",
+                    "fromNbt",
+                    "Count",
+                    "id",
+                )
+                check(
+                    requiredFoodItemStateConstants.all(
+                        foodItemStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its food-item/consumption contract: " +
+                        (requiredFoodItemStateConstants - foodItemStateConstants)
+                            .sorted()
+                }
+
                 val metalBlockStateEntry = requireNotNull(
                     probeZip.getEntry(
                         "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState.class",
@@ -6011,6 +6782,38 @@ if (minecraftVersion == "1.20.1") {
                     "metal_block_tags_stable_after_reload",
                     "metal_block_stack_nbt_stable_after_reload",
                     "metal_block_placement_stable_after_reload",
+                    "food_items",
+                    "food_consumption",
+                    "registry:food_item_ids_exact",
+                    "food_item_capture_error",
+                    "food_item_runtime_class_exact",
+                    "food_item_properties_exact",
+                    "food_item_stack_nbt_round_trip_exact",
+                    "food_item_save_representation_exact",
+                    "food_item_contract_exact",
+                    "food_items_captured_after_server_data_load",
+                    "server_started_food_items_rechecked",
+                    "food_item_registry_stable_after_reload",
+                    "food_item_properties_stable_after_reload",
+                    "food_item_stack_nbt_stable_after_reload",
+                    "server_started_food_consumption_capture_error",
+                    "server_started_food_consumption_player_class",
+                    "server_started_food_consumption_player_uuid",
+                    "server_started_food_consumption_player_name",
+                    "server_started_food_consumption_item_id",
+                    "server_started_food_consumption_result_item_id",
+                    "server_started_food_consumption_initial_hunger",
+                    "server_started_food_consumption_initial_saturation",
+                    "server_started_food_consumption_initial_stack_count",
+                    "server_started_food_consumption_result_hunger",
+                    "server_started_food_consumption_result_saturation",
+                    "server_started_food_consumption_result_stack_count",
+                    "server_started_food_consumption_same_stack_instance",
+                    "server_started_food_consumption_exact",
+                    "reloaded_food_consumption_capture_error",
+                    "reloaded_food_consumption_exact",
+                    "food_consumption_fresh_player_after_reload",
+                    "food_consumption_stable_after_reload",
                     "loot_condition",
                     "registry:loot_condition:etherology:random_chance_with_fortune",
                     "registry:loot_condition_etherology_ids_exact",
@@ -6055,6 +6858,7 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/ParticleProbeState",
                     "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState",
                     "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState",
+                    "dev/theplumteam/etherology/e2e/server/FoodItemProbeState",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
@@ -6154,10 +6958,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 metal-block server probe."
+                "Builds and validates the Forge 1.20.1 food-item server probe."
             dependsOn(
-                validateForgeMetalBlockRegistryStaticMilestone,
-                forgeMetalBlockRegistryServerSafetyTest,
+                validateForgeFoodItemRegistryStaticMilestone,
+                forgeFoodItemRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,
@@ -6167,6 +6971,31 @@ if (minecraftVersion == "1.20.1") {
         }
     serverProbeRunTask.configure {
         dependsOn(verifyRegistryFoundationServerProbe)
+        doFirst {
+            val evidenceDirectories = listOf(
+                serverProbeEvidenceRoot.resolve("reports"),
+                serverProbeEvidenceRoot.resolve("logs"),
+            )
+            val failure = serverProbeSafetyInterlockFailure(
+                ServerProbeSafetyInterlockSpec(
+                    sealedArchive = serverProbeSealedArchive,
+                    runToken = System.getenv(
+                        "ETHERLOGY_E2E_FORGE_SERVER_RUN_TOKEN",
+                    ),
+                    runLock = serverProbeRunLock,
+                    profileMarker = serverProbeProfileMarker,
+                    profileId = serverProbeProfileId,
+                    managedBy = "scripts/e2e/forge_server.py",
+                    taskPath =
+                        ":forge:1.20.1:runRegistryFoundationServerProbe",
+                    scenarioId = serverProbeScenarioId,
+                    evidenceDirectories = evidenceDirectories,
+                ),
+            )
+            check(failure == null) {
+                failure?.message.orEmpty()
+            }
+        }
     }
 
     val e2eHarness = sourceSets.create("e2eHarness") {

@@ -9,7 +9,8 @@ runtime evidence before the release gate advances.
 The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation,
 bounded SharedSounds registry/resource milestone, bounded SharedGameEvents/SharedLootConditions
 registry/server foundation, bounded Common Ether-source reload path, and bounded
-SharedEnchantments, SharedParticleTypes, SharedMaterialItems, and SharedMetalBlocks registry/server milestones are
+SharedEnchantments, SharedParticleTypes, SharedMaterialItems, SharedMetalBlocks, and
+SharedFoodItems registry/server milestones are
 accepted, not the finished port.
 Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
 lifecycle, synchronized Gecko animation, and
@@ -20,7 +21,7 @@ resource inventory, but does not claim native playback. SharedGameEvents closes 
 resonance declaration and both vanilla listening tags. SharedLootConditions closes the sole
 deferred `random_chance_with_fortune` declaration and serializer. One real Forge dedicated-server
 registry-foundation proof covers both registries. A separate real reload proof covers the
-Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v13
+Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v14
 server record. SharedEnchantments closes the two canonical enchantment declarations, concrete
 types, and exact non-treasure tag on both loaders; enchanting applicability and the Peal/reflection
 combat mechanics are not part of that acceptance. SharedParticleTypes closes the exact 22 particle
@@ -34,7 +35,11 @@ that acceptance. SharedMetalBlocks and SharedMetalBlockItems close exactly `azel
 bounded server proof covers registry/classes/mappings/properties, selected tags, stack NBT, direct
 world placement through reload, and normal save/stop; it does not prove restart persistence,
 player `/give` or placement, mining/drop behavior, beacon activation, recipe execution, creative
-tabs, or client rendering. The broader authoritative registry spine is still the first incomplete forward
+tabs, or client rendering. `SharedFoodItems` closes the plain `forest_lantern_crumb` declaration,
+exact hunger 3 and saturation modifier 2.0 behavior, packaged model/texture/translations, and
+native player consumption through reload. It does not include the three recipes and three
+matching advancements that require the unported `forest_lantern`, client visual proof, restart
+persistence, or multiplayer. The broader authoritative registry spine is still the first incomplete forward
 milestone. Broad content migration must follow the ownership and dependency order below.
 
 ## Audit snapshot
@@ -65,15 +70,16 @@ canonical Fabric graph remains authoritative until each bounded slice is accepte
 the loader-neutral lifecycle without replacing canonical Fabric classes. They cannot remain a
 second permanent catalog for the same identifiers. `SharedSounds`, `SharedGameEvents`,
 `SharedLootConditions`, `SharedEnchantments`, `SharedParticleTypes`, `SharedMaterialItems`,
-`SharedMetalBlocks`, and `SharedMetalBlockItems` are
+`SharedMetalBlocks`, `SharedMetalBlockItems`, and `SharedFoodItems` are
 the accepted parts of the authoritative registry spine and the single Common declaration owners
 for their IDs. Forge attaches them before
 lifecycle registry events, while Fabric attaches the same owners from its canonical initializer.
 The legacy eager `EtherSounds`, `EventsRegistry`, `LootConditions`, and `EtherParticleTypes`
 owners are removed, the accepted material fields are removed from `EItems` and `DecoBlockItems`,
 and the legacy concrete enchantment and particle-effect classes moved to Common. The three former
-eager metal-block fields are removed from `DecoBlocks`. Fabric's
-`EtherEnchantments` remains only a
+eager metal-block fields are removed from `DecoBlocks`. Fabric's legacy
+`EItems.FOREST_LANTERN_CRUMB` field aliases the shared supplier instead of registering a second
+item. `EtherEnchantments` remains only a
 policy/gameplay consumer of `SharedEnchantments`, not another registry owner. Before broad content
 migration, converge the remaining catalogs on one active
 declaration owner for every registry ID and attach that declaration once per loader.
@@ -99,14 +105,14 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 This is the current forward milestone. Its bounded shared-sound, game-event, loot-condition,
 Ether-source reload, enchantment-registry, particle-registry, behavior-free material-item, and
-behavior-free metal-block steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
+behavior-free metal-block and food-item steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
 incomplete work.
 
 Source owners:
 
 - Blocks: accepted Common `SharedMetalBlocks`; remaining `ExtraBlocksRegistry`, `DecoBlocks`,
   `EBlocks`, `DevBlocks`, and `EBlockFamilies` declarations and behavior.
-- Items: accepted Common `SharedMaterialItems` and `SharedMetalBlockItems`; the remaining `EItems`, `ToolItems`, `ArmorItems`,
+- Items: accepted Common `SharedMaterialItems`, `SharedMetalBlockItems`, and `SharedFoodItems`; the remaining `EItems`, `ToolItems`, `ArmorItems`,
   `DecoBlockItems`, and `EItemGroups` declarations and behavior.
 - Other registries: accepted Common `SharedSounds`, `SharedGameEvents`,
   `SharedLootConditions`, `SharedEnchantments`, and `SharedParticleTypes`; remaining
@@ -212,7 +218,8 @@ Accepted bounded Ether-source reload foundation:
   `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
 - The v6 archive remains immutable historical evidence for the Ether-source slice. The cumulative
   v7 enchantment-registry, v10 particle-registry, and v11 material-item archives below are
-  historical; v13 is the current cumulative dedicated-server proof.
+  historical; v13 is the historical metal-block predecessor and v14 is the current cumulative
+  food-item dedicated-server proof.
 - It does not prove furnace or machine consumption, the wider Ether network, the full registry,
   native sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness.
 
@@ -364,6 +371,50 @@ Accepted bounded metal-block-registry milestone:
   rendering, the complete port, or release readiness. The archive proves capture-time userdev
   observations and payload integrity only; it does not cryptographically bind later sources or
   rebuilt JARs.
+
+Accepted bounded food-item-registry milestone:
+
+- `SharedFoodItems` is the sole Common deferred owner of the plain
+  `etherology:forest_lantern_crumb` vanilla `Item`. Its food component has hunger 3, saturation
+  modifier 2.0, no always-edible behavior, no status effects, and no recipe remainder. Fabric's
+  retained `EItems.FOREST_LANTERN_CRUMB` is an alias of that supplier, not a second registration.
+- The exact English and Russian names are `Mushroom Crumb` and `Грибной мякиш`. The model and
+  texture SHA-256 values are
+  `6ba61590386580a2f70526313d501eec44cd88ff9d86cd1d13d9092b41a42fbe` and
+  `44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65`.
+  The three recipes and their three matching advancements depend on the unported
+  `forest_lantern`, so all six data resources are deliberately deferred.
+- `validateForgeFoodItemRegistryMilestone` combines the static/resource/artifact gate with the
+  immutable capture-time
+  [`food-item-registry-server-v14`](../evidence/forge-1.20.1/food-item-registry-server-v14)
+  archive. A fresh repository-owned `etherology-e2e-forge-server-1.20.1-v14` Java 17 Forge 47.4.9
+  dedicated server used a tracked 1192-byte profile manifest with SHA-256
+  `442d11e6a5072c8ec418bced406529dc15caa6d4f4d4c5c68edc8a79ce2e493d`; report schema 9 passed
+  all 219 ordered assertions.
+- Real `ServerPlayerEntity` instances `EtherFoodStart` and `EtherFoodReload` proved exact
+  registry/class/food/stack/save-representation state, hunger `10 → 13`, saturation `0 → 12`,
+  stack `2 → 1`, retention of the same `ItemStack` instance, and exact stability through a real
+  `reload`. The cumulative run re-proved v13 and every earlier registry/reload contract. The world
+  saved, the server stopped normally, and the launcher exited zero.
+- The archive binds archive-manifest SHA-256
+  `eacab05996569a78a55ed21117d2a7e0768d87c258c93757cdc4ab4205881927`, report SHA-256
+  `3ccd86d4ef6f5b31fd37b686254bdf427e351019c778d2d8e3f03958de0e1f6c`, launcher-result SHA-256
+  `4ec610688bf030ea722772c40d871ec1b954fcbc0b15f90cbad41acec6278ad0`, completion-marker SHA-256
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`, and server-log SHA-256
+  `e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`.
+- All 82 current Python runner/verifier safety tests pass. Separately,
+  `:forge:1.20.1:serverProbeSafetyInterlockTest` passes 15 non-Minecraft Gradle interlock fixture
+  cases and is wired into `forgeFoodItemRegistryServerSafetyTest`; these are distinct suites, not
+  one 97-test count. The sealed archive durably blocks normal
+  reprovisioning and environment checks for that identity, even after runtime removal; the raw
+  Gradle launch also requires the runner's exact token/lock, profile marker, and pristine evidence
+  directories. These are accidental-misuse interlocks, not provenance authentication;
+  same-account adversarial or concurrent filesystem mutation and TOCTOU are outside their threat
+  model.
+- This headless proof has no client visual evidence and does not establish a second JVM/restart,
+  multiplayer, the deferred recipe behavior, creative-tab interaction, client rendering/gameplay,
+  the complete registry, or release readiness. The broader authoritative registry spine remains
+  the next forward gate.
 
 Implementation:
 
@@ -547,7 +598,7 @@ The bounded `validateForgeChannelNetworkMilestone` has since been accepted with 
 native evidence; the storage run was not reused as channel proof. The bounded
 `validateForgeSoundRegistryMilestone`, SharedGameEvents/SharedLootConditions registry-foundation,
 Ether-source reload, SharedEnchantments, SharedParticleTypes, SharedMaterialItems, and
-SharedMetalBlocks registry milestones are also accepted, so the broader authoritative registry spine is now the first
+SharedMetalBlocks and SharedFoodItems registry milestones are also accepted, so the broader authoritative registry spine is now the first
 incomplete stage in the release dependency graph.
 The unconditional
 `validateForgeReleaseReadinessMilestone` remains behind every forward gate and cannot be satisfied
@@ -614,8 +665,8 @@ Accepted bounded proof:
 - One Common listener/default-data owner, exact 23-entry startup data, and exact 24-entry result
   after a real Forge `reload` override/addition, frozen by the historical schema-4, 72-assertion
   v6 record and re-proved cumulatively by the historical schema-5, 95-assertion v7 and schema-6,
-  138-assertion v10 and schema-7, 163-assertion v11 records plus the current schema-8,
-  188-assertion v13 record. Registry
+  138-assertion v10, schema-7, 163-assertion v11, and schema-8, 188-assertion v13 records plus the
+  current schema-9, 219-assertion v14 record. Registry
   and tags remain stable; loot-condition registry and evaluated behavior remain stable while the
   probe loot-table instance is replaced.
 - Shared Ether storage/pipe contracts, exact `ethereal_channel` block and block-entity IDs, storage
@@ -955,20 +1006,20 @@ integration tests.
 
 The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents,
 SharedLootConditions, Ether-source reload, SharedEnchantments, SharedParticleTypes, and
-SharedMaterialItems, SharedMetalBlocks, and SharedMetalBlockItems registry gates are currently
-positive. The v4 registry-foundation, v6 Ether-source, v7 enchantment, v10 particle, and v11
-material-item archives remain historical evidence. The current v13 proof is a fresh schema-8
-Forge 47.4.9 dedicated-server run with 188 of 188 cumulative assertions. It adds the exact three
-metal block and block-item IDs, classes/mappings, properties, selected tags, stack NBT, and direct
-bounded world placement through reload to the prior material-item, particle, enchantment,
-registry/tag/loot, and exact startup/reloaded Ether-source contracts. It saved, followed the exact
-lifecycle, stopped normally, exited zero, and produced a verifier-accepted server log. The v12
-diagnostic profile was consumed by required unported references in the packaged
+SharedMaterialItems, SharedMetalBlocks, SharedMetalBlockItems, and SharedFoodItems registry gates
+are currently positive. The v4 registry-foundation, v6 Ether-source, v7 enchantment, v10 particle,
+v11 material-item, and v13 metal-block archives remain historical evidence. The current v14 proof
+is a fresh schema-9 Forge 47.4.9 dedicated-server run with 219 of 219 cumulative assertions. It
+adds the exact plain `forest_lantern_crumb` registry/class/food/stack/save state and native
+consumption by two real `ServerPlayerEntity` instances to all v13 and earlier contracts. Hunger
+changed `10 → 13`, saturation changed `0 → 12`, the stack changed `2 → 1`, the same `ItemStack`
+instance remained, and the observations were exactly stable through reload. The world saved, followed
+the exact lifecycle, stopped normally, exited zero, and produced a verifier-accepted server log.
+The v12 diagnostic profile was consumed by required unported references in the packaged
 `mineable/pickaxe` and `needs_iron_tool` files; those references are now optional, while
-`needs_stone_tool` is unchanged and outside this Forge resource slice. v12 was never accepted or
-archived. The v13 proof
-remains narrower than restart persistence, player `/give` or player placement, mining/drop
-behavior, beacon activation, recipe execution, creative-tab interaction, client rendering,
+`needs_stone_tool` is unchanged and outside that Forge resource slice. v12 was never accepted or
+archived. The v14 proof remains narrower than restart persistence, multiplayer, the deliberately
+deferred three recipes and three advancements, creative-tab interaction, client rendering,
 full-catalog placement/save, and combat acceptance. Its archive records capture-time userdev
 observations and payload integrity; it does not cryptographically bind later sources or rebuilt
 JARs. The broader

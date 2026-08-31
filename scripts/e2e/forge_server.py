@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded Forge 1.20.1 metal-block probe in isolated state."""
+"""Run the bounded Forge 1.20.1 food-item probe in isolated state."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import secrets
 import shutil
 import signal
 import subprocess
@@ -18,7 +19,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
-import forge_server_contract_v13 as contract_v13
+import forge_server_contract_v14 as contract_v14
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -33,77 +34,90 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v13.PROFILE_ID
-SCENARIO_ID = contract_v13.SCENARIO_ID
-TASK_PATH = contract_v13.TASK_PATH
+PROFILE_ID = contract_v14.PROFILE_ID
+SCENARIO_ID = contract_v14.SCENARIO_ID
+TASK_PATH = contract_v14.TASK_PATH
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
 GRADLE_JAVA_OVERRIDE_ENVIRONMENT_VARIABLE = "ETHERLOGY_E2E_GRADLE_JAVA"
+RUN_TOKEN_ENVIRONMENT_VARIABLE = "ETHERLOGY_E2E_FORGE_SERVER_RUN_TOKEN"
 RUN_TIMEOUT_SECONDS = 15 * 60
 PROCESS_STOP_TIMEOUT_SECONDS = 15
 PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 MAXIMUM_SERVER_LOG_SIZE = 48 * 1024 * 1024
 COMPLETION_MARKER_CONTENT = b"complete\n"
-REQUIRED_MOD_IDS = contract_v13.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v13.FORBIDDEN_MOD_IDS
-RELOAD_PACK_DIRECTORY = contract_v13.RELOAD_PACK_DIRECTORY
-RELOAD_PACK_ENABLED_NAME = contract_v13.RELOAD_PACK_ENABLED_NAME
-RELOAD_PACK_RESOURCES = contract_v13.RELOAD_PACK_RESOURCES
-ETHER_SOURCE_LISTENER_CLASS = contract_v13.ETHER_SOURCE_LISTENER_CLASS
-ENCHANTMENT_REGISTRY_ID = contract_v13.ENCHANTMENT_REGISTRY_ID
-NON_TREASURE_TAG_ID = contract_v13.NON_TREASURE_TAG_ID
-ENCHANTMENT_IDS = contract_v13.ENCHANTMENT_IDS
-ENCHANTMENTS = contract_v13.ENCHANTMENTS
-PARTICLE_REGISTRY_ID = contract_v13.PARTICLE_REGISTRY_ID
-FEY_PARTICLE_TYPE_CLASS = contract_v13.FEY_PARTICLE_TYPE_CLASS
-PARTICLE_IDS = contract_v13.PARTICLE_IDS
-PARTICLE_PAYLOAD_FAMILIES = contract_v13.PARTICLE_PAYLOAD_FAMILIES
-PARTICLES = contract_v13.PARTICLES
-SEAL_TYPE_ORDER = contract_v13.SEAL_TYPE_ORDER
-SEAL_TYPES = contract_v13.SEAL_TYPES
-MATERIAL_ITEM_REGISTRY_ID = contract_v13.MATERIAL_ITEM_REGISTRY_ID
-MATERIAL_ITEM_CLASS = contract_v13.MATERIAL_ITEM_CLASS
-MATERIAL_ITEM_NBT_KEYS = contract_v13.MATERIAL_ITEM_NBT_KEYS
-MATERIAL_ITEM_MAX_COUNTS = contract_v13.MATERIAL_ITEM_MAX_COUNTS
-MATERIAL_ITEM_IDS = contract_v13.MATERIAL_ITEM_IDS
-MATERIAL_ITEMS = contract_v13.MATERIAL_ITEMS
+REQUIRED_MOD_IDS = contract_v14.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v14.FORBIDDEN_MOD_IDS
+RELOAD_PACK_DIRECTORY = contract_v14.RELOAD_PACK_DIRECTORY
+RELOAD_PACK_ENABLED_NAME = contract_v14.RELOAD_PACK_ENABLED_NAME
+RELOAD_PACK_RESOURCES = contract_v14.RELOAD_PACK_RESOURCES
+ETHER_SOURCE_LISTENER_CLASS = contract_v14.ETHER_SOURCE_LISTENER_CLASS
+ENCHANTMENT_REGISTRY_ID = contract_v14.ENCHANTMENT_REGISTRY_ID
+NON_TREASURE_TAG_ID = contract_v14.NON_TREASURE_TAG_ID
+ENCHANTMENT_IDS = contract_v14.ENCHANTMENT_IDS
+ENCHANTMENTS = contract_v14.ENCHANTMENTS
+PARTICLE_REGISTRY_ID = contract_v14.PARTICLE_REGISTRY_ID
+FEY_PARTICLE_TYPE_CLASS = contract_v14.FEY_PARTICLE_TYPE_CLASS
+PARTICLE_IDS = contract_v14.PARTICLE_IDS
+PARTICLE_PAYLOAD_FAMILIES = contract_v14.PARTICLE_PAYLOAD_FAMILIES
+PARTICLES = contract_v14.PARTICLES
+SEAL_TYPE_ORDER = contract_v14.SEAL_TYPE_ORDER
+SEAL_TYPES = contract_v14.SEAL_TYPES
+MATERIAL_ITEM_REGISTRY_ID = contract_v14.MATERIAL_ITEM_REGISTRY_ID
+MATERIAL_ITEM_CLASS = contract_v14.MATERIAL_ITEM_CLASS
+MATERIAL_ITEM_NBT_KEYS = contract_v14.MATERIAL_ITEM_NBT_KEYS
+MATERIAL_ITEM_MAX_COUNTS = contract_v14.MATERIAL_ITEM_MAX_COUNTS
+MATERIAL_ITEM_IDS = contract_v14.MATERIAL_ITEM_IDS
+MATERIAL_ITEMS = contract_v14.MATERIAL_ITEMS
 MATERIAL_ITEM_CANONICAL_MAX_COUNTS = (
-    contract_v13.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
+    contract_v14.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
 )
 MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v13.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v14.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
 )
-METAL_BLOCK_REGISTRY_ID = contract_v13.METAL_BLOCK_REGISTRY_ID
-METAL_BLOCK_ITEM_REGISTRY_ID = contract_v13.METAL_BLOCK_ITEM_REGISTRY_ID
-METAL_BLOCK_CLASS = contract_v13.METAL_BLOCK_CLASS
-BLOCK_ITEM_CLASS = contract_v13.BLOCK_ITEM_CLASS
-METAL_BLOCK_NBT_KEYS = contract_v13.METAL_BLOCK_NBT_KEYS
-METAL_BLOCK_SPECS = contract_v13.METAL_BLOCK_SPECS
-METAL_BLOCK_IDS = contract_v13.METAL_BLOCK_IDS
-METAL_BLOCKS = contract_v13.METAL_BLOCKS
-METAL_BLOCK_CANONICAL_PROPERTIES = contract_v13.METAL_BLOCK_CANONICAL_PROPERTIES
+METAL_BLOCK_REGISTRY_ID = contract_v14.METAL_BLOCK_REGISTRY_ID
+METAL_BLOCK_ITEM_REGISTRY_ID = contract_v14.METAL_BLOCK_ITEM_REGISTRY_ID
+METAL_BLOCK_CLASS = contract_v14.METAL_BLOCK_CLASS
+BLOCK_ITEM_CLASS = contract_v14.BLOCK_ITEM_CLASS
+METAL_BLOCK_NBT_KEYS = contract_v14.METAL_BLOCK_NBT_KEYS
+METAL_BLOCK_SPECS = contract_v14.METAL_BLOCK_SPECS
+METAL_BLOCK_IDS = contract_v14.METAL_BLOCK_IDS
+METAL_BLOCKS = contract_v14.METAL_BLOCKS
+METAL_BLOCK_CANONICAL_PROPERTIES = contract_v14.METAL_BLOCK_CANONICAL_PROPERTIES
 METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v13.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v14.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
 )
-METAL_BLOCK_PLACEMENT_POSITIONS = contract_v13.METAL_BLOCK_PLACEMENT_POSITIONS
+METAL_BLOCK_PLACEMENT_POSITIONS = contract_v14.METAL_BLOCK_PLACEMENT_POSITIONS
 METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS = (
-    contract_v13.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
+    contract_v14.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
 )
-METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v13.METAL_BLOCK_CANONICAL_PLACED_IDS
-INITIAL_ETHER_SOURCE_ENTRIES = contract_v13.INITIAL_ETHER_SOURCE_ENTRIES
-RELOADED_ETHER_SOURCE_ENTRIES = contract_v13.RELOADED_ETHER_SOURCE_ENTRIES
-canonical_ether_source_entries = contract_v13.canonical_ether_source_entries
-EXPECTED_LIFECYCLE = contract_v13.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v13.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v13.EXPECTED_ASSERTION_VALUES
-PROBE_LOG_PHASES = contract_v13.PROBE_LOG_PHASES
-SERVER_LOG_TOKENS = contract_v13.SERVER_LOG_TOKENS
-CLIENT_LOG_MARKERS = contract_v13.CLIENT_LOG_MARKERS
-CLIENT_CLASS_PATTERN = contract_v13.CLIENT_CLASS_PATTERN
+METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v14.METAL_BLOCK_CANONICAL_PLACED_IDS
+FOOD_ITEM_REGISTRY_ID = contract_v14.FOOD_ITEM_REGISTRY_ID
+FOOD_ITEM_ID = contract_v14.FOOD_ITEM_ID
+FOOD_ITEM_IDS = contract_v14.FOOD_ITEM_IDS
+FOOD_ITEM_CLASS = contract_v14.FOOD_ITEM_CLASS
+FOOD_ITEM_NBT_KEYS = contract_v14.FOOD_ITEM_NBT_KEYS
+FOOD_ITEM_PROPERTIES = contract_v14.FOOD_ITEM_PROPERTIES
+FOOD_ITEM_SAVE_REPRESENTATION = contract_v14.FOOD_ITEM_SAVE_REPRESENTATION
+FOOD_ITEM_SAVE_REPRESENTATIONS = contract_v14.FOOD_ITEM_SAVE_REPRESENTATIONS
+FOOD_ITEMS = contract_v14.FOOD_ITEMS
+FOOD_CONSUMPTION_PLAYER_CLASS = contract_v14.FOOD_CONSUMPTION_PLAYER_CLASS
+SERVER_STARTED_FOOD_CONSUMPTION = contract_v14.SERVER_STARTED_FOOD_CONSUMPTION
+RELOADED_FOOD_CONSUMPTION = contract_v14.RELOADED_FOOD_CONSUMPTION
+INITIAL_ETHER_SOURCE_ENTRIES = contract_v14.INITIAL_ETHER_SOURCE_ENTRIES
+RELOADED_ETHER_SOURCE_ENTRIES = contract_v14.RELOADED_ETHER_SOURCE_ENTRIES
+canonical_ether_source_entries = contract_v14.canonical_ether_source_entries
+EXPECTED_LIFECYCLE = contract_v14.EXPECTED_LIFECYCLE
+EXPECTED_ASSERTION_NAMES = contract_v14.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v14.EXPECTED_ASSERTION_VALUES
+PROBE_LOG_PHASES = contract_v14.PROBE_LOG_PHASES
+SERVER_LOG_TOKENS = contract_v14.SERVER_LOG_TOKENS
+CLIENT_LOG_MARKERS = contract_v14.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v14.CLIENT_CLASS_PATTERN
 ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
-    contract_v13.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+    contract_v14.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
 )
 FATAL_SERVER_LOG_MARKERS = (
     "A mod crashed on startup!",
@@ -357,12 +371,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v13.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v14.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v13.PROFILE_MANIFEST_SHA256
+        != contract_v14.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v13 contract"
+            "The dedicated-server profile bytes differ from the immutable v14 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -464,6 +478,29 @@ def run_lock_path(
     state_root: Path = STATE_ROOT,
 ) -> Path:
     return state_root / f"{profile_spec(configuration)['id']}-run.lock"
+
+
+def sealed_archive_path(configuration: ResolvedConfiguration) -> Path:
+    """Resolves the immutable archive that permanently consumes this profile."""
+    profile_version = PROFILE_ID.rpartition("-")[2]
+    if re.fullmatch(r"v[1-9][0-9]*", profile_version) is None:
+        raise E2EError("The dedicated-server profile has no safe archive version")
+    return (
+        configuration.repository_root
+        / "docs/evidence/forge-1.20.1"
+        / f"{SCENARIO_ID}-server-{profile_version}"
+    )
+
+
+def require_unsealed_profile(configuration: ResolvedConfiguration) -> None:
+    """Rejects every lifecycle action after this profile has frozen evidence."""
+    archive = sealed_archive_path(configuration)
+    ensure_no_symlink_components(archive, configuration.repository_root)
+    if archive.exists() or archive.is_symlink():
+        raise E2EError(
+            "The dedicated-server profile already has sealed evidence and is consumed: "
+            f"{archive}"
+        )
 
 
 def profile_descriptor(configuration: ResolvedConfiguration) -> dict[str, object]:
@@ -684,6 +721,7 @@ def provision_profile(
     configuration: ResolvedConfiguration,
     state_root: Path = STATE_ROOT,
 ) -> None:
+    require_unsealed_profile(configuration)
     ensure_owned_state_roots(state_root)
     state_root.mkdir(mode=0o700, parents=True, exist_ok=True)
     runtimes_root = state_root / "runtimes"
@@ -815,6 +853,10 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
         "languageVersion.set(JavaLanguageVersion.of(serverProbeJavaVersion))",
         "serverProbeRunTask.configure",
         "dependsOn(verifyRegistryFoundationServerProbe)",
+        RUN_TOKEN_ENVIRONMENT_VARIABLE,
+        "serverProbeSealedArchive",
+        "serverProbeRunLock",
+        "serverProbeProfileMarker",
         PROFILE_ID,
         SCENARIO_ID,
     )
@@ -876,6 +918,7 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     state_root: Path = STATE_ROOT,
 ) -> tuple[Path, list[str]]:
+    require_unsealed_profile(configuration)
     verify_runtime(configuration, state_root)
     lock_path = run_lock_path(configuration, state_root)
     if lock_path.exists() or lock_path.is_symlink():
@@ -892,16 +935,16 @@ def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v13 contract."""
+    """Validates a probe report through the immutable profile-v14 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v13.validate_probe_report(
+        contract_v14.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v13.V13ContractError as exception:
+    except contract_v14.V14ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 
@@ -1098,8 +1141,10 @@ def execute_probe(
     java_path, command = verify_environment(configuration, state_root)
     target_root = runtime_root(configuration, state_root)
     lock_path = run_lock_path(configuration, state_root)
+    run_token = secrets.token_hex(32)
+    lock_content = f"pid={os.getpid()}\ntoken={run_token}\n".encode("utf-8")
     try:
-        write_bytes_exclusive(lock_path, f"pid={os.getpid()}\n".encode("utf-8"))
+        write_bytes_exclusive(lock_path, lock_content)
     except FileExistsError as exception:
         raise E2EError(
             f"A dedicated-server probe run is already owned: {lock_path}"
@@ -1117,6 +1162,7 @@ def execute_probe(
         output_path = Path(output_name)
         environment = os.environ.copy()
         environment["JAVA_HOME"] = str(java_path.parent.parent)
+        environment[RUN_TOKEN_ENVIRONMENT_VARIABLE] = run_token
         with os.fdopen(output_descriptor, "wb", buffering=0) as output_handle:
             try:
                 process = subprocess.Popen(

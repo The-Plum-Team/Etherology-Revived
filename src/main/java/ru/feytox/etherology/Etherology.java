@@ -21,6 +21,7 @@ import ru.feytox.etherology.registry.block.SharedMetalBlocks;
 import ru.feytox.etherology.registry.entity.EntityRegistry;
 import ru.feytox.etherology.registry.item.EItemGroups;
 import ru.feytox.etherology.registry.item.EItems;
+import ru.feytox.etherology.registry.item.SharedFoodItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
 import ru.feytox.etherology.registry.misc.*;
@@ -53,6 +54,7 @@ public class Etherology {
         SharedMetalBlocks.register();
         SharedMetalBlockItems.register();
         SharedMaterialItems.register();
+        SharedFoodItems.register();
         EItems.registerItems();
         EtherEnchantments.registerAll();
         EBlocks.registerAll();

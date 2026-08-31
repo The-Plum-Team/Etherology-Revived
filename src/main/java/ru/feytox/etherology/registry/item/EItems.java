@@ -41,7 +41,8 @@ public class EItems {
     public static final Item REDSTONE_LENS = registerItem("redstone_lens", new RedstoneLens());
     public static final Item[] LENSES = {REDSTONE_LENS};
 
-    public static final Item FOREST_LANTERN_CRUMB = registerItem("forest_lantern_crumb", new Item(new Item.Settings().food(EFoodComponents.CRUMB)));
+    public static final Item FOREST_LANTERN_CRUMB =
+            SharedFoodItems.FOREST_LANTERN_CRUMB.get();
 
     public static final Item PEACH_BOAT = registerItem("peach_boat", new BoatItem(false, BoatTypes.PEACH, new Item.Settings().maxCount(1)));
     public static final Item PEACH_CHEST_BOAT = registerItem("peach_chest_boat", new BoatItem(true, BoatTypes.PEACH, new Item.Settings().maxCount(1)));

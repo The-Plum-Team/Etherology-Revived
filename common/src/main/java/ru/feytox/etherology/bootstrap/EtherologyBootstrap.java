@@ -3,6 +3,7 @@ package ru.feytox.etherology.bootstrap;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.block.SharedBlocks;
 import ru.feytox.etherology.registry.block.SharedMetalBlocks;
+import ru.feytox.etherology.registry.item.SharedFoodItems;
 import ru.feytox.etherology.registry.item.SharedItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
@@ -40,6 +41,7 @@ public final class EtherologyBootstrap {
         SharedMetalBlockItems.register();
         SharedItems.register();
         SharedMaterialItems.register();
+        SharedFoodItems.register();
         SharedBlockEntities.register();
         SharedScreenHandlers.register();
         SharedSounds.register();

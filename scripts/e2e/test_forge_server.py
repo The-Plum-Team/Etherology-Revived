@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 8,
+        "schema": 9,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -188,6 +188,31 @@ def valid_report() -> dict[str, object]:
             "tags_stable_after_reload": True,
             "stack_nbt_stable_after_reload": True,
         },
+        "food_items": {
+            "registry_id": forge_server.FOOD_ITEM_REGISTRY_ID,
+            "capture_error": "",
+            "food_item_ids": list(forge_server.FOOD_ITEM_IDS),
+            "vanilla_item_class": forge_server.FOOD_ITEM_CLASS,
+            "properties": forge_server.FOOD_ITEM_PROPERTIES,
+            "save_representations": (
+                forge_server.FOOD_ITEM_SAVE_REPRESENTATIONS
+            ),
+            "entries": copy.deepcopy(forge_server.FOOD_ITEMS),
+            "same_state_at_server_started": True,
+            "registry_stable_after_reload": True,
+            "properties_stable_after_reload": True,
+            "stack_nbt_stable_after_reload": True,
+        },
+        "food_consumption": {
+            "server_started": copy.deepcopy(
+                forge_server.SERVER_STARTED_FOOD_CONSUMPTION
+            ),
+            "reloaded": copy.deepcopy(
+                forge_server.RELOADED_FOOD_CONSUMPTION
+            ),
+            "fresh_player_after_reload": True,
+            "stable_after_reload": True,
+        },
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
             "condition_id": "etherology:random_chance_with_fortune",
@@ -255,6 +280,10 @@ def valid_report() -> dict[str, object]:
             "metal_block_tags_stable": True,
             "metal_block_stack_nbt_stable": True,
             "metal_block_placement_stable": True,
+            "food_item_registry_stable": True,
+            "food_item_properties_stable": True,
+            "food_item_stack_nbt_stable": True,
+            "food_consumption_stable": True,
             "stop_requested_after_completion": True,
         },
         "tags": {
@@ -312,7 +341,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v13",
+            "etherology-e2e-forge-server-1.20.1-v14",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -338,8 +367,12 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v13_snapshot_and_preserves_v12(self) -> None:
+    def test_active_profile_matches_v14_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
+        v14_snapshot = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v14.json"
+        ).read_bytes()
         v13_snapshot = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v13.json"
@@ -350,8 +383,13 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v13_snapshot, active)
+        self.assertEqual(v14_snapshot, active)
+        self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v13",
+            json.loads(v13_snapshot)["profile"]["id"],
+        )
         self.assertEqual(
             "etherology-e2e-forge-server-1.20.1-v12",
             json.loads(v12_snapshot)["profile"]["id"],
@@ -467,6 +505,34 @@ class RuntimeIsolationTests(unittest.TestCase):
             forge_server.provision_profile(self.configuration, self.state_root)
 
         self.assertEqual(marker_content, marker_path.read_bytes())
+
+    def test_sealed_archive_permanently_consumes_profile_without_runtime(self) -> None:
+        archive = forge_server.sealed_archive_path(self.configuration)
+        archive.mkdir(parents=True)
+
+        with self.assertRaisesRegex(forge_server.E2EError, "sealed evidence.*consumed"):
+            forge_server.provision_profile(self.configuration, self.state_root)
+
+        self.assertFalse(self.state_root.exists())
+
+    def test_sealed_archive_blocks_check_after_an_existing_runtime(self) -> None:
+        forge_server.provision_profile(self.configuration, self.state_root)
+        forge_server.sealed_archive_path(self.configuration).mkdir(parents=True)
+
+        with self.assertRaisesRegex(forge_server.E2EError, "sealed evidence.*consumed"):
+            forge_server.verify_environment(self.configuration, self.state_root)
+
+    def test_linked_archive_destination_is_rejected_before_provision(self) -> None:
+        archive = forge_server.sealed_archive_path(self.configuration)
+        archive.parent.mkdir(parents=True)
+        target = self.repository_root / "foreign-archive"
+        target.mkdir()
+        archive.symlink_to(target, target_is_directory=True)
+
+        with self.assertRaisesRegex(forge_server.E2EError, "symlink"):
+            forge_server.provision_profile(self.configuration, self.state_root)
+
+        self.assertFalse(self.state_root.exists())
 
     def test_unmarked_existing_runtime_is_never_adopted(self) -> None:
         runtime = forge_server.runtime_root(self.configuration, self.state_root)
@@ -660,7 +726,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(188, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(219, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -793,11 +859,145 @@ class ProbeReportTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
+            f"registry:item:{forge_server.FOOD_ITEM_ID}",
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index + len(expected_names)
+            ],
+        )
+
+    def test_food_assertions_are_exact_and_probe_ordered(self) -> None:
+        server_started = forge_server.SERVER_STARTED_FOOD_CONSUMPTION
+        expected_names = (
+            f"registry:item:{forge_server.FOOD_ITEM_ID}",
+            "registry:food_item_ids_exact",
+            "food_item_capture_error",
+            "food_item_runtime_class_exact",
+            "food_item_properties_exact",
+            "food_item_stack_nbt_round_trip_exact",
+            "food_item_save_representation_exact",
+            "food_item_contract_exact",
+            "food_items_captured_after_server_data_load",
+            "server_started_food_items_rechecked",
+            "food_item_registry_stable_after_reload",
+            "food_item_properties_stable_after_reload",
+            "food_item_stack_nbt_stable_after_reload",
+            "server_started_food_consumption_capture_error",
+            "server_started_food_consumption_player_class",
+            "server_started_food_consumption_player_uuid",
+            "server_started_food_consumption_player_name",
+            "server_started_food_consumption_item_id",
+            "server_started_food_consumption_result_item_id",
+            "server_started_food_consumption_initial_hunger",
+            "server_started_food_consumption_initial_saturation",
+            "server_started_food_consumption_initial_stack_count",
+            "server_started_food_consumption_result_hunger",
+            "server_started_food_consumption_result_saturation",
+            "server_started_food_consumption_result_stack_count",
+            "server_started_food_consumption_same_stack_instance",
+            "server_started_food_consumption_exact",
+            "reloaded_food_consumption_capture_error",
+            "reloaded_food_consumption_exact",
+            "food_consumption_fresh_player_after_reload",
+            "food_consumption_stable_after_reload",
+        )
+        expected_values = (
+            "present",
+            forge_server.FOOD_ITEM_ID,
+            "none",
+            forge_server.FOOD_ITEM_CLASS,
+            forge_server.FOOD_ITEM_PROPERTIES,
+            "true",
+            forge_server.FOOD_ITEM_SAVE_REPRESENTATIONS,
+            *("true" for _check in range(6)),
+            "none",
+            forge_server.FOOD_CONSUMPTION_PLAYER_CLASS,
+            str(server_started["player_uuid"]),
+            str(server_started["player_name"]),
+            forge_server.FOOD_ITEM_ID,
+            forge_server.FOOD_ITEM_ID,
+            str(server_started["initial_hunger"]),
+            str(server_started["initial_saturation"]),
+            str(server_started["initial_stack_count"]),
+            str(server_started["result_hunger"]),
+            str(server_started["result_saturation"]),
+            str(server_started["result_stack_count"]),
+            "true",
+            "true",
+            "none",
+            "true",
+            "true",
+            "true",
+        )
+        insertion_index = (
+            forge_server.EXPECTED_ASSERTION_NAMES.index(
+                "metal_block_placement_stable_after_reload"
+            )
+            + 1
+        )
+
+        self.assertEqual(31, len(expected_names))
+        self.assertEqual(31, len(expected_values))
+        self.assertEqual(
+            expected_names,
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index:insertion_index + len(expected_names)
+            ],
+        )
+        self.assertEqual(
+            expected_values,
+            forge_server.EXPECTED_ASSERTION_VALUES[
+                insertion_index:insertion_index + len(expected_values)
+            ],
+        )
+        self.assertEqual(
             "registry:loot_condition:etherology:random_chance_with_fortune",
             forge_server.EXPECTED_ASSERTION_NAMES[
                 insertion_index + len(expected_names)
             ],
         )
+
+    def test_food_report_rejects_focused_contract_drift(self) -> None:
+        food_assertion_index = forge_server.EXPECTED_ASSERTION_NAMES.index(
+            "food_item_contract_exact"
+        )
+        mutations = {
+            "food registry": lambda report: report["food_items"].__setitem__(
+                "registry_id", "minecraft:block"
+            ),
+            "food properties": lambda report: report["food_items"]["entries"][
+                forge_server.FOOD_ITEM_ID
+            ].__setitem__("hunger", 4),
+            "server-started consumption": lambda report: report[
+                "food_consumption"
+            ]["server_started"].__setitem__("result_hunger", 12),
+            "reloaded consumption": lambda report: report["food_consumption"][
+                "reloaded"
+            ].__setitem__("result_stack_count", 2),
+            "fresh player after reload": lambda report: report[
+                "food_consumption"
+            ].__setitem__("fresh_player_after_reload", False),
+            "food registry reload stability": lambda report: report[
+                "reload"
+            ].__setitem__("food_item_registry_stable", False),
+            "food properties reload stability": lambda report: report[
+                "reload"
+            ].__setitem__("food_item_properties_stable", False),
+            "food stack NBT reload stability": lambda report: report[
+                "reload"
+            ].__setitem__("food_item_stack_nbt_stable", False),
+            "food consumption reload stability": lambda report: report[
+                "reload"
+            ].__setitem__("food_consumption_stable", False),
+            "food assertion inventory": lambda report: report["assertions"].pop(
+                food_assertion_index
+            ),
+        }
+        for description, mutate in mutations.items():
+            with self.subTest(description=description):
+                report = valid_report()
+                mutate(report)
+                with self.assertRaises(forge_server.E2EError):
+                    forge_server.validate_probe_report(report, self.configuration)
 
     def test_each_forbidden_mod_requires_an_explicit_false_result(self) -> None:
         for mod_id in forge_server.FORBIDDEN_MOD_IDS:
@@ -1183,6 +1383,10 @@ class ExecutionTests(unittest.TestCase):
 
         def fake_popen(*_args: object, **kwargs: object) -> FakeProcess:
             launch.update(kwargs)
+            launch["run_lock"] = forge_server.run_lock_path(
+                self.configuration,
+                self.state_root,
+            ).read_text(encoding="utf-8")
             self.publish_probe_outputs(kwargs["stdout"])
             return FakeProcess()
 
@@ -1205,6 +1409,10 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(subprocess.DEVNULL, launch["stdin"])
         self.assertEqual(subprocess.STDOUT, launch["stderr"])
         self.assertEqual("/jdk21", launch["env"]["JAVA_HOME"])
+        run_token = launch["env"][forge_server.RUN_TOKEN_ENVIRONMENT_VARIABLE]
+        self.assertRegex(run_token, r"^[0-9a-f]{64}$")
+        self.assertRegex(launch["run_lock"], r"^pid=[1-9][0-9]*\n")
+        self.assertIn(f"token={run_token}\n", launch["run_lock"])
         self.assertEqual(
             forge_server.COMPLETION_MARKER_CONTENT,
             (scenario / "reports/done.marker").read_bytes(),

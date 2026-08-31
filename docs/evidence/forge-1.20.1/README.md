@@ -196,11 +196,127 @@ sound-playback, enchantment-gameplay, or particle-rendering E2E was run. The
 14 behavior-free material items and their bounded server registry/NBT contract
 have passed as well. The three behavior-free metal blocks, their corresponding
 block items, and their bounded server registry/property/tag/NBT/placement
-contract have now passed. The
+contract have now passed. The plain `forest_lantern_crumb` food item and its
+bounded registry/reload/native-consumption contract have now passed as well. The
 broader authoritative registry spine is the next forward gate. The Forge
 release gate remains closed.
 
-## Current metal-block-registry dedicated server (v13)
+## Current food-item-registry dedicated server (v14)
+
+- Profile: `etherology-e2e-forge-server-1.20.1-v14`
+- Runtime directory:
+  `scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v14`
+- Scenario: `food-item-registry`
+- Tracked profile manifest SHA-256:
+  `442d11e6a5072c8ec418bced406529dc15caa6d4f4d4c5c68edc8a79ce2e493d`
+- Tracked profile manifest size: `1192` bytes
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Distribution: `DEDICATED_SERVER`
+- Execution: fresh repository-owned Loom-userdev dedicated server
+- Named task: `:forge:1.20.1:runRegistryFoundationServerProbe`
+- Report schema: `9`; archive-manifest schema: `1`
+- Report status: `passed`
+- Assertions: `219` passed, `0` failed
+- Launcher exit code: `0`; timed out: `false`
+- Copied server-log SHA-256:
+  `e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`
+
+`SharedFoodItems` is the sole Common deferred owner of exactly the plain
+`etherology:forest_lantern_crumb` vanilla `Item`. Its food component has hunger
+3 and saturation modifier 2.0, and it has no always-edible behavior, status
+effects, or recipe remainder. The packaged model SHA-256 is
+`6ba61590386580a2f70526313d501eec44cd88ff9d86cd1d13d9092b41a42fbe`;
+the packaged texture SHA-256 is
+`44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65`.
+The exact translations are `Mushroom Crumb` in English and `Грибной мякиш` in
+Russian. The three original recipes and their three advancements reference the
+still-unported `etherology:forest_lantern`, so they remain deliberately absent from
+the Forge slice instead of loading invalid data or substituting another input.
+
+The native server created two real `ServerPlayerEntity` instances,
+`EtherFoodStart` and `EtherFoodReload`. It captured the exact registry ID,
+runtime class, food properties, stack state, and deterministic save
+representation before and after a real `reload`, with exact reload stability.
+Real consumption changed hunger from 10 to 13, saturation from 0 to 12, and the
+stack count from 2 to 1 while retaining the same `ItemStack` instance. The report
+cumulatively re-proved the v13 metal-block, v11 material-item, v10 particle, v7
+enchantment, game-event/tag, loot-condition, and Ether-source contracts. The
+world saved, normal `stop(false)` completed, the launcher exited zero, and the
+copied log passed the strict verifier scan.
+
+Frozen file digests:
+
+- `food-item-registry-server-v14/archive-manifest.json`:
+  `eacab05996569a78a55ed21117d2a7e0768d87c258c93757cdc4ab4205881927`
+- `food-item-registry-server-v14/reports/report.json`:
+  `3ccd86d4ef6f5b31fd37b686254bdf427e351019c778d2d8e3f03958de0e1f6c`
+- `food-item-registry-server-v14/reports/launcher-result.json`:
+  `4ec610688bf030ea722772c40d871ec1b954fcbc0b15f90cbad41acec6278ad0`
+- `food-item-registry-server-v14/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `food-item-registry-server-v14/logs/latest.log`:
+  `e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`
+
+Validate the five-file archive without the ignored live runtime:
+
+```bash
+python3 -B scripts/e2e/forge_server_food_item_evidence_v14.py \
+  --archive docs/evidence/forge-1.20.1/food-item-registry-server-v14
+```
+
+```text
+Validated archived food-item-registry for etherology-e2e-forge-server-1.20.1-v14: 219 assertions
+Server log SHA-256: e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+The complete Python runner/verifier safety suite contains 82 passing tests:
+
+```bash
+python3 -B -m unittest discover -s scripts/e2e -p 'test_*.py'
+```
+
+Separately, the executable Gradle interlock task passes 15 non-Minecraft
+fixture cases and is wired into `forgeFoodItemRegistryServerSafetyTest`:
+
+```bash
+./gradlew --no-daemon --no-parallel --console=plain \
+  :forge:1.20.1:serverProbeSafetyInterlockTest
+```
+
+The 15 Gradle fixture cases and 82 Python tests are distinct suites, not one
+97-test count.
+
+The integrated positive milestone and forward-gate diagnostic are:
+
+```bash
+./gradlew --no-daemon --no-parallel --console=plain \
+  :forge:1.20.1:validateForgeFoodItemRegistryMilestone \
+  :forge:1.20.1:verifyForgePortGateClosed
+```
+
+The v14 profile is durably consumed. Once its archive is sealed, the runner
+rejects both reprovisioning and environment checks even if the ignored runtime
+directory is removed. The raw Gradle launch task additionally requires the
+exact cryptographic runner token and matching lock, exact tracked profile
+marker, and pristine live evidence directories. Direct, stale, or replayed
+launches fail before Minecraft starts in the normal runner flow. These are
+accidental-misuse interlocks, not provenance authentication; same-account
+adversarial or concurrent filesystem mutation and TOCTOU are outside the
+bounded threat model.
+
+This headless evidence creates no screenshots and supplies no client visual
+proof. It does not prove a second JVM or restart persistence, multiplayer, the
+six deferred recipe/advancement resources, creative-tab interaction, client
+rendering/gameplay, the complete authoritative registry, a complete port, or
+release readiness. Its immutable archive proves capture-time Loom-userdev
+observations and payload integrity only; it does not compare or
+cryptographically bind later sources or rebuilt JARs. Current static artifact
+checks are a separate proof boundary.
+
+## Historical metal-block-registry dedicated server (v13)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v13`
 - Runtime directory:
@@ -774,7 +890,7 @@ immutable historical archive.
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v13 metal-block archive is the current
+registry-foundation proof. The v14 food-item archive is the current
 cumulative dedicated-server proof. No current acceptance task or verifier
 treats v2 as the active archive.
 
@@ -859,5 +975,5 @@ closed on the broader authoritative registry spine. The v4 section above is
 the superseding registry-foundation proof; v6 is the historical Ether-source
 reload proof, v7 is the historical enchantment-registry proof, and v10 is the
 historical particle-registry proof. The v11 material-item archive is the
-immediate historical predecessor; v13 is the current cumulative
-metal-block-registry proof.
+older material-item predecessor, v13 is the immediate historical metal-block
+predecessor, and v14 is the current cumulative food-item-registry proof.

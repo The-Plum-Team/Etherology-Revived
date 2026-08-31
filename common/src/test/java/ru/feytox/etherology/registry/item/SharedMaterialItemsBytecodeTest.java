@@ -155,7 +155,7 @@ final class SharedMaterialItemsBytecodeTest {
                 invocations.get(materialIndex - 1)
         );
         assertEquals(
-                "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",
+                "ru/feytox/etherology/registry/item/SharedFoodItems#register()V",
                 invocations.get(materialIndex + 1)
         );
         assertEquals(1, invocations.stream()

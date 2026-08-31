@@ -90,16 +90,28 @@ id must match one of those two values without whitespace normalization.
 2. Bind the exact tracked profile-manifest bytes, Minecraft/Forge/Java pins,
    named Loom task, required mod IDs, and forbidden client/foreign mod IDs.
 3. Provision exactly one new repository-owned runtime. Never adopt, clean, or
-   replace a prior capture directory.
-4. Launch the offline dedicated server from the checked-out source-set output;
+   replace a prior capture directory. A sealed archive permanently consumes
+   the profile identity: provisioning and environment checks must reject it
+   even if its ignored runtime directory is later removed.
+4. Launch the offline dedicated server from the checked-out source-set output.
+   The raw Gradle launch task must receive the exact cryptographic token from
+   the runner's lock, match the exact profile marker, and find pristine live
+   evidence directories; a direct or stale invocation must fail before game
+   launch.
+5. The production source-set output is the only Etherology target;
    no client harness or staged production JAR is part of this evidence mode.
-5. Drive the scenario on server lifecycle events and commands, capture registry
+6. Drive the scenario on server lifecycle events and commands, capture registry
    state at its declared checkpoints, and force-save the world.
-6. Atomically publish the report, validate and copy the server log, publish the
+7. Atomically publish the report, validate and copy the server log, publish the
    launcher result, then write `done.marker` last after normal shutdown.
-7. Reject assertion, lifecycle, timeout, crash, fatal-log, forbidden mod/class,
+8. Reject assertion, lifecycle, timeout, crash, fatal-log, forbidden mod/class,
    saved-world, publication-order, or profile-binding failures. Headless
    scenarios neither wait for render callbacks nor create screenshots.
+
+The sealed-archive check is durable for the normal runner flow. The run token,
+lock, marker, and pristine-directory checks are accidental-misuse interlocks,
+not provenance authentication; same-account adversarial or concurrent
+filesystem mutation and TOCTOU are outside this bounded threat model.
 
 ## Standard scenarios
 
@@ -140,23 +152,33 @@ not replace any standard scenario or establish complete loader readiness.
 | `enchantment-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: Common owns exactly `etherology:peal` and `etherology:reflection` through `ru.feytox.etherology.registry.misc.PealEnchantment` and `ru.feytox.etherology.registry.misc.ReflectionEnchantment`; Peal has maximum level 3, minimum powers `1, 12, 23`, and maximum powers `21, 32, 43`; Reflection has maximum level 1, minimum power `1`, and maximum power `21`; both are the only Etherology entries in the singular `minecraft:non_treasure` tag; exact registry identities, properties, and tag membership remain stable at server start and through a real `reload`; the previously accepted game-event, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and does not prove enchantment applicability, Peal shockwaves, projectile reflection, client visuals, complete combat parity, the full authoritative registry, or release readiness. |
 | `particle-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: `SharedParticleTypes` owns the exact 22 canonical IDs; exact type classes, eight payload families, `shouldAlwaysSpawn = false`, codecs, parameter factories, sample command strings, packet/codec round trips, and seal order/colors/textures are captured without error and remain stable at server start and through a real `reload`; the item parser accepts namespaced IDs; all earlier enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and does not install or exercise Forge client particle factories/renderers, emitted visuals, gameplay consumers, the full authoritative registry, or release readiness. |
 | `material-item-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: `SharedMaterialItems` owns exactly `etheroscope`, `thuja_oil`, `azel_ingot`, `azel_nugget`, `ethril_ingot`, `ethril_nugget`, `ebony_ingot`, `ebony_nugget`, `enriched_attrahite`, `raw_azel`, `attrahite_brick`, `binder`, `ebony`, and `resonating_wand`; all resolve to vanilla `Item`, `enriched_attrahite` has maximum count 16, and the other 13 have maximum count 64; exact `ItemStack` NBT ID/count/key round trips and deterministic save representations remain stable at server start and through a real `reload`; all historical particle, enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots and proves registry properties and in-process `ItemStack` NBT round-trip/reload evidence only. It does not execute player `/give`, a second JVM or restart, Forge fuel registration, creative-tab placement, recipes, client gameplay, the full authoritative registry, or release readiness. |
-| `metal-block-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload proof in a fresh repository-owned Loom-userdev profile: `SharedMetalBlocks` and `SharedMetalBlockItems` own exactly `azel_block`, `ethril_block`, and `ebony_block` as vanilla `Block` instances and mapped `BlockItem`s; exact runtime classes/mappings, vanilla-copy properties, selected pickaxe/iron-tool/beacon tags, and maximum-count stack NBT remain stable at server start and through a real `reload`; the three blocks are placed directly at bounded server-world positions and the exact placed IDs remain stable through reload; all historical material-item, particle, enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots. It does not prove a second JVM or restart persistence, player `/give` or player placement, mining/drop behavior, beacon activation, recipe execution, creative-tab interaction, client rendering, the full authoritative registry, or release readiness. |
+| `metal-block-registry` | `forge-1.20.1` | Historical cumulative dedicated-server registry/reload predecessor in a fresh repository-owned Loom-userdev profile: `SharedMetalBlocks` and `SharedMetalBlockItems` own exactly `azel_block`, `ethril_block`, and `ebony_block` as vanilla `Block` instances and mapped `BlockItem`s; exact runtime classes/mappings, vanilla-copy properties, selected pickaxe/iron-tool/beacon tags, and maximum-count stack NBT remain stable at server start and through a real `reload`; the three blocks are placed directly at bounded server-world positions and the exact placed IDs remain stable through reload; all historical material-item, particle, enchantment, game-event/tag, loot-condition, and Ether-source assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots. It does not prove a second JVM or restart persistence, player `/give` or player placement, mining/drop behavior, beacon activation, recipe execution, creative-tab interaction, client rendering, the full authoritative registry, or release readiness. |
+| `food-item-registry` | `forge-1.20.1` | Current cumulative dedicated-server registry/reload and native-consumption proof in a fresh repository-owned Loom-userdev profile: `SharedFoodItems` owns exactly the plain `etherology:forest_lantern_crumb` vanilla `Item`; its food component has hunger 3, saturation modifier 2.0, no always-edible behavior, no effects, and no recipe remainder; exact registry, class, food, stack, and save-representation state remains stable through a real `reload`; real `ServerPlayerEntity` instances `EtherFoodStart` and `EtherFoodReload` prove hunger `10 → 13`, saturation `0 → 12`, stack `2 → 1`, and retention of the same `ItemStack` instance after consumption; all v13 and earlier assertions remain cumulative; world save, normal stop, exit code zero, and no fatal or forbidden client-startup marker. This headless scenario requires no screenshots. The exact model, texture, and English/Russian names are checked statically; three recipes and three matching advancements remain deliberately deferred with the unported `forest_lantern`. It does not prove a second JVM or restart persistence, multiplayer, client visuals, recipe execution, the full authoritative registry, or release readiness. |
 
-The current accepted cumulative record is `metal-block-registry` report
-schema 8 with 188 of 188 passing assertions in
-`docs/evidence/forge-1.20.1/metal-block-registry-server-v13`. It binds
-profile-manifest SHA-256
-`c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`,
+The current accepted cumulative record is `food-item-registry` report schema 9
+with 219 of 219 passing assertions in
+`docs/evidence/forge-1.20.1/food-item-registry-server-v14`. Its tracked profile
+manifest is 1192 bytes with SHA-256
+`442d11e6a5072c8ec418bced406529dc15caa6d4f4d4c5c68edc8a79ce2e493d`.
+The archive binds archive-manifest SHA-256
+`eacab05996569a78a55ed21117d2a7e0768d87c258c93757cdc4ab4205881927`,
 report SHA-256
-`b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`,
-server-log SHA-256
-`f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`,
-and archive-manifest SHA-256
-`0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
-The v6 `ether-source-reload`, v7 `enchantment-registry`, and v10
-`particle-registry` archives remain immutable historical evidence. The v11
-`material-item-registry` archive is the immediate historical predecessor; all
-accepted states are included in and superseded by the cumulative v13 runtime
+`3ccd86d4ef6f5b31fd37b686254bdf427e351019c778d2d8e3f03958de0e1f6c`,
+launcher-result SHA-256
+`4ec610688bf030ea722772c40d871ec1b954fcbc0b15f90cbad41acec6278ad0`,
+completion-marker SHA-256
+`37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`,
+and server-log SHA-256
+`e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`.
+The exact model and texture SHA-256 values are
+`6ba61590386580a2f70526313d501eec44cd88ff9d86cd1d13d9092b41a42fbe`
+and `44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65`;
+the accepted translations are `Mushroom Crumb` and `Грибной мякиш`.
+
+The v6 `ether-source-reload`, v7 `enchantment-registry`, v10
+`particle-registry`, v11 `material-item-registry`, and v13
+`metal-block-registry` archives remain immutable historical evidence. All
+accepted states are included in and superseded by the cumulative v14 runtime
 proof. The v12 metal-block profile was consumed by a failed diagnostic tag-load
 run and has no accepted archive. In the two tag files packaged by this bounded
 Forge slice—`mineable/pickaxe` and `needs_iron_tool`—still-unported IDs were
@@ -166,6 +188,25 @@ from an execution of the then-checked-out source set; it binds neither exact
 source bytes nor a packaged Forge JAR. Frozen archives prove capture-time
 integrity; current-source or rebuilt-artifact identity still requires a new
 isolated native run.
+
+The strict current verifier is:
+
+```bash
+python3 -B scripts/e2e/forge_server_food_item_evidence_v14.py \
+  --archive docs/evidence/forge-1.20.1/food-item-registry-server-v14
+```
+
+All 82 Python runner and verifier safety tests pass. Separately, the executable
+`:forge:1.20.1:serverProbeSafetyInterlockTest` task passes 15 non-Minecraft
+Gradle interlock fixture cases and is wired into
+`forgeFoodItemRegistryServerSafetyTest`. These are distinct suites, not one
+97-test count. The integrated positive and forward-gate check is:
+
+```bash
+./gradlew --no-daemon --no-parallel --console=plain \
+  :forge:1.20.1:validateForgeFoodItemRegistryMilestone \
+  :forge:1.20.1:verifyForgePortGateClosed
+```
 
 ## Screenshot contract
 

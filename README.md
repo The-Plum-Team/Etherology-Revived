@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and four real-client E2E slices pass, including the dedicated metal-block visual proof; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item/metal-block registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage and Channel client E2E, shared sound resources, the shared game-event/loot-condition/enchantment/particle/material-item/metal-block/food-item registry foundation, and Common-owned Ether-source reload behavior with dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -28,7 +28,10 @@ The next Forge forward gate is the remainder of the authoritative registry
 spine. Its bounded shared-sound, game-event, loot-condition, enchantment,
 particle, behavior-free material-item, and Ether-source reload-listener steps
 are complete. The three behavior-free metal blocks and their placeable block
-items are complete as another bounded step.
+items are complete as another bounded step. The plain
+`etherology:forest_lantern_crumb` food item is complete as the next bounded
+step; its six recipe/advancement resources remain deferred with the unported
+`forest_lantern` block.
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`, whose internal ID is
 `etherology_resonance` and whose range is 16. Both loaders package exact
@@ -86,42 +89,72 @@ packaged by this bounded Forge slice—`mineable/pickaxe` and
 metal-block IDs remain required. `needs_stone_tool` is unchanged and outside
 this Forge resource slice.
 
-The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
-fresh repository-owned `etherology-e2e-forge-server-1.20.1-v13` profile and
-the `metal-block-registry` scenario with a real `reload` command. Report
-schema 8 passed all 188 ordered assertions. It cumulatively re-proved the
-material-item and earlier registry/reload states, then checked the three exact
-block and block-item IDs, runtime classes and mappings, block properties,
-selected mining/beacon tags, and exact maximum-count `ItemStack` NBT round
-trips. It placed the blocks directly in the bounded server world at
-`8,200,8`, `9,200,8`, and `10,200,8` and observed the same exact block IDs
-after reload. The world then saved, the server stopped normally, and the
-launcher exited with code zero. Because this was a headless dedicated-server
-scenario, it produced no screenshots. The immutable archive is
-[`metal-block-registry-server-v13`](docs/evidence/forge-1.20.1/metal-block-registry-server-v13),
-with profile-manifest SHA-256
-`c4112b8c4073168af573b4bb555d2f1d775ce57911046aaf352e8f569f10bd11`,
-report SHA-256
-`b6b48f567fda9f3b170c4bd0407c786123bf0487ef8248216bf92f36b681d452`,
-server-log SHA-256
-`f894973c95660d7a5b9e075a05b09874b27d63321c55d4513dfadee648c06ca4`,
-and archive-manifest SHA-256
-`0dae07208c3b14bab4a6af4f6a5c71f8c98ba76147cba7da20fb246f3377a9cc`.
-The v6 Ether-source, v7 enchantment, and v10 particle archives remain immutable
-historical evidence. The v11 material-item archive is the immediate historical
-predecessor; all of their accepted states are re-proved by this cumulative v13
-run. The v12 profile was consumed by a failed diagnostic launch that exposed
-required unported references in those two packaged tag files; it was never
-accepted or archived.
+`SharedFoodItems` is the sole Common deferred owner of the plain
+`etherology:forest_lantern_crumb` food item. It restores hunger 3 and saturation
+modifier 2.0 without always-edible behavior, status effects, or a recipe
+remainder. Its exact English name is `Mushroom Crumb` and its Russian name is
+`Грибной мякиш`. The packaged model and texture have SHA-256
+`6ba61590386580a2f70526313d501eec44cd88ff9d86cd1d13d9092b41a42fbe`
+and `44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65`
+respectively. The three original recipes and their three advancements depend on
+`etherology:forest_lantern`; packaging them before that block is ported would
+create invalid data, so they are deliberately deferred rather than weakened or
+rewritten.
 
-This bounded proof is limited to exact registry/classes/mappings/properties,
-selected tags, in-process `ItemStack` NBT, direct server-world placement through
-reload, and normal save/stop in one process. It did not launch a second JVM or
-prove restart persistence, player `/give` or player placement, mining/drop
-behavior, beacon activation, recipe execution, creative-tab placement, client
-rendering/gameplay, the full authoritative registry, or release readiness. The
-inherited particle, enchantment, sound, sculk-frequency, Attrahite-drop, and
-combat caveats also remain.
+The current cumulative Java 17 Forge 47.4.9 dedicated-server proof used the
+fresh repository-owned `etherology-e2e-forge-server-1.20.1-v14` profile and
+the `food-item-registry` scenario. Its tracked 1192-byte profile manifest has
+SHA-256
+`442d11e6a5072c8ec418bced406529dc15caa6d4f4d4c5c68edc8a79ce2e493d`.
+Report schema 9 passed all 219 ordered assertions. It cumulatively re-proved the
+v13 metal-block and earlier registry/reload states, then used two real
+`ServerPlayerEntity` instances named `EtherFoodStart` and `EtherFoodReload`.
+Each observed exact `forest_lantern_crumb` registry, class, food-component,
+stack, and save-representation state; the reloaded observation was exactly
+stable. Native consumption changed hunger from 10 to 13, saturation from 0 to
+12, and the stack from 2 to 1 while retaining the same `ItemStack` instance. The
+world saved, the server stopped normally, and the launcher exited with code
+zero. Because this was a headless dedicated-server scenario, it produced no
+screenshots.
+
+The immutable archive is
+[`food-item-registry-server-v14`](docs/evidence/forge-1.20.1/food-item-registry-server-v14),
+with archive-manifest SHA-256
+`eacab05996569a78a55ed21117d2a7e0768d87c258c93757cdc4ab4205881927`,
+report SHA-256
+`3ccd86d4ef6f5b31fd37b686254bdf427e351019c778d2d8e3f03958de0e1f6c`,
+launcher-result SHA-256
+`4ec610688bf030ea722772c40d871ec1b954fcbc0b15f90cbad41acec6278ad0`,
+completion-marker SHA-256
+`37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`,
+and server-log SHA-256
+`e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`.
+All 82 current Python runner and verifier safety tests pass. Separately,
+`:forge:1.20.1:serverProbeSafetyInterlockTest` passes 15 non-Minecraft Gradle
+interlock fixture cases and is wired into `forgeFoodItemRegistryServerSafetyTest`.
+A sealed archive now
+durably consumes its profile: provisioning and environment checks reject it
+even if the ignored runtime is removed, while the raw Gradle launch task also
+requires the exact runner token, lock, profile marker, and pristine evidence
+directories. The token and lock are accidental-misuse interlocks, not
+provenance authentication; same-account adversarial or concurrent filesystem
+mutation and TOCTOU are outside the bounded threat model.
+The strict archive verifier is
+`python3 -B scripts/e2e/forge_server_food_item_evidence_v14.py --archive docs/evidence/forge-1.20.1/food-item-registry-server-v14`.
+The integrated positive and forward-gate tasks are
+`:forge:1.20.1:validateForgeFoodItemRegistryMilestone` and
+`:forge:1.20.1:verifyForgePortGateClosed`.
+
+The v6 Ether-source, v7 enchantment, v10 particle, v11 material-item, and v13
+metal-block archives remain immutable historical evidence; all of their
+accepted states are re-proved by this cumulative v14 run. The v12 profile was
+consumed by a failed diagnostic launch and was never accepted or archived.
+This bounded proof did not launch a second JVM or prove restart persistence,
+multiplayer, the six deferred recipe/advancement resources, creative-tab
+interaction, client rendering/gameplay, the full authoritative registry, or
+release readiness. The
+inherited particle, enchantment, sound, sculk-frequency, Attrahite-drop, block
+interaction, and combat caveats also remain.
 
 The historical registry foundation has both exact cross-loader artifact gates and a real
 Java 17 Forge 47.4.9 dedicated-server run in the fresh repository-owned
@@ -140,8 +173,8 @@ block and item set has not been ported. The synthetic table proves the shared co
 serializer, not Attrahite gameplay or drop parity. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
 archive superseded it as the registry-foundation proof and is now retained
-alongside the current v13 cumulative metal-block proof, historical v11
-material-item proof, and historical v10 particle-registry, v7
+alongside the current v14 cumulative food-item proof, historical v13
+metal-block proof, v11 material-item proof, and historical v10 particle-registry, v7
 enchantment-registry, and v6 Ether-source reload proofs.
 Native sound playback and Forge's custom sculk frequency remain deferred. The
 fresh repository-owned Fabric `etherology-e2e-fabric-1.20.1-v23` profile ran a
@@ -174,7 +207,7 @@ particular, v22 passed 42 of 42 assertions and captured the existing
 four-machine fixture, but its screenshots did not show the three metal blocks.
 
 Frozen archives preserve capture-time observations, artifact identity, and
-payload integrity; neither the Fabric v23 archive nor the Forge v13 archive
+payload integrity; neither the Fabric v23 archive nor the Forge v14 archive
 compares or cryptographically binds later sources or rebuilt JARs. Current
 static artifact gates are a separate proof boundary. Every later rebuilt JAR
 needs another fresh isolated profile before it can claim equivalent runtime

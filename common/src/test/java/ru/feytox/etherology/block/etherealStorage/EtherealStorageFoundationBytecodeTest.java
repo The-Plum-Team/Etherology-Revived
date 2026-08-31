@@ -91,16 +91,44 @@ final class EtherealStorageFoundationBytecodeTest {
     }
 
     @Test
-    void compiledTickerChargesGlintsOnlyFromTheLogicalServerCadence() throws IOException {
+    void compiledTickerTransfersBeforeChargingGlintsOnTheLogicalServerCadence()
+            throws IOException {
         InvocationInventory tickerLookup = invocations(BLOCK, "lambda$getTicker$0");
         assertTrue(tickerLookup.hasOwned("serverTick"));
 
         InvocationInventory serverTick = invocations(BLOCK_ENTITY, "serverTick");
         assertTrue(serverTick.has("net/minecraft/world/World", "getTime"));
+        assertTrue(serverTick.hasOwned("transferTick"));
         assertTrue(serverTick.hasOwned("chargeGlints"));
         assertTrue(serverTick.hasOwned("updateDisplayStack"));
         assertTrue(serverTick.hasOwned("markDirty"));
+        assertTrue(
+                serverTick.indexOfOwned("transferTick")
+                        < serverTick.indexOfOwned("chargeGlints")
+        );
         assertTrue(loadsIntegerConstant(BLOCK_ENTITY, "serverTick", 5));
+
+        InvocationInventory transferTick = invocations(BLOCK_ENTITY, "transferTick");
+        assertTrue(transferTick.has("net/minecraft/server/world/ServerWorld", "getTime"));
+        assertEquals(1, transferTick.count("transfer"));
+        assertTrue(loadsIntegerConstant(BLOCK_ENTITY, "transferTick", 5));
+    }
+
+    @Test
+    void compiledStorageImplementsTheCompleteSharedEtherContract() throws IOException {
+        assertImplements(
+                BLOCK_ENTITY,
+                "ru/feytox/etherology/magic/ether/EtherStorage"
+        );
+        assertTrue(loadsFloatConstant(BLOCK_ENTITY, "getTransferSize", 1.0f));
+        assertTrue(readsField(BLOCK_ENTITY, "getStoragePos", "pos"));
+        assertTrue(readsStaticField(
+                BLOCK_ENTITY,
+                "getOutputSide",
+                "net/minecraft/util/math/Direction",
+                "DOWN"
+        ));
+        assertReturnsFalse(BLOCK_ENTITY, "isActivated");
     }
 
     @Test
@@ -288,6 +316,37 @@ final class EtherealStorageFoundationBytecodeTest {
             @Override
             public void visitLdcInsn(Object value) {
                 if (value instanceof Number number && number.intValue() == expectedValue) {
+                    found.set(true);
+                }
+            }
+        });
+        return found.get();
+    }
+
+    private static boolean loadsFloatConstant(
+            String classResource,
+            String methodName,
+            float expectedValue
+    ) throws IOException {
+        AtomicBoolean found = new AtomicBoolean();
+        visitMethod(classResource, methodName, new MethodVisitor(Opcodes.ASM9) {
+            @Override
+            public void visitInsn(int opcode) {
+                if (Float.compare(expectedValue, 0.0f) == 0 && opcode == Opcodes.FCONST_0) {
+                    found.set(true);
+                }
+                if (Float.compare(expectedValue, 1.0f) == 0 && opcode == Opcodes.FCONST_1) {
+                    found.set(true);
+                }
+                if (Float.compare(expectedValue, 2.0f) == 0 && opcode == Opcodes.FCONST_2) {
+                    found.set(true);
+                }
+            }
+
+            @Override
+            public void visitLdcInsn(Object value) {
+                if (value instanceof Float floatValue
+                        && Float.compare(floatValue, expectedValue) == 0) {
                     found.set(true);
                 }
             }

@@ -14,6 +14,10 @@ class ScenarioSelectionTest {
                 ScenarioSelection.ETHEREAL_STORAGE,
                 ScenarioSelection.parse(ScenarioSelection.ETHEREAL_STORAGE)
         );
+        assertEquals(
+                ScenarioSelection.ETHEREAL_CHANNEL,
+                ScenarioSelection.parse(ScenarioSelection.ETHEREAL_CHANNEL)
+        );
     }
 
     @Test
@@ -26,6 +30,10 @@ class ScenarioSelectionTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> ScenarioSelection.parse("ethereal-storage ")
+        );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> ScenarioSelection.parse(" ethereal-channel")
         );
         assertThrows(
                 IllegalArgumentException.class,

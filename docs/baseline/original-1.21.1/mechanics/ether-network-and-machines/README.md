@@ -78,5 +78,45 @@ The complete assertion inventory and artifact provenance are stored in
 The deterministic verifier measured `0.253670` changed pixels in the centered
 storage region from closed to open and only `0.001168` from the original closed
 frame to the closed-again frame. These captures and assertions accept only the
-bounded storage vertical; Forge channel transfer and the wider Ether network
-remain separate, release-blocking work.
+bounded storage vertical. The channel record below is an independent bounded
+vertical; neither record establishes parity for the wider Ether network or
+opens the Forge release gate.
+
+## Forge 1.20.1 Ethereal Channel foundation record
+
+The fresh isolated `etherology-e2e-forge-1.20.1-v11` client completed the
+bounded `ethereal-channel` scenario with 42 passing assertions and no failures.
+Its real integrated-world fixture verifies:
+
+- registered channel and storage endpoints with exact persistent Ether,
+  activation, direction, and block-entity state;
+- a powered redstone gate retaining one Ether in the channel, followed by
+  exact transfer into storage on the fifth-tick cadence after power removal;
+- an independent missing-output channel evaporating exactly `0.2` Ether on its
+  fifth-tick cadence and naturally clearing its evaporation flags;
+- a vanilla wall lever remaining attached to the channel, preserving its
+  support and connection topology, and surviving restart through native Forge
+  support;
+- exact client mirrors, ready terrain, and the fixed first-person camera for
+  120 consecutive composed frames before each capture;
+- exact state and block-entity types after force-save, disconnect, and a full
+  integrated-world restart.
+
+![Forge 1.20.1 Ethereal Channel gated](../../../../evidence/forge-1.20.1/ethereal-channel-v11/screenshots/ethereal-channel-gated.png)
+
+![Forge 1.20.1 Ethereal Channel transferred](../../../../evidence/forge-1.20.1/ethereal-channel-v11/screenshots/ethereal-channel-transferred.png)
+
+![Forge 1.20.1 Ethereal Channel reopened](../../../../evidence/forge-1.20.1/ethereal-channel-v11/screenshots/ethereal-channel-reopened.png)
+
+The complete assertion inventory and artifact provenance are stored in
+[`report.json`](../../../../evidence/forge-1.20.1/ethereal-channel-v11/reports/report.json).
+The deterministic verifier measured a `0.013136` gated-to-transferred change
+and `0.004009` transferred-to-reopened structural change across the three
+native `1920x1080` Minecraft framebuffers.
+
+This evidence accepts only the shared channel foundation, its bounded network
+behavior with storage endpoints, and native Forge lever support. Channel case
+interaction and registration, particles and the client ticker, channel loot
+and recipe data, and the wider machine/network graph remain deferred. The next
+forward gate is the authoritative registry spine, beginning with sounds; Forge
+release readiness remains closed.

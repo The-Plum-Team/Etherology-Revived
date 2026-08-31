@@ -52,7 +52,8 @@ public final class ForgeClientEvents {
         );
         RenderTypeRegistry.register(
                 RenderLayer.getCutout(),
-                SharedBlocks.ETHEREAL_STORAGE.get()
+                SharedBlocks.ETHEREAL_STORAGE.get(),
+                SharedBlocks.ETHEREAL_CHANNEL.get()
         );
         ModelPredicateProviderRegistry.register(
                 SharedItems.GLINT_SHARD.get(),

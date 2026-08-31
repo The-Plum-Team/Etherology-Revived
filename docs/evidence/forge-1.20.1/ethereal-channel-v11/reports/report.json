@@ -1,0 +1,246 @@
+{
+  "schema": 1,
+  "scenario": "ethereal-channel",
+  "profile_id": "etherology-e2e-forge-1.20.1-v11",
+  "profile_manifest_size": 3644,
+  "profile_manifest_sha256": "af21ba7cbf1ba71f06a1dc2594daa5aa4a790ee89df3ed560760ceb1b6aa8e6f",
+  "artifact_node": "forge-1.20.1",
+  "minecraft": "1.20.1",
+  "loader": "forge",
+  "loader_version": "47.4.9",
+  "java": 17,
+  "passed": true,
+  "client_ticks": 3434,
+  "framebuffer_width": 1920,
+  "framebuffer_height": 1080,
+  "assertions": [
+    {
+      "name": "lifecycle",
+      "passed": true,
+      "actual": ""
+    },
+    {
+      "name": "forge_loaded",
+      "passed": true,
+      "actual": "forge"
+    },
+    {
+      "name": "etherology_loaded",
+      "passed": true,
+      "actual": "etherology"
+    },
+    {
+      "name": "chunk_loaded",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "chunk_forced",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "fixture_positions_distinct",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "prepowered_placement",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "channel_block_id",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "channel_block_entity_id",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "storage_block_id",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "storage_block_entity_id",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "fixture_topology",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "lever_support_topology",
+      "passed": true,
+      "actual": "lever\u003dminecraft:lever;survived\u003dtrue;can_place\u003dtrue;face\u003dwall;facing\u003dnorth;channel\u003detherology:ethereal_channel;channel_block_entity\u003detherology:ethereal_channel_block_entity;channel_facing\u003deast;north\u003din;east\u003dout;west\u003dempty;cross\u003dtrue"
+    },
+    {
+      "name": "channel_nbt_reconstructed",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "channel_nbt_sync_contract",
+      "passed": true,
+      "actual": "SetupResult[chunkLoaded\u003dtrue, chunkForced\u003dtrue, fixturePositionsDistinct\u003dtrue, prePoweredPlacement\u003dtrue, fixtureTopology\u003dtrue, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue], nbtReconstructed\u003dtrue, nbtSyncContract\u003dtrue, initialSnapshot\u003dChannelSnapshot[worldTime\u003d8, sourceEther\u003d1.0, channelEther\u003d0.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "gated_activated",
+      "passed": true,
+      "actual": "GatedResult[receivedWorldTime\u003d10, retainedWorldTime\u003d15, snapshot\u003dChannelSnapshot[worldTime\u003d15, sourceEther\u003d0.0, channelEther\u003d1.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "gated_received_one",
+      "passed": true,
+      "actual": "GatedResult[receivedWorldTime\u003d10, retainedWorldTime\u003d15, snapshot\u003dChannelSnapshot[worldTime\u003d15, sourceEther\u003d0.0, channelEther\u003d1.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "gated_retained_without_forwarding",
+      "passed": true,
+      "actual": "GatedResult[receivedWorldTime\u003d10, retainedWorldTime\u003d15, snapshot\u003dChannelSnapshot[worldTime\u003d15, sourceEther\u003d0.0, channelEther\u003d1.0, targetEther\u003d0.0, evaporationEther\u003d1.0, channelActivated\u003dtrue, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "release_deactivated",
+      "passed": true,
+      "actual": "PowerReleaseResult[worldTime\u003d2927, deactivated\u003dtrue]"
+    },
+    {
+      "name": "transfer_fifth_tick",
+      "passed": true,
+      "actual": "TransferResult[releaseWorldTime\u003d2927, transferWorldTime\u003d2930, exactTransfer\u003dtrue, totalConserved\u003dtrue, snapshot\u003dChannelSnapshot[worldTime\u003d2930, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d1.0, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "transfer_exact_one",
+      "passed": true,
+      "actual": "TransferResult[releaseWorldTime\u003d2927, transferWorldTime\u003d2930, exactTransfer\u003dtrue, totalConserved\u003dtrue, snapshot\u003dChannelSnapshot[worldTime\u003d2930, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d1.0, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "transfer_total_conserved",
+      "passed": true,
+      "actual": "TransferResult[releaseWorldTime\u003d2927, transferWorldTime\u003d2930, exactTransfer\u003dtrue, totalConserved\u003dtrue, snapshot\u003dChannelSnapshot[worldTime\u003d2930, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d1.0, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "transfer_no_reverse",
+      "passed": true,
+      "actual": "StableTransferResult[worldTime\u003d2935, unchanged\u003dtrue, snapshot\u003dChannelSnapshot[worldTime\u003d2935, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d1.0, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "evaporation_fifth_tick",
+      "passed": true,
+      "actual": "EvaporationResult[releaseWorldTime\u003d3012, evaporationWorldTime\u003d3015, evaporatedEther\u003d0.19999999, exactLoss\u003dtrue, exactFlags\u003dtrue, observedSnapshot\u003dChannelSnapshot[worldTime\u003d3015, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dfalse, evaporating\u003dtrue, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]], snapshot\u003dChannelSnapshot[worldTime\u003d3020, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "evaporation_exact_point_two",
+      "passed": true,
+      "actual": "EvaporationResult[releaseWorldTime\u003d3012, evaporationWorldTime\u003d3015, evaporatedEther\u003d0.19999999, exactLoss\u003dtrue, exactFlags\u003dtrue, observedSnapshot\u003dChannelSnapshot[worldTime\u003d3015, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dfalse, evaporating\u003dtrue, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]], snapshot\u003dChannelSnapshot[worldTime\u003d3020, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "evaporation_flags",
+      "passed": true,
+      "actual": "EvaporationResult[releaseWorldTime\u003d3012, evaporationWorldTime\u003d3015, evaporatedEther\u003d0.19999999, exactLoss\u003dtrue, exactFlags\u003dtrue, observedSnapshot\u003dChannelSnapshot[worldTime\u003d3015, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dfalse, evaporating\u003dtrue, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]], snapshot\u003dChannelSnapshot[worldTime\u003d3020, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]]"
+    },
+    {
+      "name": "client_mirror",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "gated_capture_mirror",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "transferred_capture_mirror",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "reopened_capture_mirror",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "capture_render_ready",
+      "passed": true,
+      "actual": "gated\u003dtrue;transferred\u003dtrue;reopened\u003dtrue"
+    },
+    {
+      "name": "capture_camera_exact",
+      "passed": true,
+      "actual": "gated\u003dtrue;transferred\u003dtrue;reopened\u003dtrue"
+    },
+    {
+      "name": "forced_save",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "saved_snapshot",
+      "passed": true,
+      "actual": "ChannelSnapshot[worldTime\u003d3021, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]]"
+    },
+    {
+      "name": "restart_exact_state",
+      "passed": true,
+      "actual": "RestartResult[snapshot\u003dChannelSnapshot[worldTime\u003d3032, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]], exactStateRetained\u003dtrue, blockEntityTypesRetained\u003dtrue, leverSupportRetained\u003dtrue]"
+    },
+    {
+      "name": "restart_block_entity_types",
+      "passed": true,
+      "actual": "RestartResult[snapshot\u003dChannelSnapshot[worldTime\u003d3032, sourceEther\u003d0.0, channelEther\u003d0.0, targetEther\u003d1.0, evaporationEther\u003d0.8, channelActivated\u003dfalse, evaporationActivated\u003dtrue, evaporating\u003dfalse, crossEvaporating\u003dfalse, sourceBlockId\u003detherology:ethereal_storage, sourceBlockEntityId\u003detherology:ethereal_storage_block_entity, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, targetBlockId\u003detherology:ethereal_storage, targetBlockEntityId\u003detherology:ethereal_storage_block_entity, evaporationBlockId\u003detherology:ethereal_channel, evaporationBlockEntityId\u003detherology:ethereal_channel_block_entity, leverSupport\u003dLeverSupportResult[leverBlockId\u003dminecraft:lever, survived\u003dtrue, canPlace\u003dtrue, face\u003dwall, facing\u003dnorth, channelBlockId\u003detherology:ethereal_channel, channelBlockEntityId\u003detherology:ethereal_channel_block_entity, channelFacing\u003deast, northConnection\u003din, eastConnection\u003dout, westConnection\u003dempty, cross\u003dtrue]], exactStateRetained\u003dtrue, blockEntityTypesRetained\u003dtrue, leverSupportRetained\u003dtrue]"
+    },
+    {
+      "name": "restart_client_mirror",
+      "passed": true,
+      "actual": "true"
+    },
+    {
+      "name": "gated_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d462969, sha256\u003dffcd33ea596992a39afb86d1011467cf95207d0e02f43968f438bcffe7f38006, failure\u003d]"
+    },
+    {
+      "name": "transferred_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d464400, sha256\u003de33947206f968a5f8005e6e4163c588f9464e70484d485bd68f6d7e912fdb901, failure\u003d]"
+    },
+    {
+      "name": "reopened_screenshot",
+      "passed": true,
+      "actual": "ScreenshotResult[passed\u003dtrue, size\u003d464412, sha256\u003d5860d53c1f9c56b12d91469c043faae98ab8bc2876b52f696adcaa5fc00cfa01, failure\u003d]"
+    },
+    {
+      "name": "artifact_etherology",
+      "passed": true,
+      "actual": "ForgeArtifactDigest[modId\u003detherology, passed\u003dtrue, fileName\u003detherology-forge-under-test.jar, size\u003d1210836, sha256\u003d45e94cf67b0be441aae529df08ede9602e3d6d67f07e3570d1facd067b0cfa12, failure\u003d]"
+    },
+    {
+      "name": "artifact_etherology_e2e_harness",
+      "passed": true,
+      "actual": "ForgeArtifactDigest[modId\u003detherology_e2e_harness, passed\u003dtrue, fileName\u003detherology-forge-e2e-harness.jar, size\u003d102226, sha256\u003de229554424abf1896436d87298d4788786e784fd987f96fe731b1c42a54f5284, failure\u003d]"
+    }
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "passed": true,
+      "file_name": "etherology-forge-under-test.jar",
+      "size": 1210836,
+      "sha256": "45e94cf67b0be441aae529df08ede9602e3d6d67f07e3570d1facd067b0cfa12",
+      "failure": ""
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "passed": true,
+      "file_name": "etherology-forge-e2e-harness.jar",
+      "size": 102226,
+      "sha256": "e229554424abf1896436d87298d4788786e784fd987f96fe731b1c42a54f5284",
+      "failure": ""
+    }
+  ]
+}

@@ -19,10 +19,13 @@ public final class ForgeE2eHarness {
      */
     public ForgeE2eHarness() {
         String scenarioId = ScenarioSelection.fromSystemProperty();
-        if (ScenarioSelection.ETHEREAL_STORAGE.equals(scenarioId)) {
-            MinecraftForge.EVENT_BUS.register(new EtherealStorageScenario());
-            return;
-        }
-        throw new IllegalStateException("No Forge E2E controller for " + scenarioId);
+        Object controller = switch (scenarioId) {
+            case ScenarioSelection.ETHEREAL_STORAGE -> new EtherealStorageScenario();
+            case ScenarioSelection.ETHEREAL_CHANNEL -> new EtherealChannelScenario();
+            default -> throw new IllegalStateException(
+                    "No Forge E2E controller for " + scenarioId
+            );
+        };
+        MinecraftForge.EVENT_BUS.register(controller);
     }
 }

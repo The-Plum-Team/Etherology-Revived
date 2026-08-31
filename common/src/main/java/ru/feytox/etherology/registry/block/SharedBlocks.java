@@ -3,6 +3,7 @@ package ru.feytox.etherology.registry.block;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.block.Block;
 import net.minecraft.registry.RegistryKeys;
+import ru.feytox.etherology.block.etherealChannel.EtherealChannelFoundationBlock;
 import ru.feytox.etherology.block.etherealStorage.EtherealStorageFoundationBlock;
 import ru.feytox.etherology.registry.SharedDeferredRegister;
 
@@ -19,6 +20,12 @@ public final class SharedBlocks {
      */
     public static final RegistrySupplier<EtherealStorageFoundationBlock> ETHEREAL_STORAGE =
             BLOCKS.register("ethereal_storage", EtherealStorageFoundationBlock::new);
+
+    /**
+     * Supplies the directed Ether channel after the active loader registers blocks.
+     */
+    public static final RegistrySupplier<EtherealChannelFoundationBlock> ETHEREAL_CHANNEL =
+            BLOCKS.register("ethereal_channel", EtherealChannelFoundationBlock::new);
 
     private SharedBlocks() {
     }

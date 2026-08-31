@@ -21,6 +21,7 @@ final class SharedItemsTest {
                 "EtherealStorageInputItem",
                 "BlockItem",
                 "ethereal_storage",
+                "ethereal_channel",
                 "SharedBlocks",
                 "register"
         );

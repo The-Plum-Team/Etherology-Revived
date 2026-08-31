@@ -196,7 +196,12 @@ The Forge lane is a separate repository-owned profile described by
 `forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
-an external launcher profile.
+an external launcher profile. The current runtime is the fresh isolated
+`etherology-e2e-forge-1.20.1-v11` profile. Its exact ordered scenarios are
+`ethereal-storage` and `ethereal-channel`; selection defaults to storage.
+The launcher-created runtime marker also records the tracked profile manifest's
+repository path, exact byte size, and SHA-256. Every readiness and launch action
+recomputes that descriptor and rejects a mismatched marker.
 
 Validate the tracked contract, provision the isolated launcher, build the two
 local artifacts, stage them, and run the fail-closed readiness check:
@@ -207,6 +212,7 @@ python3 -B scripts/e2e/forge_client.py provision
 ./gradlew :forge:1.20.1:remapE2eUnderTestJar :forge:1.20.1:remapE2eHarnessJar
 python3 -B scripts/e2e/forge_client.py stage
 python3 -B scripts/e2e/forge_client.py check --scenario ethereal-storage
+python3 -B scripts/e2e/forge_client.py check --scenario ethereal-channel
 ```
 
 Only `start` launches Minecraft. The lifecycle commands manage processes only
@@ -215,20 +221,39 @@ and BootstrapLauncher command:
 
 ```bash
 python3 -B scripts/e2e/forge_client.py start --scenario ethereal-storage
+python3 -B scripts/e2e/forge_client.py start --scenario ethereal-channel
 python3 -B scripts/e2e/forge_client.py status
 python3 -B scripts/e2e/forge_client.py stop
 python3 -B scripts/e2e/forge_client.py stop-all-owned
 ```
 
-The Forge scenario writes five 1920x1080 composed-framebuffer captures and one
-atomic report below the Forge runtime's `evidence/ethereal-storage/` directory.
-After the game records a normal shutdown, verify the exact assertion inventory,
-artifact lock and hashes, save/restart evidence, log/crash state, screenshot
-inventory, centered-storage closed-to-open visual change, and its closed-again
-return to baseline without treating clouds or world lighting as fixture motion:
+The storage scenario writes five 1920x1080 composed-framebuffer captures and one
+atomic report below `evidence/ethereal-storage/`. The channel scenario writes
+exactly `ethereal-channel-gated.png`, `ethereal-channel-transferred.png`, and
+`ethereal-channel-reopened.png` below `evidence/ethereal-channel/screenshots/`.
+Its v11 fixture uses redstone-fed powered repeaters on the full solid arena floor
+as exact strong-power sources. It waits through the first scheduled server tick
+before asserting ACTIVATED, `up=in`, and `east=out`; later power changes are also
+observed through natural `NOTIFY_ALL` propagation, with no manual neighbor refresh.
+Every channel screenshot requires 120 consecutive composed frames with the exact
+role-specific client fixture, an empty terrain-build queue, and all ten fixture
+positions render-ready. The first-person player camera must also remain at the
+fixed fixture position, yaw, and pitch. Those conditions are rechecked and
+recorded immediately before `ScreenshotRecorder` writes the framebuffer. The
+visual verifier anchors the gated-to-transferred frames with lower and upper raw
+pixel-change bounds plus a structural bound. For transferred-to-reopened, it
+combines a high-delta pixel guard with whole-fixture and worst-window local
+luminance-contrast bounds. That accepts the measured restart relighting while
+still rejecting missing or moved fixture geometry and unrelated nonblank views.
+Both publish the report first and `done.marker` last. After the game records a
+normal shutdown, the scenario-specific verifier checks its exact assertion and
+screenshot inventories, artifact lock and hashes, save/restart evidence,
+log/crash state, PNG CRC and decoded-size bounds, and fixture-region visual
+change:
 
 ```bash
 python3 -B scripts/e2e/forge_evidence.py --scenario ethereal-storage
+python3 -B scripts/e2e/forge_channel_evidence.py --scenario ethereal-channel
 ```
 
 After copying the seven accepted payload files (the report, completion marker,
@@ -245,9 +270,43 @@ Archive validation proves internal integrity and capture-time provenance; it
 does not claim that current sources or later rebuilt artifacts still match the
 capture. Establishing that requires a new isolated profile and native run.
 
+The channel archive contains the report, completion marker, and three PNGs in
+`docs/evidence/forge-1.20.1/ethereal-channel-v11`. Create or validate its own
+manifest without weakening the storage verifier:
+
+```bash
+python3 -B scripts/e2e/forge_channel_evidence.py --create-archive-manifest docs/evidence/forge-1.20.1/ethereal-channel-v11
+python3 -B scripts/e2e/forge_channel_evidence.py --archive docs/evidence/forge-1.20.1/ethereal-channel-v11
+```
+
+The channel harness copies the capture-time profile id, manifest size, and
+manifest SHA-256 from the launcher-verified runtime marker into `report.json`.
+Manifest creation rejects a report whose capture record differs from the tracked
+profile, then derives the archive profile provenance from that report. Archive
+validation compares the frozen report back to the archive manifest.
+
+Archive-only validation establishes internal integrity, not current-build
+equivalence. A gate can additionally compare the explicit current profile and
+both current remapped JARs to the archive's recorded byte sizes and SHA-256
+digests:
+
+```bash
+python3 -B scripts/e2e/forge_channel_evidence.py \
+  --archive docs/evidence/forge-1.20.1/ethereal-channel-v11 \
+  --current-production <production-remapped.jar> \
+  --current-harness <harness-remapped.jar> \
+  --current-profile scripts/e2e/forge-1.20.1-profile.json
+```
+
+Even that comparison does not compare current source files; it proves only that
+the supplied profile and artifacts are byte-identical to the capture-time
+records.
+
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
 
 ```bash
-python3 -B -m unittest scripts/e2e/test_forge_client.py scripts/e2e/test_forge_evidence.py
+python3 -B -m unittest scripts/e2e/test_forge_client.py \
+  scripts/e2e/test_forge_evidence.py \
+  scripts/e2e/test_forge_channel_evidence.py
 ```

@@ -1,13 +1,17 @@
-# Forge 1.20.1 bootstrap and bounded-storage status
+# Forge 1.20.1 bootstrap, storage, and channel-foundation status
 
 The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and one
 complete loader-neutral item registration vertical. Its bounded ethereal-storage vertical now
 persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
 vanilla sided insertion and native Forge item-handler access, transfers Ether into canonical Glint
 state, registers a Dist-scoped Forge client screen and Gecko renderer, and has passed a packaged
-save/restart/reopen scenario in an isolated macOS client. This accepts the bounded storage-parity
-milestone only, not the channel/network graph or a playable Etherology port. It cannot produce or
-publish a release artifact.
+save/restart/reopen scenario in an isolated macOS client. The next bounded vertical registers the
+shared ethereal channel and block entity, applies the shared storage/pipe transfer contract,
+preserves direction and Ether state, supports redstone gating and native Forge wall levers, and
+has passed its own packaged save/restart scenario in a fresh isolated macOS client. These runs
+accept only bounded storage parity and channel-foundation behavior, not channel cases, particles,
+loot and recipes, the wider machine/network graph, or a playable Etherology port. The lane cannot
+produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
 `EtherologyBootstrap` attaches the shared block, item, block-entity, and screen-handler registries
@@ -39,20 +43,24 @@ client systems have been registered.
   arithmetic, invalidatable Forge item-handler capability interop, synchronized Gecko open/close
   animation, and the required model, animation, and texture resources to the positive storage
   gate.
+- `validateForgeChannelImplementationMilestone` is expected to pass. It checks the shared Ether
+  storage/pipe contracts, registered channel block and block entity, persistent Ether and
+  direction state, compiled fifth-tick transfer and evaporation behavior, storage endpoints,
+  native Forge lever support, and the deterministic harness and visual-verifier regressions.
+- `validateForgeChannelNetworkMilestone` is expected to pass. It adds the fresh packaged
+  `ethereal-channel` run, exact save/restart state, three native framebuffers, and frozen artifact
+  provenance to the positive bounded channel-foundation gate.
 - `verifyForgePortGateClosed` is expected to pass. It is a diagnostic task, not an artifact gate:
   after requiring every accepted positive gate, it reports the first incomplete forward stage.
-  That stage is now ethereal channel/network.
-- `validateForgeChannelNetworkMilestone` is the explicit next forward gate. It depends on storage
-  parity and is expected to fail until the shared Ether transfer contract and registered persistent
-  directed ethereal channel are implemented and accepted.
-- `validateForgeReleaseReadinessMilestone` is a permanent final backstop after channel/network. It
-  fails unconditionally until the full gameplay graph and complete packaged native Forge client,
-  dedicated-server, persistence, and E2E matrix are implemented and the task itself is replaced by
-  concrete acceptance checks. The bounded storage run is not sufficient. Class or method-name
-  stubs cannot open this gate.
+  That stage is now the authoritative registry spine, beginning with shared sound registration.
+- `validateForgeReleaseReadinessMilestone` is a permanent final backstop after every bounded
+  forward gate. It fails unconditionally until the full gameplay graph and complete packaged
+  native Forge client, dedicated-server, persistence, and E2E matrix are implemented and the task
+  itself is replaced by concrete acceptance checks. The bounded storage and channel runs are not
+  sufficient. Class or method-name stubs cannot open this gate.
 - `validateForgePortInputs`, `remapJar`, and every future `publish*` task depend on every accepted
-  positive gate plus the channel/network and final-readiness milestones. They remain closed during
-  channel/network work and afterward until full native release readiness is explicitly accepted.
+  positive gate plus the remaining authoritative-registry, gameplay, and final-readiness
+  milestones. They remain closed until full native release readiness is explicitly accepted.
 
 The diagnostic verification walks the predeclared forward milestones in order. A completed stage
 must gain its positive and native proof, while the unconditional final readiness stage remains in
@@ -140,21 +148,47 @@ and reopened the menu. It passed 34 of 34 assertions in 438 client ticks. The fu
 five native framebuffers, report, and deterministic visual ratios are frozen in the
 [`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md).
 
-## Forward fail-closed channel/network milestone
+## Accepted bounded ethereal-channel foundation milestone
 
-The first incomplete gate is now `validateForgeChannelNetworkMilestone`. It requires the shared
-Ether storage transfer contract, a registered `ethereal_channel` block and block entity, persistent
-`stored_ether`, output-direction state, and directed transfer behavior. Its eventual acceptance
-must include the matching native runtime proof; storage evidence cannot stand in for channel
-transport.
+The shared foundation now registers `ethereal_channel` and
+`ethereal_channel_block_entity` alongside the accepted storage endpoint. The channel persists its
+Ether, output direction, connection state, activation state, and evaporation flags. Shared pipe
+behavior retains one Ether while redstone-gated, transfers it in the output direction on the
+fifth-tick cadence after natural power removal, and evaporates exactly `0.2` Ether on that cadence
+when no output exists. A narrow Forge-owned mixin preserves vanilla wall-lever support on the
+channel without importing the broad Fabric mixin configuration.
 
-`validateForgeReleaseReadinessMilestone` remains behind that gate and keeps the artifact path
-closed for every subsequent gameplay, dedicated-server, client, persistence, and E2E slice.
+The packaged `ethereal-channel` scenario placed exact registered channel and storage endpoints in
+a fresh integrated world, proved the gate-to-transfer-to-evaporation sequence, verified exact
+client mirrors and render readiness for 120 consecutive frames at the fixed camera before every
+capture, force-saved, disconnected, restarted the world, and compared the exact persistent state.
+It passed 42 of 42 assertions in 3,434 client ticks with three native `1920x1080` framebuffers. The
+full artifact hashes, report, screenshots, and deterministic visual ratios are frozen in the
+[`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md).
+
+This positive milestone covers only the shared channel foundation, bounded directed behavior with
+storage endpoints, and native Forge lever support. It does not cover channel-case interaction and
+registration, channel particles and the client ticker, channel loot and recipe data, or the wider
+machine/network graph.
+
+## Forward fail-closed authoritative registry and sound milestone
+
+The next forward gate returns to the authoritative registry spine. The temporary shared catalogs
+must converge into one declaration owner per canonical ID, beginning with the sound registry and
+its packaged resources, without shadowing Fabric classes or resolving suppliers during
+declaration. The broader content catalogs and the unfinished portions of the Ether graph remain
+behind that work.
+
+`validateForgeReleaseReadinessMilestone` remains behind the forward registry and gameplay gates
+and keeps the artifact path closed for every subsequent dedicated-server, client, persistence, and
+E2E slice.
 
 ## Remaining implementation blockers
 
 - The common JAR contains component state/access contracts, the loader handshake,
-  `etherology:ether`, and the accepted bounded ethereal-storage vertical.
+  `etherology:ether`, the accepted bounded ethereal-storage vertical, and the accepted bounded
+  ethereal-channel foundation. Its temporary catalogs have not yet converged into the
+  authoritative registry spine.
 - The canonical initializer remains in the Fabric production source graph. Of 352 canonical main
   Java files, 22 directly import Fabric API, Biolith, Trinkets, or Fabric Shield Lib through 34
   import statements. Transitive ownership work remains beyond that lower bound.
@@ -163,11 +197,13 @@ closed for every subsequent gameplay, dedicated-server, client, persistence, and
   event frequencies, and biome modification.
 - Component contracts are shared, but only Fabric component adapters exist. Forge capability
   adapters for Ether, corruption, Teldecore, and visited state do not exist yet.
-- Forge-owned mixin configuration and an access-transformer replacement for the Fabric access
-  widener do not exist yet.
+- A minimal Forge-owned mixin configuration now supplies the accepted channel lever support. The
+  remaining retained mixins and any narrowly required access-transformer entries still need to be
+  selected and proven with their owning slices; the broad Fabric access widener is not packaged.
 - The client tree has 211 Java files; 64 directly import Fabric, REI/EMI, owo, Biolith, Trinkets, or
   Fabric Shield Lib APIs and still need common-versus-loader ownership decisions.
 
-The next native slice is the already gated ethereal channel/network vertical. A release remains
-invalid until that slice and every subsequent gameplay system, dedicated-server check, and native
-E2E requirement are ported and accepted as well.
+The next native slice is the authoritative registry spine, beginning with shared sound
+registration and resource closure. A release remains invalid until that gate, the deferred channel
+work, every subsequent gameplay system, dedicated-server checks, and the full native E2E matrix
+are ported and accepted.

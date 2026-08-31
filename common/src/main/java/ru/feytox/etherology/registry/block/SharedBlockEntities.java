@@ -3,6 +3,7 @@ package ru.feytox.etherology.registry.block;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.registry.RegistryKeys;
+import ru.feytox.etherology.block.etherealChannel.EtherealChannelFoundationBlockEntity;
 import ru.feytox.etherology.block.etherealStorage.EtherealStorageFoundationBlockEntity;
 import ru.feytox.etherology.registry.SharedDeferredRegister;
 
@@ -23,6 +24,18 @@ public final class SharedBlockEntities {
                     () -> BlockEntityType.Builder.create(
                             EtherealStorageFoundationBlockEntity::new,
                             SharedBlocks.ETHEREAL_STORAGE.get()
+                    ).build(null)
+            );
+
+    /**
+     * Supplies the persistent directed-channel type after block registration completes.
+     */
+    public static final RegistrySupplier<BlockEntityType<EtherealChannelFoundationBlockEntity>>
+            ETHEREAL_CHANNEL = BLOCK_ENTITIES.register(
+                    "ethereal_channel_block_entity",
+                    () -> BlockEntityType.Builder.create(
+                            EtherealChannelFoundationBlockEntity::new,
+                            SharedBlocks.ETHEREAL_CHANNEL.get()
                     ).build(null)
             );
 

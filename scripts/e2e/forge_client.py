@@ -30,6 +30,7 @@ EXPECTED_LAUNCHER_LIBRARY_VERSION = "8.0"
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = SCRIPT_DIRECTORY / "forge-1.20.1-profile.json"
+PROFILE_MANIFEST_RELATIVE_PATH = Path("scripts/e2e/forge-1.20.1-profile.json")
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
 PROFILE_MARKER_NAME = ".etherology-forge-e2e-profile.json"
@@ -76,6 +77,7 @@ class ResolvedConfiguration:
     runtime_lane: dict[str, object]
     installer: dict[str, object]
     repository_root: Path
+    profile_manifest_path: Path
 
 
 def load_json_object(path: Path, description: str) -> dict[str, object]:
@@ -232,7 +234,7 @@ def validate_manifest_shape(
     profile_id = safe_leaf_name(profile.get("id"), "profile.id")
     if re.fullmatch(r"[a-z0-9][a-z0-9.-]+", profile_id) is None:
         raise E2EError("The Forge profile id is not stable lowercase text")
-    if profile_id != "etherology-e2e-forge-1.20.1-v7":
+    if profile_id != "etherology-e2e-forge-1.20.1-v11":
         raise E2EError("The Forge profile id differs from the isolated profile contract")
     if profile.get("runtime_directory") != profile_id:
         raise E2EError("The Forge runtime directory must equal its unique profile id")
@@ -284,8 +286,10 @@ def validate_manifest_shape(
     }:
         raise E2EError("The Forge evidence capture contract is invalid")
     scenarios = require_list(evidence, "scenarios")
-    if scenarios != ["ethereal-storage"]:
-        raise E2EError("The Forge harness must expose exactly ethereal-storage")
+    if scenarios != ["ethereal-storage", "ethereal-channel"]:
+        raise E2EError(
+            "The Forge harness must expose ethereal-storage then ethereal-channel"
+        )
 
     directories = require_list(manifest, "profile_directories")
     if len(directories) != len(set(str(value) for value in directories)):
@@ -360,11 +364,26 @@ def load_configuration(
     manifest_path: Path = MANIFEST_PATH,
     repository_root: Path = REPOSITORY_ROOT,
 ) -> ResolvedConfiguration:
+    resolved_repository_root = repository_root.resolve()
+    expected_manifest_path = resolved_repository_root / PROFILE_MANIFEST_RELATIVE_PATH
+    normalized_manifest_path = manifest_path.absolute()
+    if normalized_manifest_path != expected_manifest_path:
+        raise E2EError(
+            "The Forge E2E profile must be loaded from its tracked repository path"
+        )
+    if normalized_manifest_path.is_symlink() or not normalized_manifest_path.is_file():
+        raise E2EError(
+            f"The Forge E2E profile manifest is missing or linked: {normalized_manifest_path}"
+        )
     manifest = load_json_object(manifest_path, "Forge E2E profile manifest")
-    properties = parse_gradle_properties(repository_root / "gradle.properties")
+    properties = parse_gradle_properties(resolved_repository_root / "gradle.properties")
     validate_manifest_shape(manifest, properties)
     release = require_object(manifest, "release")
-    matrix_path = safe_repository_path(repository_root, release["matrix"], "release.matrix")
+    matrix_path = safe_repository_path(
+        resolved_repository_root,
+        release["matrix"],
+        "release.matrix",
+    )
     matrix = load_json_object(matrix_path, "release matrix")
     if matrix.get("schema_version") != 1:
         raise E2EError("Unsupported release matrix schema")
@@ -430,7 +449,8 @@ def load_configuration(
         artifact_lane,
         runtime_lane,
         installer,
-        repository_root.resolve(),
+        resolved_repository_root,
+        normalized_manifest_path,
     )
 
 
@@ -548,10 +568,20 @@ def write_json_atomic(path: Path, value: dict[str, object]) -> None:
 
 
 def profile_descriptor(configuration: ResolvedConfiguration) -> dict[str, object]:
+    manifest_path = configuration.profile_manifest_path
+    if manifest_path.is_symlink() or not manifest_path.is_file():
+        raise E2EError(
+            f"The Forge E2E profile manifest is missing or linked: {manifest_path}"
+        )
     return {
         "schema": 1,
         "profile_id": profile_spec(configuration)["id"],
         "managed_by": MANAGED_BY,
+        "profile_manifest": {
+            "path": PROFILE_MANIFEST_RELATIVE_PATH.as_posix(),
+            "size": manifest_path.stat().st_size,
+            "sha256": sha256_file(manifest_path),
+        },
         "isolation": {
             "scope": "repository-owned-ignored-state",
             "source_profiles": [],

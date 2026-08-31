@@ -40,6 +40,14 @@ public final class SharedItems {
             () -> new BlockItem(SharedBlocks.ETHEREAL_STORAGE.get(), new Item.Settings())
     );
 
+    /**
+     * Supplies the placeable item for the shared directed Ether channel.
+     */
+    public static final RegistrySupplier<BlockItem> ETHEREAL_CHANNEL_ITEM = ITEMS.register(
+            "ethereal_channel",
+            () -> new BlockItem(SharedBlocks.ETHEREAL_CHANNEL.get(), new Item.Settings())
+    );
+
     private SharedItems() {
     }
 

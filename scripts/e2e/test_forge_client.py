@@ -186,8 +186,10 @@ class ConfigurationTests(unittest.TestCase):
     def test_profile_runtime_is_distinct_and_repository_owned(self) -> None:
         configuration = forge_client.load_configuration()
         profile = forge_client.profile_spec(configuration)
+        descriptor = forge_client.profile_descriptor(configuration)
+        manifest_provenance = descriptor["profile_manifest"]
 
-        self.assertEqual("etherology-e2e-forge-1.20.1-v7", profile["id"])
+        self.assertEqual("etherology-e2e-forge-1.20.1-v11", profile["id"])
         self.assertNotEqual(
             "etherology-e2e-fabric-1.20.1-v19", profile["runtime_directory"]
         )
@@ -196,6 +198,26 @@ class ConfigurationTests(unittest.TestCase):
             forge_client.runtime_root(configuration),
         )
         self.assertEqual([], forge_client.profile_descriptor(configuration)["isolation"]["source_profiles"])
+        self.assertEqual(
+            forge_client.PROFILE_MANIFEST_RELATIVE_PATH.as_posix(),
+            manifest_provenance["path"],
+        )
+        self.assertEqual(
+            configuration.profile_manifest_path.stat().st_size,
+            manifest_provenance["size"],
+        )
+        self.assertEqual(
+            forge_client.sha256_file(configuration.profile_manifest_path),
+            manifest_provenance["sha256"],
+        )
+
+    def test_rejects_a_profile_loaded_from_an_untracked_path(self) -> None:
+        with temporary_repository() as (root, manifest_path):
+            untracked_path = root / "profile-copy.json"
+            untracked_path.write_bytes(manifest_path.read_bytes())
+
+            with self.assertRaisesRegex(forge_client.E2EError, "tracked repository path"):
+                forge_client.load_configuration(untracked_path, root)
 
     def test_evidence_scenarios_match_bounded_contract(self) -> None:
         configuration = forge_client.load_configuration()
@@ -216,6 +238,24 @@ class ConfigurationTests(unittest.TestCase):
             contract_scenarios,
             forge_client.scenario_ids(configuration),
         )
+
+    def test_scenario_order_defaults_to_storage_and_selects_channel_exactly(self) -> None:
+        configuration = forge_client.load_configuration()
+
+        self.assertEqual(
+            ["ethereal-storage", "ethereal-channel"],
+            forge_client.scenario_ids(configuration),
+        )
+        self.assertEqual(
+            "ethereal-storage",
+            forge_client.resolve_scenario_id(configuration, None),
+        )
+        self.assertEqual(
+            "ethereal-channel",
+            forge_client.resolve_scenario_id(configuration, "ethereal-channel"),
+        )
+        with self.assertRaisesRegex(forge_client.E2EError, "Unsupported"):
+            forge_client.resolve_scenario_id(configuration, " ethereal-channel")
 
     def test_dependency_inventory_drift_is_rejected(self) -> None:
         with temporary_repository() as (root, manifest_path):
@@ -387,10 +427,23 @@ class RuntimeIsolationTests(unittest.TestCase):
             with self.assertRaisesRegex(forge_client.E2EError, "does not match"):
                 forge_client.verify_profile_marker(configuration, root)
 
+    def test_profile_marker_with_another_manifest_digest_is_rejected(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            marker = forge_client.profile_descriptor(configuration)
+            marker["profile_manifest"]["sha256"] = "0" * 64
+            (root / forge_client.PROFILE_MARKER_NAME).write_text(
+                json.dumps(marker), encoding="utf-8"
+            )
+
+            with self.assertRaisesRegex(forge_client.E2EError, "does not match"):
+                forge_client.verify_profile_marker(configuration, root)
+
     def test_process_state_with_wrong_manager_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             state_root = Path(temporary_directory).resolve()
-            profile_id = "etherology-e2e-forge-1.20.1-v7"
+            profile_id = "etherology-e2e-forge-1.20.1-v11"
             runtime = state_root / "runtimes" / profile_id
             game = runtime / "game"
             game.mkdir(parents=True)
@@ -532,6 +585,42 @@ class RuntimeIsolationTests(unittest.TestCase):
                 forge_client.verify_launch_command(
                     configuration, command, root, "ethereal-storage"
                 )
+
+    def test_launch_command_accepts_the_exact_channel_selector(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            launcher = forge_client.launcher_directory(configuration, root)
+            _parent_jar, _child_jar = create_inherited_version_fixture(
+                configuration,
+                root,
+            )
+            forge_client.materialize_inherited_client_jar(configuration, root)
+            _parent_jar, child_jar = forge_client.inherited_client_jar_paths(
+                configuration,
+                root,
+            )
+            library = launcher / "libraries/example.jar"
+            library.parent.mkdir(parents=True)
+            library.write_bytes(b"jar")
+            command = [
+                "/java17",
+                "-cp",
+                os.pathsep.join((str(library), str(child_jar))),
+                f"-D{forge_client.SCENARIO_PROPERTY_NAME}=ethereal-channel",
+                forge_client.FORGE_MAIN_CLASS,
+                "--version",
+                forge_client.forge_version_id(configuration),
+                "--gameDir",
+                str(forge_client.game_directory(configuration, root)),
+            ]
+
+            forge_client.verify_launch_command(
+                configuration,
+                command,
+                root,
+                "ethereal-channel",
+            )
 
     def test_materializes_an_exact_inherited_child_copy(self) -> None:
         configuration = forge_client.load_configuration()

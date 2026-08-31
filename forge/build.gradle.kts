@@ -1,6 +1,8 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import dev.architectury.plugin.ArchitectPluginExtension
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import net.fabricmc.loom.task.RemapJarTask
+import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.testing.Test
 import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.jvm.tasks.Jar
@@ -8,6 +10,7 @@ import org.gradle.jvm.tasks.Jar
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.zip.ZipFile
 
 plugins {
@@ -57,6 +60,8 @@ val forgeEntrypointClassEntry =
     "ru/feytox/etherology/forge/EtherologyForge.class"
 val forgeClientEventsClassEntry =
     "ru/feytox/etherology/forge/client/ForgeClientEvents.class"
+val forgeChannelLeverMixinClassEntry =
+    "ru/feytox/etherology/forge/mixin/ChannelLeverSupportMixin.class"
 val etherealStorageFoundationScreenClassEntry =
     "ru/feytox/etherology/forge/client/EtherealStorageFoundationScreen.class"
 val etherealStorageFoundationModelClassEntry =
@@ -67,10 +72,20 @@ val etherealStorageItemHandlerProviderClassEntry =
     "ru/feytox/etherology/forge/block/etherealStorage/EtherealStorageItemHandlerProvider.class"
 val etherStorageContractClassEntry =
     "ru/feytox/etherology/magic/ether/EtherStorage.class"
+val etherPipeContractClassEntry =
+    "ru/feytox/etherology/magic/ether/EtherPipe.class"
+val etherDisplayContractClassEntry =
+    "ru/feytox/etherology/magic/ether/EtherDisplay.class"
+val evaporatingEtherPipeContractClassEntry =
+    "ru/feytox/etherology/magic/ether/EvaporatingEtherPipe.class"
+val pipeSideClassEntry =
+    "ru/feytox/etherology/enums/PipeSide.class"
 val etherealChannelBlockClassEntry =
-    "ru/feytox/etherology/block/etherealChannel/EtherealChannelBlock.class"
+    "ru/feytox/etherology/block/etherealChannel/EtherealChannelFoundationBlock.class"
 val etherealChannelBlockEntityClassEntry =
-    "ru/feytox/etherology/block/etherealChannel/EtherealChannelBlockEntity.class"
+    "ru/feytox/etherology/block/etherealChannel/EtherealChannelFoundationBlockEntity.class"
+val etherealChannelShapeClassEntry =
+    "ru/feytox/etherology/block/etherealChannel/EtherealChannelFoundationShape.class"
 val etherItemModel = rootProject.file("src/client/resources/assets/etherology/models/item/ether.json")
 val etherItemTexture = rootProject.file("src/client/resources/assets/etherology/textures/item/ether.png")
 val englishLanguageFile = rootProject.file("src/client/resources/assets/etherology/lang/en_us.json")
@@ -102,6 +117,38 @@ val etherealStorageLootTable =
     rootProject.file("src/main/generated/data/etherology/loot_tables/blocks/ethereal_storage.json")
 val etherealStorageRecipe =
     rootProject.file("src/main/generated/data/etherology/recipes/ethereal_storage.json")
+val etherealChannelBlockstate =
+    rootProject.file("src/client/resources/assets/etherology/blockstates/ethereal_channel.json")
+val etherealChannelBlockModels = listOf(
+    "ethereal_channel_central_cross.json",
+    "ethereal_channel_central_line.json",
+    "ethereal_channel_in_case.json",
+    "ethereal_channel_input.json",
+    "ethereal_channel_output.json",
+).map { modelName ->
+    rootProject.file("src/client/resources/assets/etherology/models/block/$modelName")
+}
+val etherealChannelItemModel =
+    rootProject.file("src/main/generated/assets/etherology/models/item/ethereal_channel.json")
+val etherealChannelTextures = listOf(
+    "channel_case.png",
+    "channel_case_front.png",
+    "ethereal_channel_central_cross.png",
+    "ethereal_channel_central_line.png",
+    "ethereal_channel_input.png",
+    "ethereal_channel_inside.png",
+    "ethereal_channel_output.png",
+).map { textureName ->
+    rootProject.file("src/client/resources/assets/etherology/textures/block/$textureName")
+} + rootProject.file("src/client/resources/assets/etherology/textures/item/ethereal_channel.png")
+val etherealChannelResources =
+    listOf(etherealChannelBlockstate, etherealChannelItemModel) +
+        etherealChannelBlockModels + etherealChannelTextures
+val forgeChannelEvidenceRoot = rootProject.file("docs/evidence/forge-1.20.1")
+val forgeChannelEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_channel_evidence.py")
+val forgeE2eProfileManifest = rootProject.file("scripts/e2e/forge-1.20.1-profile.json")
+val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
 apply(plugin = "dev.architectury.loom")
 apply(plugin = "architectury-plugin")
@@ -121,6 +168,12 @@ extensions.configure<ArchitectPluginExtension>("architectury") {
     minecraft = minecraftVersion
     platformSetupLoomIde()
     forge()
+}
+
+extensions.configure<LoomGradleExtensionAPI>("loom") {
+    forge {
+        mixinConfig("etherology.forge.mixins.json")
+    }
 }
 
 repositories {
@@ -878,7 +931,7 @@ fun missingForgeStorageParityMilestone(
     return missingConditions
 }
 
-fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> {
+fun missingForgeChannelImplementationMilestone(commonJarFile: File): List<String> {
     val missingConditions = mutableListOf<String>()
     ZipFile(commonJarFile).use { commonZip ->
         val etherStorageEntry = commonZip.getEntry(etherStorageContractClassEntry)
@@ -888,18 +941,170 @@ fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> {
             val etherStorageConstants = readClassUtf8Constants(
                 commonZip.getInputStream(etherStorageEntry).use { input -> input.readAllBytes() },
             )
-            if ("getTransportableEther" !in etherStorageConstants
+            if ("getMaxEther" !in etherStorageConstants
+                || "getStoredEther" !in etherStorageConstants
+                || "getTransferSize" !in etherStorageConstants
+                || "setStoredEther" !in etherStorageConstants
+                || "isInputSide" !in etherStorageConstants
+                || "getOutputSide" !in etherStorageConstants
+                || "getStoragePos" !in etherStorageConstants
+                || "transferTick" !in etherStorageConstants
+                || "getTransportableEther" !in etherStorageConstants
+                || "isOutputSide" !in etherStorageConstants
+                || "canInputFrom" !in etherStorageConstants
+                || "canOutputTo" !in etherStorageConstants
+                || "isActivated" !in etherStorageConstants
+                || "transfer" !in etherStorageConstants
                 || "transferTo" !in etherStorageConstants
+                || "evaporate" !in etherStorageConstants
                 || "increment" !in etherStorageConstants
                 || "decrement" !in etherStorageConstants
+                || "ru/feytox/etherology/magic/ether/EvaporatingEtherPipe"
+                !in etherStorageConstants
+                || "setEvaporating" !in etherStorageConstants
+                || "setCrossEvaporating" !in etherStorageConstants
             ) {
                 missingConditions.add("shared Ether storage contract has no bounded transfer flow")
+            }
+        }
+
+        listOf(
+            etherPipeContractClassEntry to "shared Ether pipe contract",
+            etherDisplayContractClassEntry to "shared Ether display contract",
+            evaporatingEtherPipeContractClassEntry to "shared evaporating-pipe contract",
+            pipeSideClassEntry to "shared pipe-side state",
+        ).forEach { (entryName, description) ->
+            if (commonZip.getEntry(entryName) == null) {
+                missingConditions.add("common JAR has no $description")
+            }
+        }
+
+        val evaporatingPipeEntry = commonZip.getEntry(evaporatingEtherPipeContractClassEntry)
+        if (evaporatingPipeEntry != null) {
+            val evaporatingPipeConstants = readClassUtf8Constants(
+                commonZip.getInputStream(evaporatingPipeEntry).use { input -> input.readAllBytes() },
+            )
+            if ("ru/feytox/etherology/magic/ether/EtherPipe" !in evaporatingPipeConstants
+                || "setEvaporating" !in evaporatingPipeConstants
+                || "setCrossEvaporating" !in evaporatingPipeConstants
+            ) {
+                missingConditions.add("shared evaporating-pipe contract has no two-state API")
+            }
+        }
+
+        val pipeSideEntry = commonZip.getEntry(pipeSideClassEntry)
+        if (pipeSideEntry != null) {
+            val pipeSideConstants = readClassUtf8Constants(
+                commonZip.getInputStream(pipeSideEntry).use { input -> input.readAllBytes() },
+            )
+            val requiredPipeSideConstants = setOf(
+                "net/minecraft/util/StringIdentifiable",
+                "EMPTY",
+                "IN",
+                "OUT",
+                "isInput",
+                "isOutput",
+                "isEmpty",
+                "asString",
+                "toLowerCase",
+            )
+            val missingPipeSideConstants = requiredPipeSideConstants - pipeSideConstants
+            if (missingPipeSideConstants.isNotEmpty()) {
+                missingConditions.add(
+                    "shared pipe-side state lost its serialized three-value contract: " +
+                        missingPipeSideConstants.sorted(),
+                )
+            }
+        }
+
+        val storageEntry = commonZip.getEntry(etherealStorageFoundationBlockEntityClassEntry)
+        if (storageEntry == null) {
+            missingConditions.add("common JAR has no channel-compatible ethereal storage")
+        } else {
+            val storageConstants = readClassUtf8Constants(
+                commonZip.getInputStream(storageEntry).use { input -> input.readAllBytes() },
+            )
+            if ("ru/feytox/etherology/magic/ether/EtherStorage" !in storageConstants
+                || "transferTick" !in storageConstants
+                || "transfer" !in storageConstants
+                || "chargeGlints" !in storageConstants
+                || "getTime" !in storageConstants
+            ) {
+                missingConditions.add(
+                    "ethereal storage does not run directed transfer before its fifth-tick Glint flow",
+                )
             }
         }
 
         val channelBlockEntry = commonZip.getEntry(etherealChannelBlockClassEntry)
         if (channelBlockEntry == null) {
             missingConditions.add("common JAR has no shared ethereal-channel block")
+        } else {
+            val channelBlockConstants = readClassUtf8Constants(
+                commonZip.getInputStream(channelBlockEntry).use { input -> input.readAllBytes() },
+            )
+            val requiredBlockConstants = setOf(
+                "net/minecraft/block/BlockEntityProvider",
+                "net/minecraft/block/Waterloggable",
+                "ru/feytox/etherology/enums/PipeSide",
+                "ACTIVATED",
+                "FACING",
+                "IN_CASE",
+                "IS_CROSS",
+                "WATERLOGGED",
+                "getChannelState",
+                "isNeighborOutput",
+                "leverOutputDirection",
+                "applyFacingState",
+                "inputProperty",
+                "outputProperty",
+                "neighborUpdate",
+                "getReceivedStrongRedstonePower",
+                "getFluidState",
+                "scheduleFluidTick",
+                "getOutlineShape",
+                "getTicker",
+                "ru/feytox/etherology/block/etherealChannel/" +
+                    "EtherealChannelFoundationBlockEntity",
+            )
+            val missingBlockConstants = requiredBlockConstants - channelBlockConstants
+            if (missingBlockConstants.isNotEmpty()) {
+                missingConditions.add(
+                    "shared ethereal channel lacks canonical state, shape, water, redstone, " +
+                        "topology, or server-ticker behavior: ${missingBlockConstants.sorted()}",
+                )
+            }
+        }
+
+        val channelShapeEntry = commonZip.getEntry(etherealChannelShapeClassEntry)
+        if (channelShapeEntry == null) {
+            missingConditions.add("common JAR has no precomputed ethereal-channel shape owner")
+        } else {
+            val channelShapeConstants = readClassUtf8Constants(
+                commonZip.getInputStream(channelShapeEntry).use { input -> input.readAllBytes() },
+            )
+            val requiredShapeConstants = setOf(
+                "NORTH",
+                "SOUTH",
+                "EAST",
+                "WEST",
+                "UP",
+                "DOWN",
+                "SIDE_PROPERTIES",
+                "DIRECTIONS",
+                "CENTER",
+                "buildShapes",
+                "getShape",
+                "withEmptySides",
+                "combineAndSimplify",
+            )
+            val missingShapeConstants = requiredShapeConstants - channelShapeConstants
+            if (missingShapeConstants.isNotEmpty()) {
+                missingConditions.add(
+                    "shared ethereal channel lacks its six-face precomputed shapes: " +
+                        missingShapeConstants.sorted(),
+                )
+            }
         }
 
         val channelBlockEntityEntry = commonZip.getEntry(etherealChannelBlockEntityClassEntry)
@@ -910,12 +1115,37 @@ fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> {
                 commonZip.getInputStream(channelBlockEntityEntry)
                     .use { input -> input.readAllBytes() },
             )
-            if ("ru/feytox/etherology/magic/ether/EtherStorage" !in channelConstants
-                || "transferTick" !in channelConstants
-                || "stored_ether" !in channelConstants
-                || "getOutputSide" !in channelConstants
-            ) {
-                missingConditions.add("shared ethereal channel has no persistent directed transfer behavior")
+            val requiredBlockEntityConstants = setOf(
+                "ru/feytox/etherology/magic/ether/EtherDisplay",
+                "ru/feytox/etherology/magic/ether/EvaporatingEtherPipe",
+                "transferTick",
+                "transfer",
+                "stored_ether",
+                "evaporating",
+                "cross_evaporating",
+                "getOutputSide",
+                "getStoredEther",
+                "setStoredEther",
+                "getMaxEther",
+                "getTransferSize",
+                "isInputSide",
+                "isActivated",
+                "getDisplayEther",
+                "getDisplayMaxEther",
+                "setEvaporating",
+                "setCrossEvaporating",
+                "writeNbt",
+                "readNbt",
+                "toUpdatePacket",
+                "toInitialChunkDataNbt",
+                "net/minecraft/network/packet/s2c/play/BlockEntityUpdateS2CPacket",
+            )
+            val missingBlockEntityConstants = requiredBlockEntityConstants - channelConstants
+            if (missingBlockEntityConstants.isNotEmpty()) {
+                missingConditions.add(
+                    "shared ethereal channel has no persistent, synchronized directed transfer " +
+                        "behavior: ${missingBlockEntityConstants.sorted()}",
+                )
             }
         }
 
@@ -926,7 +1156,7 @@ fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> {
             )
         }.orEmpty()
         if ("ethereal_channel" !in sharedBlockConstants
-            || "ru/feytox/etherology/block/etherealChannel/EtherealChannelBlock"
+            || "ru/feytox/etherology/block/etherealChannel/EtherealChannelFoundationBlock"
             !in sharedBlockConstants
         ) {
             missingConditions.add("SharedBlocks does not register the ethereal channel")
@@ -938,15 +1168,181 @@ fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> {
                 commonZip.getInputStream(entry).use { input -> input.readAllBytes() },
             )
         }.orEmpty()
+        val channelBlockEntityClassName =
+            "ru/feytox/etherology/block/etherealChannel/" +
+                "EtherealChannelFoundationBlockEntity"
         if ("ethereal_channel_block_entity" !in sharedBlockEntityConstants
-            || "ru/feytox/etherology/block/etherealChannel/EtherealChannelBlockEntity"
-            !in sharedBlockEntityConstants
+            || channelBlockEntityClassName !in sharedBlockEntityConstants
         ) {
             missingConditions.add("SharedBlockEntities does not register the ethereal channel")
+        }
+
+        val sharedItemEntry = commonZip.getEntry(sharedItemRegistryClassEntry)
+        val sharedItemConstants = sharedItemEntry?.let { entry ->
+            readClassUtf8Constants(
+                commonZip.getInputStream(entry).use { input -> input.readAllBytes() },
+            )
+        }.orEmpty()
+        if ("ethereal_channel" !in sharedItemConstants
+            || "net/minecraft/item/BlockItem" !in sharedItemConstants
+            || "ru/feytox/etherology/registry/block/SharedBlocks" !in sharedItemConstants
+        ) {
+            missingConditions.add("SharedItems does not register the ethereal-channel block item")
+        }
+    }
+
+    etherealChannelResources.filterNot(File::isFile).forEach { missingResource ->
+        missingConditions.add("ethereal channel resource is missing: ${missingResource.name}")
+    }
+    if (etherealChannelBlockstate.isFile) {
+        val blockstateText = etherealChannelBlockstate.readText()
+        listOf(
+            "ethereal_channel_input",
+            "ethereal_channel_output",
+            "ethereal_channel_central_line",
+            "ethereal_channel_central_cross",
+            "ethereal_channel_in_case",
+            "\"in_case\"",
+            "\"is_cross\"",
+        ).filterNot(blockstateText::contains).forEach { missingToken ->
+            missingConditions.add("ethereal channel blockstate lacks $missingToken")
+        }
+    }
+    if (!englishLanguageFile.isFile
+        || !englishLanguageFile.readText().contains("\"block.etherology.ethereal_channel\"")
+    ) {
+        missingConditions.add("ethereal channel English translation is missing")
+    }
+    val compiledMixin = forgeMainClasses.get().asFile.resolve(
+        forgeChannelLeverMixinClassEntry,
+    )
+    if (!compiledMixin.isFile) {
+        missingConditions.add("Forge has no compiled channel lever-support mixin")
+    } else {
+        val mixinConstants = readClassUtf8Constants(compiledMixin.readBytes())
+        val requiredMixinConstants = setOf(
+            "Lnet/minecraft/block/WallMountedBlock;",
+            "net/minecraft/block/LeverBlock",
+            "ru/feytox/etherology/registry/block/SharedBlocks",
+            "ETHEREAL_CHANNEL",
+            "canPlaceAt(Lnet/minecraft/block/BlockState;" +
+                "Lnet/minecraft/world/WorldView;Lnet/minecraft/util/math/BlockPos;)Z",
+            "getDirection",
+        )
+        val missingMixinConstants = requiredMixinConstants - mixinConstants
+        if (missingMixinConstants.isNotEmpty()) {
+            missingConditions.add(
+                "Forge channel lever-support mixin lacks its narrow canonical binding: " +
+                    missingMixinConstants.sorted(),
+            )
+        }
+    }
+    if (!forgeMixinConfig.isFile) {
+        missingConditions.add("Forge channel mixin configuration is missing")
+    } else {
+        val mixinConfigText = forgeMixinConfig.readText()
+        listOf(
+            "ru.feytox.etherology.forge.mixin",
+            "ChannelLeverSupportMixin",
+        ).filterNot(mixinConfigText::contains).forEach { missingToken ->
+            missingConditions.add("Forge channel mixin configuration lacks $missingToken")
         }
     }
     return missingConditions
 }
+
+fun missingForgeChannelEvidenceMilestone(
+    currentProduction: File? = null,
+    currentHarness: File? = null,
+): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if ((currentProduction == null) != (currentHarness == null)) {
+        missingConditions.add(
+            "current production and harness artifacts must be verified together",
+        )
+        return missingConditions
+    }
+    if (!forgeChannelEvidenceVerifier.isFile) {
+        missingConditions.add("strict native Forge ethereal-channel verifier is missing")
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeChannelEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("ethereal-channel-v[1-9][0-9]*").matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories.size != 1) {
+        missingConditions.add(
+            "exactly one frozen native Forge ethereal-channel evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectory = archiveDirectories.single()
+    val command = mutableListOf(
+        "python3",
+        "-B",
+        forgeChannelEvidenceVerifier.absolutePath,
+        "--archive",
+        archiveDirectory.absolutePath,
+    )
+    if (currentProduction != null && currentHarness != null) {
+        command.addAll(
+            listOf(
+                "--current-production",
+                currentProduction.absolutePath,
+                "--current-harness",
+                currentHarness.absolutePath,
+                "--current-profile",
+                forgeE2eProfileManifest.absolutePath,
+            ),
+        )
+    }
+
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict native Forge ethereal-channel evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict native Forge ethereal-channel evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
+fun missingForgeChannelNetworkMilestone(commonJarFile: File): List<String> =
+    missingForgeChannelImplementationMilestone(commonJarFile) +
+        missingForgeChannelEvidenceMilestone()
+
+fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
+    "the shared block and item catalogs do not cover every canonical runtime ID",
+    "entity, enchantment, sound, recipe, screen, effect, event, loot, particle, tree, and " +
+        "world-generation registries are not loader-neutral",
+    "creative tabs, fuel, reload, lifecycle, trade, brewing, wood, sculk, and command hooks " +
+        "are not accepted on both loaders",
+    "the exact Fabric/Forge registry manifest and dedicated-server placement/save smoke are " +
+        "not accepted",
+)
 
 fun missingForgeReleaseReadinessMilestone(): List<String> = listOf(
     "the complete authoritative Forge gameplay registry and lifecycle graph is not accepted",
@@ -971,6 +1367,11 @@ fun firstIncompleteForgeMilestone(
     val missingChannelNetwork = missingForgeChannelNetworkMilestone(commonJarFile)
     if (missingChannelNetwork.isNotEmpty()) {
         return "ethereal channel/network" to missingChannelNetwork
+    }
+
+    val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
+    if (missingRegistrySpine.isNotEmpty()) {
+        return "authoritative registry spine" to missingRegistrySpine
     }
 
     return "complete gameplay and native release readiness" to
@@ -1142,16 +1543,43 @@ val validateForgeStorageParityMilestone = tasks.register("validateForgeStoragePa
     }
 }
 
+val validateForgeChannelImplementationMilestone =
+    tasks.register("validateForgeChannelImplementationMilestone") {
+        group = "verification"
+        description =
+            "Checks the shared ethereal-channel implementation before native evidence acceptance."
+        dependsOn(
+            validateForgeStorageParityMilestone,
+            commonJar,
+            commonTest,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(etherealChannelResources + englishLanguageFile + forgeMixinConfig)
+        inputs.dir(forgeMainClasses)
+        doLast {
+            val commonJarFile = commonJar.get().archiveFile.get().asFile
+            val missingConditions = missingForgeChannelImplementationMilestone(commonJarFile)
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion ethereal-channel implementation is incomplete:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
 val validateForgeChannelNetworkMilestone = tasks.register("validateForgeChannelNetworkMilestone") {
     group = "verification"
-    description = "Requires the next shared ethereal-channel and directed transfer vertical."
+    description =
+        "Requires the shared directed-transfer implementation and its frozen native Forge proof."
     dependsOn(
-        validateForgeStorageParityMilestone,
-        commonJar,
-        commonTest,
-        tasks.named("test"),
+        validateForgeChannelImplementationMilestone,
     )
     inputs.file(commonJar.flatMap { it.archiveFile })
+    inputs.files(etherealChannelResources + englishLanguageFile)
+    inputs.dir(forgeChannelEvidenceRoot)
+        .withPropertyName("forgeChannelEvidenceRoot")
+        .optional()
     doLast {
         val commonJarFile = commonJar.get().archiveFile.get().asFile
         val missingConditions = missingForgeChannelNetworkMilestone(commonJarFile)
@@ -1163,11 +1591,27 @@ val validateForgeChannelNetworkMilestone = tasks.register("validateForgeChannelN
     }
 }
 
+val validateForgeAuthoritativeRegistrySpineMilestone =
+    tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
+        group = "verification"
+        description =
+            "Blocks broad gameplay until every canonical runtime registry has one shared owner."
+        dependsOn(validateForgeChannelNetworkMilestone)
+        doLast {
+            val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion authoritative registry spine is incomplete:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
 val validateForgeReleaseReadinessMilestone = tasks.register("validateForgeReleaseReadinessMilestone") {
     group = "verification"
     description =
         "Permanently blocks artifacts until complete gameplay and packaged native Forge E2E are accepted."
-    dependsOn(validateForgeChannelNetworkMilestone)
+    dependsOn(validateForgeAuthoritativeRegistrySpineMilestone)
     doLast {
         val missingConditions = missingForgeReleaseReadinessMilestone()
         check(missingConditions.isEmpty()) {
@@ -1187,7 +1631,9 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeStorageFoundationMilestone,
         validateForgePersistentStorageMenuCoreMilestone,
         validateForgeStorageParityMilestone,
+        validateForgeChannelImplementationMilestone,
         validateForgeChannelNetworkMilestone,
+        validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
 }
@@ -1206,6 +1652,10 @@ tasks.register("verifyForgePortGateClosed") {
     )
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
+    inputs.files(etherealChannelResources + englishLanguageFile)
+    inputs.dir(forgeChannelEvidenceRoot)
+        .withPropertyName("forgeChannelEvidenceRoot")
+        .optional()
     doLast {
         val commonJarFile = commonJar.get().archiveFile.get().asFile
         val firstIncompleteMilestone = firstIncompleteForgeMilestone(
@@ -1267,6 +1717,32 @@ if (minecraftVersion == "1.20.1") {
         testClassesDirs = e2eHarnessTest.output.classesDirs
         classpath = e2eHarnessTest.runtimeClasspath
         useJUnitPlatform()
+    }
+
+    val forgeChannelEvidenceVerifierTest =
+        tasks.register<Exec>("forgeChannelEvidenceVerifierTest") {
+            group = "verification"
+            description =
+                "Runs adversarial tests for the Forge 1.20.1 channel evidence verifier."
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_forge_channel_evidence.py",
+            )
+            inputs.files(
+                forgeChannelEvidenceVerifier,
+                forgeE2eProfileManifest,
+                rootProject.file("scripts/e2e/test_forge_channel_evidence.py"),
+                rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/forge_evidence.py"),
+            )
+        }
+
+    validateForgeChannelImplementationMilestone.configure {
+        dependsOn(e2eHarnessTestTask, forgeChannelEvidenceVerifierTest)
     }
 
     val expandedE2eHarnessMetadata = mapOf(
@@ -1348,7 +1824,9 @@ if (minecraftVersion == "1.20.1") {
                 val classConstants = harnessZip.getInputStream(classEntry).use { input ->
                     String(input.readAllBytes(), StandardCharsets.ISO_8859_1)
                 }
-                check(!classConstants.contains("ru/feytox/etherology/")) {
+                check(!classConstants.contains("ru/feytox/etherology/")
+                    && !classConstants.contains("ru.feytox.etherology.")
+                ) {
                     "Forge E2E harness class $classEntryName links to production Etherology code"
                 }
             }
@@ -1428,6 +1906,38 @@ if (minecraftVersion == "1.20.1") {
                 }
             }
         }
+    }
+
+    val validateForgeChannelEvidenceProvenance =
+        tasks.register("validateForgeChannelEvidenceProvenance") {
+            group = "verification"
+            description =
+                "Binds frozen Forge channel evidence to the current remapped test artifacts."
+            dependsOn(verifyE2eUnderTestIsolation)
+            inputs.files(forgeChannelEvidenceVerifier, forgeE2eProfileManifest)
+            inputs.file(remapE2eUnderTestJar.flatMap { it.archiveFile })
+            inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+            inputs.dir(forgeChannelEvidenceRoot)
+                .withPropertyName("forgeChannelEvidenceRoot")
+                .optional()
+
+            doLast {
+                val productionFile = remapE2eUnderTestJar.get().archiveFile.get().asFile
+                val harnessFile = remapE2eHarnessJar.get().archiveFile.get().asFile
+                val missingConditions = missingForgeChannelEvidenceMilestone(
+                    productionFile,
+                    harnessFile,
+                )
+                check(missingConditions.isEmpty()) {
+                    "Forge $minecraftVersion native ethereal-channel provenance is invalid:\n${
+                        missingConditions.joinToString("\n") { condition -> " - $condition" }
+                    }"
+                }
+            }
+        }
+
+    validateForgeChannelNetworkMilestone.configure {
+        dependsOn(validateForgeChannelEvidenceProvenance)
     }
 
     tasks.register("buildE2eHarness") {

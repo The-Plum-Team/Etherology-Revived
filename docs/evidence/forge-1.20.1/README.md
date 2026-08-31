@@ -46,7 +46,7 @@ restarts the integrated world, compares the exact Ether distribution, ordered
 input inventory, display state, and block-entity type, and reopens the native
 menu. Viewer open and close calls also drive the captured Gecko animation.
 
-## Capture contract
+## Ethereal Storage capture contract
 
 All five PNGs are composed Minecraft framebuffers at `1920x1080`; none is an
 operating-system screenshot or crop. The world captures wait for 16 completed
@@ -100,3 +100,85 @@ This is proof for the bounded Forge Ethereal Storage vertical only. It does not
 open the Forge release gate or establish parity for channels, the wider Ether
 network, the remaining gameplay graph, dedicated-server behavior, or the full
 E2E matrix.
+
+## Ethereal Channel (v11)
+
+- Profile: `etherology-e2e-forge-1.20.1-v11`
+- Runtime directory: `scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v11`
+- Tracked profile manifest SHA-256:
+  `af21ba7cbf1ba71f06a1dc2594daa5aa4a790ee89df3ed560760ceb1b6aa8e6f`
+- Minecraft: `1.20.1`
+- Forge: `47.4.9`
+- Runtime Java: `17`
+- Production JAR SHA-256:
+  `45e94cf67b0be441aae529df08ede9602e3d6d67f07e3570d1facd067b0cfa12`
+- Harness JAR SHA-256:
+  `e229554424abf1896436d87298d4788786e784fd987f96fe731b1c42a54f5284`
+- Report status: `passed`
+- Assertions: `42` passed, `0` failed
+- Client ticks: `3434`
+- Gated-to-transferred change: `0.013136`
+- Transferred-to-reopened structure: `0.004009`
+
+The fresh integrated-world fixture verifies the shared ethereal-channel
+foundation with registered channel and storage endpoints, persistent Ether and
+direction state, redstone activation, and native Forge support for a vanilla
+wall lever attached to the channel. A powered channel first receives and holds
+exactly one Ether. Removing the gate transfers that Ether to storage on the
+fifth-tick cadence without reverse motion. An independent channel with a
+missing output then evaporates exactly `0.2` Ether on its fifth-tick cadence and
+naturally clears its evaporation state after reactivation. The run force-saves,
+disconnects, restarts the integrated world, and compares the exact Ether,
+activation, direction, lever, and block-entity state.
+
+## Ethereal Channel capture contract
+
+All three PNGs are composed Minecraft framebuffers at `1920x1080`. Before each
+capture, the client sustained 120 consecutive frames with the exact expected
+block and block-entity mirror, a complete and ready terrain render, and the
+fixed first-person camera pose. The harness rechecked and latched those three
+conditions immediately before recording each screenshot. The deterministic
+verifier requires the gated-to-transferred change recorded above, limits
+unrelated scene movement, and requires the reopened image to retain the
+transferred structure. It also validates PNG dimensions, archive inventory,
+artifact provenance, assertion evidence, normal shutdown, and publication of
+`done.marker` only after the report and captures were complete.
+
+Frozen file digests:
+
+- `ethereal-channel-v11/archive-manifest.json`:
+  `b04886bf18b8f74a8bbfed0d0d48e2ae7f0b32321aa820952280673ec3fd70be`
+- `ethereal-channel-v11/reports/report.json`:
+  `80c31a4ca1e0e3c1000de48f83b374cf3ae17dcf43e76d0d1fac0cbaa9204203`
+- `ethereal-channel-v11/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `ethereal-channel-v11/screenshots/ethereal-channel-gated.png`:
+  `ffcd33ea596992a39afb86d1011467cf95207d0e02f43968f438bcffe7f38006`
+- `ethereal-channel-v11/screenshots/ethereal-channel-transferred.png`:
+  `e33947206f968a5f8005e6e4163c588f9464e70484d485bd68f6d7e912fdb901`
+- `ethereal-channel-v11/screenshots/ethereal-channel-reopened.png`:
+  `5860d53c1f9c56b12d91469c043faae98ab8bc2876b52f696adcaa5fc00cfa01`
+
+The complete assertion inventory and artifact provenance are in
+[`report.json`](ethereal-channel-v11/reports/report.json). The six-file archive
+can be checked without the ignored live runtime:
+
+```text
+Validated archived ethereal-channel for etherology-e2e-forge-1.20.1-v11: 42 assertions, 3 screenshots, transfer-change 0.013136, reopened-structure 0.004009
+Production SHA-256: 45e94cf67b0be441aae529df08ede9602e3d6d67f07e3570d1facd067b0cfa12
+Harness SHA-256: e229554424abf1896436d87298d4788786e784fd987f96fe731b1c42a54f5284
+Archive integrity only: current sources and rebuilt artifacts were not compared.
+```
+
+Run `python3 -B scripts/e2e/forge_channel_evidence.py --archive
+docs/evidence/forge-1.20.1/ethereal-channel-v11` from the repository root to
+repeat that archival check. The frozen archive proves only its own integrity;
+later source changes and rebuilt JARs require another fresh isolated profile and
+native run before they can claim equivalence.
+
+This accepts only the shared ethereal-channel foundation and its bounded
+network behavior with storage endpoints and native Forge lever support. Channel
+case interaction and registration, channel particles and the client ticker,
+channel loot and recipe data, and the wider machine/network graph remain
+deferred. The authoritative registry spine, beginning with shared sound
+registration, is the next forward gate. The Forge release gate remains closed.

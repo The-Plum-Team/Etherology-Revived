@@ -12,6 +12,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -22,6 +23,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import ru.feytox.etherology.item.EtherealStorageInputItem;
 import ru.feytox.etherology.item.glints.GlintEtherData;
+import ru.feytox.etherology.magic.ether.EtherStorage;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.item.SharedItems;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
@@ -38,7 +40,7 @@ import java.util.List;
  * Persists internal and per-glint Ether while owning the four-slot server storage menu.
  */
 public final class EtherealStorageFoundationBlockEntity extends BlockEntity
-        implements SidedInventory, NamedScreenHandlerFactory, GeoBlockEntity {
+        implements EtherStorage, SidedInventory, NamedScreenHandlerFactory, GeoBlockEntity {
 
     private static final String STORAGE_ETHER_KEY = "storage_ether";
     private static final String STORAGE_CONTROLLER = "storage_controller";
@@ -77,6 +79,7 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
      *
      * @return stored Ether units
      */
+    @Override
     public float getStoredEther() {
         return storageEther;
     }
@@ -86,8 +89,19 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
      *
      * @return 64 internal Ether units
      */
+    @Override
     public float getMaxEther() {
         return MAX_ETHER;
+    }
+
+    /**
+     * Limits each network exchange to the canonical one-Ether step.
+     *
+     * @return one Ether unit
+     */
+    @Override
+    public float getTransferSize() {
+        return 1.0f;
     }
 
     /**
@@ -104,6 +118,7 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
      *
      * @return combined internal and per-glint Ether
      */
+    @Override
     public float getTransportableEther() {
         return storageEther + getGlintEther();
     }
@@ -113,6 +128,7 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
      *
      * @param value Ether units clamped to this bounded core's capacity
      */
+    @Override
     public void setStoredEther(float value) {
         float clampedValue = normalizeEther(value);
         if (Float.compare(storageEther, clampedValue) == 0) {
@@ -125,24 +141,12 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
     }
 
     /**
-     * Adds Ether to the 64-unit internal buffer and returns the amount that did not fit.
-     *
-     * @param value Ether units offered to the internal buffer
-     * @return Ether units left over after filling the internal buffer
-     */
-    public float increment(float value) {
-        float storedBefore = storageEther;
-        float storedAfter = Math.min(storedBefore + value, MAX_ETHER);
-        setStoredEther(storedAfter);
-        return Math.max(0.0f, storedBefore + value - MAX_ETHER);
-    }
-
-    /**
      * Removes Ether using the canonical internal/glint selection and reverse-slot drain order.
      *
      * @param value maximum Ether units to remove
      * @return Ether units actually removed
      */
+    @Override
     public float decrement(float value) {
         EtherDrainResult result = drainEther(inventory, storageEther, value);
         if (result.removedEther() <= 0.0f) {
@@ -189,6 +193,7 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
      * @param side queried input face
      * @return whether the face may accept Ether
      */
+    @Override
     public boolean isInputSide(Direction side) {
         return side != Direction.DOWN
                 && side != Direction.UP
@@ -200,8 +205,41 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
      *
      * @return the downward face
      */
+    @Override
     public Direction getOutputSide() {
         return Direction.DOWN;
+    }
+
+    /**
+     * Returns the world position used to resolve the next Ether consumer.
+     *
+     * @return this block entity's position
+     */
+    @Override
+    public BlockPos getStoragePos() {
+        return pos;
+    }
+
+    /**
+     * Transfers Ether through the downward output on the canonical fifth-tick cadence.
+     *
+     * @param world logical server world containing this storage
+     */
+    @Override
+    public void transferTick(ServerWorld world) {
+        if (world.getTime() % 5 == 0) {
+            transfer(world);
+        }
+    }
+
+    /**
+     * Keeps this passive storage available to the Ether network at all times.
+     *
+     * @return always false
+     */
+    @Override
+    public boolean isActivated() {
+        return false;
     }
 
     static void serverTick(
@@ -210,6 +248,7 @@ public final class EtherealStorageFoundationBlockEntity extends BlockEntity
             BlockState state,
             EtherealStorageFoundationBlockEntity storage
     ) {
+        storage.transferTick((ServerWorld) world);
         if (world.getTime() % 5 != 0) {
             return;
         }

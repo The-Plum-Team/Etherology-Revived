@@ -44,6 +44,7 @@ final class EtherealStorageClientRegistrationTest {
         assertTrue(eventConstants.contains("RenderTypeRegistry"));
         assertTrue(eventConstants.contains("getCutout"));
         assertTrue(eventConstants.contains("SharedBlocks"));
+        assertTrue(eventConstants.contains("ETHEREAL_CHANNEL"));
         assertTrue(eventConstants.contains("ModelPredicateProviderRegistry"));
         assertTrue(eventConstants.contains("ether_percentage"));
         assertFalse(eventConstants.contains("etherology:ether_percentage"));

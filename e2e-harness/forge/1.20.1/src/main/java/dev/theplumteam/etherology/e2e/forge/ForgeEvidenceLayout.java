@@ -12,11 +12,22 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
 
-record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screenshotsDirectory) {
+record ForgeEvidenceLayout(
+        Path scenarioRoot,
+        Path reportsDirectory,
+        Path screenshotsDirectory,
+        String profileId,
+        long profileManifestSize,
+        String profileManifestSha256
+) {
 
     private static final String ARTIFACT_NODE = "forge-1.20.1";
-    private static final String PROFILE_ID = "etherology-e2e-forge-1.20.1-v7";
+    private static final String PROFILE_ID = "etherology-e2e-forge-1.20.1-v11";
+    private static final String PROFILE_MANIFEST_PATH =
+            "scripts/e2e/forge-1.20.1-profile.json";
     private static final Pattern SCENARIO_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9-]*");
+    private static final Pattern SHA256_PATTERN = Pattern.compile("[0-9a-f]{64}");
+    private static final Pattern POSITIVE_INTEGER_PATTERN = Pattern.compile("[1-9][0-9]*");
 
     static ForgeEvidenceLayout resolve(Path gameDirectory, String scenarioId) throws IOException {
         if (!SCENARIO_ID_PATTERN.matcher(scenarioId).matches()) {
@@ -31,7 +42,7 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
 
         requireDirectory(normalizedGameDirectory, "game directory");
         requireDirectory(runtimeRoot, "runtime root");
-        String profileId = validateProfileMarker(
+        ProfileProvenance profile = validateProfileMarker(
                 runtimeRoot.resolve(".etherology-forge-e2e-profile.json")
         );
 
@@ -39,7 +50,7 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         requireDirectory(evidenceRoot, "evidence root");
         validateEvidenceMarker(
                 evidenceRoot.resolve(".etherology-e2e-evidence.json"),
-                profileId,
+                profile.profileId(),
                 scenarioId
         );
 
@@ -49,7 +60,14 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         requireDirectory(scenarioRoot, scenarioId + " scenario root");
         requireDirectory(reportsDirectory, scenarioId + " reports directory");
         requireDirectory(screenshotsDirectory, scenarioId + " screenshots directory");
-        return new ForgeEvidenceLayout(scenarioRoot, reportsDirectory, screenshotsDirectory);
+        return new ForgeEvidenceLayout(
+                scenarioRoot,
+                reportsDirectory,
+                screenshotsDirectory,
+                profile.profileId(),
+                profile.manifestSize(),
+                profile.manifestSha256()
+        );
     }
 
     Path screenshotPath(String fileName) {
@@ -68,7 +86,7 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         requireMissing(reportsDirectory.resolve("done.marker"), "scenario completion marker");
     }
 
-    private static String validateProfileMarker(Path path) throws IOException {
+    private static ProfileProvenance validateProfileMarker(Path path) throws IOException {
         JsonObject marker = readObject(path, "isolated profile marker");
         requireInteger(marker, "schema", 1, "isolated profile marker");
         requireString(marker, "profile_id", PROFILE_ID, "isolated profile marker");
@@ -77,6 +95,32 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
                 "managed_by",
                 "scripts/e2e/forge_client.py",
                 "isolated profile marker"
+        );
+
+        JsonObject profileManifest = requireObject(
+                marker,
+                "profile_manifest",
+                "isolated profile marker"
+        );
+        if (profileManifest.size() != 3) {
+            throw new IOException("The profile manifest provenance field inventory changed");
+        }
+        requireString(
+                profileManifest,
+                "path",
+                PROFILE_MANIFEST_PATH,
+                "profile manifest provenance"
+        );
+        long profileManifestSize = requirePositiveLong(
+                profileManifest,
+                "size",
+                "profile manifest provenance"
+        );
+        String profileManifestSha256 = requirePattern(
+                profileManifest,
+                "sha256",
+                SHA256_PATTERN,
+                "profile manifest provenance"
         );
 
         JsonObject isolation = requireObject(marker, "isolation", "isolated profile marker");
@@ -91,7 +135,11 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         requireString(release, "minecraft_version", "1.20.1", "profile release");
         requireString(release, "loader", "forge", "profile release");
         requireInteger(release, "java", 17, "profile release");
-        return PROFILE_ID;
+        return new ProfileProvenance(
+                PROFILE_ID,
+                profileManifestSize,
+                profileManifestSha256
+        );
     }
 
     private static void validateEvidenceMarker(
@@ -113,14 +161,19 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         requireInteger(marker, "java", 17, "evidence marker");
 
         JsonArray scenarios = requireArray(marker, "scenarios", "evidence marker");
-        boolean scenarioDeclared = false;
-        for (JsonElement scenario : scenarios) {
-            if (scenario.isJsonPrimitive() && scenarioId.equals(scenario.getAsString())) {
-                scenarioDeclared = true;
-                break;
-            }
+        if (scenarios.size() != 2
+                || !scenarios.get(0).isJsonPrimitive()
+                || !scenarios.get(1).isJsonPrimitive()
+                || !ScenarioSelection.ETHEREAL_STORAGE.equals(
+                    scenarios.get(0).getAsString()
+                )
+                || !ScenarioSelection.ETHEREAL_CHANNEL.equals(
+                    scenarios.get(1).getAsString()
+                )) {
+            throw new IOException("The evidence marker scenario order changed");
         }
-        if (!scenarioDeclared) {
+        if (!ScenarioSelection.ETHEREAL_STORAGE.equals(scenarioId)
+                && !ScenarioSelection.ETHEREAL_CHANNEL.equals(scenarioId)) {
             throw new IOException("The evidence marker does not declare " + scenarioId);
         }
 
@@ -214,6 +267,25 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         }
     }
 
+    private static long requirePositiveLong(
+            JsonObject object,
+            String name,
+            String label
+    ) throws IOException {
+        JsonElement element = object.get(name);
+        if (element == null
+                || !element.isJsonPrimitive()
+                || !element.getAsJsonPrimitive().isNumber()
+                || !POSITIVE_INTEGER_PATTERN.matcher(element.getAsString()).matches()) {
+            throw new IOException("The " + label + " has an invalid " + name);
+        }
+        try {
+            return element.getAsLong();
+        } catch (NumberFormatException exception) {
+            throw new IOException("The " + label + " has an invalid " + name, exception);
+        }
+    }
+
     private static void requireDirectory(Path path, String label) throws IOException {
         if (Files.isSymbolicLink(path) || !Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
             throw new IOException("The " + label + " is missing or linked: " + path);
@@ -231,5 +303,12 @@ record ForgeEvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screen
         if (Files.exists(path, LinkOption.NOFOLLOW_LINKS) || Files.isSymbolicLink(path)) {
             throw new IOException("Refusing to replace an existing " + label + ": " + path);
         }
+    }
+
+    private record ProfileProvenance(
+            String profileId,
+            long manifestSize,
+            String manifestSha256
+    ) {
     }
 }

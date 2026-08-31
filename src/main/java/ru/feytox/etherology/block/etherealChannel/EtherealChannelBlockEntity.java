@@ -11,7 +11,7 @@ import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.enums.PipeSide;
 import ru.feytox.etherology.magic.ether.EtherDisplay;
-import ru.feytox.etherology.magic.ether.EtherPipe;
+import ru.feytox.etherology.magic.ether.EvaporatingEtherPipe;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import java.util.List;
@@ -19,7 +19,7 @@ import java.util.List;
 import static ru.feytox.etherology.block.etherealChannel.EtherealChannel.ACTIVATED;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_CHANNEL_BLOCK_ENTITY;
 
-public class EtherealChannelBlockEntity extends TickableBlockEntity implements EtherPipe, EtherDisplay {
+public class EtherealChannelBlockEntity extends TickableBlockEntity implements EvaporatingEtherPipe, EtherDisplay {
 
     private float storedEther = 0;
     @Getter @Setter

@@ -53,10 +53,17 @@ the report and evidence-directory identity, and `phase0-smoke` retains its exist
 report schema, assertions, screenshot names, report-first publication, and
 `done.marker`-last contract.
 
+The Forge 1.20.1 harness uses the same one-controller rule in its isolated v11
+profile. Its exact ordered scenario inventory is `ethereal-storage`, then
+`ethereal-channel`; an absent property defaults to `ethereal-storage`. An explicit
+id must match one of those two values without whitespace normalization.
+
 ## Evidence lifecycle
 
 1. Build and stage the production and E2E JARs.
-2. Record and verify the SHA-256 of both JARs before launch.
+2. Record and verify the SHA-256 of both JARs before launch. Loader-specific
+   profiles must also bind their runtime marker and report to the exact tracked
+   profile-manifest bytes used for capture.
 3. Install a real client in a new disposable runtime directory. Install a dedicated
    server there as well when the scenario contract requires it.
 4. Put the production JAR on every game process; put the harness only on clients.
@@ -100,6 +107,7 @@ not replace any standard scenario or establish complete loader readiness.
 | Scenario | Lane | Required proof |
 |---|---|---|
 | `ethereal-storage` | `forge-1.20.1` | Bounded Ethereal Storage vertical in a fresh integrated world: four-slot block entity and NBT reconstruction; per-Glint Ether transfer with exact-total conservation; Forge item-handler access on the unsided view and all six faces with simulated/live insertion, blocked extraction, and hidden display slot; viewer open/close and synchronized Gecko animation; native menu; closed/open/closed-again plus pre-restart and post-restart menu captures; forced save, full disconnect/restart, exact Ether distribution, ordered input inventory, display state, block-entity type, and menu reopen. This scenario does not satisfy `ether-network`, general `persistence`, multiplayer, or full-loader readiness. |
+| `ethereal-channel` | `forge-1.20.1` | Bounded directed-channel vertical in a fresh integrated world and forced fixture chunk: exact channel/storage block and block-entity ids at non-overlapping fixture positions; redstone-fed powered repeaters provide exact strong power from the full solid arena floor while temporary support blocks are replaced by channels, then the first scheduled server tick resolves ACTIVATED with source-above `up=in` and target-east `east=out` without any manual neighbor refresh; an independent vanilla wall lever remains attached to a channel after natural propagation, reports `canPlaceAt=true`, produces the exact `north=in`, `east=out`, `west=empty`, cross topology, mirrors to the client, and survives save/restart; a strongly powered channel receives and retains exactly one Ether without forwarding; natural power removal transfers exactly one Ether on the fifth-tick cadence with total conservation and no reverse motion; a missing output evaporates exactly 0.2 Ether and exposes then naturally clears its evaporation flags after natural reactivation; channel NBT reconstruction and client sync; gated, transferred, and reopened 1920×1080 captures after 120 consecutive exact client/terrain-ready frames at the fixed first-person camera pose, with capture-time mirror, renderer, and camera assertions; forced save, full disconnect/restart, exact server state, and exact block-entity types. Storage Ether distribution is a server oracle because the storage foundation has no client update packet. This scenario does not satisfy the complete `ether-network`, general `persistence`, multiplayer, or full-loader readiness contracts. |
 
 ## Screenshot contract
 

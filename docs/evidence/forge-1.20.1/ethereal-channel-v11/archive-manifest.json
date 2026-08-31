@@ -1,0 +1,59 @@
+{
+  "schema": 1,
+  "kind": "etherology-forge-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "ethereal-channel",
+  "profile": {
+    "id": "etherology-e2e-forge-1.20.1-v11",
+    "manifest_path": "scripts/e2e/forge-1.20.1-profile.json",
+    "manifest_size": 3644,
+    "manifest_sha256": "af21ba7cbf1ba71f06a1dc2594daa5aa4a790ee89df3ed560760ceb1b6aa8e6f"
+  },
+  "runtime": {
+    "artifact_node": "forge-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "forge",
+    "loader_version": "47.4.9",
+    "java": 17,
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "assertion_count": 42,
+  "screenshot_count": 3,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-forge-under-test.jar",
+      "size": 1210836,
+      "sha256": "45e94cf67b0be441aae529df08ede9602e3d6d67f07e3570d1facd067b0cfa12"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-forge-e2e-harness.jar",
+      "size": 102226,
+      "sha256": "e229554424abf1896436d87298d4788786e784fd987f96fe731b1c42a54f5284"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 44202,
+      "sha256": "80c31a4ca1e0e3c1000de48f83b374cf3ae17dcf43e76d0d1fac0cbaa9204203"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/ethereal-channel-gated.png": {
+      "size": 462969,
+      "sha256": "ffcd33ea596992a39afb86d1011467cf95207d0e02f43968f438bcffe7f38006"
+    },
+    "screenshots/ethereal-channel-transferred.png": {
+      "size": 464400,
+      "sha256": "e33947206f968a5f8005e6e4163c588f9464e70484d485bd68f6d7e912fdb901"
+    },
+    "screenshots/ethereal-channel-reopened.png": {
+      "size": 464412,
+      "sha256": "5860d53c1f9c56b12d91469c043faae98ab8bc2876b52f696adcaa5fc00cfa01"
+    }
+  }
+}

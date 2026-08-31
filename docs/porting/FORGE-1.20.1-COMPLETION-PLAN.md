@@ -5,11 +5,14 @@ complete Etherology gameplay port. It is intentionally stricter than a compilati
 each slice must own a coherent mechanic, preserve the canonical registry identifiers and save
 semantics, and finish with native runtime evidence before the release gate advances.
 
-The shared Ether item and the bounded Ethereal Storage vertical are accepted foundations, not the
-finished port. Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler
-capability lifecycle, synchronized Gecko animation, and packaged save/restart/reopen proof. The
-ethereal channel/network gate is the first incomplete forward milestone. Broad content migration
-must still follow the ownership and dependency order below.
+The shared Ether item, bounded Ethereal Storage vertical, and bounded Ethereal Channel foundation
+are accepted foundations, not the finished port. Storage now has canonical per-Glint Ether
+arithmetic, native Forge item-handler capability lifecycle, synchronized Gecko animation, and
+packaged save/restart/reopen proof. The channel foundation now has directed fifth-tick transfer,
+redstone gating, exact `0.2` evaporation, storage endpoints, native Forge lever support, and its own
+packaged save/restart proof. The authoritative registry spine, beginning with shared sound
+registration, is the first incomplete forward milestone. Broad content migration must still
+follow the ownership and dependency order below.
 
 ## Audit snapshot
 
@@ -48,7 +51,11 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 ## Execution order
 
-### Slice 0: build and authoritative registry spine
+### Slice 0: build and authoritative registry spine — next forward gate
+
+This is the current forward milestone. Shared sound declarations and their resource closure are
+the first bounded step; accepting that step will not by itself complete the broader catalogs in
+this slice.
 
 Source owners:
 
@@ -234,10 +241,12 @@ forced save, disconnect, restart, exact persistent-state comparison, and menu re
 record is the
 [`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md).
 
-`validateForgeChannelNetworkMilestone` is now the first incomplete stage in the release dependency
-graph. The unconditional `validateForgeReleaseReadinessMilestone` follows it and cannot be
-satisfied by channel-shaped class or method stubs, or by reusing the bounded storage evidence. The
-release graph must never remove or relax either stage merely to allow `remapJar`.
+The bounded `validateForgeChannelNetworkMilestone` has since been accepted with its own fresh
+native evidence; the storage run was not reused as channel proof. The authoritative registry spine,
+beginning with shared sound registration, is now the first incomplete stage in the release
+dependency graph. The unconditional `validateForgeReleaseReadinessMilestone` remains behind every
+forward gate and cannot be satisfied by class or method stubs or by reusing either bounded archive.
+The release graph must never remove or relax a stage merely to allow `remapJar`.
 
 ### Slice 4: static content and storage utilities
 
@@ -263,7 +272,11 @@ Proof:
   redstone/game-event behavior, vanilla hopper behavior, Forge capability interoperability, and
   before/after captures.
 
-### Slice 5: Ether graph and machines
+### Slice 5: Ether graph and machines — bounded channel foundation accepted
+
+Only the shared ethereal-channel foundation within this slice is accepted. The channel case,
+particles, client ticker, loot and recipe data, forks, sockets, furnaces, generators, Levitator,
+and the wider graph remain incomplete.
 
 Source owners:
 
@@ -284,10 +297,28 @@ Implementation:
 
 Dependencies:
 
-Storage, shared packets, deferred block-entity registration, and the Forge client registration
-spine must exist first.
+Completing the full graph still requires storage, shared packets, authoritative deferred
+block-entity registration, and the Forge client registration spine. The bounded foundation uses
+the accepted storage endpoint and deliberately excludes packet-driven particles and other client
+effects.
 
-Proof:
+Accepted bounded proof:
+
+- Shared Ether storage/pipe contracts, exact `ethereal_channel` block and block-entity IDs, storage
+  endpoints, persistent direction and Ether state, and NBT reconstruction.
+- Redstone-gated retention followed by exact one-Ether transfer on the fifth-tick cadence, with no
+  reverse motion.
+- Missing-output evaporation of exactly `0.2` Ether on the fifth-tick cadence, including natural
+  evaporation-flag clearing after reactivation.
+- Native Forge support for a vanilla wall lever attached to the channel, with exact connection
+  topology retained after restart.
+- Fresh isolated `etherology-e2e-forge-1.20.1-v11` proof with 42 of 42 assertions, three native
+  `1920x1080` framebuffers, 120 consecutive exact mirror/render/camera frames before each capture,
+  force-save, disconnect, restart, and exact persistent-state comparison. Its immutable record is
+  the [`Forge 1.20.1 runtime evidence`](../evidence/forge-1.20.1/README.md), which does not claim
+  that later sources or rebuilt artifacts still match the capture.
+
+Remaining full-slice proof:
 
 - Fixed-tick storage to channel to fork to socket/furnace flows.
 - Direction, redstone gate, cross-evaporation, generator stall/restart, and glint fill/drain.
@@ -498,8 +529,9 @@ Optional integrations:
 
 ## Forge mixin policy
 
-Forge currently expects `etherology.forge.mixins.json`, but that file does not yet exist. Create a
-minimal Forge-owned configuration. Do not include either broad Fabric configuration unchanged.
+Forge now has a minimal Forge-owned `etherology.forge.mixins.json` for the accepted native channel
+lever support. Extend that configuration only with mixins required by an owning slice and its
+proof. Do not include either broad Fabric configuration unchanged.
 
 Retain initially where no clean Forge hook preserves the behavior:
 
@@ -597,6 +629,11 @@ Current positive gates run real Common and Forge tests/compile and inspect compi
 do not rely solely on source/comment tokens. Compilation, deterministic bytecode structure, and
 resource presence still cannot replace native gameplay evidence. Conversely, native evidence
 cannot excuse missing deterministic unit and integration tests.
+
+The bounded storage and channel-foundation gates are currently positive. The authoritative
+registry spine, beginning with shared sound registration and resource closure, is the next
+fail-closed milestone. The deferred portions of the channel and machine graph remain part of the
+later full-slice acceptance rather than being inferred from the foundation run.
 
 The final release-readiness task intentionally fails unconditionally until all required slices
 pass, a dedicated server starts cleanly, an isolated Forge client completes the required scenario

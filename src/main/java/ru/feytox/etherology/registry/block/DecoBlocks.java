@@ -79,7 +79,8 @@ public class DecoBlocks {
     public static final BeamerBlock BEAMER = (BeamerBlock) new BeamerBlock().registerBlock();
     public static final ThujaBlock THUJA = (ThujaBlock) new ThujaBlock().registerBlock();
     public static final ThujaPlantBlock THUJA_PLANT = (ThujaPlantBlock) new ThujaPlantBlock().registerBlock();
-    public static final ForestLanternBlock FOREST_LANTERN = (ForestLanternBlock) new ForestLanternBlock().registerAll(false);
+    public static final ForestLanternBlock FOREST_LANTERN =
+            SharedForestLanternBlocks.FOREST_LANTERN.get();
     public static final Block LIGHTELET = register("lightelet", new FernBlock(AbstractBlock.Settings.copy(GRASS).emissiveLighting((a, b, c) -> true))).withItem(false);
 
     // saplings

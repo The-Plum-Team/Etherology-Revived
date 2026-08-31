@@ -240,7 +240,11 @@ final class SharedSoundsBytecodeTest {
                 List.of(
                         "ru/feytox/etherology/registry/block/SharedBlocks#register()V",
                         "ru/feytox/etherology/registry/block/SharedMetalBlocks#register()V",
+                        "ru/feytox/etherology/registry/block/SharedForestLanternBlocks"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedMetalBlockItems#register()V",
+                        "ru/feytox/etherology/registry/item/SharedForestLanternBlockItems"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedFoodItems#register()V",
@@ -253,6 +257,8 @@ final class SharedSoundsBytecodeTest {
                         "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V",
                         "ru/feytox/etherology/registry/misc/ResourceReloaders"
                                 + "#registerServerData()V",
+                        "ru/feytox/etherology/block/forestLantern/ForestLanternBlock"
+                                + "#registerJumpEvent()V",
                         "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"
                                 + "(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
                 ),

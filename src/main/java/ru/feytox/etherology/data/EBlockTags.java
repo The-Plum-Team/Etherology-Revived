@@ -9,6 +9,6 @@ import ru.feytox.etherology.util.misc.EIdentifier;
 @UtilityClass
 public class EBlockTags {
 
-    public static final TagKey<Block> PEACH_LOGS = TagKey.of(RegistryKeys.BLOCK, EIdentifier.of("peach_logs"));
+    public static final TagKey<Block> PEACH_LOGS = SharedForestLanternBlockTags.PEACH_LOGS;
     public static final TagKey<Block> SEDIMENTARY_STONES = TagKey.of(RegistryKeys.BLOCK, EIdentifier.of("sedimentary_stones"));
 }

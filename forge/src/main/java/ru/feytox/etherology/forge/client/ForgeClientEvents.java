@@ -15,6 +15,7 @@ import ru.feytox.etherology.item.EtherealStorageInputItem;
 import ru.feytox.etherology.item.glints.GlintEtherData;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.block.SharedBlocks;
+import ru.feytox.etherology.registry.block.SharedForestLanternBlocks;
 import ru.feytox.etherology.registry.item.SharedItems;
 import ru.feytox.etherology.registry.misc.SharedScreenHandlers;
 
@@ -53,7 +54,8 @@ public final class ForgeClientEvents {
         RenderTypeRegistry.register(
                 RenderLayer.getCutout(),
                 SharedBlocks.ETHEREAL_STORAGE.get(),
-                SharedBlocks.ETHEREAL_CHANNEL.get()
+                SharedBlocks.ETHEREAL_CHANNEL.get(),
+                SharedForestLanternBlocks.FOREST_LANTERN.get()
         );
         ModelPredicateProviderRegistry.register(
                 SharedItems.GLINT_SHARD.get(),

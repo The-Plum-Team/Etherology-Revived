@@ -220,6 +220,10 @@ final class SharedLootConditionsBytecodeTest {
                 "ru/feytox/etherology/registry/misc/ResourceReloaders"
                         + "#registerServerData()V"
         );
+        int forestLanternJumpEvent = invocations.indexOf(
+                "ru/feytox/etherology/block/forestLantern/ForestLanternBlock"
+                        + "#registerJumpEvent()V"
+        );
         int lifecycle = invocations.indexOf(
                 "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"
                         + "(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
@@ -230,7 +234,8 @@ final class SharedLootConditionsBytecodeTest {
         assertEquals(lootConditions + 1, enchantments);
         assertEquals(enchantments + 1, particleTypes);
         assertEquals(particleTypes + 1, resourceReloaders);
-        assertEquals(resourceReloaders + 1, lifecycle);
+        assertEquals(resourceReloaders + 1, forestLanternJumpEvent);
+        assertEquals(forestLanternJumpEvent + 1, lifecycle);
         assertEquals(1, count(invocations, SHARED_LOOT_CONDITIONS + "#register()V"));
     }
 

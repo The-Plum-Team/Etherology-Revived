@@ -90,14 +90,6 @@ final class FoodItemRegistryResourcesTest {
             "6ba61590386580a2f70526313d501eec44cd88ff9d86cd1d13d9092b41a42fbe";
     private static final String TEXTURE_SHA256 =
             "44f9d92ccf36c3555d21ace9eea0268e43eb4a8e95f1e81b74f22977d4928d65";
-    private static final Set<String> DEFERRED_COOKING_DATA = Set.of(
-            "data/etherology/recipes/forest_lantern_crumb.json",
-            "data/etherology/recipes/forest_lantern_crumb_from_campfire.json",
-            "data/etherology/recipes/forest_lantern_crumb_from_smoking.json",
-            "data/etherology/advancements/recipes/food/forest_lantern_crumb.json",
-            "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
-            "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_smoking.json"
-    );
 
     @Test
     void everyArtifactHasOneExactDeferredFoodOwner() throws IOException {
@@ -267,8 +259,7 @@ final class FoodItemRegistryResourcesTest {
     }
 
     @Test
-    void packagedAssetsAndBothNamesAreExactWhileForgeCookingDataIsDeferred()
-            throws IOException {
+    void packagedAssetsAndBothNamesAreExact() throws IOException {
         Path repositoryRoot = requiredPath("etherology.foodItems.repositoryRoot");
         Path model = repositoryRoot.resolve(
                 "src/main/generated/assets/etherology/models/item/forest_lantern_crumb.json"
@@ -291,10 +282,6 @@ final class FoodItemRegistryResourcesTest {
         assertLanguageName(englishLanguage, "Mushroom Crumb");
         assertLanguageName(russianLanguage, "Грибной мякиш");
 
-        for (String entry : DEFERRED_COOKING_DATA) {
-            requireRegularFile(repositoryRoot.resolve("src/main/generated").resolve(entry));
-        }
-
         for (Artifact artifact : artifacts()) {
             try (JarFile jar = artifact.open()) {
                 assertResource(artifact, jar, MODEL_ENTRY, model, MODEL_SHA256);
@@ -311,16 +298,6 @@ final class FoodItemRegistryResourcesTest {
                         RUSSIAN_LANGUAGE_ENTRY,
                         "Грибной мякиш"
                 );
-
-                if (artifact.forgeApplication()) {
-                    for (String entry : DEFERRED_COOKING_DATA) {
-                        assertEquals(
-                                null,
-                                jar.getJarEntry(entry),
-                                artifact.description() + ":" + entry
-                        );
-                    }
-                }
             }
         }
     }

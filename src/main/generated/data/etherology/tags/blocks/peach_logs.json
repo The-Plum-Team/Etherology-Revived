@@ -1,9 +1,21 @@
 {
   "replace": false,
   "values": [
-    "etherology:peach_log",
-    "etherology:peach_wood",
-    "etherology:stripped_peach_log",
-    "etherology:stripped_peach_wood"
+    {
+      "id": "etherology:peach_log",
+      "required": false
+    },
+    {
+      "id": "etherology:peach_wood",
+      "required": false
+    },
+    {
+      "id": "etherology:stripped_peach_log",
+      "required": false
+    },
+    {
+      "id": "etherology:stripped_peach_wood",
+      "required": false
+    }
   ]
 }

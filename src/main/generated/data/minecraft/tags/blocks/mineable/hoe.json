@@ -1,7 +1,10 @@
 {
   "replace": false,
   "values": [
-    "etherology:peach_leaves",
+    {
+      "id": "etherology:peach_leaves",
+      "required": false
+    },
     "etherology:forest_lantern"
   ]
 }

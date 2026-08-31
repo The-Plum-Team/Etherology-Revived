@@ -67,9 +67,22 @@ val canonicalMetalBlockDataEntries = setOf(
     "minecraft/tags/blocks/needs_iron_tool.json",
     "minecraft/tags/blocks/beacon_base_blocks.json",
 )
+val canonicalForestLanternDataEntries = setOf(
+    "etherology/loot_tables/blocks/forest_lantern.json",
+    "etherology/recipes/forest_lantern_crumb.json",
+    "etherology/recipes/forest_lantern_crumb_from_campfire.json",
+    "etherology/recipes/forest_lantern_crumb_from_smoking.json",
+    "etherology/recipes/leather.json",
+    "etherology/advancements/recipes/food/forest_lantern_crumb.json",
+    "etherology/advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
+    "etherology/advancements/recipes/food/forest_lantern_crumb_from_smoking.json",
+    "etherology/advancements/recipes/misc/leather.json",
+    "etherology/tags/blocks/peach_logs.json",
+    "minecraft/tags/blocks/mineable/hoe.json",
+)
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
-) + canonicalMetalBlockDataEntries +
+) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
@@ -645,6 +658,9 @@ sourceSets {
                 "data/minecraft/tags/blocks/needs_iron_tool.json",
                 "data/minecraft/tags/blocks/beacon_base_blocks.json",
             )
+            canonicalForestLanternDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
             include(canonicalEnchantmentTagEntry)
             include("META-INF/**")
@@ -3748,6 +3764,7 @@ tasks.named<Test>("test").configure {
     exclude("**/MaterialItemRegistryResourcesTest.class")
     exclude("**/FoodItemRegistryResourcesTest.class")
     exclude("**/MetalBlockRegistryResourcesTest.class")
+    exclude("**/ForestLanternBlockResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -4314,6 +4331,93 @@ val foodItemRegistryTest = tasks.register<Test>("foodItemRegistryTest") {
         )
         systemProperty(
             "etherology.foodItems.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
+val forestLanternBlockTest = tasks.register<Test>("forestLanternBlockTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader Forest Lantern ownership, mechanics, and resource tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.ForestLanternBlockResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("forestLanternCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("forestLanternFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("forestLanternForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("forestLanternFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("forestLanternFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("forestLanternForgeShadowJar")
+    inputs.files(
+        rootProject.fileTree("src/client/resources/assets/etherology") {
+            include("blockstates/forest_lantern.json")
+            include("models/block/forest_lantern*.json")
+            include("textures/block/forest_lantern*.png")
+            include("textures/item/forest_lantern.png")
+            include("lang/en_us.json")
+        },
+        rootProject.fileTree("src/main/generated") {
+            include("assets/etherology/models/item/forest_lantern.json")
+            include("assets/etherology/lang/ru_ru.json")
+            canonicalForestLanternDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+        },
+    ).withPropertyName("canonicalForestLanternResources")
+    doFirst {
+        systemProperty(
+            "etherology.forestLantern.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.forestLantern.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.forestLantern.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.forestLantern.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.forestLantern.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.forestLantern.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.forestLantern.repositoryRoot",
             rootProject.projectDir.absolutePath,
         )
     }
@@ -5711,12 +5815,56 @@ val validateForgeFoodItemRegistryMilestone =
         )
     }
 
+val validateForgeForestLanternStaticMilestone =
+    tasks.register("validateForgeForestLanternStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the shared Forest Lantern block, behavior bridges, and exact resources."
+        dependsOn(
+            validateForgeFoodItemRegistryMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            forestLanternBlockTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("forestLanternFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("forestLanternForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree("src/client/resources/assets/etherology") {
+                include("blockstates/forest_lantern.json")
+                include("models/block/forest_lantern*.json")
+                include("textures/block/forest_lantern*.png")
+                include("textures/item/forest_lantern.png")
+                include("lang/en_us.json")
+            },
+            rootProject.fileTree("src/main/generated") {
+                include("assets/etherology/models/item/forest_lantern.json")
+                include("assets/etherology/lang/ru_ru.json")
+                canonicalForestLanternDataEntries.forEach { entry ->
+                    include("data/$entry")
+                }
+            },
+        ).withPropertyName("canonicalForestLanternResources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeFoodItemRegistryMilestone)
+        dependsOn(validateForgeForestLanternStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -5763,6 +5911,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeMaterialItemRegistryMilestone,
         validateForgeMetalBlockRegistryMilestone,
         validateForgeFoodItemRegistryMilestone,
+        validateForgeForestLanternStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -5771,7 +5920,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeFoodItemRegistryStaticMilestone)
+    dependsOn(validateForgeForestLanternStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

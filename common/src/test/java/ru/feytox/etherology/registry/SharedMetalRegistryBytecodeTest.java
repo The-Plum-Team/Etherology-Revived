@@ -100,11 +100,15 @@ final class SharedMetalRegistryBytecodeTest {
                 List.of(
                         "ru/feytox/etherology/registry/block/SharedBlocks#register()V",
                         BLOCK_OWNER + "#register()V",
+                        "ru/feytox/etherology/registry/block/SharedForestLanternBlocks"
+                                + "#register()V",
                         ITEM_OWNER + "#register()V",
+                        "ru/feytox/etherology/registry/item/SharedForestLanternBlockItems"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V"
                 ),
-                invocations.subList(0, 5)
+                invocations.subList(0, 7)
         );
     }
 

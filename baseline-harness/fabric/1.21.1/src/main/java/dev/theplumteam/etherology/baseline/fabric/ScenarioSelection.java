@@ -20,13 +20,16 @@ final class ScenarioSelection {
                     new ScenarioController(new PhaseZeroScenario());
             case ForestLanternScenario.SCENARIO_ID ->
                     new ScenarioController(new ForestLanternScenario());
+            case AttrahiteBlockRegistryScenario.SCENARIO_ID ->
+                    new ScenarioController(new AttrahiteBlockRegistryScenario());
             default -> throw new IllegalStateException("Scenario resolution was not exhaustive");
         };
     }
 
     static String resolveScenarioId(String configuredScenarioId) {
         if (PhaseZeroScenario.SCENARIO_ID.equals(configuredScenarioId)
-                || ForestLanternScenario.SCENARIO_ID.equals(configuredScenarioId)) {
+                || ForestLanternScenario.SCENARIO_ID.equals(configuredScenarioId)
+                || AttrahiteBlockRegistryScenario.SCENARIO_ID.equals(configuredScenarioId)) {
             return configuredScenarioId;
         }
 
@@ -34,7 +37,8 @@ final class ScenarioSelection {
                 "Unsupported or missing -D" + SCENARIO_PROPERTY_NAME + " value '"
                         + configuredScenarioId + "'; expected exactly "
                         + PhaseZeroScenario.SCENARIO_ID + " or "
-                        + ForestLanternScenario.SCENARIO_ID
+                        + ForestLanternScenario.SCENARIO_ID + " or "
+                        + AttrahiteBlockRegistryScenario.SCENARIO_ID
         );
     }
 }

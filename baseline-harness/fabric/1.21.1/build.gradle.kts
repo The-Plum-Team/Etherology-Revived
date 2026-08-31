@@ -109,6 +109,12 @@ val validateHarnessArtifact = tasks.register("validateHarnessArtifact") {
                 "Harness JAR has no client entrypoint class"
             }
             check(
+                "dev/theplumteam/etherology/baseline/fabric/" +
+                    "AttrahiteBlockRegistryScenario.class" in entries,
+            ) {
+                "Harness JAR has no Attrahite block-registry scenario"
+            }
+            check(
                 "dev/theplumteam/etherology/baseline/fabric/mixin/GameRendererMixin.class" in
                     entries,
             ) {

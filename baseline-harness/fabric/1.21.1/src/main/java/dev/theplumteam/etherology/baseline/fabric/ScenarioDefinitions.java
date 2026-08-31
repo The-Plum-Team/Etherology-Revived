@@ -16,6 +16,13 @@ final class ScenarioDefinitions {
             "Etherology Original 0.1.7 Forest Lantern",
             0x455448464c303137L
     );
+    static final ScenarioDefinition ATTRAHITE_BLOCK_REGISTRY = new ScenarioDefinition(
+            "attrahite-block-registry",
+            "attrahite-block-registry.png",
+            "etherology-original-attrahite-block-registry-world",
+            "Etherology Original 0.1.7 Attrahite Blocks",
+            0x4554484154543031L
+    );
 
     private ScenarioDefinitions() {
     }

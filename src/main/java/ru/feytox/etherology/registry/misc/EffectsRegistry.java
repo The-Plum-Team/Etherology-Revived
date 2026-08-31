@@ -1,10 +1,9 @@
 package ru.feytox.etherology.registry.misc;
 
 import lombok.experimental.UtilityClass;
-import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistryBuilder;
+import net.fabricmc.fabric.api.registry.FabricBrewingRecipeRegistry;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.item.Items;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.Potions;
@@ -25,16 +24,14 @@ public class EffectsRegistry {
     public static final RegistryEntry<StatusEffect> DEVASTATION = register("devastation", new EtherEffect(HARMFUL, 0x5A5672, -0.1f));
     public static final RegistryEntry<StatusEffect> VITAL_ENERGY = register("vital_energy", new EtherEffect(BENEFICIAL, 0x59FFD5, 0.1f));
 
-    public static final RegistryEntry<Potion> VITAL_ENERGY_POTION = registerPotion("vital_energy", new StatusEffectInstance(VITAL_ENERGY, 900));
-    public static final RegistryEntry<Potion> STRONG_VITAL_ENERGY_POTION = registerPotion("strong_vital_energy", "vital_energy", new StatusEffectInstance(VITAL_ENERGY, 450, 1));
-    public static final RegistryEntry<Potion> LONG_VITAL_ENERGY_POTION = registerPotion("long_vital_energy", "vital_energy", new StatusEffectInstance(VITAL_ENERGY, 1800));
+    public static final RegistryEntry<Potion> VITAL_ENERGY_POTION = registerPotion("vital_energy", new StatusEffectInstance(VITAL_ENERGY.value(), 900));
+    public static final RegistryEntry<Potion> STRONG_VITAL_ENERGY_POTION = registerPotion("strong_vital_energy", "vital_energy", new StatusEffectInstance(VITAL_ENERGY.value(), 450, 1));
+    public static final RegistryEntry<Potion> LONG_VITAL_ENERGY_POTION = registerPotion("long_vital_energy", "vital_energy", new StatusEffectInstance(VITAL_ENERGY.value(), 1800));
 
     public static void registerAll() {
-        FabricBrewingRecipeRegistryBuilder.BUILD.register(builder -> {
-            builder.registerPotionRecipe(Potions.AWKWARD, DecoBlockItems.BEAM_FRUIT, VITAL_ENERGY_POTION);
-            builder.registerPotionRecipe(VITAL_ENERGY_POTION, Items.REDSTONE, LONG_VITAL_ENERGY_POTION);
-            builder.registerPotionRecipe(VITAL_ENERGY_POTION, Items.GLOWSTONE_DUST, STRONG_VITAL_ENERGY_POTION);
-        });
+        FabricBrewingRecipeRegistry.registerPotionRecipe(Potions.AWKWARD, Ingredient.ofItems(DecoBlockItems.BEAM_FRUIT), VITAL_ENERGY_POTION.value());
+        FabricBrewingRecipeRegistry.registerPotionRecipe(VITAL_ENERGY_POTION.value(), Ingredient.ofItems(Items.REDSTONE), LONG_VITAL_ENERGY_POTION.value());
+        FabricBrewingRecipeRegistry.registerPotionRecipe(VITAL_ENERGY_POTION.value(), Ingredient.ofItems(Items.GLOWSTONE_DUST), STRONG_VITAL_ENERGY_POTION.value());
     }
 
     private static RegistryEntry<StatusEffect> register(String id, StatusEffect effect) {

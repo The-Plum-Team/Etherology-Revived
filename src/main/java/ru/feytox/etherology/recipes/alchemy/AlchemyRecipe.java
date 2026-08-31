@@ -5,7 +5,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import ru.feytox.etherology.magic.aspects.Aspect;
 import ru.feytox.etherology.magic.aspects.AspectContainer;
@@ -24,6 +25,8 @@ public class AlchemyRecipe implements FeyInputRecipe<AlchemyRecipeInventory> {
     @Getter
     private final AspectContainer inputAspects;
     private final ItemStack outputStack;
+    @Getter
+    private final Identifier id;
 
     @Override
     public boolean matches(AlchemyRecipeInventory inventory, World world) {
@@ -39,7 +42,7 @@ public class AlchemyRecipe implements FeyInputRecipe<AlchemyRecipeInventory> {
     }
 
     @Override
-    public ItemStack craft(AlchemyRecipeInventory inventory, RegistryWrapper.WrapperLookup lookup) {
+    public ItemStack craft(AlchemyRecipeInventory inventory, DynamicRegistryManager registryManager) {
         return ItemStack.EMPTY;
     }
 
@@ -49,7 +52,7 @@ public class AlchemyRecipe implements FeyInputRecipe<AlchemyRecipeInventory> {
     }
 
     @Override
-    public ItemStack getResult(RegistryWrapper.WrapperLookup registriesLookup) {
+    public ItemStack getOutput(DynamicRegistryManager registryManager) {
         return getOutput();
     }
 

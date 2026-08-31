@@ -1,18 +1,12 @@
 package ru.feytox.etherology.magic.aspects;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import org.apache.commons.lang3.EnumUtils;
-import ru.feytox.etherology.util.misc.CodecUtil;
 import ru.feytox.etherology.util.misc.EIdentifier;
-
-import java.util.List;
 
 @Getter
 @RequiredArgsConstructor
@@ -58,9 +52,7 @@ public enum Aspect implements EtherologyAspect, StringIdentifiable {
     LUMOS(4, 6, 38),
     NOX(4, 7, 39);
 
-    public static final Codec<Aspect> CODEC = StringIdentifiable.createBasicCodec(Aspect::values);
-    public static final PacketCodec<ByteBuf, Aspect> PACKET_CODEC = CodecUtil.ofEnum(values());
-    public static final PacketCodec<ByteBuf, List<Aspect>> LIST_PACKET_CODEC = PACKET_CODEC.collect(PacketCodecs.toList());
+    public static final Codec<Aspect> CODEC = StringIdentifiable.createCodec(Aspect::values);
     public static final Identifier TEXTURE = EIdentifier.of("textures/gui/aspects.png");
 
     private final int textureRow;

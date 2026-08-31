@@ -4,6 +4,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import org.jetbrains.annotations.NotNull;
+import ru.feytox.etherology.Etherology;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,17 +28,17 @@ public record AspectEntry(@NotNull AspectContainer aspects, @NotNull List<Aspect
                     AtomicInteger priority = new AtomicInteger();
                     List<AspectContainerId> parents = new ObjectArrayList<>();
 
-                    Stream<Pair<T, T>> aspectsStream = mapLike.entries().filter(pair -> switch (ops.getStringValue(pair.getFirst()).getOrThrow()) {
+                    Stream<Pair<T, T>> aspectsStream = mapLike.entries().filter(pair -> switch (ops.getStringValue(pair.getFirst()).getOrThrow(false, Etherology.ELOGGER::error)) {
                         case "priority" -> {
-                            priority.set(Codec.INT.parse(ops, pair.getSecond()).getOrThrow());
+                            priority.set(Codec.INT.parse(ops, pair.getSecond()).getOrThrow(false, Etherology.ELOGGER::error));
                             yield false;
                         }
                         case "parents" -> {
-                            parents.addAll(AspectContainerId.CODEC.listOf().parse(ops, pair.getSecond()).getOrThrow());
+                            parents.addAll(AspectContainerId.CODEC.listOf().parse(ops, pair.getSecond()).getOrThrow(false, Etherology.ELOGGER::error));
                             yield false;
                         }
                         case "parent" -> {
-                            parents.add(AspectContainerId.CODEC.parse(ops, pair.getSecond()).getOrThrow());
+                            parents.add(AspectContainerId.CODEC.parse(ops, pair.getSecond()).getOrThrow(false, Etherology.ELOGGER::error));
                             yield false;
                         }
                         default -> true;
@@ -51,7 +52,7 @@ public record AspectEntry(@NotNull AspectContainer aspects, @NotNull List<Aspect
             public <T> DataResult<T> encode(AspectEntry input, DynamicOps<T> ops, T prefix) {
                 RecordBuilder<T> builder = ops.mapBuilder();
                 if (input.priority != 0) builder.add("priority", Codec.INT.encodeStart(ops, input.priority));
-                if (input.parents().size() == 1) builder.add("parent", AspectContainerId.CODEC.encodeStart(ops, input.parents.getFirst()));
+                if (input.parents().size() == 1) builder.add("parent", AspectContainerId.CODEC.encodeStart(ops, input.parents.get(0)));
                 else if (input.parents().size() > 1) builder.add("parents", AspectContainerId.CODEC.listOf().encodeStart(ops, input.parents));
                 AspectContainer.encodeStart(builder, ops, input.aspects);
                 return builder.build(prefix);
@@ -59,4 +60,3 @@ public record AspectEntry(@NotNull AspectContainer aspects, @NotNull List<Aspect
         };
     }
 }
-

@@ -39,7 +39,7 @@ public record Chapter(ChapterType type, Identifier icon, String titleKey, String
         CONTENT_TYPES = Map.of(
                 "text", TextContent.CODEC, "image", ImageContent.CODEC, "recipe", RecipeContent.CODEC
         );
-        CONTENT_CODEC = Codec.STRING.dispatch(AbstractContent::getType, CONTENT_TYPES::get);
+        CONTENT_CODEC = Codec.STRING.dispatch(AbstractContent::getType, type -> CONTENT_TYPES.get(type).codec());
 
         CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 ChapterType.CODEC.fieldOf("type").forGetter(c -> c.type),

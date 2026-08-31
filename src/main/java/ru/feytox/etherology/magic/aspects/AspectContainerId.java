@@ -20,7 +20,7 @@ public class AspectContainerId {
     public static AspectContainerId of(String id) {
         String[] splitStr = id.split(":", 2);
         AspectContainerType containerType = AspectContainerType.getByPrefix(splitStr[0], AspectContainerType.ITEM);
-        return new AspectContainerId(Identifier.of(containerType.getPrefix() != null ? splitStr[1] : id), containerType);
+        return new AspectContainerId(new Identifier(containerType.getPrefix() != null ? splitStr[1] : id), containerType);
     }
 
     public static AspectContainerId of(Identifier id, AspectContainerType containerType) {
@@ -35,6 +35,6 @@ public class AspectContainerId {
 
     public Identifier toTypedId() {
         String prefix = containerType.getPrefix();
-        return id.withPrefixedPath((prefix != null ? prefix : "item") + "_");
+        return new Identifier(id.getNamespace(), (prefix != null ? prefix : "item") + "_" + id.getPath());
     }
 }

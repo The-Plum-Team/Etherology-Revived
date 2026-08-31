@@ -2,9 +2,9 @@ package ru.feytox.etherology.recipes.alchemy;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.advancement.AdvancementCriterion;
+import net.minecraft.advancement.criterion.CriterionConditions;
 import net.minecraft.data.server.recipe.CraftingRecipeJsonBuilder;
-import net.minecraft.data.server.recipe.RecipeExporter;
+import net.minecraft.data.server.recipe.RecipeJsonProvider;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
@@ -14,6 +14,8 @@ import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.Etherology;
 import ru.feytox.etherology.magic.aspects.Aspect;
 import ru.feytox.etherology.magic.aspects.AspectContainer;
+
+import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 public class AlchemyRecipeBuilder implements CraftingRecipeJsonBuilder {
@@ -47,7 +49,7 @@ public class AlchemyRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public CraftingRecipeJsonBuilder criterion(String name, AdvancementCriterion<?> criterion) {
+    public CraftingRecipeJsonBuilder criterion(String name, CriterionConditions criterion) {
         Etherology.ELOGGER.warn("Criterion is not yet supported by Alchemy recipe type.");
         return null;
     }
@@ -64,12 +66,12 @@ public class AlchemyRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public void offerTo(RecipeExporter exporter, Identifier recipeId) {
+    public void offerTo(Consumer<RecipeJsonProvider> exporter, Identifier recipeId) {
         if (inputAspects == null) {
             Etherology.ELOGGER.warn("Input aspects is empty for recipe {}", recipeId);
             inputAspects = new AspectContainer();
         }
-        AlchemyRecipe recipe = new AlchemyRecipe(inputItem, inputAmount, inputAspects, outputStack);
-        exporter.accept(recipeId, recipe, null);
+        AlchemyRecipe recipe = new AlchemyRecipe(inputItem, inputAmount, inputAspects, outputStack, recipeId);
+        exporter.accept(AlchemyRecipeSerializer.INSTANCE.toProvider(recipe));
     }
 }

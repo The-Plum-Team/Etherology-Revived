@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.empowerTable;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -8,6 +7,7 @@ import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.state.StateManager;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -18,7 +18,6 @@ import ru.feytox.etherology.util.misc.RegistrableBlock;
 
 public class EmpowerTableBlock extends HorizontalFacingBlock implements RegistrableBlock, BlockEntityProvider {
 
-    private static final MapCodec<EmpowerTableBlock> CODEC = MapCodec.unit(EmpowerTableBlock::new);
 
     public EmpowerTableBlock() {
         super(Settings.copy(Blocks.CRAFTING_TABLE));
@@ -31,7 +30,7 @@ public class EmpowerTableBlock extends HorizontalFacingBlock implements Registra
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
             NamedScreenHandlerFactory factory = (NamedScreenHandlerFactory) world.getBlockEntity(pos);
             if (factory != null) {
@@ -43,7 +42,7 @@ public class EmpowerTableBlock extends HorizontalFacingBlock implements Registra
     }
 
     @Override
-    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = world.getBlockEntity(pos);
             if (blockEntity instanceof EmpowerTableBlockEntity table) {
@@ -69,8 +68,4 @@ public class EmpowerTableBlock extends HorizontalFacingBlock implements Registra
         return "empowerment_table";
     }
 
-    @Override
-    protected MapCodec<? extends HorizontalFacingBlock> getCodec() {
-        return CODEC;
-    }
 }

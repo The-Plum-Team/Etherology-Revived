@@ -4,7 +4,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 import ru.feytox.etherology.block.generators.AbstractGeneratorBlockEntity;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.RawAnimation;
 
 import java.util.Optional;
 

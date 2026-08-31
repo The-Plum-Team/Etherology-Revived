@@ -2,6 +2,7 @@ package ru.feytox.etherology.mixin;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.util.StringIdentifiable;
 import net.minecraft.util.function.ValueLists;
@@ -10,7 +11,6 @@ import org.spongepowered.asm.mixin.gen.Invoker;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import ru.feytox.etherology.registry.block.ExtraBlocksRegistry;
 import ru.feytox.etherology.util.misc.BoatTypes;
 
 import java.util.Comparator;
@@ -23,7 +23,7 @@ public abstract class BoatEntityTypeMixin {
 
     @Shadow
     @Mutable
-    public static @Final StringIdentifiable.EnumCodec<BoatEntity.Type> CODEC;
+    public static @Final StringIdentifiable.Codec<BoatEntity.Type> CODEC;
 
     @Shadow
     @Mutable
@@ -43,7 +43,7 @@ public abstract class BoatEntityTypeMixin {
         var types = new ObjectArrayList<>(field_7724);
         var maxOrdinal = types.stream().map(Enum::ordinal).max(Comparator.naturalOrder()).get();
 
-        BoatTypes.PEACH = createAndAdd(types, "ETHEROLOGY_PEACH", maxOrdinal + 1, ExtraBlocksRegistry.PEACH_PLANKS, "etherology_peach");
+        BoatTypes.PEACH = createAndAdd(types, "ETHEROLOGY_PEACH", maxOrdinal + 1, Blocks.OAK_PLANKS, "etherology_peach");
 
         field_7724 = types.toArray(BoatEntity.Type[]::new);
         CODEC = StringIdentifiable.createCodec(BoatEntity.Type::values);

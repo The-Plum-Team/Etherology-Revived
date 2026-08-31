@@ -4,19 +4,17 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.minecraft.resource.JsonDataLoader;
 import net.minecraft.resource.ResourceManager;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.profiler.Profiler;
-import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static ru.feytox.etherology.Etherology.ELOGGER;
 
-public class EtherSourceLoader extends JsonDataLoader implements IdentifiableResourceReloadListener {
+public class EtherSourceLoader extends JsonDataLoader {
 
     // TODO: 11.07.2024 use codecs... before it's too late :skull:
 
@@ -52,10 +50,5 @@ public class EtherSourceLoader extends JsonDataLoader implements IdentifiableRes
 
         etherItems = builder.build();
         loaded = true;
-    }
-
-    @Override
-    public Identifier getFabricId() {
-        return EIdentifier.of("ether_sources");
     }
 }

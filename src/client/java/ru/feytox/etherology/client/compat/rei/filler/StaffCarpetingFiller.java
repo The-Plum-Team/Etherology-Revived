@@ -7,7 +7,6 @@ import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.plugin.client.categories.crafting.filler.CraftingRecipeFiller;
 import me.shedaniel.rei.plugin.common.displays.crafting.DefaultCustomShapelessDisplay;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.RecipeEntry;
 import ru.feytox.etherology.magic.staff.StaffColors;
 import ru.feytox.etherology.magic.staff.StaffComponent;
 import ru.feytox.etherology.magic.staff.StaffPart;
@@ -23,13 +22,13 @@ import java.util.List;
 public class StaffCarpetingFiller implements CraftingRecipeFiller<StaffCarpetingRecipe> {
 
     @Override
-    public Collection<Display> apply(RecipeEntry<StaffCarpetingRecipe> recipe) {
+    public Collection<Display> apply(StaffCarpetingRecipe recipe) {
         List<Display> displays = new ObjectArrayList<>();
         EntryIngredient staff = EntryIngredients.of(ToolItems.STAFF);
 
         Arrays.stream(StaffColors.values()).map(color -> {
             ItemStack resultStaff = ToolItems.STAFF.getDefaultStack();
-            resultStaff.apply(ComponentTypes.STAFF, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
+            ComponentTypes.STAFF.apply(resultStaff, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
             return new DefaultCustomShapelessDisplay(recipe, List.of(staff, EntryIngredients.of(color.getCarpet())), List.of(EntryIngredients.of(resultStaff)));
         }).forEach(displays::add);
         return displays;

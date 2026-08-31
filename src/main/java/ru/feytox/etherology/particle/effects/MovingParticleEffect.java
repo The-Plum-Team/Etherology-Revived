@@ -1,13 +1,13 @@
 package ru.feytox.etherology.particle.effects;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import lombok.Getter;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
-import ru.feytox.etherology.util.misc.CodecUtil;
 
 public class MovingParticleEffect extends FeyParticleEffect<MovingParticleEffect> {
 
@@ -24,12 +24,28 @@ public class MovingParticleEffect extends FeyParticleEffect<MovingParticleEffect
     }
 
     @Override
-    public MapCodec<MovingParticleEffect> createCodec() {
-        return Vec3d.CODEC.xmap(factory(MovingParticleEffect::new), MovingParticleEffect::getMoveVec).fieldOf("moveVec");
+    public Codec<MovingParticleEffect> createCodec() {
+        return Vec3d.CODEC.xmap(factory(MovingParticleEffect::new), MovingParticleEffect::getMoveVec).fieldOf("moveVec").codec();
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, MovingParticleEffect> createPacketCodec() {
-        return PacketCodec.tuple(CodecUtil.VEC3D_PACKET, MovingParticleEffect::getMoveVec, factory(MovingParticleEffect::new));
+    public MovingParticleEffect read(ParticleType<MovingParticleEffect> type, StringReader reader) throws CommandSyntaxException {
+        reader.expect(' ');
+        return new MovingParticleEffect(type, readVec3d(reader));
+    }
+
+    @Override
+    public MovingParticleEffect read(ParticleType<MovingParticleEffect> type, PacketByteBuf buf) {
+        return new MovingParticleEffect(type, readVec3d(buf));
+    }
+
+    @Override
+    public String writeParameters() {
+        return writeVec3d(moveVec);
+    }
+
+    @Override
+    public void write(PacketByteBuf buf) {
+        writeVec3d(buf, moveVec);
     }
 }

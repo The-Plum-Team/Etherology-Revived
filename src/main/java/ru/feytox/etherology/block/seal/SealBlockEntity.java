@@ -3,7 +3,6 @@ package ru.feytox.etherology.block.seal;
 import lombok.Getter;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
@@ -82,23 +81,23 @@ public class SealBlockEntity extends TickableBlockEntity implements EssenceSuppl
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putFloat("max_points", maxPoints);
         nbt.putInt("radius", radius);
         nbt.putFloat("points", points);
         nbt.putFloat("pitch", pitch);
         nbt.putFloat("yaw", yaw);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         maxPoints = nbt.getFloat("max_points");
         radius = nbt.getInt("radius");
-        points = nbt.getInt("points");
+        points = nbt.getFloat("points");
         pitch = nbt.getFloat("pitch");
         yaw = nbt.getFloat("yaw");
     }

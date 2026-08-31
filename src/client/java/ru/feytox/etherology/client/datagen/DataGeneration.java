@@ -6,7 +6,6 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider
 import net.minecraft.registry.RegistryBuilder;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
-import ru.feytox.etherology.registry.misc.EtherEnchantments;
 import ru.feytox.etherology.world.BiomesGen;
 import ru.feytox.etherology.world.ConfiguredFeaturesGen;
 import ru.feytox.etherology.world.PlacedFeaturesGen;
@@ -40,6 +39,5 @@ public class DataGeneration implements DataGeneratorEntrypoint {
         registryBuilder.addRegistry(RegistryKeys.STRUCTURE, StructuresGen::registerStructures);
         registryBuilder.addRegistry(RegistryKeys.TEMPLATE_POOL, StructuresGen::registerTemplates);
         registryBuilder.addRegistry(RegistryKeys.BIOME, BiomesGen::registerBiomes);
-        registryBuilder.addRegistry(RegistryKeys.ENCHANTMENT, EtherEnchantments::generateEnchantments);
     }
 }

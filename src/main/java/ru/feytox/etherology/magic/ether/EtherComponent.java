@@ -10,19 +10,17 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import org.ladysnake.cca.api.v3.component.ComponentV3;
-import org.ladysnake.cca.api.v3.component.CopyableComponent;
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import ru.feytox.etherology.component.CopyableComponentState;
+import ru.feytox.etherology.component.PersistentComponentState;
+import ru.feytox.etherology.component.ServerTickingComponentState;
 import ru.feytox.etherology.registry.misc.EtherologyComponents;
-import ru.feytox.etherology.util.misc.EIdentifier;
+
+import java.util.UUID;
 
 // TODO: 15.06.2024 split into multiple files
 @RequiredArgsConstructor
-public class EtherComponent implements ComponentV3, CopyableComponent<EtherComponent>, ServerTickingComponent, AutoSyncedComponent {
+public class EtherComponent implements PersistentComponentState, CopyableComponentState<EtherComponent>, ServerTickingComponentState {
 
     public static final float EXHAUSTION_1 = 5.0f;
     public static final float EXHAUSTION_2 = 3.0f;
@@ -36,8 +34,8 @@ public class EtherComponent implements ComponentV3, CopyableComponent<EtherCompo
     private static final int REGEN_TICKS = 40;
     private static final int EX_TICKS = 20;
 
-    private static final Identifier HEALTH_MODIFIER_ID = EIdentifier.of("devastating_health");
-    private static final Identifier SPEED_MODIFIER_ID = EIdentifier.of("devastating_speed");
+    private static final UUID HEALTH_MODIFIER_ID = UUID.fromString("162b5a0d-deca-47e0-b829-929af7985629");
+    private static final UUID SPEED_MODIFIER_ID = UUID.fromString("3364a987-2858-485d-948c-2bcf93c0ad1d");
 
     private final LivingEntity entity;
     @Getter @Setter
@@ -152,7 +150,8 @@ public class EtherComponent implements ComponentV3, CopyableComponent<EtherCompo
         if (healthModifier >= 1.0f) return;
 
         double baseModifier = 20.0f / attrInstance.getValue();
-        attrInstance.addTemporaryModifier(new EntityAttributeModifier(HEALTH_MODIFIER_ID, healthModifier * baseModifier - 1.0f, EntityAttributeModifier.Operation.ADD_MULTIPLIED_TOTAL));
+        attrInstance.addTemporaryModifier(new EntityAttributeModifier(HEALTH_MODIFIER_ID, "Max Health Exhaustion modifier",
+                healthModifier * baseModifier - 1.0f, EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
     }
 
     private void tickSpeed() {
@@ -164,7 +163,8 @@ public class EtherComponent implements ComponentV3, CopyableComponent<EtherCompo
         if (modifier >= 1.0f || modifier <= 0.0f) return;
 
         modifier *= -0.025;
-        attrInstance.addTemporaryModifier(new EntityAttributeModifier(SPEED_MODIFIER_ID, modifier, EntityAttributeModifier.Operation.ADD_VALUE));
+        attrInstance.addTemporaryModifier(new EntityAttributeModifier(SPEED_MODIFIER_ID, "Speed Exhaustion modifier", modifier,
+                EntityAttributeModifier.Operation.ADDITION));
     }
 
     private boolean checkRand(World world, float chance) {
@@ -176,7 +176,7 @@ public class EtherComponent implements ComponentV3, CopyableComponent<EtherCompo
     }
 
     @Override
-    public void readFromNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registryLookup) {
+    public void readFromNbt(NbtCompound tag) {
         points = tag.getFloat("points");
         maxPoints = tag.getFloat("max_points");
         pointsRegen = tag.getFloat("points_regen");
@@ -185,7 +185,7 @@ public class EtherComponent implements ComponentV3, CopyableComponent<EtherCompo
     }
 
     @Override
-    public void writeToNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registryLookup) {
+    public void writeToNbt(NbtCompound tag) {
         tag.putFloat("points", points);
         tag.putFloat("max_points", maxPoints);
         tag.putFloat("points_regen", pointsRegen);
@@ -194,9 +194,9 @@ public class EtherComponent implements ComponentV3, CopyableComponent<EtherCompo
     }
 
     @Override
-    public void copyFrom(EtherComponent other, RegistryWrapper.WrapperLookup registryLookup) {
+    public void copyFrom(EtherComponent other) {
         NbtCompound tag = new NbtCompound();
-        other.writeToNbt(tag, registryLookup);
-        this.readFromNbt(tag, registryLookup);
+        other.writeToNbt(tag);
+        this.readFromNbt(tag);
     }
 }

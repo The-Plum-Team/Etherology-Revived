@@ -8,9 +8,10 @@ import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.potion.PotionUtil;
 import net.minecraft.registry.Registries;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
@@ -58,7 +59,7 @@ public class AspectionERecipe extends FeyEmiRecipe {
     @Override
     public void addWidgets(WidgetHolder widgets) {
         widgets.addTexture(EmiTexture.EMPTY_ARROW, 26, 15);
-        widgets.addSlot(inputs.getFirst(), 1, 14);
+        widgets.addSlot(inputs.get(0), 1, 14);
 
         for (int i = 0; i < outputs.size(); i++) {
             widgets.addSlot(outputs.get(i), 56 + i*18, 14).recipeContext(this);
@@ -78,7 +79,7 @@ public class AspectionERecipe extends FeyEmiRecipe {
     }
 
     private static EmiStack getPotion(Item item, AspectContainerId id) {
-        return Registries.POTION.getEntry(id.getId()).map(potion -> PotionContentsComponent.createStack(item, potion))
+        return Registries.POTION.getOrEmpty(id.getId()).map(potion -> PotionUtil.setPotion(new ItemStack(item), potion))
                 .map(EmiStack::of).orElse(null);
     }
 }

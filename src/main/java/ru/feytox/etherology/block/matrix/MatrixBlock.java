@@ -12,6 +12,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.EnumProperty;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -36,9 +37,9 @@ public class MatrixBlock extends Block implements RegistrableBlock, BlockEntityP
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (world.isClient || !(world.getBlockEntity(pos) instanceof MatrixBlockEntity matrix)) return ActionResult.CONSUME;
-        matrix.onHandUse((ServerWorld) world, state, player, player.getActiveHand());
+        matrix.onHandUse((ServerWorld) world, state, player, hand);
         matrix.syncData((ServerWorld) world);
         return ActionResult.CONSUME;
     }

@@ -33,7 +33,7 @@ public class StaffModel extends MultiItemModel {
         String suffix = partInfo.part().getName();
         if (!partInfo.firstPattern().isEmpty()) suffix += "_" + partInfo.firstPattern().getName();
         if (!partInfo.secondPattern().isEmpty()) suffix += "_" + partInfo.secondPattern().getName();
-        return EtherologyModels.createItemModelId("item/staff_" + suffix);
+        return EtherologyModels.createItemModelId("staff_" + suffix);
     }
 
     public static Identifier toTextureId(StaffPartInfo partInfo) {
@@ -55,7 +55,7 @@ public class StaffModel extends MultiItemModel {
 
         staffData.parts().values().forEach(partInfo -> {
             ModelIdentifier modelId = toModelId(partInfo);
-            BakedModel model = modelManager.getModel(modelId.id());
+            BakedModel model = modelManager.getModel(modelId);
             model.emitItemQuads(stack, randomSupplier, context);
         });
     }
@@ -63,8 +63,7 @@ public class StaffModel extends MultiItemModel {
     public static void loadPartModels(ModelLoadingPlugin.Context context) {
         for (StaffPartInfo staffPartInfo : StaffPartInfo.generateAll()) {
             ModelIdentifier modelId = toModelId(staffPartInfo);
-            Identifier id = modelId.id();
-            context.addModels(id);
+            context.addModels(modelId);
         }
     }
 

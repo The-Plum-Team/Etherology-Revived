@@ -4,7 +4,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.item.ItemStack;
 import net.minecraft.recipe.Ingredient;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import ru.feytox.etherology.block.matrix.MatrixBlockEntity;
 import ru.feytox.etherology.magic.aspects.Aspect;
@@ -23,6 +24,8 @@ public class MatrixRecipe implements FeyRecipe<MatrixBlockEntity> {
     @Getter
     private final float etherPoints;
     private final ItemStack outputStack;
+    @Getter
+    private final Identifier id;
 
     @Override
     public boolean matches(MatrixBlockEntity inventory, World world) {
@@ -34,7 +37,7 @@ public class MatrixRecipe implements FeyRecipe<MatrixBlockEntity> {
     }
 
     @Override
-    public ItemStack craft(MatrixBlockEntity inventory, RegistryWrapper.WrapperLookup lookup) {
+    public ItemStack craft(MatrixBlockEntity inventory, DynamicRegistryManager registryManager) {
         return ItemStack.EMPTY;
     }
 
@@ -44,7 +47,7 @@ public class MatrixRecipe implements FeyRecipe<MatrixBlockEntity> {
     }
 
     @Override
-    public ItemStack getResult(RegistryWrapper.WrapperLookup registriesLookup) {
+    public ItemStack getOutput(DynamicRegistryManager registryManager) {
         return getOutput();
     }
 

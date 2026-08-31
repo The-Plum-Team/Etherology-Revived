@@ -42,7 +42,7 @@ public class ModelComponents {
     }
 
     private static Reader getReaderForResource(Identifier location) throws IOException {
-        Identifier file = Identifier.of(location.getNamespace(), location.getPath() + ".json");
+        Identifier file = new Identifier(location.getNamespace(), location.getPath() + ".json");
         Resource resource = MinecraftClient.getInstance().getResourceManager().getResource(file).orElseThrow();
         return new BufferedReader(new InputStreamReader(resource.getInputStream(), Charsets.UTF_8));
     }

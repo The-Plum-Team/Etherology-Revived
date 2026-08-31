@@ -1,12 +1,11 @@
 package ru.feytox.etherology.util.misc;
 
 import com.google.common.collect.ImmutableSet;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.item.ItemStack;
@@ -15,9 +14,8 @@ import net.minecraft.loot.condition.LootConditionType;
 import net.minecraft.loot.context.LootContext;
 import net.minecraft.loot.context.LootContextParameter;
 import net.minecraft.loot.context.LootContextParameters;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.util.JsonHelper;
+import net.minecraft.util.JsonSerializer;
 import ru.feytox.etherology.registry.misc.LootConditions;
 
 import java.util.Set;
@@ -27,15 +25,8 @@ import java.util.Set;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class RandomChanceWithFortuneCondition implements LootCondition {
 
-    public static final MapCodec<RandomChanceWithFortuneCondition> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
-            Codec.FLOAT.fieldOf("chance").forGetter(condition -> condition.chance),
-            Codec.FLOAT.fieldOf("fortune_multiplier").forGetter(condition -> condition.fortuneMultiplier),
-            Enchantment.ENTRY_CODEC.fieldOf("enchantment").forGetter(condition -> condition.enchantment)
-    ).apply(instance, RandomChanceWithFortuneCondition::new));
-
     private final float chance;
     private final float fortuneMultiplier;
-    private final RegistryEntry<Enchantment> enchantment;
 
     @Override
     public LootConditionType getType() {
@@ -50,11 +41,27 @@ public class RandomChanceWithFortuneCondition implements LootCondition {
     public boolean test(LootContext lootContext) {
         ItemStack toolStack = lootContext.get(LootContextParameters.TOOL);
 
-        int fortuneLevel = toolStack == null ? 0 : EnchantmentHelper.getLevel(enchantment, toolStack);
+        int fortuneLevel = toolStack == null ? 0 : EnchantmentHelper.getLevel(Enchantments.FORTUNE, toolStack);
         return lootContext.getRandom().nextFloat() < chance + fortuneLevel * fortuneMultiplier;
     }
 
-    public static LootCondition.Builder builder(RegistryWrapper.WrapperLookup registryLookup, float chance, float fortuneMultiplier) {
-        return () -> new RandomChanceWithFortuneCondition(chance, fortuneMultiplier, registryLookup.getWrapperOrThrow(RegistryKeys.ENCHANTMENT).getOrThrow(Enchantments.FORTUNE));
+    public static LootCondition.Builder builder(float chance, float fortuneMultiplier) {
+        return () -> new RandomChanceWithFortuneCondition(chance, fortuneMultiplier);
+    }
+
+    public static class Serializer implements JsonSerializer<RandomChanceWithFortuneCondition> {
+
+        @Override
+        public void toJson(JsonObject json, RandomChanceWithFortuneCondition condition, JsonSerializationContext context) {
+            json.addProperty("chance", condition.chance);
+            json.addProperty("fortune_multiplier", condition.fortuneMultiplier);
+        }
+
+        @Override
+        public RandomChanceWithFortuneCondition fromJson(JsonObject json, JsonDeserializationContext context) {
+            return new RandomChanceWithFortuneCondition(
+                    JsonHelper.getFloat(json, "chance"),
+                    JsonHelper.getFloat(json, "fortune_multiplier"));
+        }
     }
 }

@@ -1,16 +1,17 @@
 package ru.feytox.etherology.particle.effects;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
 import net.minecraft.item.Item;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.registry.Registries;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
-import ru.feytox.etherology.util.misc.CodecUtil;
 
 @Getter
 public class ItemParticleEffect extends FeyParticleEffect<ItemParticleEffect> {
@@ -29,16 +30,38 @@ public class ItemParticleEffect extends FeyParticleEffect<ItemParticleEffect> {
     }
 
     @Override
-    public MapCodec<ItemParticleEffect> createCodec() {
-        return RecordCodecBuilder.mapCodec(instance -> instance.group(
+    public Codec<ItemParticleEffect> createCodec() {
+        return RecordCodecBuilder.create(instance -> instance.group(
                 Registries.ITEM.getCodec().fieldOf("item").forGetter(ItemParticleEffect::getItem),
                 Vec3d.CODEC.fieldOf("moveVec").forGetter(ItemParticleEffect::getMoveVec)
                 ).apply(instance, biFactory(ItemParticleEffect::new)));
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, ItemParticleEffect> createPacketCodec() {
-        return PacketCodec.tuple(CodecUtil.ITEM_PACKET, ItemParticleEffect::getItem,
-                CodecUtil.VEC3D_PACKET, ItemParticleEffect::getMoveVec, biFactory(ItemParticleEffect::new));
+    public ItemParticleEffect read(ParticleType<ItemParticleEffect> type, StringReader reader) throws CommandSyntaxException {
+        reader.expect(' ');
+        Identifier itemId = Identifier.tryParse(reader.readString());
+        if (itemId == null || !Registries.ITEM.containsId(itemId)) {
+            throw CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownArgument().createWithContext(reader);
+        }
+        reader.expect(' ');
+        return new ItemParticleEffect(type, Registries.ITEM.get(itemId), readVec3d(reader));
+    }
+
+    @Override
+    public ItemParticleEffect read(ParticleType<ItemParticleEffect> type, PacketByteBuf buf) {
+        Item item = Registries.ITEM.get(buf.readIdentifier());
+        return new ItemParticleEffect(type, item, readVec3d(buf));
+    }
+
+    @Override
+    public String writeParameters() {
+        return Registries.ITEM.getId(item) + " " + writeVec3d(moveVec);
+    }
+
+    @Override
+    public void write(PacketByteBuf buf) {
+        buf.writeIdentifier(Registries.ITEM.getId(item));
+        writeVec3d(buf, moveVec);
     }
 }

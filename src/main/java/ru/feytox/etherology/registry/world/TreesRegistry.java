@@ -37,15 +37,15 @@ public class TreesRegistry {
     public static void registerTrees() {}
 
     private static <T extends TreeDecorator> TreeDecoratorType<T> registerDeco(String name, MapCodec<T> codec) {
-        return TreeDecoratorTypeAccessor.callRegister(Etherology.MOD_ID + ":" + name + "_decorator", codec);
+        return TreeDecoratorTypeAccessor.callRegister(Etherology.MOD_ID + ":" + name + "_decorator", codec.codec());
     }
 
     private static <T extends FoliagePlacer> FoliagePlacerType<T> registerFoliage(String name, MapCodec<T> codec) {
-        return FoliagePlacerTypeAccessor.callRegister(Etherology.MOD_ID + ":" + name + "_foliage_placer", codec);
+        return FoliagePlacerTypeAccessor.callRegister(Etherology.MOD_ID + ":" + name + "_foliage_placer", codec.codec());
     }
 
     private static <T extends TrunkPlacer> TrunkPlacerType<T> registerTrunk(String name, MapCodec<T> codec) {
-        return TrunkPlacerTypeAccessor.callRegister(Etherology.MOD_ID + ":" + name + "_trunk_placer", codec);
+        return TrunkPlacerTypeAccessor.callRegister(Etherology.MOD_ID + ":" + name + "_trunk_placer", codec.codec());
     }
 
     public static TreeFeatureConfig.Builder peach() {

@@ -1,6 +1,7 @@
 package ru.feytox.etherology.client.gui.teldecore.button;
 
 import net.minecraft.util.Identifier;
+import net.minecraft.util.math.MathHelper;
 import ru.feytox.etherology.client.gui.teldecore.TeldecoreScreen;
 import ru.feytox.etherology.client.gui.teldecore.page.ResearchTreePage;
 import ru.feytox.etherology.util.misc.EIdentifier;
@@ -24,7 +25,7 @@ public class SliderButton extends AbstractButton {
 
     @Override
     public boolean onClick(double mouseX, double mouseY, int button) {
-        baseY = Math.clamp((float) mouseY - height/2f, rootY, rootY + ResearchTreePage.SLIDER_LENGTH);
+        baseY = MathHelper.clamp((float) mouseY - height/2f, rootY, rootY + ResearchTreePage.SLIDER_LENGTH);
         deltaConsumer.accept(baseY - rootY);
         sliderDragged = true;
         return true;
@@ -33,7 +34,7 @@ public class SliderButton extends AbstractButton {
     @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
         if (!active || !sliderDragged) return false;
-        baseY = Math.clamp((float) mouseY - height/2f, rootY, rootY + ResearchTreePage.SLIDER_LENGTH);
+        baseY = MathHelper.clamp((float) mouseY - height/2f, rootY, rootY + ResearchTreePage.SLIDER_LENGTH);
         deltaConsumer.accept(baseY - rootY);
         return true;
     }

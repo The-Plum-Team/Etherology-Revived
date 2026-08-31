@@ -9,7 +9,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.enchantment.Enchantment;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.ItemEntity;
@@ -18,20 +18,17 @@ import net.minecraft.item.AxeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.Etherology;
@@ -70,7 +67,7 @@ public class SedimentaryStone extends Block implements BlockEntityProvider {
     }
 
     @Override
-    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+    public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
         if (world.isClient || state.get(POWERED) == world.isReceivingRedstonePower(pos))
             return;
         world.setBlockState(pos, state.cycle(POWERED), NOTIFY_LISTENERS);
@@ -83,8 +80,8 @@ public class SedimentaryStone extends Block implements BlockEntityProvider {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType options) {
-        super.appendTooltip(stack, context, tooltip, options);
+    public void appendTooltip(ItemStack stack, @Nullable BlockView world, List<Text> tooltip, TooltipContext options) {
+        super.appendTooltip(stack, world, tooltip, options);
         if (sealType.isSeal()) tooltip.add(1, Text.translatable("lore.etherology.primoshard", StringUtils.capitalize(sealType.asString())).formatted(Formatting.DARK_PURPLE));
     }
 
@@ -95,15 +92,16 @@ public class SedimentaryStone extends Block implements BlockEntityProvider {
     }
 
     @Override
-    protected void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
+    public void onStateReplaced(BlockState state, World world, BlockPos pos, BlockState newState, boolean moved) {
         if (newState.getBlock() instanceof SedimentaryStone) return;
         super.onStateReplaced(state, world, pos, newState, moved);
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        ItemStack stack = player.getStackInHand(hand);
         if (!essenceLevel.isPresent() || !(stack.getItem() instanceof AxeItem))
-            return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            return super.onUse(state, world, pos, player, hand, hit);
 
         var result = false;
         var blockEntity = world.getBlockEntity(pos);
@@ -112,14 +110,13 @@ public class SedimentaryStone extends Block implements BlockEntityProvider {
             var dropItem = essenceLevel.toFullness() >= minFullness;
             result = sedimentaryBlock.onUseAxe(state, world, sealType, hit.getSide().getVector(), dropItem);
         }
-        return result ? ItemActionResult.SUCCESS : ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return result ? ActionResult.SUCCESS : super.onUse(state, world, pos, player, hand, hit);
     }
 
     @Override
-    public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         generateDrop(world, pos, player);
-
-        return super.onBreak(world, pos, state, player);
+        super.onBreak(world, pos, state, player);
     }
 
     private void generateDrop(World world, BlockPos pos, PlayerEntity player) {
@@ -129,10 +126,9 @@ public class SedimentaryStone extends Block implements BlockEntityProvider {
 
         ItemStack stack = SEDIMENTARY_STONE.asItem().getDefaultStack();
 
-        RegistryEntry<Enchantment> silkTouch = world.getRegistryManager().get(RegistryKeys.ENCHANTMENT).getEntry(Enchantments.SILK_TOUCH).orElse(null);
-        if (sealType.isSeal() && silkTouch != null && EnchantmentHelper.getEquipmentLevel(silkTouch, player) > 0) {
+        if (sealType.isSeal() && EnchantmentHelper.getEquipmentLevel(Enchantments.SILK_TOUCH, player) > 0) {
             stack = asItem().getDefaultStack();
-            stack.applyComponentsFrom(sedimentary.createComponentMap());
+            sedimentary.setStackNbt(stack);
         }
 
         ItemEntity itemEntity = new ItemEntity(world, (double) pos.getX() + 0.5, (double) pos.getY() + 0.5, (double) pos.getZ() + 0.5, stack);
@@ -141,10 +137,10 @@ public class SedimentaryStone extends Block implements BlockEntityProvider {
     }
 
     @Override
-    public ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state) {
+    public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
         ItemStack itemStack = super.getPickStack(world, pos, state);
         world.getBlockEntity(pos, SEDIMENTARY_BLOCK_ENTITY).ifPresent((blockEntity) ->
-                blockEntity.setStackNbt(itemStack, world.getRegistryManager()));
+                blockEntity.setStackNbt(itemStack));
         return itemStack;
     }
 

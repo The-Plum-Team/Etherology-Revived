@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "id": "etherology_e2e_harness",
+  "version": "${version}",
+  "name": "Etherology Packaged E2E Harness",
+  "description": "Client-only packaged end-to-end evidence harness for Etherology.",
+  "license": "LGPL-2.1-only",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness"
+    ]
+  },
+  "mixins": [
+    {
+      "config": "etherology-e2e-harness.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "minecraft": "=${minecraft_version}",
+    "java": ">=${java_version}",
+    "etherology": "=${version}"
+  }
+}

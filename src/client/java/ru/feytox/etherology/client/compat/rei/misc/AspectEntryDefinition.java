@@ -132,12 +132,12 @@ public class AspectEntryDefinition implements EntryDefinition<AspectPair> {
             if (entry.isEmpty()) return;
             Aspect aspect = entry.getValue().aspect();
 
-            graphics.push();
-            graphics.translate(bounds.x, bounds.y, 0);
-            graphics.scale((float) bounds.width / aspect.getWidth(), (float) bounds.height / aspect.getHeight(), 1.0f);
+            graphics.getMatrices().push();
+            graphics.getMatrices().translate(bounds.x, bounds.y, 0);
+            graphics.getMatrices().scale((float) bounds.width / aspect.getWidth(), (float) bounds.height / aspect.getHeight(), 1.0f);
 
             RenderUtils.renderTexture(graphics, 0, 0, aspect.getTextureMinX(), aspect.getTextureMinY(), aspect.getWidth(), aspect.getHeight(), aspect.getWidth(), aspect.getHeight(), EtherologyAspect.TEXTURE_WIDTH, EtherologyAspect.TEXTURE_HEIGHT);
-            graphics.pop();
+            graphics.getMatrices().pop();
         }
 
         @Override
@@ -152,12 +152,12 @@ public class AspectEntryDefinition implements EntryDefinition<AspectPair> {
             if (count == 1) return;
             String value = Integer.toString(count);
 
-            graphics.push();
-            graphics.translate(bounds.x, bounds.y, 0);
-            graphics.scale(bounds.width / 16f, (bounds.getWidth() + bounds.getHeight()) / 2f / 16f, 1.0f);
+            graphics.getMatrices().push();
+            graphics.getMatrices().translate(bounds.x, bounds.y, 0);
+            graphics.getMatrices().scale(bounds.width / 16f, (bounds.getWidth() + bounds.getHeight()) / 2f / 16f, 1.0f);
 
             textRenderer.draw(value, 17 - textRenderer.getWidth(value), 9, 0xFFFFFF, true, graphics.getMatrices().peek().getPositionMatrix(), immediate, TextRenderer.TextLayerType.NORMAL, 0, 15728880);
-            graphics.pop();
+            graphics.getMatrices().pop();
         }
 
         @Override

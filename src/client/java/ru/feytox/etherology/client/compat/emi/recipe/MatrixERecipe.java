@@ -6,7 +6,6 @@ import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.util.Identifier;
 import ru.feytox.etherology.client.compat.emi.EtherEMIPlugin;
 import ru.feytox.etherology.client.compat.emi.misc.AspectStack;
@@ -22,12 +21,11 @@ public class MatrixERecipe extends FeyEmiRecipe {
         super(inputs, outputs, id);
     }
 
-    public static MatrixERecipe of(RecipeEntry<MatrixRecipe> entry) {
-        MatrixRecipe recipe = entry.value();
+    public static MatrixERecipe of(MatrixRecipe recipe) {
         List<EmiIngredient> inputs = ObjectArrayList.of(EmiIngredient.of(recipe.getCenterInput()));
         recipe.getAspects().forEach(aspect -> inputs.add(new AspectStack(aspect, 1)));
         List<EmiStack> output = Collections.singletonList(EmiStack.of(recipe.getOutput()));
-        return new MatrixERecipe(inputs, output, entry.id());
+        return new MatrixERecipe(inputs, output, recipe.getId());
     }
 
     @Override
@@ -55,6 +53,6 @@ public class MatrixERecipe extends FeyEmiRecipe {
         }
 
         widgets.addTexture(EmiTexture.EMPTY_ARROW, dx+4, 15);
-        widgets.addSlot(outputs.getFirst(), dx+31, 10).large(true).recipeContext(this);
+        widgets.addSlot(outputs.get(0), dx+31, 10).large(true).recipeContext(this);
     }
 }

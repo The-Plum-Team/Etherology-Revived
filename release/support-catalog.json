@@ -1,0 +1,327 @@
+{
+  "schema_version": 1,
+  "architecture": "branch-per-minecraft-version",
+  "resource_metadata_policy": "Resolve pack formats independently in each release branch.",
+  "branches": [
+    {
+      "branch": "forge-and-fabric-1.20.1",
+      "minecraft_version": "1.20.1",
+      "java": 17,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.17.3",
+          "api_version": "0.92.6+1.20.1",
+          "architectury_api_version": "9.2.14"
+        },
+        {
+          "id": "forge",
+          "loader_version": "1.20.1-47.4.9",
+          "api_version": "1.20.1-47.4.9",
+          "architectury_api_version": "9.2.14"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.1",
+      "minecraft_version": "1.21.1",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.9",
+          "api_version": "0.110.0+1.21.1",
+          "architectury_api_version": "13.0.6"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.1.77",
+          "api_version": "21.1.77",
+          "architectury_api_version": "13.0.6"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.2",
+      "minecraft_version": "1.21.2",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.9",
+          "api_version": "0.106.1+1.21.2",
+          "architectury_api_version": "14.0.4"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.2.1-beta",
+          "api_version": "21.2.1-beta",
+          "architectury_api_version": "14.0.4"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.3",
+      "minecraft_version": "1.21.3",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.9",
+          "api_version": "0.114.1+1.21.3",
+          "architectury_api_version": "14.0.4"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.3.97",
+          "api_version": "21.3.97",
+          "architectury_api_version": "14.0.4"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.4",
+      "minecraft_version": "1.21.4",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.17.0",
+          "api_version": "0.111.0+1.21.4",
+          "architectury_api_version": "15.0.3"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.4.156",
+          "api_version": "21.4.156",
+          "architectury_api_version": "15.0.3"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.5",
+      "minecraft_version": "1.21.5",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.10",
+          "api_version": "0.126.0+1.21.5",
+          "architectury_api_version": "16.1.4"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.5.82",
+          "api_version": "21.5.82",
+          "architectury_api_version": "16.1.4"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.6",
+      "minecraft_version": "1.21.6",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.14",
+          "api_version": "0.127.1+1.21.6",
+          "architectury_api_version": "17.0.6"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.6.20-beta",
+          "api_version": "21.6.20-beta",
+          "architectury_api_version": "17.0.6"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.7",
+      "minecraft_version": "1.21.7",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.14",
+          "api_version": "0.128.1+1.21.7",
+          "architectury_api_version": "17.0.8"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.7.25-beta",
+          "api_version": "21.7.25-beta",
+          "architectury_api_version": "17.0.8"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.8",
+      "minecraft_version": "1.21.8",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.16.14",
+          "api_version": "0.129.0+1.21.8",
+          "architectury_api_version": "17.0.8"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.8.52",
+          "api_version": "21.8.52",
+          "architectury_api_version": "17.0.8"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.9",
+      "minecraft_version": "1.21.9",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.17.3",
+          "api_version": "0.134.1+1.21.9",
+          "architectury_api_version": "18.0.5"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.9.16-beta",
+          "api_version": "21.9.16-beta",
+          "architectury_api_version": "18.0.5"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.10",
+      "minecraft_version": "1.21.10",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.18.4",
+          "api_version": "0.138.4+1.21.10",
+          "architectury_api_version": "18.0.8"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.10.64",
+          "api_version": "21.10.64",
+          "architectury_api_version": "18.0.8"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-1.21.11",
+      "minecraft_version": "1.21.11",
+      "java": 21,
+      "no_remap": false,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.18.4",
+          "api_version": "0.141.3+1.21.11",
+          "architectury_api_version": "19.0.1"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "21.11.38-beta",
+          "api_version": "21.11.38-beta",
+          "architectury_api_version": "19.0.1"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-26.1",
+      "minecraft_version": "26.1",
+      "java": 25,
+      "no_remap": true,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.19.3",
+          "api_version": "0.145.1+26.1",
+          "architectury_api_version": "20.0.4"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "26.1.0.19-beta",
+          "api_version": "26.1.0.19-beta",
+          "architectury_api_version": "20.0.4"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-26.1.1",
+      "minecraft_version": "26.1.1",
+      "java": 25,
+      "no_remap": true,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.19.3",
+          "api_version": "0.145.4+26.1.1",
+          "architectury_api_version": "20.0.4"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "26.1.1.15-beta",
+          "api_version": "26.1.1.15-beta",
+          "architectury_api_version": "20.0.4"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-26.1.2",
+      "minecraft_version": "26.1.2",
+      "java": 25,
+      "no_remap": true,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.19.3",
+          "api_version": "0.151.0+26.1.2",
+          "architectury_api_version": "20.0.6"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "26.1.2.76",
+          "api_version": "26.1.2.76",
+          "architectury_api_version": "20.0.6"
+        }
+      ]
+    },
+    {
+      "branch": "fabric-and-neoforge-26.2",
+      "minecraft_version": "26.2",
+      "java": 25,
+      "no_remap": true,
+      "loaders": [
+        {
+          "id": "fabric",
+          "loader_version": "0.19.3",
+          "api_version": "0.152.2+26.2",
+          "architectury_api_version": "21.0.2"
+        },
+        {
+          "id": "neoforge",
+          "loader_version": "26.2.0.10-beta",
+          "api_version": "26.2.0.10-beta",
+          "architectury_api_version": "21.0.2"
+        }
+      ]
+    }
+  ]
+}

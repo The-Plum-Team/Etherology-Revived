@@ -71,7 +71,7 @@ public class WarpCounterClient {
     }
 
     private static float getLevel(World world, BlockPos pos) {
-        val data = world.getChunk(pos).getComponent(EtherologyComponents.CORRUPTION);
+        val data = EtherologyComponents.CORRUPTION.getNullable(world.getChunk(pos));
         Corruption corruption = data.getCorruption();
         if (corruption == null) return 0.0f;
         return Math.min(corruption.corruptionValue() / CorruptionComponent.MAX_CHUNK_CORRUPTION, 1.0f);

@@ -1,13 +1,8 @@
 package ru.feytox.etherology.block.spill_barrel;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import lombok.Setter;
 import lombok.val;
 import net.minecraft.block.BlockState;
-import net.minecraft.component.ComponentMap;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ContainerComponent;
-import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluids;
@@ -16,7 +11,8 @@ import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionUtil;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -26,12 +22,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.registry.block.EBlocks;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import java.util.Optional;
 import java.util.stream.StreamSupport;
 
-public class SpillBarrelBlockEntity extends TickableBlockEntity implements ImplementedInventory, SidedInventory, Nameable {
+public class SpillBarrelBlockEntity extends TickableBlockEntity implements ListBackedInventory, SidedInventory, Nameable {
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(16, ItemStack.EMPTY);
     @Setter
     private Text customName;
@@ -53,11 +50,9 @@ public class SpillBarrelBlockEntity extends TickableBlockEntity implements Imple
             return true;
         }
 
-
-        val barrelPotion = items.getFirst().getOrDefault(DataComponentTypes.POTION_CONTENTS, PotionContentsComponent.DEFAULT).potion().orElse(null);
-        val stackContent = handStack.get(DataComponentTypes.POTION_CONTENTS);
-        if (stackContent == null || barrelPotion == null) return false;
-        if (!stackContent.matches(barrelPotion) || !items.get(15).isEmpty()) return false;
+        Potion barrelPotion = PotionUtil.getPotion(items.get(0));
+        Potion stackPotion = PotionUtil.getPotion(handStack);
+        if (!stackPotion.equals(barrelPotion) || !items.get(15).isEmpty()) return false;
 
         for (int i = 0; i < 16; i++) {
             if (items.get(i).isEmpty()) {
@@ -77,14 +72,12 @@ public class SpillBarrelBlockEntity extends TickableBlockEntity implements Imple
     public ItemStack tryEmptyBarrel(ItemStack handStack) {
         if (!handStack.isOf(Items.GLASS_BOTTLE) || isEmpty()) return handStack;
 
-        val barrelContent = items.getFirst().get(DataComponentTypes.POTION_CONTENTS);
-        if (barrelContent == null) return handStack;
+        Potion barrelPotion = PotionUtil.getPotion(items.get(0));
 
         for (int i = 15; i >= 0; i--) {
             if (!items.get(i).isEmpty()) {
-                ItemStack outputStack = Items.POTION.getDefaultStack();
-                outputStack.set(DataComponentTypes.POTION_CONTENTS, barrelContent);
-                if (hasCustomName()) outputStack.set(DataComponentTypes.CUSTOM_NAME, getCustomName());
+                ItemStack outputStack = PotionUtil.setPotion(Items.POTION.getDefaultStack(), barrelPotion);
+                if (hasCustomName()) outputStack.setCustomName(getCustomName());
                 items.set(i, ItemStack.EMPTY);
                 markDirty();
                 return outputStack;
@@ -99,7 +92,7 @@ public class SpillBarrelBlockEntity extends TickableBlockEntity implements Imple
     public void showPotionsInfo(PlayerEntity player) {
         Text resultText = Text.translatable("lore.etherology.spill_barrel.empty").formatted(Formatting.GRAY);
         if (!isEmpty()) {
-            MutableText potionInfo = getPotionInfo(items.getFirst(), getPotionCount(), hasCustomName(), getCustomName());
+            MutableText potionInfo = getPotionInfo(items.get(0), getPotionCount(), hasCustomName(), getCustomName());
             if (potionInfo != null) resultText = potionInfo.formatted(Formatting.GRAY);
         }
 
@@ -111,10 +104,7 @@ public class SpillBarrelBlockEntity extends TickableBlockEntity implements Imple
         if (withCustomName)
             return Text.translatable("lore.etherology.spill_barrel.filled", customName, potionCount);
 
-        val barrelContent = potionStack.get(DataComponentTypes.POTION_CONTENTS);
-        if (barrelContent == null) return null;
-
-        var effectsText = getEffectsText(barrelContent.getEffects());
+        var effectsText = getEffectsText(PotionUtil.getPotionEffects(potionStack));
         return Text.translatable("lore.etherology.spill_barrel.filled", effectsText.getString(), potionCount);
     }
 
@@ -154,30 +144,18 @@ public class SpillBarrelBlockEntity extends TickableBlockEntity implements Imple
     }
 
     @Override
-    protected void addComponents(ComponentMap.Builder componentMapBuilder) {
-        super.addComponents(componentMapBuilder);
-        componentMapBuilder.add(DataComponentTypes.CONTAINER, ContainerComponent.fromStacks(items));
+    protected void writeNbt(NbtCompound nbt) {
+        super.writeNbt(nbt);
+        Inventories.writeNbt(nbt, items);
+        if (customName != null) nbt.putString("CustomName", Text.Serializer.toJson(customName));
     }
 
     @Override
-    protected void readComponents(ComponentsAccess components) {
-        super.readComponents(components);
-        components.getOrDefault(DataComponentTypes.CONTAINER, ContainerComponent.DEFAULT).copyTo(items);
-    }
-
-    @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, items, registryLookup);
-
-        super.writeNbt(nbt, registryLookup);
-    }
-
-    @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
-
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
         items.clear();
-        Inventories.readNbt(nbt, items, registryLookup);
+        Inventories.readNbt(nbt, items);
+        customName = nbt.contains("CustomName") ? Text.Serializer.fromJson(nbt.getString("CustomName")) : null;
     }
 
     @Override

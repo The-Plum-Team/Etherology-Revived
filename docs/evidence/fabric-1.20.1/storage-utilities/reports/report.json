@@ -1,0 +1,311 @@
+{
+  "schema": 2,
+  "scenario": "storage-utilities",
+  "lane": "fabric-1.20.1",
+  "role": "host",
+  "status": "passed",
+  "client_ticks": 201,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "fixture_registry_preflight",
+      "passed": true,
+      "expected": "all fixture registries and state network ids present",
+      "actual": "true"
+    },
+    {
+      "name": "registry:block:etherology:crate",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:shelf_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:spill_barrel",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:tuning_fork",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:crate_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:furniture_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:spill_barrel_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:tuning_fork_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:screen_handler:etherology:crate_screen_handler",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_e2e_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "server_arena_chunk_loaded",
+      "passed": true,
+      "expected": "full chunk",
+      "actual": "true"
+    },
+    {
+      "name": "server_player_creative",
+      "passed": true,
+      "expected": "creative",
+      "actual": "true"
+    },
+    {
+      "name": "server_fixture_blocks_placed",
+      "passed": true,
+      "expected": "all expected identifiers",
+      "actual": "[-5, 121, 2\u003detherology:crate, -2, 121, 2\u003detherology:shelf_slab, 2, 121, 2\u003detherology:spill_barrel, 5, 121, 2\u003detherology:tuning_fork]"
+    },
+    {
+      "name": "server_fixture_block_entities_present",
+      "passed": true,
+      "expected": "all expected block-entity identifiers",
+      "actual": "[-5, 121, 2\u003detherology:crate_block_entity, -2, 121, 2\u003detherology:furniture_block_entity, 2, 121, 2\u003detherology:spill_barrel_block_entity, 5, 121, 2\u003detherology:tuning_fork_block_entity]"
+    },
+    {
+      "name": "server_fixture_initial_state",
+      "passed": true,
+      "expected": "empty inventories, note\u003d0, with_frame\u003dfalse",
+      "actual": "crate_empty\u003dtrue, shelf_empty\u003dtrue, barrel_empty\u003dtrue, note\u003d0, with_frame\u003dfalse"
+    },
+    {
+      "name": "client_fixture_initial_mirror",
+      "passed": true,
+      "expected": "empty inventories, note\u003d0, with_frame\u003dfalse",
+      "actual": "configured\u003dfalse, diamonds\u003d0, books\u003d0, potions\u003d0, healing\u003dfalse, with_frame\u003dfalse, note\u003d0"
+    },
+    {
+      "name": "server_crate_screen_opened",
+      "passed": true,
+      "expected": "etherology:crate_screen_handler",
+      "actual": "etherology:crate_screen_handler"
+    },
+    {
+      "name": "client_crate_screen_mirrored",
+      "passed": true,
+      "expected": "etherology:crate_screen_handler",
+      "actual": "etherology:crate_screen_handler"
+    },
+    {
+      "name": "crate_inventory_interaction",
+      "passed": true,
+      "expected": "5 diamonds",
+      "actual": "5 diamonds"
+    },
+    {
+      "name": "shelf_real_block_use",
+      "passed": true,
+      "expected": "3 books retained and hand emptied",
+      "actual": "accepted\u003dtrue, hand_empty\u003dtrue, books\u003d3"
+    },
+    {
+      "name": "spill_barrel_real_block_use",
+      "passed": true,
+      "expected": "survival exchange retained one healing potion and returned a glass bottle",
+      "actual": "accepted\u003dtrue, survival\u003dtrue, returned_bottle\u003dtrue, potions\u003d1, healing\u003dtrue"
+    },
+    {
+      "name": "spill_barrel_frame_neighbor_transition",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "tuning_fork_real_block_uses",
+      "passed": true,
+      "expected": "12 accepted uses, note\u003d12, creative restored",
+      "actual": "all_accepted\u003dtrue, note\u003d12, creative_restored\u003dtrue"
+    },
+    {
+      "name": "crate_block_entity_nbt_round_trip",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:crate_block_entity, retained\u003d5, matching type"
+    },
+    {
+      "name": "shelf_block_entity_nbt_round_trip",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:furniture_block_entity, retained\u003d3, matching type"
+    },
+    {
+      "name": "spill_barrel_block_entity_nbt_round_trip",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:spill_barrel_block_entity, retained\u003d1, matching_type\u003dtrue, healing\u003dtrue"
+    },
+    {
+      "name": "tuning_fork_block_entity_nbt_round_trip",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:tuning_fork_block_entity, retained\u003d12, delay\u003d7, reloading_ticks\u003d4"
+    },
+    {
+      "name": "client_fixture_configured_mirror",
+      "passed": true,
+      "expected": "configured inventories and block states",
+      "actual": "configured\u003dtrue, diamonds\u003d5, books\u003d3, potions\u003d1, healing\u003dtrue, with_frame\u003dtrue, note\u003d12"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "completed_world_renders_before_capture:before",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "framebuffer_dimensions:before",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:before",
+      "passed": true,
+      "expected": "non-empty PNG",
+      "actual": "881199 bytes, sha256\u003da38e1b539a721d32804351016b8cc34132e76d51a7bca07482c81c75a5c5c23f"
+    },
+    {
+      "name": "completed_world_renders_before_capture:after",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "framebuffer_dimensions:after",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:after",
+      "passed": true,
+      "expected": "non-empty PNG",
+      "actual": "862643 bytes, sha256\u003dbcbbd2f67de2ede5c8315b4f403998f6ffe0b84f6f716db14d448c399d4f9b84"
+    },
+    {
+      "name": "before_after_native_screenshots_differ",
+      "passed": true,
+      "expected": "different SHA-256 digests",
+      "actual": "a38e1b539a721d32804351016b8cc34132e76d51a7bca07482c81c75a5c5c23f !\u003d bcbbd2f67de2ede5c8315b4f403998f6ffe0b84f6f716db14d448c399d4f9b84"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "configured_state_retained_after_forced_save",
+      "passed": true,
+      "expected": "all configured inventory and block state retained",
+      "actual": "diamonds\u003d5, books\u003d3, potions\u003d1, with_frame\u003dtrue, note\u003d12"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-e2e-storage-utilities-world",
+      "actual": "etherology-e2e-storage-utilities-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-e2e-storage-utilities-world",
+    "display_name": "Etherology E2E Storage Utilities",
+    "seed": 23455122726143813,
+    "dimension": "minecraft:overworld",
+    "integrated": true
+  },
+  "ready_resources": [
+    "etherology:models/item/oculus.json"
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "etherology-under-test.jar",
+      "size": 2841524,
+      "sha256": "06c47e738e5c45b753c67b65bf6ac12abef4b810f1308eeb21c18cbe7961a776"
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "origin_kind": "PATH",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 127334,
+      "sha256": "473c75d0b1a86cf744d8cd0ebcaac7e77232bbc47a2b5b2b5b74f8348be31c29"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "storage-utilities-before-interactions",
+      "role": "host",
+      "file": "screenshots/storage-utilities-before.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 881199,
+      "sha256": "a38e1b539a721d32804351016b8cc34132e76d51a7bca07482c81c75a5c5c23f",
+      "completed_render_count": 2
+    },
+    {
+      "step": "storage-utilities-after-interactions",
+      "role": "host",
+      "file": "screenshots/storage-utilities-after.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 862643,
+      "sha256": "bcbbd2f67de2ede5c8315b4f403998f6ffe0b84f6f716db14d448c399d4f9b84",
+      "completed_render_count": 2
+    }
+  ]
+}

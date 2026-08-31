@@ -1,8 +1,7 @@
 package ru.feytox.etherology.recipes.jewelry;
 
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.DynamicRegistryManager;
 import ru.feytox.etherology.block.jewelryTable.JewelryBlockEntity;
 import ru.feytox.etherology.block.jewelryTable.JewelryTableInventory;
 import ru.feytox.etherology.item.LensItem;
@@ -15,10 +14,10 @@ import java.util.Optional;
 
 public class BrokenRecipe extends AbstractJewelryRecipe {
 
-    public static final RecipeEntry<BrokenRecipe> INSTANCE = new RecipeEntry<>(EIdentifier.of("broken_lens_jewelry"), new BrokenRecipe());
+    public static final BrokenRecipe INSTANCE = new BrokenRecipe();
 
     private BrokenRecipe() {
-        super(new Pattern(LensPattern.empty(), Optional.empty()), 6);
+        super(new Pattern(LensPattern.empty(), Optional.empty()), 6, EIdentifier.of("broken_lens_jewelry"));
     }
 
     @Override
@@ -45,7 +44,7 @@ public class BrokenRecipe extends AbstractJewelryRecipe {
     }
 
     @Override
-    public ItemStack getResult(RegistryWrapper.WrapperLookup registriesLookup) {
+    public ItemStack getOutput(DynamicRegistryManager registryManager) {
         return ItemStack.EMPTY;
     }
 

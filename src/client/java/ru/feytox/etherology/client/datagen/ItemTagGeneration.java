@@ -2,7 +2,7 @@ package ru.feytox.etherology.client.datagen;
 
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
-import net.fabricmc.fabric.api.tag.convention.v2.ConventionalItemTags;
+import net.fabricmc.fabric.api.tag.convention.v1.ConventionalItemTags;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.registry.RegistryWrapper;
@@ -67,18 +67,10 @@ public class ItemTagGeneration extends FabricTagProvider.ItemTagProvider {
         addItems(SHOVELS, EBONY_SHOVEL);
         addItems(SWORDS, EBONY_SWORD, BROADSWORD, TUNING_MACE);
         addItems(SWORDS, BATTLE_PICKAXES);
-        addItems(HEAD_ARMOR, EBONY_HELMET);
-        addItems(CHEST_ARMOR, EBONY_CHESTPLATE);
-        addItems(LEG_ARMOR, EBONY_LEGGINGS);
-        addItems(FOOT_ARMOR, EBONY_BOOTS);
-
         addItems(BOATS, PEACH_BOAT);
         addItems(CHEST_BOATS, PEACH_CHEST_BOAT);
 
-        addItems(DURABILITY_ENCHANTABLE, IRON_SHIELD);
-        addItems(DURABILITY_ENCHANTABLE, STREAM_KEY);
-
-        addItems(ConventionalItemTags.SHIELD_TOOLS, IRON_SHIELD);
+        addItems(ConventionalItemTags.SHIELDS, IRON_SHIELD);
         // TODO: 18.02.2024 add to convention tags
     }
 

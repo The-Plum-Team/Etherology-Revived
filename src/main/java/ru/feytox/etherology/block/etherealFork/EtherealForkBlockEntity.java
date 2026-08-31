@@ -2,7 +2,6 @@ package ru.feytox.etherology.block.etherealFork;
 
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -83,15 +82,15 @@ public class EtherealForkBlockEntity extends TickableBlockEntity implements Ethe
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putFloat("stored_ether", storedEther);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         storedEther = nbt.getFloat("stored_ether");
     }

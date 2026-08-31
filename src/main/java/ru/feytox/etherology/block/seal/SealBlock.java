@@ -8,18 +8,20 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
@@ -43,8 +45,8 @@ public class SealBlock extends Block implements BlockEntityProvider, HideSurviva
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
-        return tryRotateSeal(world, pos, player).orElse(super.onUse(state, world, pos, player, hit));
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        return tryRotateSeal(world, pos, player).orElse(super.onUse(state, world, pos, player, hand, hit));
     }
 
     private Optional<ActionResult> tryRotateSeal(World world, BlockPos pos, PlayerEntity player) {
@@ -62,7 +64,7 @@ public class SealBlock extends Block implements BlockEntityProvider, HideSurviva
     }
 
     @Override
-    protected void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
+    public void onEntityCollision(BlockState state, World world, BlockPos pos, Entity entity) {
         Vec3d collisionVec = entity.getBoundingBox().getCenter().subtract(pos.toCenterPos());
         collisionVec = collisionVec.multiply(1 / Math.max(0.001d, collisionVec.length()))
                 .multiply(0.1d);
@@ -71,8 +73,8 @@ public class SealBlock extends Block implements BlockEntityProvider, HideSurviva
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType options) {
-        super.appendTooltip(stack, context, tooltip, options);
+    public void appendTooltip(ItemStack stack, @Nullable BlockView world, List<Text> tooltip, TooltipContext options) {
+        super.appendTooltip(stack, world, tooltip, options);
         tooltip.add(1, Text.translatable("lore.etherology.primoshard", StringUtils.capitalize(sealType.asString())).formatted(Formatting.DARK_PURPLE));
     }
 

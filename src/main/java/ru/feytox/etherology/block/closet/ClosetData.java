@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.closet;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -8,7 +7,6 @@ import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
@@ -23,12 +21,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.world.World;
 import ru.feytox.etherology.block.furniture.FurnitureData;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 
 import static ru.feytox.etherology.block.furniture.AbstractFurSlabBlock.BOTTOM_ACTIVE;
 import static ru.feytox.etherology.block.furniture.AbstractFurSlabBlock.TOP_ACTIVE;
 import static ru.feytox.etherology.registry.block.EBlocks.CLOSET_SLAB;
 
-public class ClosetData extends FurnitureData implements ImplementedInventory, NamedScreenHandlerFactory {
+public class ClosetData extends FurnitureData implements ListBackedInventory, NamedScreenHandlerFactory {
 
     // TODO: 18.12.2024 refactor, use something else
     private World cachedWorld = null;
@@ -78,14 +77,14 @@ public class ClosetData extends FurnitureData implements ImplementedInventory, N
     }
 
     @Override
-    public void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, this.inventory, registryLookup);
+    public void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, this.inventory);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    public void readNbt(NbtCompound nbt) {
         inventory.clear();
-        Inventories.readNbt(nbt, this.inventory, registryLookup);
+        Inventories.readNbt(nbt, this.inventory);
     }
 
     @Override

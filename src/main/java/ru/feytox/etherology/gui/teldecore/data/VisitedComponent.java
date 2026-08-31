@@ -8,13 +8,11 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import org.ladysnake.cca.api.v3.component.ComponentV3;
-import org.ladysnake.cca.api.v3.component.CopyableComponent;
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import ru.feytox.etherology.component.CopyableComponentState;
+import ru.feytox.etherology.component.PersistentComponentState;
+import ru.feytox.etherology.component.ServerTickingComponentState;
 import ru.feytox.etherology.registry.misc.EtherologyComponents;
 
 import java.util.Map;
@@ -22,7 +20,7 @@ import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
-public class VisitedComponent implements ComponentV3, CopyableComponent<VisitedComponent>, ServerTickingComponent, AutoSyncedComponent {
+public class VisitedComponent implements PersistentComponentState, CopyableComponentState<VisitedComponent>, ServerTickingComponentState {
 
     private static final Map<Identifier, BiPredicate<PlayerEntity, World>> ALL_PLACES = new Object2ObjectOpenHashMap<>();
     private static final int REFRESH_RATE = 10;
@@ -53,21 +51,21 @@ public class VisitedComponent implements ComponentV3, CopyableComponent<VisitedC
     }
 
     @Override
-    public void writeToNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registryLookup) {
+    public void writeToNbt(NbtCompound tag) {
         NbtList nbtIds = new NbtList();
         visitedIds.stream().map(Identifier::toString).map(NbtString::of).forEach(nbtIds::add);
         tag.put("visited", nbtIds);
     }
 
     @Override
-    public void readFromNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registryLookup) {
-        visitedIds = tag.getList("visited", NbtList.STRING_TYPE).stream()
-                .map(NbtElement::asString).map(Identifier::of).collect(Collectors.toCollection(ObjectOpenHashSet::new));
+    public void readFromNbt(NbtCompound tag) {
+        visitedIds = tag.getList("visited", NbtElement.STRING_TYPE).stream()
+                .map(NbtElement::asString).map(Identifier::new).collect(Collectors.toCollection(ObjectOpenHashSet::new));
 
     }
 
     @Override
-    public void copyFrom(VisitedComponent other, RegistryWrapper.WrapperLookup registryLookup) {
+    public void copyFrom(VisitedComponent other) {
         visitedIds = other.visitedIds.clone();
     }
 

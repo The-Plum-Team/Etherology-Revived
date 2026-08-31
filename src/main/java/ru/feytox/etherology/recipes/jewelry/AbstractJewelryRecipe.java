@@ -1,14 +1,13 @@
 package ru.feytox.etherology.recipes.jewelry;
 
-import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
-import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import ru.feytox.etherology.block.jewelryTable.JewelryTableInventory;
 import ru.feytox.etherology.magic.lens.LensComponent;
@@ -24,6 +23,7 @@ public abstract class AbstractJewelryRecipe implements FeyRecipe<JewelryTableInv
 
     private final Pattern pattern;
     private final int ether;
+    private final Identifier id;
 
     @Override
     public boolean matches(JewelryTableInventory inventory, World world) {
@@ -31,7 +31,7 @@ public abstract class AbstractJewelryRecipe implements FeyRecipe<JewelryTableInv
     }
 
     @Override
-    public ItemStack craft(JewelryTableInventory input, RegistryWrapper.WrapperLookup lookup) {
+    public ItemStack craft(JewelryTableInventory input, DynamicRegistryManager registryManager) {
         return craft(input);
     }
 
@@ -52,11 +52,10 @@ public abstract class AbstractJewelryRecipe implements FeyRecipe<JewelryTableInv
     }
 
     public record Pattern(LensPattern pattern, Optional<List<String>> data) {
-        public static final Codec<Pattern> CODEC = Codec.STRING.listOf().flatXmap(Pattern::fromData, pattern -> pattern.data().map(DataResult::success).orElseGet(() -> DataResult.error(() -> "Cannot encode unpacked recipe")));
-        public static final PacketCodec<ByteBuf, Pattern> PACKET_CODEC = LensPattern.PACKET_CODEC.xmap(pattern -> new Pattern(pattern, Optional.empty()), Pattern::pattern);
-
         public static Pattern create(List<String> pattern) {
-            return fromData(pattern).getOrThrow();
+            return fromData(pattern).getOrThrow(false, message -> {
+                throw new IllegalArgumentException(message);
+            });
         }
 
         // TODO: 11.07.2024 add error on wrong pattern
@@ -75,6 +74,23 @@ public abstract class AbstractJewelryRecipe implements FeyRecipe<JewelryTableInv
             }
 
             return DataResult.success(new Pattern(new LensPattern(cracks, softCells), Optional.of(data)));
+        }
+
+        static Pattern read(PacketByteBuf buf) {
+            IntArraySet cracks = buf.readCollection(IntArraySet::new, PacketByteBuf::readVarInt);
+            IntArraySet softCells = buf.readCollection(IntArraySet::new, PacketByteBuf::readVarInt);
+            return new Pattern(new LensPattern(cracks, softCells), Optional.empty());
+        }
+
+        void write(PacketByteBuf buf) {
+            IntArraySet cracks = new IntArraySet();
+            IntArraySet softCells = new IntArraySet();
+            for (int i = 0; i < 64; i++) {
+                if (pattern.isHard(i)) cracks.add(i);
+                if (pattern.isSoft(i)) softCells.add(i);
+            }
+            buf.writeCollection(cracks, PacketByteBuf::writeVarInt);
+            buf.writeCollection(softCells, PacketByteBuf::writeVarInt);
         }
     }
 }

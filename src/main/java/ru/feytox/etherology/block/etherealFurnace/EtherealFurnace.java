@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.etherealFurnace;
 
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
@@ -35,12 +34,12 @@ public class EtherealFurnace extends Block implements BlockEntityProvider, Regis
     public static final BooleanProperty LIT = Properties.LIT;
 
     public EtherealFurnace() {
-        super(Settings.copy(Blocks.STONE));
+        super(AbstractBlock.Settings.copy(Blocks.STONE));
         setDefaultState(getDefaultState().with(FACING, Direction.NORTH).with(LIT, false));
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
             NamedScreenHandlerFactory factory = (NamedScreenHandlerFactory) world.getBlockEntity(pos);
             if (factory != null) {

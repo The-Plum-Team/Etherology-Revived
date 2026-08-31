@@ -5,8 +5,7 @@ import dev.emi.emi.api.render.EmiTexture;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
 import dev.emi.emi.api.widget.WidgetHolder;
-import net.minecraft.component.ComponentChanges;
-import net.minecraft.recipe.RecipeEntry;
+import net.minecraft.item.ItemStack;
 import ru.feytox.etherology.client.block.jewelryTable.JewelryTableScreen;
 import ru.feytox.etherology.client.compat.emi.EtherEMIPlugin;
 import ru.feytox.etherology.client.compat.emi.misc.FeyEmiRecipe;
@@ -27,9 +26,9 @@ public abstract class JewelryERecipe extends FeyEmiRecipe {
 
     private final LensPattern pattern;
 
-    protected JewelryERecipe(List<EmiIngredient> inputs, List<EmiStack> outputs, RecipeEntry<? extends AbstractJewelryRecipe> recipeEntry) {
-        super(inputs, outputs, recipeEntry.id());
-        pattern = recipeEntry.value().getPattern().pattern();
+    protected JewelryERecipe(List<EmiIngredient> inputs, List<EmiStack> outputs, AbstractJewelryRecipe recipe) {
+        super(inputs, outputs, recipe.getId());
+        pattern = recipe.getPattern().pattern();
     }
 
     @Override
@@ -54,14 +53,14 @@ public abstract class JewelryERecipe extends FeyEmiRecipe {
 
     public static class Lens extends JewelryERecipe {
 
-        protected Lens(List<EmiIngredient> inputs, List<EmiStack> outputs, RecipeEntry<? extends AbstractJewelryRecipe> recipeEntry) {
-            super(inputs, outputs, recipeEntry);
+        protected Lens(List<EmiIngredient> inputs, List<EmiStack> outputs, AbstractJewelryRecipe recipe) {
+            super(inputs, outputs, recipe);
         }
 
-        public static Lens of(RecipeEntry<LensRecipe> entry) {
+        public static Lens of(LensRecipe recipe) {
             List<EmiIngredient> input = Collections.singletonList(EmiStack.of(EItems.UNADJUSTED_LENS));
-            List<EmiStack> output = Collections.singletonList(EmiStack.of(entry.value().getOutputItem()));
-            return new Lens(input, output, entry);
+            List<EmiStack> output = Collections.singletonList(EmiStack.of(recipe.getOutputItem()));
+            return new Lens(input, output, recipe);
         }
 
         @Override
@@ -72,16 +71,19 @@ public abstract class JewelryERecipe extends FeyEmiRecipe {
 
     public static class Modifier extends JewelryERecipe {
 
-        protected Modifier(List<EmiIngredient> inputs, List<EmiStack> outputs, RecipeEntry<? extends AbstractJewelryRecipe> recipeEntry) {
-            super(inputs, outputs, recipeEntry);
+        protected Modifier(List<EmiIngredient> inputs, List<EmiStack> outputs, AbstractJewelryRecipe recipe) {
+            super(inputs, outputs, recipe);
         }
 
-        public static Modifier of(RecipeEntry<ModifierRecipe> entry) {
-            LensModifier modifier = entry.value().getModifier();
-            ComponentChanges changes = ComponentChanges.builder().add(ComponentTypes.LENS, LensComponent.EMPTY.incrementLevel(modifier)).build();
+        public static Modifier of(ModifierRecipe recipe) {
+            LensModifier modifier = recipe.getModifier();
             List<EmiIngredient> input = Collections.singletonList(EmiIngredient.of(Arrays.stream(EItems.LENSES).map(EmiStack::of).toList()));
-            List<EmiStack> output = Arrays.stream(EItems.LENSES).map(lensItem -> EmiStack.of(lensItem, changes)).toList();
-            return new Modifier(input, output, entry);
+            List<EmiStack> output = Arrays.stream(EItems.LENSES).map(lensItem -> {
+                ItemStack lensStack = lensItem.getDefaultStack();
+                ComponentTypes.LENS.apply(lensStack, LensComponent.EMPTY, component -> component.incrementLevel(modifier));
+                return EmiStack.of(lensStack);
+            }).toList();
+            return new Modifier(input, output, recipe);
         }
 
         @Override

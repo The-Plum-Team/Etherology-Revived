@@ -1,9 +1,10 @@
 package ru.feytox.etherology.particle.effects;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import lombok.Getter;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.random.Random;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
@@ -26,14 +27,30 @@ public class ElectricityParticleEffect extends FeyParticleEffect<ElectricityPart
     }
 
     @Override
-    public MapCodec<ElectricityParticleEffect> createCodec() {
+    public Codec<ElectricityParticleEffect> createCodec() {
         return ElectricitySubtype.CODEC.xmap(factory(ElectricityParticleEffect::new), ElectricityParticleEffect::getElectricityType)
-                .fieldOf("electricity_type");
+                .fieldOf("electricity_type").codec();
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, ElectricityParticleEffect> createPacketCodec() {
-        return PacketCodec.tuple(ElectricitySubtype.PACKET_CODEC, ElectricityParticleEffect::getElectricityType, factory(ElectricityParticleEffect::new));
+    public ElectricityParticleEffect read(ParticleType<ElectricityParticleEffect> type, StringReader reader) throws CommandSyntaxException {
+        reader.expect(' ');
+        return new ElectricityParticleEffect(type, readEnum(reader, ElectricitySubtype.class));
+    }
+
+    @Override
+    public ElectricityParticleEffect read(ParticleType<ElectricityParticleEffect> type, PacketByteBuf buf) {
+        return new ElectricityParticleEffect(type, buf.readEnumConstant(ElectricitySubtype.class));
+    }
+
+    @Override
+    public String writeParameters() {
+        return electricityType.name();
+    }
+
+    @Override
+    public void write(PacketByteBuf buf) {
+        buf.writeEnumConstant(electricityType);
     }
 
     public static ElectricityParticleEffect of(Random random, ElectricitySubtype electricityType) {

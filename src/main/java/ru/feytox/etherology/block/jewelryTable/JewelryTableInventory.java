@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.jewelryTable;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -10,8 +9,6 @@ import net.minecraft.inventory.Inventories;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
@@ -26,12 +23,13 @@ import ru.feytox.etherology.recipes.jewelry.BrokenRecipe;
 import ru.feytox.etherology.recipes.jewelry.LensRecipeSerializer;
 import ru.feytox.etherology.recipes.jewelry.ModifierRecipeSerializer;
 import ru.feytox.etherology.registry.misc.RecipesRegistry;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 
 import java.util.List;
 
 @RequiredArgsConstructor
 @NoArgsConstructor(force = true)
-public class JewelryTableInventory implements ImplementedInventory {
+public class JewelryTableInventory implements ListBackedInventory {
 
     public static final List<Integer> EMPTY_CELLS;
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(1, ItemStack.EMPTY);
@@ -52,7 +50,7 @@ public class JewelryTableInventory implements ImplementedInventory {
 
     @Override
     public void setStack(int slot, ItemStack stack) {
-        ImplementedInventory.super.setStack(slot, stack);
+        ListBackedInventory.super.setStack(slot, stack);
         if (stack.isEmpty()) {
             resetRecipe();
             return;
@@ -63,16 +61,16 @@ public class JewelryTableInventory implements ImplementedInventory {
     }
 
     public void updateRecipe(ServerWorld world) {
-        RecipeEntry<? extends AbstractJewelryRecipe> recipe = RecipesRegistry.getFirstMatch(world, this, LensRecipeSerializer.INSTANCE);
+        AbstractJewelryRecipe recipe = RecipesRegistry.getFirstMatch(world, this, LensRecipeSerializer.INSTANCE);
         if (recipe == null) recipe = RecipesRegistry.getFirstMatch(world, this, ModifierRecipeSerializer.INSTANCE);
         if (recipe == null) recipe = getBrokenRecipe();
 
         if (recipe == null) currentRecipe = null;
-        else currentRecipe = recipe.id();
+        else currentRecipe = recipe.getId();
     }
 
     @Nullable
-    private RecipeEntry<BrokenRecipe> getBrokenRecipe() {
+    private BrokenRecipe getBrokenRecipe() {
         return LensComponent.get(getStack(0))
                 .filter(component -> component.pattern().isCracked())
                 .map(component -> BrokenRecipe.INSTANCE).orElse(null);
@@ -85,8 +83,10 @@ public class JewelryTableInventory implements ImplementedInventory {
     @Nullable
     public AbstractJewelryRecipe getRecipe(ServerWorld world) {
         if (currentRecipe != null) {
-            if (currentRecipe.equals(BrokenRecipe.INSTANCE.id())) return BrokenRecipe.INSTANCE.value();
-            return RecipesRegistry.maybeGet(world, currentRecipe).map(entry -> entry.value() instanceof AbstractJewelryRecipe recipe ? recipe : null).orElse(null);
+            if (currentRecipe.equals(BrokenRecipe.INSTANCE.getId())) return BrokenRecipe.INSTANCE;
+            return RecipesRegistry.maybeGet(world, currentRecipe)
+                    .map(recipe -> recipe instanceof AbstractJewelryRecipe jewelryRecipe ? jewelryRecipe : null)
+                    .orElse(null);
         }
 
         return null;
@@ -230,19 +230,19 @@ public class JewelryTableInventory implements ImplementedInventory {
 
     @Override
     public void markDirty() {
-        ImplementedInventory.super.markDirty();
+        ListBackedInventory.super.markDirty();
         if (parent != null) parent.trySyncData();
     }
 
-    public void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, items, registryLookup);
+    public void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, items);
         String recipeStr = currentRecipe == null ? "" : currentRecipe.toString();
         nbt.putString("recipe", recipeStr);
     }
 
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    public void readNbt(NbtCompound nbt) {
         items.clear();
-        Inventories.readNbt(nbt, items, registryLookup);
+        Inventories.readNbt(nbt, items);
         String recipeStr = nbt.getString("recipe");
         currentRecipe = recipeStr.isEmpty() ? null : Identifier.tryParse(recipeStr);
     }

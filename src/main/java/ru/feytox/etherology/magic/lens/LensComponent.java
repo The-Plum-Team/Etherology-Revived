@@ -4,10 +4,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.With;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.world.World;
+import ru.feytox.etherology.item.LensItem;
 import ru.feytox.etherology.registry.misc.ComponentTypes;
 import ru.feytox.etherology.util.misc.ItemData;
 
@@ -17,7 +15,6 @@ import java.util.Optional;
 public record LensComponent(int charge, LensMode mode, LensPattern pattern, LensModifiersData modifiers, long endTick) {
 
     public static final Codec<LensComponent> CODEC;
-    public static final PacketCodec<RegistryByteBuf, LensComponent> PACKET_CODEC;
     public static final LensComponent EMPTY = new LensComponent(0, LensMode.STREAM, LensPattern.empty(), LensModifiersData.empty(), -1);
 
     public LensComponent incrementCooldown(World world, long cooldown) {
@@ -71,7 +68,8 @@ public record LensComponent(int charge, LensMode mode, LensPattern pattern, Lens
     }
 
     public static Optional<LensComponent> get(ItemStack stack) {
-        return Optional.ofNullable(stack.get(ComponentTypes.LENS));
+        if (!(stack.getItem() instanceof LensItem)) return Optional.empty();
+        return Optional.of(ComponentTypes.LENS.getOrDefault(stack, EMPTY));
     }
 
     static {
@@ -82,10 +80,5 @@ public record LensComponent(int charge, LensMode mode, LensPattern pattern, Lens
                         LensModifiersData.CODEC.fieldOf("modifiers").forGetter(LensComponent::modifiers),
                         Codec.LONG.fieldOf("end_tick").forGetter(LensComponent::endTick)
                 ).apply(instance, LensComponent::new));
-        PACKET_CODEC = PacketCodec.tuple(PacketCodecs.VAR_INT, LensComponent::charge,
-                LensMode.PACKET_CODEC, LensComponent::mode,
-                LensPattern.PACKET_CODEC, LensComponent::pattern,
-                LensModifiersData.PACKET_CODEC, LensComponent::modifiers,
-                PacketCodecs.VAR_LONG, LensComponent::endTick, LensComponent::new);
     }
 }

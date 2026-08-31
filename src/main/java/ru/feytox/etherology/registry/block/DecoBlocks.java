@@ -1,9 +1,11 @@
 package ru.feytox.etherology.registry.block;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.experimental.UtilityClass;
 import net.fabricmc.fabric.api.object.builder.v1.block.type.BlockSetTypeBuilder;
 import net.fabricmc.fabric.api.object.builder.v1.block.type.WoodTypeBuilder;
 import net.minecraft.block.*;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.sound.BlockSoundGroup;
@@ -13,7 +15,7 @@ import ru.feytox.etherology.block.peach.PeachSaplingBlock;
 import ru.feytox.etherology.block.peach.WeepingPeachLogBlock;
 import ru.feytox.etherology.block.thuja.ThujaBlock;
 import ru.feytox.etherology.block.thuja.ThujaPlantBlock;
-import ru.feytox.etherology.mixin.BlocksAccessor;
+import ru.feytox.etherology.mixin.BlockEntityTypeMixin;
 import ru.feytox.etherology.util.misc.EBlock;
 import ru.feytox.etherology.util.misc.EIdentifier;
 
@@ -37,15 +39,15 @@ public class DecoBlocks {
     public static final Block PEACH_STAIRS = registerStairs("peach_stairs", ExtraBlocksRegistry.PEACH_PLANKS).withItem();
     public static final Block PEACH_SLAB = register("peach_slab", new SlabBlock(copy(OAK_SLAB))).withItem();
     public static final Block PEACH_BUTTON = register("peach_button", createWoodenButtonBlock(PEACH_TYPE)).withItem();
-    public static final Block PEACH_DOOR = register("peach_door", new DoorBlock(PEACH_TYPE, copy(OAK_DOOR))).withoutItem();
+    public static final Block PEACH_DOOR = register("peach_door", new DoorBlock(copy(OAK_DOOR), PEACH_TYPE)).withoutItem();
     public static final Block PEACH_FENCE = register("peach_fence", new FenceBlock(copy(OAK_FENCE))).withItem();
-    public static final Block PEACH_FENCE_GATE = register("peach_fence_gate", new FenceGateBlock(PEACH_WOOD_TYPE, copy(OAK_FENCE_GATE))).withItem();
-    public static final Block PEACH_PRESSURE_PLATE = register("peach_pressure_plate", new PressurePlateBlock(PEACH_TYPE, copy(OAK_PRESSURE_PLATE))).withItem();
-    public static final Block PEACH_SIGN = register("peach_sign", new SignBlock(PEACH_WOOD_TYPE, copy(OAK_SIGN))).withoutItem();
-    public static final Block PEACH_WALL_SIGN = register("peach_wall_sign", new WallSignBlock(PEACH_WOOD_TYPE, copy(OAK_WALL_SIGN).dropsLike(PEACH_SIGN))).withoutItem();
-    public static final Block PEACH_HANGING_SIGN = register("peach_hanging_sign", new HangingSignBlock(PEACH_WOOD_TYPE, copy(OAK_HANGING_SIGN))).withoutItem();
-    public static final Block PEACH_WALL_HANGING_SIGN = register("peach_wall_hanging_sign", new WallHangingSignBlock(PEACH_WOOD_TYPE, copy(OAK_WALL_HANGING_SIGN).dropsLike(PEACH_HANGING_SIGN))).withoutItem();
-    public static final Block PEACH_TRAPDOOR = register("peach_trapdoor", new TrapdoorBlock(PEACH_TYPE, copy(OAK_TRAPDOOR))).withItem();
+    public static final Block PEACH_FENCE_GATE = register("peach_fence_gate", new FenceGateBlock(copy(OAK_FENCE_GATE), PEACH_WOOD_TYPE)).withItem();
+    public static final Block PEACH_PRESSURE_PLATE = register("peach_pressure_plate", new PressurePlateBlock(PressurePlateBlock.ActivationRule.EVERYTHING, copy(OAK_PRESSURE_PLATE), PEACH_TYPE)).withItem();
+    public static final Block PEACH_SIGN = register("peach_sign", new SignBlock(copy(OAK_SIGN), PEACH_WOOD_TYPE)).withoutItem();
+    public static final Block PEACH_WALL_SIGN = register("peach_wall_sign", new WallSignBlock(copy(OAK_WALL_SIGN).dropsLike(PEACH_SIGN), PEACH_WOOD_TYPE)).withoutItem();
+    public static final Block PEACH_HANGING_SIGN = register("peach_hanging_sign", new HangingSignBlock(copy(OAK_HANGING_SIGN), PEACH_WOOD_TYPE)).withoutItem();
+    public static final Block PEACH_WALL_HANGING_SIGN = register("peach_wall_hanging_sign", new WallHangingSignBlock(copy(OAK_WALL_HANGING_SIGN).dropsLike(PEACH_HANGING_SIGN), PEACH_WOOD_TYPE)).withoutItem();
+    public static final Block PEACH_TRAPDOOR = register("peach_trapdoor", new TrapdoorBlock(copy(OAK_TRAPDOOR), PEACH_TYPE)).withItem();
     public static final Block PEACH_LEAVES = register("peach_leaves", createLeavesBlock(BlockSoundGroup.AZALEA_LEAVES)).withItem(false);
 
     // slitherite
@@ -60,7 +62,7 @@ public class DecoBlocks {
     public static final Block POLISHED_SLITHERITE_SLAB = register("polished_slitherite_slab", new SlabBlock(copy(SMOOTH_STONE_SLAB))).withItem();
     public static final Block POLISHED_SLITHERITE_WALL = register("polished_slitherite_wall", new WallBlock(copy(STONE_BRICK_WALL))).withItem();
     public static final Block POLISHED_SLITHERITE_BUTTON = register("polished_slitherite_button", createStoneButtonBlock()).withItem();
-    public static final Block POLISHED_SLITHERITE_PRESSURE_PLATE = register("polished_slitherite_pressure_plate", new PressurePlateBlock(POLISHED_SLITHERITE_TYPE, copy(STONE_PRESSURE_PLATE))).withItem();
+    public static final Block POLISHED_SLITHERITE_PRESSURE_PLATE = register("polished_slitherite_pressure_plate", new PressurePlateBlock(PressurePlateBlock.ActivationRule.MOBS, copy(STONE_PRESSURE_PLATE), POLISHED_SLITHERITE_TYPE)).withItem();
 
     // polished slitherite bricks
     public static final Block POLISHED_SLITHERITE_BRICKS = registerSimple("polished_slitherite_bricks", copy(STONE_BRICKS)).withItem();
@@ -78,7 +80,7 @@ public class DecoBlocks {
     public static final ThujaBlock THUJA = (ThujaBlock) new ThujaBlock().registerBlock();
     public static final ThujaPlantBlock THUJA_PLANT = (ThujaPlantBlock) new ThujaPlantBlock().registerBlock();
     public static final ForestLanternBlock FOREST_LANTERN = (ForestLanternBlock) new ForestLanternBlock().registerAll(false);
-    public static final Block LIGHTELET = register("lightelet", new ShortPlantBlock(AbstractBlock.Settings.copy(SHORT_GRASS).emissiveLighting((a, b, c) -> true))).withItem(false);
+    public static final Block LIGHTELET = register("lightelet", new FernBlock(AbstractBlock.Settings.copy(GRASS).emissiveLighting((a, b, c) -> true))).withItem(false);
 
     // saplings
     public static final PeachSaplingBlock PEACH_SAPLING = (PeachSaplingBlock) new PeachSaplingBlock().registerAll();
@@ -113,7 +115,7 @@ public class DecoBlocks {
     }
 
     private static EBlock registerStairs(String id, Block baseBlock) {
-        return register(id, BlocksAccessor.callCreateOldStairsBlock(baseBlock));
+        return register(id, new StairsBlock(baseBlock.getDefaultState(), copy(baseBlock)));
     }
 
     private static AbstractBlock.Settings copy(AbstractBlock original) {
@@ -121,7 +123,21 @@ public class DecoBlocks {
     }
 
     public static void registerAll() {
+        registerSignBlockEntityTypes();
         registerFlammables();
+    }
+
+    private static void registerSignBlockEntityTypes() {
+        addSupportedBlocks(BlockEntityType.SIGN, SIGNS);
+        addSupportedBlocks(BlockEntityType.HANGING_SIGN, HANGING_SIGNS);
+    }
+
+    private static void addSupportedBlocks(BlockEntityType<?> blockEntityType, Block... blocks) {
+        BlockEntityTypeMixin accessor = (BlockEntityTypeMixin) (Object) blockEntityType;
+        accessor.etherology$setBlocks(ImmutableSet.<Block>builder()
+                .addAll(accessor.etherology$getBlocks())
+                .add(blocks)
+                .build());
     }
 
     public static void registerFlammables() {

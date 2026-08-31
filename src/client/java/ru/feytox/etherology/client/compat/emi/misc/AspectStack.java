@@ -7,7 +7,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.tooltip.TooltipComponent;
-import net.minecraft.component.ComponentChanges;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -44,11 +44,11 @@ public class AspectStack extends EmiStack {
         RenderSystem.defaultBlendFunc();
 
         if ((flags & RENDER_ICON) != 0) {
-            context.push();
-            context.translate(x, y, 0);
-            context.scale(16f / aspect.getWidth(), 16f / aspect.getHeight(), 1.0f);
+            context.getMatrices().push();
+            context.getMatrices().translate(x, y, 0);
+            context.getMatrices().scale(16f / aspect.getWidth(), 16f / aspect.getHeight(), 1.0f);
             RenderUtils.renderTexture(context, 0, 0, aspect.getTextureMinX(), aspect.getTextureMinY(), aspect.getWidth(), aspect.getHeight(), aspect.getWidth(), aspect.getHeight(), EtherologyAspect.TEXTURE_WIDTH, EtherologyAspect.TEXTURE_HEIGHT);
-            context.pop();
+            context.getMatrices().pop();
         }
         if ((flags & RENDER_AMOUNT) != 0) {
             RenderSystem.enableDepthTest();
@@ -56,11 +56,11 @@ public class AspectStack extends EmiStack {
             if (amount == 1) return;
             String count = Long.toString(amount);
 
-            context.push();
-            context.translate(x, y, 0);
+            context.getMatrices().push();
+            context.getMatrices().translate(x, y, 0);
 
             textRenderer.draw(count, 17 - textRenderer.getWidth(count), 9, 0xFFFFFF, true, context.getMatrices().peek().getPositionMatrix(), context.getVertexConsumers(), TextRenderer.TextLayerType.NORMAL, 0, 15728880);
-            context.pop();
+            context.getMatrices().pop();
         }
     }
 
@@ -70,8 +70,8 @@ public class AspectStack extends EmiStack {
     }
 
     @Override
-    public ComponentChanges getComponentChanges() {
-        return ComponentChanges.EMPTY;
+    public NbtCompound getNbt() {
+        return null;
     }
 
     @Override
@@ -105,7 +105,7 @@ public class AspectStack extends EmiStack {
     public static class Serializer implements EmiStackSerializer<AspectStack> {
 
         @Override
-        public EmiStack create(Identifier id, ComponentChanges componentChanges, long amount) {
+        public EmiStack create(Identifier id, NbtCompound nbt, long amount) {
             return new AspectStack(Aspect.get(id), amount);
         }
 

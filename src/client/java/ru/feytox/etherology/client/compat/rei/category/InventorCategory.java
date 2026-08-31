@@ -51,7 +51,7 @@ public class InventorCategory implements DisplayCategory<InventorDisplay> {
             widgets.add(Widgets.createSlot(start.add(1 + 18*i, 14)).entries(display.getInputEntries().get(i)).markInput());
         }
 
-        widgets.add(Widgets.createSlot(start.add(95, 14)).entries(display.getOutputEntries().getFirst()).disableBackground().markOutput());
+        widgets.add(Widgets.createSlot(start.add(95, 14)).entries(display.getOutputEntries().get(0)).disableBackground().markOutput());
 
         return widgets;
     }

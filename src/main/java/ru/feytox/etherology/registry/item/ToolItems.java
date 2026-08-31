@@ -13,11 +13,11 @@ import static ru.feytox.etherology.registry.misc.EtherToolMaterials.EBONY;
 @UtilityClass
 public class ToolItems {
     // ebony tools
-    public static final Item EBONY_AXE = register("ebony_axe", new AxeItem(EBONY, new Item.Settings().attributeModifiers(AxeItem.createAttributeModifiers(EBONY, 5, -3.1F))));
-    public static final Item EBONY_PICKAXE = register("ebony_pickaxe", new PickaxeItem(EBONY, new Item.Settings().attributeModifiers(PickaxeItem.createAttributeModifiers(EBONY, 0, -2.8F))));
-    public static final Item EBONY_HOE = register("ebony_hoe", new HoeItem(EBONY, new Item.Settings().attributeModifiers(HoeItem.createAttributeModifiers(EBONY, -2, -1))));
-    public static final Item EBONY_SHOVEL = register("ebony_shovel", new ShovelItem(EBONY, new Item.Settings().attributeModifiers(ShovelItem.createAttributeModifiers(EBONY, 0.5f, -3))));
-    public static final Item EBONY_SWORD = register("ebony_sword", new SwordItem(EBONY, new Item.Settings().attributeModifiers(SwordItem.createAttributeModifiers(EBONY, 3, -2.4f))));
+    public static final Item EBONY_AXE = register("ebony_axe", new AxeItem(EBONY, 5, -3.1F, new Item.Settings()));
+    public static final Item EBONY_PICKAXE = register("ebony_pickaxe", new PickaxeItem(EBONY, 0, -2.8F, new Item.Settings()));
+    public static final Item EBONY_HOE = register("ebony_hoe", new HoeItem(EBONY, -2, -1, new Item.Settings()));
+    public static final Item EBONY_SHOVEL = register("ebony_shovel", new ShovelItem(EBONY, 0.5f, -3, new Item.Settings()));
+    public static final Item EBONY_SWORD = register("ebony_sword", new SwordItem(EBONY, 3, -2.4f, new Item.Settings()));
 
     // battle pickaxes
     public static final Item WOODEN_BATTLE_PICKAXE = register("wooden_battle_pickaxe", new BattlePickaxe(WOOD, 2, -2.6f));

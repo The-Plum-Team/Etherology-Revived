@@ -3,15 +3,16 @@ package ru.feytox.etherology.recipes.jewelry;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.advancement.AdvancementCriterion;
+import net.minecraft.advancement.criterion.CriterionConditions;
 import net.minecraft.data.server.recipe.CraftingRecipeJsonBuilder;
-import net.minecraft.data.server.recipe.RecipeExporter;
+import net.minecraft.data.server.recipe.RecipeJsonProvider;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.Etherology;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 @RequiredArgsConstructor(staticName = "create")
 public class LensRecipeBuilder implements CraftingRecipeJsonBuilder {
@@ -27,7 +28,7 @@ public class LensRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public CraftingRecipeJsonBuilder criterion(String name, AdvancementCriterion<?> criterion) {
+    public CraftingRecipeJsonBuilder criterion(String name, CriterionConditions criterion) {
         Etherology.ELOGGER.warn("Criterion is not yet supported by Lens recipe type.");
         return null;
     }
@@ -44,9 +45,9 @@ public class LensRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public void offerTo(RecipeExporter exporter, Identifier recipeId) {
+    public void offerTo(Consumer<RecipeJsonProvider> exporter, Identifier recipeId) {
         AbstractJewelryRecipe.Pattern pattern = AbstractJewelryRecipe.Pattern.create(this.pattern);
-        LensRecipe recipe = new LensRecipe(pattern, outputItem, etherPoints);
-        exporter.accept(recipeId, recipe, null);
+        LensRecipe recipe = new LensRecipe(pattern, outputItem, etherPoints, recipeId);
+        exporter.accept(LensRecipeSerializer.INSTANCE.toProvider(recipe));
     }
 }

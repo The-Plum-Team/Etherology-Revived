@@ -2,7 +2,6 @@ package ru.feytox.etherology.client.datagen;
 
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricRecipeProvider;
-import net.minecraft.advancement.AdvancementCriterion;
 import net.minecraft.advancement.criterion.InventoryChangedCriterion;
 import net.minecraft.data.family.BlockFamily;
 import net.minecraft.data.server.recipe.*;
@@ -10,7 +9,6 @@ import net.minecraft.item.*;
 import net.minecraft.predicate.item.ItemPredicate;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.recipe.book.RecipeCategory;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.resource.featuretoggle.FeatureFlags;
 import net.minecraft.resource.featuretoggle.FeatureSet;
@@ -24,19 +22,18 @@ import ru.feytox.etherology.recipes.empower.EmpowerRecipeBuilder;
 import ru.feytox.etherology.recipes.jewelry.LensRecipeBuilder;
 import ru.feytox.etherology.recipes.jewelry.ModifierRecipeBuilder;
 import ru.feytox.etherology.recipes.matrix.MatrixRecipeBuilder;
-import ru.feytox.etherology.recipes.staff.StaffCarpetCuttingRecipe;
-import ru.feytox.etherology.recipes.staff.StaffCarpetingRecipe;
 import ru.feytox.etherology.registry.block.EBlockFamilies;
 import ru.feytox.etherology.registry.block.EBlocks;
 import ru.feytox.etherology.registry.block.ExtraBlocksRegistry;
 import ru.feytox.etherology.registry.item.DecoBlockItems;
 import ru.feytox.etherology.registry.item.ToolItems;
 import ru.feytox.etherology.registry.misc.ComponentTypes;
+import ru.feytox.etherology.registry.misc.RecipesRegistry;
 import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import static net.minecraft.block.Blocks.*;
@@ -51,12 +48,15 @@ import static ru.feytox.etherology.registry.item.ToolItems.*;
 
 public class RecipeGeneration extends FabricRecipeProvider {
 
-    public RecipeGeneration(FabricDataOutput output, CompletableFuture<RegistryWrapper.WrapperLookup> registriesFuture) {
-        super(output, registriesFuture);
+    public RecipeGeneration(FabricDataOutput output) {
+        super(output);
     }
 
     @Override
-    public void generate(RecipeExporter exporter) {
+    public void generate(Consumer<RecipeJsonProvider> downstreamExporter) {
+        Consumer<RecipeJsonProvider> exporter = provider -> downstreamExporter.accept(
+                new NamespacedRecipeJsonProvider(provider, getRecipeIdentifier(provider.getRecipeId())));
+
         // azel
         offerMaterialBlock(exporter, AZEL_INGOT, AZEL_BLOCK);
         offerMaterialNugget(exporter, AZEL_NUGGET, AZEL_INGOT);
@@ -80,8 +80,8 @@ public class RecipeGeneration extends FabricRecipeProvider {
         CookingRecipeJsonBuilder.createCampfireCooking(Ingredient.ofItems(FOREST_LANTERN), FOOD, FOREST_LANTERN_CRUMB, 0.35f, 600).criterion(has(FOREST_LANTERN), from(FOREST_LANTERN)).offerTo(exporter, getFromPath(FOREST_LANTERN_CRUMB, "campfire"));
 
         // special recipes
-        ComplexRecipeJsonBuilder.create(StaffCarpetingRecipe::new).offerTo(exporter, "staff_carpeting");
-        ComplexRecipeJsonBuilder.create(StaffCarpetCuttingRecipe::new).offerTo(exporter, "staff_carpet_cutting");
+        ComplexRecipeJsonBuilder.create(RecipesRegistry.STAFF_CARPET).offerTo(exporter, "staff_carpeting");
+        ComplexRecipeJsonBuilder.create(RecipesRegistry.STAFF_CARPET_CUT).offerTo(exporter, "staff_carpet_cutting");
 
         // block families recipes
         registerFamilies(EBlockFamilies.FAMILIES, exporter, FeatureSet.of(FeatureFlags.VANILLA));
@@ -339,14 +339,14 @@ public class RecipeGeneration extends FabricRecipeProvider {
                 .pattern("00####00").offerTo(exporter);
     }
 
-    private void registerStaffs(RecipeExporter exporter, ItemConvertible... strippedLogs) {
+    private void registerStaffs(Consumer<RecipeJsonProvider> exporter, ItemConvertible... strippedLogs) {
         for (ItemConvertible log : strippedLogs) {
             String strippedWood = getItemPath(log.asItem()).replace("_log", "").replace("_stem", "");
             String woodType = strippedWood.replace("stripped_", "");
             if (woodType.equals(strippedWood)) throw new IllegalArgumentException("Expected stripped log, found: " + log);
             ItemStack staffStack = STAFF.getDefaultStack();
             StaffMaterial core = StaffMaterial.valueOf(woodType.toUpperCase());
-            staffStack.apply(ComponentTypes.STAFF, StaffComponent.DEFAULT, component ->
+            ComponentTypes.STAFF.apply(staffStack, StaffComponent.DEFAULT, component ->
                     component.setPartInfo(new StaffPartInfo(StaffPart.CORE, core, StaffPattern.EMPTY)));
             EmpowerRecipeBuilder.create(staffStack).clos(4).keta(6).via(6).input('I', Items.IRON_INGOT).input('B', BINDER).input('W', log)
                     .pattern(" I ")
@@ -355,7 +355,7 @@ public class RecipeGeneration extends FabricRecipeProvider {
         }
     }
 
-    private void registerPicks(RecipeExporter exporter) {
+    private void registerPicks(Consumer<RecipeJsonProvider> exporter) {
         var picksWithoutNetherite = Arrays.stream(BATTLE_PICKAXES).filter(item -> !item.equals(NETHERITE_BATTLE_PICKAXE));
         registerTools(picksWithoutNetherite, (tool, material, criterionPredicate) ->
                 ShapedRecipeJsonBuilder.create(TOOLS, tool).input('I', Items.STICK).input('M', material)
@@ -376,13 +376,13 @@ public class RecipeGeneration extends FabricRecipeProvider {
         });
     }
 
-    private void registerFamilies(List<BlockFamily> blockFamilies, RecipeExporter exporter, FeatureSet enabledFeatures) {
+    private void registerFamilies(List<BlockFamily> blockFamilies, Consumer<RecipeJsonProvider> exporter, FeatureSet enabledFeatures) {
         blockFamilies.stream()
-                .filter(BlockFamily::shouldGenerateRecipes)
-                .forEach(family -> RecipeProvider.generateFamily(exporter, family, enabledFeatures));
+                .filter(family -> family.shouldGenerateRecipes(enabledFeatures))
+                .forEach(family -> RecipeProvider.generateFamily(exporter, family));
     }
 
-    private void offerStonecuttingRecipe(RecipeExporter exporter, BlockFamily... blockFamilies) {
+    private void offerStonecuttingRecipe(Consumer<RecipeJsonProvider> exporter, BlockFamily... blockFamilies) {
         Arrays.stream(blockFamilies).forEach(family -> family.getVariants().forEach((variant, block) -> {
             int count = 1;
             RecipeCategory category = BUILDING_BLOCKS;
@@ -403,15 +403,15 @@ public class RecipeGeneration extends FabricRecipeProvider {
         return hasItem(itemConvertible);
     }
 
-    private AdvancementCriterion<InventoryChangedCriterion.Conditions> from(ItemConvertible itemConvertible) {
+    private InventoryChangedCriterion.Conditions from(ItemConvertible itemConvertible) {
         return conditionsFromItem(itemConvertible);
     }
 
-    private void offerMaterialBlock(RecipeExporter exporter, ItemConvertible ingot, ItemConvertible block) {
+    private void offerMaterialBlock(Consumer<RecipeJsonProvider> exporter, ItemConvertible ingot, ItemConvertible block) {
         offerReversibleCompactingRecipesWithReverseRecipeGroup(exporter, MISC, ingot, BUILDING_BLOCKS, block, from(ingot, block), group(ingot));
     }
 
-    private void offerMaterialNugget(RecipeExporter exporter, ItemConvertible nugget, ItemConvertible ingot) {
+    private void offerMaterialNugget(Consumer<RecipeJsonProvider> exporter, ItemConvertible nugget, ItemConvertible ingot) {
         offerReversibleCompactingRecipesWithCompactingRecipeGroup(exporter, MISC, nugget, MISC, ingot, from(ingot, nugget), group(ingot));
     }
 

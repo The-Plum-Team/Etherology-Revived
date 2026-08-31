@@ -1,18 +1,23 @@
 package ru.feytox.etherology.recipes.alchemy;
 
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.recipe.input.RecipeInput;
 import ru.feytox.etherology.magic.aspects.AspectContainer;
 
-public record AlchemyRecipeInventory(AspectContainer cauldronAspects, ItemStack stack) implements RecipeInput {
+public class AlchemyRecipeInventory extends SimpleInventory {
 
-    @Override
-    public ItemStack getStackInSlot(int slot) {
-        return stack;
+    private final AspectContainer cauldronAspects;
+
+    public AlchemyRecipeInventory(AspectContainer cauldronAspects, ItemStack stack) {
+        super(stack);
+        this.cauldronAspects = cauldronAspects;
     }
 
-    @Override
-    public int getSize() {
-        return 1;
+    public AspectContainer cauldronAspects() {
+        return cauldronAspects;
+    }
+
+    public ItemStack stack() {
+        return getStack(0);
     }
 }

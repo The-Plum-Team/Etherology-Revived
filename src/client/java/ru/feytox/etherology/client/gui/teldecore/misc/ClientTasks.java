@@ -8,14 +8,15 @@ import ru.feytox.etherology.gui.teldecore.task.AbstractTask;
 import ru.feytox.etherology.gui.teldecore.task.BiomeTask;
 import ru.feytox.etherology.gui.teldecore.task.ItemTask;
 
+import java.util.Objects;
+
 public class ClientTasks {
 
     public static FeySlot toSlot(AbstractTask abstractTask, float x, float y, float width, float height) {
-        return switch (abstractTask) {
-            case BiomeTask task -> ofBiomeTask(task, x, y, width, height);
-            case ItemTask task -> new FeySlot.ItemTask(new ItemStack(task.getItem(), task.getCount()), isClientCompleted(task), x, y, width, height);
-            default -> throw new IllegalStateException("Unexpected value: " + abstractTask);
-        };
+        Objects.requireNonNull(abstractTask);
+        if (abstractTask instanceof BiomeTask task) return ofBiomeTask(task, x, y, width, height);
+        if (abstractTask instanceof ItemTask task) return new FeySlot.ItemTask(new ItemStack(task.getItem(), task.getCount()), isClientCompleted(task), x, y, width, height);
+        throw new IllegalStateException("Unexpected value: " + abstractTask);
     }
 
     private static FeySlot ofBiomeTask(BiomeTask task, float x, float y, float width, float height) {

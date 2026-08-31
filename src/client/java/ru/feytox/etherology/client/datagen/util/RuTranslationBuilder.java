@@ -2,6 +2,7 @@ package ru.feytox.etherology.client.datagen.util;
 
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.minecraft.block.Block;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.item.Item;
 import net.minecraft.potion.Potion;
@@ -9,8 +10,6 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.TagKey;
 import ru.feytox.etherology.magic.lens.LensModifier;
-
-import java.util.Optional;
 
 public class RuTranslationBuilder {
 
@@ -36,11 +35,16 @@ public class RuTranslationBuilder {
         builder.add(effect, value);
     }
 
+    public void add(Enchantment enchantment, String value) {
+        builder.add(enchantment.getTranslationKey(), value);
+    }
+
     public void add(RegistryEntry<Potion> potion, String value) {
-        builder.add(Potion.finishTranslationKey(Optional.of(potion), "item.minecraft.potion.effect."), "Зелье " + value);
-        builder.add(Potion.finishTranslationKey(Optional.of(potion), "item.minecraft.splash_potion.effect."), "Взрывное зелье " + value);
-        builder.add(Potion.finishTranslationKey(Optional.of(potion), "item.minecraft.lingering_potion.effect."), "Туманное зелье " + value);
-        builder.add(Potion.finishTranslationKey(Optional.of(potion), "item.minecraft.tipped_arrow.effect."), "Стрела " + value);
+        Potion potionValue = potion.value();
+        builder.add(potionValue.finishTranslationKey("item.minecraft.potion.effect."), "Зелье " + value);
+        builder.add(potionValue.finishTranslationKey("item.minecraft.splash_potion.effect."), "Взрывное зелье " + value);
+        builder.add(potionValue.finishTranslationKey("item.minecraft.lingering_potion.effect."), "Туманное зелье " + value);
+        builder.add(potionValue.finishTranslationKey("item.minecraft.tipped_arrow.effect."), "Стрела " + value);
     }
 
     public void add(String key, String value) {
@@ -54,7 +58,9 @@ public class RuTranslationBuilder {
     }
 
     public void add(TagKey<?> tag, String value) {
-        builder.add(tag, value);
+        String[] splitRegistryPath = tag.registry().getValue().getPath().split("/");
+        String registryPath = splitRegistryPath[splitRegistryPath.length - 1];
+        builder.add(tag.id().toTranslationKey("tag." + registryPath), value);
     }
 
     /**

@@ -4,7 +4,7 @@ import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.enums.BlockFace;
+import net.minecraft.block.enums.WallMountLocation;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
@@ -16,8 +16,8 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.state.property.EnumProperty;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -63,16 +63,17 @@ public class EtherealChannel extends Block implements RegistrableBlock, BlockEnt
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (state.get(IN_CASE)) return super.onUseWithItem(stack, state, world, pos, player, hand, hit);
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        ItemStack stack = player.getStackInHand(hand);
+        if (state.get(IN_CASE)) return super.onUse(state, world, pos, player, hand, hit);
         if (!stack.isOf(EBlocks.CHANNEL_CASE.getItem()))
-            return super.onUseWithItem(stack, state, world, pos, player, hand, hit);
+            return super.onUse(state, world, pos, player, hand, hit);
 
         if (!player.isCreative()) stack.decrement(1);
         world.setBlockState(pos, state.with(IN_CASE, true));
         world.playSound(null, pos, SoundEvents.BLOCK_WOOD_BREAK, SoundCategory.BLOCKS, 1.0f, 1.0f);
 
-        return ItemActionResult.SUCCESS;
+        return ActionResult.SUCCESS;
     }
 
     @Override
@@ -136,9 +137,9 @@ public class EtherealChannel extends Block implements RegistrableBlock, BlockEnt
 
     private Direction getLeverDirection(BlockState leverState) {
         var face = leverState.get(LeverBlock.FACE);
-        if (face.equals(BlockFace.WALL))
+        if (face.equals(WallMountLocation.WALL))
             return leverState.get(LeverBlock.FACING);
-        return face.equals(BlockFace.FLOOR) ? Direction.UP : Direction.DOWN;
+        return face.equals(WallMountLocation.FLOOR) ? Direction.UP : Direction.DOWN;
     }
 
     public BlockState getFacingState(BlockState state, int inputCount) {

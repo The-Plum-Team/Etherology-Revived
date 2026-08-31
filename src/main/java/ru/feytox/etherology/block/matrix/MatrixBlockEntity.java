@@ -2,7 +2,6 @@ package ru.feytox.etherology.block.matrix;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
-import io.wispforest.owo.util.ImplementedInventory;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import lombok.Getter;
@@ -21,7 +20,6 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -55,12 +53,13 @@ import ru.feytox.etherology.registry.misc.RecipesRegistry;
 import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.util.gecko.EGeo2BlockEntity;
 import ru.feytox.etherology.util.gecko.EGeoAnimation;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.EtherProxy;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 import ru.feytox.etherology.util.misc.UniqueProvider;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.*;
@@ -70,7 +69,7 @@ import java.util.stream.Stream;
 import static ru.feytox.etherology.block.matrix.MatrixState.*;
 import static ru.feytox.etherology.registry.block.EBlocks.ARMILLARY_SPHERE_BLOCK_ENTITY;
 
-public class MatrixBlockEntity extends TickableBlockEntity implements ImplementedInventory, SidedInventory, EGeo2BlockEntity, UniqueProvider, RevelationAspectProvider {
+public class MatrixBlockEntity extends TickableBlockEntity implements ListBackedInventory, SidedInventory, EGeo2BlockEntity, UniqueProvider, RevelationAspectProvider {
 
     // constants
     private static final int HORIZONTAL_RADIUS = 7;
@@ -188,7 +187,7 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
         if (!handStack.isEmpty()) {
             if (!matrixStack.isEmpty()) {
                 // item take to stack
-                if (!ItemStack.areItemsAndComponentsEqual(matrixStack, handStack) || handStack.getCount() >= handStack.getMaxCount())
+                if (!ItemStack.canCombine(matrixStack, handStack) || handStack.getCount() >= handStack.getMaxCount())
                     return;
                 setStack(0, ItemStack.EMPTY);
                 handStack.increment(1);
@@ -238,11 +237,11 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
     }
 
     public boolean testForRecipe(ServerWorld world) {
-        val recipeEntry = RecipesRegistry.getFirstMatch(world, this, MatrixRecipeSerializer.INSTANCE);
-        if (recipeEntry == null) return false;
+        MatrixRecipe recipe = RecipesRegistry.getFirstMatch(world, this, MatrixRecipeSerializer.INSTANCE);
+        if (recipe == null) return false;
 
-        recipeId = recipeEntry.id();
-        recipeCache = recipeEntry.value();
+        recipeId = recipe.getId();
+        recipeCache = recipe;
         return true;
     }
 
@@ -254,8 +253,8 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
         if (recipeCache != null) return recipeCache;
         if (recipeId == null) return null;
 
-        return RecipesRegistry.maybeGet(world, recipeId).map(entry -> {
-            if (!(entry.value() instanceof MatrixRecipe matrixRecipe)) return null;
+        return RecipesRegistry.maybeGet(world, recipeId).map(recipe -> {
+            if (!(recipe instanceof MatrixRecipe matrixRecipe)) return null;
             recipeCache = matrixRecipe;
             return matrixRecipe;
         }).orElse(null);
@@ -411,9 +410,9 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
      * @return an Optional containing the closest mob, or empty if no entity is found
      */
     private Optional<LivingEntity> findClosestMob(World world) {
-        Box entitiesBox = Box.enclosing(pos.add(-HORIZONTAL_RADIUS, -DOWN_RADIUS, -HORIZONTAL_RADIUS), pos.add(HORIZONTAL_RADIUS, UP_RADIUS, HORIZONTAL_RADIUS));
+        Box entitiesBox = new Box(pos.add(-HORIZONTAL_RADIUS, -DOWN_RADIUS, -HORIZONTAL_RADIUS), pos.add(HORIZONTAL_RADIUS, UP_RADIUS, HORIZONTAL_RADIUS));
         val mobs = world.getEntitiesByType(TypeFilter.instanceOf(LivingEntity.class), entitiesBox, entity -> !entity.isPlayer());
-        return mobs.isEmpty() ? Optional.empty() : Optional.of(mobs.getFirst());
+        return mobs.isEmpty() ? Optional.empty() : Optional.of(mobs.get(0));
     }
 
     /**
@@ -469,9 +468,10 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putInt("current_tick", currentTick);
-        Inventories.writeNbt(nbt, items, registryLookup);
+        nbt.putFloat("stored_ether", storedEther);
+        Inventories.writeNbt(nbt, items);
         writeActiveAnimations(nbt);
         writeDecryptedItems(nbt);
         allCurrentAspects.writeNbt(nbt);
@@ -479,22 +479,23 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
         if (recipeId == null) nbt.putString("recipe_id", "");
         else nbt.putString("recipe_id", recipeId.toString());
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         currentTick = nbt.getInt("current_tick");
+        storedEther = nbt.getFloat("stored_ether");
         items.clear();
-        Inventories.readNbt(nbt, items, registryLookup);
+        Inventories.readNbt(nbt, items);
         activeAnimations = readActiveAnimations(nbt);
         decryptedItems = readDecryptedItems(nbt);
         allCurrentAspects = allCurrentAspects.readNbt(nbt);
 
         String id = nbt.getString("recipe_id");
-        recipeId = id.isEmpty() ? null : Identifier.of(id);
+        recipeId = id.isEmpty() ? null : new Identifier(id);
     }
 
     private void writeDecryptedItems(NbtCompound nbt) {
@@ -511,7 +512,7 @@ public class MatrixBlockEntity extends TickableBlockEntity implements Implemente
         NbtList nbtList = nbt.getList("decrypted_items", NbtElement.STRING_TYPE);
         return nbtList.stream()
                 .map(element -> (NbtString) element).map(NbtString::asString)
-                .map(Identifier::of).map(Registries.ITEM::get)
+                .map(Identifier::new).map(Registries.ITEM::get)
                 .collect(Collectors.toCollection(ObjectArrayList::new));
     }
 

@@ -2,24 +2,25 @@ package ru.feytox.etherology.block.spill_barrel;
 
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.ContainerComponent;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.inventory.Inventories;
 import net.minecraft.item.*;
-import net.minecraft.item.tooltip.TooltipType;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -62,12 +63,14 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, Item.TooltipContext context, List<Text> tooltip, TooltipType options) {
-        super.appendTooltip(stack, context, tooltip, options);
+    public void appendTooltip(ItemStack stack, @Nullable BlockView world, List<Text> tooltip, TooltipContext options) {
+        super.appendTooltip(stack, world, tooltip, options);
 
-        ContainerComponent barrelData = stack.get(DataComponentTypes.CONTAINER);
-        ItemStack potionStack = barrelData != null ? barrelData.copyFirstStack() : null;
-        long potionCount = barrelData != null ? barrelData.streamNonEmpty().count() : 0;
+        NbtCompound barrelData = BlockItem.getBlockEntityNbt(stack);
+        DefaultedList<ItemStack> items = DefaultedList.ofSize(16, ItemStack.EMPTY);
+        if (barrelData != null) Inventories.readNbt(barrelData, items);
+        ItemStack potionStack = items.stream().filter(item -> !item.isEmpty()).findFirst().orElse(null);
+        long potionCount = items.stream().filter(item -> !item.isEmpty()).count();
         MutableText potionInfo = potionStack == null ? null : SpillBarrelBlockEntity.getPotionInfo(potionStack, potionCount, false, Text.empty());
 
         if (potionCount == 0 || potionInfo == null) {
@@ -79,22 +82,22 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
-        if (hand != Hand.MAIN_HAND) return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        if (hand != Hand.MAIN_HAND) return ActionResult.PASS;
         BlockEntity be = world.getBlockEntity(pos);
-        if (!(be instanceof SpillBarrelBlockEntity spillBarrel)) return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+        if (!(be instanceof SpillBarrelBlockEntity spillBarrel)) return ActionResult.PASS;
 
         ItemStack handStack = player.getStackInHand(hand);
         if (handStack.isEmpty()) {
             spillBarrel.showPotionsInfo(player);
-            return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+            return ActionResult.PASS;
         }
 
         if (spillBarrel.tryFillBarrel(handStack.copy())) {
             player.setStackInHand(hand, ItemUsage.exchangeStack(handStack, player, Items.GLASS_BOTTLE.getDefaultStack()));
             world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_EMPTY, SoundCategory.BLOCKS, 1.0f, 1.0f);
             world.emitGameEvent(null, GameEvent.FLUID_PLACE, pos);
-            return ItemActionResult.CONSUME;
+            return ActionResult.CONSUME;
         }
 
         if (!spillBarrel.isEmpty() && !handStack.isOf(Items.POTION)) {
@@ -103,12 +106,12 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
                 player.setStackInHand(hand, ItemUsage.exchangeStack(handStack, player, outputStack));
                 world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_FILL, SoundCategory.BLOCKS, 1.0f, 1.0f);
                 world.emitGameEvent(null, GameEvent.FLUID_PICKUP, pos);
-                return ItemActionResult.CONSUME;
+                return ActionResult.CONSUME;
             }
         }
 
         spillBarrel.showPotionsInfo(player);
-        return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+        return ActionResult.PASS;
     }
 
     @Override
@@ -123,14 +126,14 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
     }
 
     @Override
-    public BlockState onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
+    public void onBreak(World world, BlockPos pos, BlockState state, PlayerEntity player) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof SpillBarrelBlockEntity spillBarrel) {
             if (!world.isClient && (!player.isCreative() || (player.isCreative() && !spillBarrel.isEmpty()))) {
                 ItemStack barrelStack = asItem().getDefaultStack();
-                barrelStack.applyComponentsFrom(spillBarrel.createComponentMap());
+                spillBarrel.setStackNbt(barrelStack);
                 if (spillBarrel.hasCustomName()) {
-                    barrelStack.set(DataComponentTypes.CUSTOM_NAME, spillBarrel.getCustomName());
+                    barrelStack.setCustomName(spillBarrel.getCustomName());
                 }
                 ItemEntity itemEntity = new ItemEntity(world, (double)pos.getX() + 0.5, (double)pos.getY() + 0.5, (double)pos.getZ() + 0.5, barrelStack);
                 itemEntity.setToDefaultPickupDelay();
@@ -138,7 +141,7 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
             }
         }
 
-        return super.onBreak(world, pos, state, player);
+        super.onBreak(world, pos, state, player);
     }
 
     @Override
@@ -152,7 +155,7 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
         var fluidState = ctx.getWorld().getFluidState(ctx.getBlockPos());
         var underState = ctx.getWorld().getBlockState(ctx.getBlockPos().down());
         var state = this.getDefaultState().with(HorizontalFacingBlock.FACING, ctx.getHorizontalPlayerFacing().getOpposite());
-        if (underState.isAir() || underState.isOf(EBlocks.SPILL_BARREL)) {
+        if (shouldHaveFrame(underState.isAir(), underState.isOf(EBlocks.SPILL_BARREL))) {
             state = state.with(WITH_FRAME, true);
         }
         return state.with(WATERLOGGED, fluidState.getFluid() == Fluids.WATER);
@@ -165,10 +168,13 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
 
         if (!neighborPos.equals(pos.down())) return super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);
 
-        if (neighborState.isAir() || neighborState.isOf(EBlocks.SPILL_BARREL)) {
-            return state.with(WITH_FRAME, true);
-        }
-        return super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);
+        BlockState updatedState = super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);
+        boolean shouldHaveFrame = shouldHaveFrame(neighborState.isAir(), neighborState.isOf(EBlocks.SPILL_BARREL));
+        return updatedState.with(WITH_FRAME, shouldHaveFrame);
+    }
+
+    static boolean shouldHaveFrame(boolean neighborIsAir, boolean neighborIsSpillBarrel) {
+        return neighborIsAir || neighborIsSpillBarrel;
     }
 
     @Override
@@ -179,9 +185,8 @@ public class SpillBarrelBlock extends Block implements RegistrableBlock, BlockEn
     @Override
     public void onPlaced(World world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack itemStack) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
-        Text customName = itemStack.get(DataComponentTypes.CUSTOM_NAME);
-        if (customName != null && blockEntity instanceof SpillBarrelBlockEntity spillBarrel) {
-            spillBarrel.setCustomName(customName);
+        if (itemStack.hasCustomName() && blockEntity instanceof SpillBarrelBlockEntity spillBarrel) {
+            spillBarrel.setCustomName(itemStack.getName());
         }
     }
 

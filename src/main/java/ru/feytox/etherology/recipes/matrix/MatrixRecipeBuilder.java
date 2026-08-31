@@ -2,9 +2,9 @@ package ru.feytox.etherology.recipes.matrix;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.advancement.AdvancementCriterion;
+import net.minecraft.advancement.criterion.CriterionConditions;
 import net.minecraft.data.server.recipe.CraftingRecipeJsonBuilder;
-import net.minecraft.data.server.recipe.RecipeExporter;
+import net.minecraft.data.server.recipe.RecipeJsonProvider;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
@@ -15,6 +15,7 @@ import ru.feytox.etherology.Etherology;
 import ru.feytox.etherology.magic.aspects.Aspect;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 @RequiredArgsConstructor
 public class MatrixRecipeBuilder implements CraftingRecipeJsonBuilder {
@@ -34,7 +35,7 @@ public class MatrixRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public CraftingRecipeJsonBuilder criterion(String name, AdvancementCriterion<?> criterion) {
+    public CraftingRecipeJsonBuilder criterion(String name, CriterionConditions criterion) {
         Etherology.ELOGGER.warn("Criterion is not yet supported by Matrix recipe type.");
         return null;
     }
@@ -51,8 +52,8 @@ public class MatrixRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public void offerTo(RecipeExporter exporter, Identifier recipeId) {
-        MatrixRecipe recipe = new MatrixRecipe(centerInput, aspects, etherPoints, outputStack);
-        exporter.accept(recipeId, recipe, null);
+    public void offerTo(Consumer<RecipeJsonProvider> exporter, Identifier recipeId) {
+        MatrixRecipe recipe = new MatrixRecipe(centerInput, aspects, etherPoints, outputStack, recipeId);
+        exporter.accept(MatrixRecipeSerializer.INSTANCE.toProvider(recipe));
     }
 }

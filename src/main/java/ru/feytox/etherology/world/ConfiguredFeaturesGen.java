@@ -79,7 +79,7 @@ public class ConfiguredFeaturesGen {
         register(context, ATTRAHITE, Feature.ORE, new OreFeatureConfig(new TagMatchRuleTest(BlockTags.DEEPSLATE_ORE_REPLACEABLES), DecoBlocks.ATTRAHITE.getDefaultState(), 52, 0));
         register(context, SINGLE_PIECE_OF_GRASS_LIGHTELET, Feature.SIMPLE_BLOCK,
                 new SimpleBlockFeatureConfig(new WeightedBlockStateProvider(DataPool.<BlockState>builder()
-                        .add(Blocks.SHORT_GRASS.getDefaultState(), 1)
+                        .add(Blocks.GRASS.getDefaultState(), 1)
                         .add(DecoBlocks.LIGHTELET.getDefaultState(), 2).build())));
         registerSeal(context, KETA_SEAL, SealType.KETA);
         registerSeal(context, RELLA_SEAL, SealType.RELLA);

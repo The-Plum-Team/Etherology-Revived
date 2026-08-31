@@ -5,10 +5,8 @@ import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.With;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import ru.feytox.etherology.item.StaffItem;
 import ru.feytox.etherology.registry.misc.ComponentTypes;
-import ru.feytox.etherology.util.misc.CodecUtil;
 import ru.feytox.etherology.util.misc.ItemData;
 
 import java.util.Map;
@@ -18,7 +16,6 @@ import java.util.Optional;
 public record StaffComponent(Map<StaffPart, StaffPartInfo> parts) {
 
     public static final Codec<StaffComponent> CODEC;
-    public static final PacketCodec<RegistryByteBuf, StaffComponent> PACKET_CODEC;
     public static final StaffComponent DEFAULT;
 
     public StaffComponent setPartInfo(StaffPartInfo partInfo) {
@@ -38,12 +35,12 @@ public record StaffComponent(Map<StaffPart, StaffPartInfo> parts) {
     }
 
     public static Optional<StaffComponent> get(ItemStack stack) {
-        return Optional.ofNullable(stack.get(ComponentTypes.STAFF));
+        if (!(stack.getItem() instanceof StaffItem)) return Optional.empty();
+        return Optional.of(ComponentTypes.STAFF.getOrDefault(stack, DEFAULT));
     }
 
     static {
         CODEC = Codec.unboundedMap(StaffPart.CODEC, StaffPartInfo.CODEC).xmap(StaffComponent::new, StaffComponent::parts).stable();
-        PACKET_CODEC = CodecUtil.map(Object2ObjectOpenHashMap::new, StaffPart.PACKET_CODEC, StaffPartInfo.PACKET_CODEC).xmap(StaffComponent::new, StaffComponent::parts).cast();
         DEFAULT = new StaffComponent(ImmutableMap.of(
                 StaffPart.CORE, new StaffPartInfo(StaffPart.CORE, StaffMaterial.OAK, StaffPattern.EMPTY),
                 StaffPart.HEAD, new StaffPartInfo(StaffPart.HEAD, StaffStyles.TRADITIONAL, StaffMetals.IRON),

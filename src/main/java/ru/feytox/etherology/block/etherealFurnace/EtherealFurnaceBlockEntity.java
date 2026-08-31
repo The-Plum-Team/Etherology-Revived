@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.etherealFurnace;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
@@ -12,7 +11,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.Registries;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
@@ -25,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.data.ethersource.EtherSources;
 import ru.feytox.etherology.magic.ether.EtherCounter;
 import ru.feytox.etherology.magic.ether.EtherStorage;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import java.util.Collections;
@@ -33,7 +32,7 @@ import java.util.List;
 import static ru.feytox.etherology.block.etherealFurnace.EtherealFurnace.LIT;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_FURNACE_BLOCK_ENTITY;
 
-public class EtherealFurnaceBlockEntity extends TickableBlockEntity implements EtherStorage, ImplementedInventory, NamedScreenHandlerFactory, EtherCounter, SidedInventory {
+public class EtherealFurnaceBlockEntity extends TickableBlockEntity implements EtherStorage, ListBackedInventory, NamedScreenHandlerFactory, EtherCounter, SidedInventory {
 
     public static final int MAX_FUEL = 8;
     public static final int DEFAULT_COOK_TIME = 20*15;
@@ -168,7 +167,7 @@ public class EtherealFurnaceBlockEntity extends TickableBlockEntity implements E
     }
 
     public boolean isEnoughSpace() {
-        return EtherSources.getEtherFuel(getStack(0).getItem()) + storedEther <= getMaxEther();
+        return EtherSources.getEtherFuel(getStack(1).getItem()) + storedEther <= getMaxEther();
     }
 
     @Override
@@ -188,7 +187,10 @@ public class EtherealFurnaceBlockEntity extends TickableBlockEntity implements E
 
     @Override
     public void setStoredEther(float value) {
+        if (storedEther == value) return;
+
         storedEther = value;
+        markDirty();
     }
 
     @Override
@@ -218,23 +220,23 @@ public class EtherealFurnaceBlockEntity extends TickableBlockEntity implements E
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, inventory, registryLookup);
+    protected void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, inventory);
         nbt.putFloat("stored_ether", storedEther);
         nbt.putInt("fuel", fuel);
         nbt.putInt("cook_time", cookTime);
         nbt.putInt("total_cook_time", totalCookTime);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         storedEther = nbt.getFloat("stored_ether");
         inventory.clear();
-        Inventories.readNbt(nbt, inventory, registryLookup);
+        Inventories.readNbt(nbt, inventory);
         fuel = nbt.getInt("fuel");
         cookTime = nbt.getInt("cook_time");
         totalCookTime = nbt.getInt("total_cook_time");

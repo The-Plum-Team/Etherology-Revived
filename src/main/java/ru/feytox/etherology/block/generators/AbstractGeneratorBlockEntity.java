@@ -6,7 +6,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.FacingBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -23,13 +22,12 @@ import ru.feytox.etherology.network.animation.StartBlockAnimS2C;
 import ru.feytox.etherology.network.animation.StopBlockAnimS2C;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static ru.feytox.etherology.block.generators.AbstractGenerator.STALLED;
 
@@ -39,7 +37,6 @@ public abstract class AbstractGeneratorBlockEntity extends TickableBlockEntity i
     private float storedEther;
     private int nextGenTime = 40 * 20;
     private boolean isMess = false;
-    private CompletableFuture<Boolean> messCheck = null;
     @Nullable
     private EssenceSupplier cachedSeal;
     @Getter @Setter
@@ -84,19 +81,13 @@ public abstract class AbstractGeneratorBlockEntity extends TickableBlockEntity i
     }
 
     public void tickMessCheck(ServerWorld world) {
-        if (messCheck != null && !messCheck.isDone()) return;
-        if (messCheck != null) {
-            boolean result = messCheck.join();
-            if (result != isMess) {
-                isMess = result;
-                markDirty();
-                messCheck = null;
-                return;
-            }
-        }
-
         if (world.getTime() % 20 != 0) return;
-        messCheck = CompletableFuture.supplyAsync(() -> messChecker(world));
+
+        boolean result = messChecker(world);
+        if (result == isMess) return;
+
+        isMess = result;
+        markDirty();
     }
 
     public boolean messChecker(ServerWorld world) {
@@ -111,7 +102,7 @@ public abstract class AbstractGeneratorBlockEntity extends TickableBlockEntity i
                 result = false;
                 break;
             }
-            if (world.getBlockEntity(pos) instanceof AbstractGeneratorBlockEntity generator) {
+            if (world.getBlockEntity(blockPos) instanceof AbstractGeneratorBlockEntity generator) {
                 if (!generator.isFull()) {
                     result = false;
                     break;
@@ -204,17 +195,17 @@ public abstract class AbstractGeneratorBlockEntity extends TickableBlockEntity i
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putFloat("stored_ether", storedEther);
         nbt.putInt("next_gen_time", nextGenTime);
         nbt.putBoolean("is_mess", isMess);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         storedEther = nbt.getFloat("stored_ether");
         nextGenTime = nbt.getInt("next_gen_time");

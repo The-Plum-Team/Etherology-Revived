@@ -3,9 +3,8 @@ package ru.feytox.etherology.block.tuningFork;
 import lombok.Getter;
 import net.minecraft.block.BlockState;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.particle.VibrationParticleEffect;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -84,11 +83,16 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
     }
 
     private void tickDelay(ServerWorld world, BlockState state) {
-        if (delay == -1 || delay-- > 0) return;
+        if (delay == -1) return;
+        if (delay-- > 0) {
+            markDirty();
+            return;
+        }
 
         tryActivate(world, state, true, receivedNote);
         delay = -1;
         receivedNote = -1;
+        markDirty();
     }
 
     public boolean isResonating() {
@@ -96,8 +100,8 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
     }
 
     @Override
-    public boolean listen(ServerWorld world, RegistryEntry<GameEvent> event, GameEvent.Emitter emitter, Vec3d emitterPos) {
-        if (!event.matchesKey(EventsRegistry.RESONANCE.registryKey())) return false;
+    public boolean listen(ServerWorld world, GameEvent event, GameEvent.Emitter emitter, Vec3d emitterPos) {
+        if (!event.equals(EventsRegistry.RESONANCE)) return false;
         BlockState sourceState = emitter.affectedState();
         if (sourceState == null) return false;
 
@@ -110,6 +114,7 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
 
         receivedNote = note;
         delay = MathHelper.floor(emitterPos.distanceTo(forkPos));
+        markDirty();
         world.spawnParticles(new VibrationParticleEffect(positionSource, delay), emitterPos.x, emitterPos.y, emitterPos.z, 1, 0.0, 0.0, 0.0, 0.0);
         world.getChunkManager().addTicket(RESONANCE_TICKET, world.getChunk(pos).getPos(), 2, pos);
 
@@ -117,17 +122,21 @@ public class TuningForkBlockEntity extends TickableBlockEntity implements GameEv
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putInt("reloading_ticks", resonatingTicks);
+        nbt.putInt("delay", delay);
+        nbt.putInt("received_note", receivedNote);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         resonatingTicks = nbt.getInt("reloading_ticks");
+        delay = nbt.contains("delay", NbtElement.INT_TYPE) ? nbt.getInt("delay") : -1;
+        receivedNote = nbt.contains("received_note", NbtElement.INT_TYPE) ? nbt.getInt("received_note") : -1;
     }
 
     @Override

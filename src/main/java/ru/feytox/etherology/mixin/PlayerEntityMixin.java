@@ -1,5 +1,6 @@
 package ru.feytox.etherology.mixin;
 
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import com.llamalad7.mixinextras.injector.v2.WrapWithCondition;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -41,6 +42,11 @@ public class PlayerEntityMixin {
         PlayerEntity attacker = ((PlayerEntity) (Object) this);
         if (!BroadSwordItem.isUsing(attacker)) return original.call(instance, x, y, z);
         return original.call(instance, 4.0, 1.0, 4.0);
+    }
+
+    @ModifyExpressionValue(method = "attack", at = @At(value = "INVOKE", target = "Lnet/minecraft/enchantment/EnchantmentHelper;getSweepingMultiplier(Lnet/minecraft/entity/LivingEntity;)F"))
+    private float addBroadSwordSweepingDamage(float original) {
+        return BroadSwordItem.addSweepingDamageRatio(original, (PlayerEntity) (Object) this);
     }
 
     @Inject(method = "attack", at = @At("HEAD"), cancellable = true)

@@ -71,14 +71,14 @@ public class EBlocks {
     public static final BlockEntityType<BrewingCauldronBlockEntity> BREWING_CAULDRON_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("brewing_cauldron_block_entity"),
-            BlockEntityType.Builder.create(BrewingCauldronBlockEntity::new, BREWING_CAULDRON).build()
+            BlockEntityType.Builder.create(BrewingCauldronBlockEntity::new, BREWING_CAULDRON).build(null)
     );
 
     public static final PedestalBlock PEDESTAL_BLOCK = (PedestalBlock) new PedestalBlock().registerAll();
     public static final BlockEntityType<PedestalBlockEntity> PEDESTAL_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("pedestal_block_entity"),
-            BlockEntityType.Builder.create(PedestalBlockEntity::new, PEDESTAL_BLOCK).build()
+            BlockEntityType.Builder.create(PedestalBlockEntity::new, PEDESTAL_BLOCK).build(null)
     );
 
     public static final SedimentaryStone SEDIMENTARY_STONE = (SedimentaryStone) registerSedimentaryBlock(SealType.EMPTY, EssenceLevel.EMPTY);
@@ -86,14 +86,14 @@ public class EBlocks {
     public static final BlockEntityType<SedimentaryStoneBlockEntity> SEDIMENTARY_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("sedimentary_stone_block_entity"),
-            BlockEntityType.Builder.create(SedimentaryStoneBlockEntity::new, SEDIMENTARY_STONES).build()
+            BlockEntityType.Builder.create(SedimentaryStoneBlockEntity::new, SEDIMENTARY_STONES).build(null)
     );
 
     public static final ArcanelightDetectorBlock ARCANELIGHT_DETECTOR_BLOCK = (ArcanelightDetectorBlock) new ArcanelightDetectorBlock().registerAll();
     public static final BlockEntityType<ArcanelightDetectorBlockEntity> ARCANELIGHT_DETECTOR_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("arcanelight_detector_block_entity"),
-            BlockEntityType.Builder.create(ArcanelightDetectorBlockEntity::new, ARCANELIGHT_DETECTOR_BLOCK).build()
+            BlockEntityType.Builder.create(ArcanelightDetectorBlockEntity::new, ARCANELIGHT_DETECTOR_BLOCK).build(null)
     );
 
     public static final FurSlabBlock FURNITURE_SLAB = (FurSlabBlock) new FurSlabBlock().registerAll();
@@ -102,63 +102,63 @@ public class EBlocks {
     public static final BlockEntityType<FurSlabBlockEntity> FURNITURE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("furniture_block_entity"),
-            BlockEntityType.Builder.create(FurSlabBlockEntity::new, FurnitureType.getBlocks()).build()
+            BlockEntityType.Builder.create(FurSlabBlockEntity::new, FurnitureType.getBlocks()).build(null)
     );
 
     public static final EtherealStorageBlock ETHEREAL_STORAGE = (EtherealStorageBlock) new EtherealStorageBlock().registerAll();
     public static final BlockEntityType<EtherealStorageBlockEntity> ETHEREAL_STORAGE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("ethereal_storage_block_entity"),
-            BlockEntityType.Builder.create(EtherealStorageBlockEntity::new, ETHEREAL_STORAGE).build()
+            BlockEntityType.Builder.create(EtherealStorageBlockEntity::new, ETHEREAL_STORAGE).build(null)
     );
 
     public static final EtherealChannel ETHEREAL_CHANNEL = (EtherealChannel) new EtherealChannel().registerAll(false);
     public static final BlockEntityType<EtherealChannelBlockEntity> ETHEREAL_CHANNEL_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("ethereal_channel_block_entity"),
-            BlockEntityType.Builder.create(EtherealChannelBlockEntity::new, ETHEREAL_CHANNEL).build()
+            BlockEntityType.Builder.create(EtherealChannelBlockEntity::new, ETHEREAL_CHANNEL).build(null)
     );
 
     public static final EtherealForkBlock ETHEREAL_FORK = (EtherealForkBlock) new EtherealForkBlock().registerAll();
     public static final BlockEntityType<EtherealForkBlockEntity> ETHEREAL_FORK_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("ethereal_fork_block_entity"),
-            BlockEntityType.Builder.create(EtherealForkBlockEntity::new, ETHEREAL_FORK).build()
+            BlockEntityType.Builder.create(EtherealForkBlockEntity::new, ETHEREAL_FORK).build(null)
     );
 
     public static final EtherealSocketBlock ETHEREAL_SOCKET = (EtherealSocketBlock) new EtherealSocketBlock().registerAll();
     public static final BlockEntityType<EtherealSocketBlockEntity> ETHEREAL_SOCKET_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("ethereal_socket_block_entity"),
-            BlockEntityType.Builder.create(EtherealSocketBlockEntity::new, ETHEREAL_SOCKET).build()
+            BlockEntityType.Builder.create(EtherealSocketBlockEntity::new, ETHEREAL_SOCKET).build(null)
     );
 
     public static final EtherealFurnace ETHEREAL_FURNACE = (EtherealFurnace) new EtherealFurnace().registerAll();
     public static final BlockEntityType<EtherealFurnaceBlockEntity> ETHEREAL_FURNACE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("ethereal_furnace_block_entity"),
-            BlockEntityType.Builder.create(EtherealFurnaceBlockEntity::new, ETHEREAL_FURNACE).build()
+            BlockEntityType.Builder.create(EtherealFurnaceBlockEntity::new, ETHEREAL_FURNACE).build(null)
     );
 
     public static final SpinnerBlock SPINNER = (SpinnerBlock) new SpinnerBlock().registerAll();
     public static final BlockEntityType<SpinnerBlockEntity> SPINNER_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("spinner_block_entity"),
-            BlockEntityType.Builder.create(SpinnerBlockEntity::new, SPINNER).build()
+            BlockEntityType.Builder.create(SpinnerBlockEntity::new, SPINNER).build(null)
     );
 
     public static final MetronomeBlock METRONOME = (MetronomeBlock) new MetronomeBlock().registerAll();
     public static final BlockEntityType<MetronomeBlockEntity> METRONOME_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("metronome_block_entity"),
-            BlockEntityType.Builder.create(MetronomeBlockEntity::new, METRONOME).build()
+            BlockEntityType.Builder.create(MetronomeBlockEntity::new, METRONOME).build(null)
     );
 
     public static final EmpowerTableBlock EMPOWERMENT_TABLE = (EmpowerTableBlock) new EmpowerTableBlock().registerAll();
     public static final BlockEntityType<EmpowerTableBlockEntity> EMPOWERMENT_TABLE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("empowerment_table_block_entity"),
-            BlockEntityType.Builder.create(EmpowerTableBlockEntity::new, EMPOWERMENT_TABLE).build()
+            BlockEntityType.Builder.create(EmpowerTableBlockEntity::new, EMPOWERMENT_TABLE).build(null)
     );
 
     public static final SamovarBlock SAMOVAR_BLOCK = (SamovarBlock) new SamovarBlock().registerAll();
@@ -167,7 +167,7 @@ public class EBlocks {
     public static final BlockEntityType<SpillBarrelBlockEntity> SPILL_BARREL_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("spill_barrel_block_entity"),
-            BlockEntityType.Builder.create(SpillBarrelBlockEntity::new, SPILL_BARREL).build()
+            BlockEntityType.Builder.create(SpillBarrelBlockEntity::new, SPILL_BARREL).build(null)
     );
 
     public static final JugBlock JUG = (JugBlock) new JugBlock("jug", JugType.BURN).registerAll();
@@ -175,28 +175,28 @@ public class EBlocks {
     public static final BlockEntityType<JugBlockEntity> JUG_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("jug_block_entity"),
-            BlockEntityType.Builder.create(JugBlockEntity::new, JUG).build()
+            BlockEntityType.Builder.create(JugBlockEntity::new, JUG).build(null)
     );
 
     public static final CrateBlock CRATE = (CrateBlock) new CrateBlock().registerAll();
     public static final BlockEntityType<CrateBlockEntity> CRATE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("crate_block_entity"),
-            BlockEntityType.Builder.create(CrateBlockEntity::new, CRATE).build()
+            BlockEntityType.Builder.create(CrateBlockEntity::new, CRATE).build(null)
     );
 
     public static final LevitatorBlock LEVITATOR = (LevitatorBlock) new LevitatorBlock().registerAll();
     public static final BlockEntityType<LevitatorBlockEntity> LEVITATOR_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("levitator_block_entity"),
-            BlockEntityType.Builder.create(LevitatorBlockEntity::new, LEVITATOR).build()
+            BlockEntityType.Builder.create(LevitatorBlockEntity::new, LEVITATOR).build(null)
     );
 
     public static final MatrixBlock ARMILLARY_SPHERE = (MatrixBlock) new MatrixBlock().registerAll();
     public static final BlockEntityType<MatrixBlockEntity> ARMILLARY_SPHERE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("armillary_sphere_block_entity"),
-            BlockEntityType.Builder.create(MatrixBlockEntity::new, ARMILLARY_SPHERE).build()
+            BlockEntityType.Builder.create(MatrixBlockEntity::new, ARMILLARY_SPHERE).build(null)
     );
 
     public static final InventorTable INVENTOR_TABLE = (InventorTable) new InventorTable().registerAll();
@@ -205,7 +205,7 @@ public class EBlocks {
     public static final BlockEntityType<JewelryBlockEntity> JEWELRY_TABLE_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("jewelry_table_block_entity"),
-            BlockEntityType.Builder.create(JewelryBlockEntity::new, JEWELRY_TABLE).build()
+            BlockEntityType.Builder.create(JewelryBlockEntity::new, JEWELRY_TABLE).build(null)
     );
 
     public static final ChannelCase CHANNEL_CASE = (ChannelCase) new ChannelCase().registerAll();
@@ -214,14 +214,14 @@ public class EBlocks {
     public static final BlockEntityType<TuningForkBlockEntity> TUNING_FORK_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("tuning_fork_block_entity"),
-            BlockEntityType.Builder.create(TuningForkBlockEntity::new, TUNING_FORK).build()
+            BlockEntityType.Builder.create(TuningForkBlockEntity::new, TUNING_FORK).build(null)
     );
 
     public static final Block[] SEALS = registerSeals();
     public static final BlockEntityType<SealBlockEntity> SEAL_BLOCK_ENTITY = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("seal_block_entity"),
-            BlockEntityType.Builder.create(SealBlockEntity::new, SEALS).build()
+            BlockEntityType.Builder.create(SealBlockEntity::new, SEALS).build(null)
     );
 
     public static void registerAll() {

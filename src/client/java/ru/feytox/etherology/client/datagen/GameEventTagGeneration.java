@@ -18,7 +18,7 @@ public class GameEventTagGeneration extends FabricTagProvider<GameEvent> {
 
     @Override
     protected void configure(RegistryWrapper.WrapperLookup arg) {
-        getOrCreateTagBuilder(GameEventTags.VIBRATIONS).add(EventsRegistry.RESONANCE.registryKey());
-        getOrCreateTagBuilder(GameEventTags.WARDEN_CAN_LISTEN).add(EventsRegistry.RESONANCE.registryKey());
+        getOrCreateTagBuilder(GameEventTags.VIBRATIONS).add(EventsRegistry.RESONANCE);
+        getOrCreateTagBuilder(GameEventTags.WARDEN_CAN_LISTEN).add(EventsRegistry.RESONANCE);
     }
 }

@@ -1,15 +1,15 @@
 package ru.feytox.etherology.particle.effects;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.magic.seal.SealType;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
-import ru.feytox.etherology.util.misc.CodecUtil;
 
 @Getter
 public class SealParticleEffect extends FeyParticleEffect<SealParticleEffect> {
@@ -28,16 +28,35 @@ public class SealParticleEffect extends FeyParticleEffect<SealParticleEffect> {
     }
 
     @Override
-    public MapCodec<SealParticleEffect> createCodec() {
-        return RecordCodecBuilder.mapCodec(instance -> instance.group(
+    public Codec<SealParticleEffect> createCodec() {
+        return RecordCodecBuilder.create(instance -> instance.group(
                 SealType.CODEC.fieldOf("zoneType").forGetter(SealParticleEffect::getZoneType),
                 Vec3d.CODEC.fieldOf("endPos").forGetter(SealParticleEffect::getEndPos)
         ).apply(instance, biFactory(SealParticleEffect::new)));
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, SealParticleEffect> createPacketCodec() {
-        return PacketCodec.tuple(SealType.PACKET_CODEC, SealParticleEffect::getZoneType,
-                CodecUtil.VEC3D_PACKET, SealParticleEffect::getEndPos, biFactory(SealParticleEffect::new));
+    public SealParticleEffect read(ParticleType<SealParticleEffect> type, StringReader reader) throws CommandSyntaxException {
+        reader.expect(' ');
+        SealType sealType = readEnum(reader, SealType.class);
+        reader.expect(' ');
+        return new SealParticleEffect(type, sealType, readVec3d(reader));
+    }
+
+    @Override
+    public SealParticleEffect read(ParticleType<SealParticleEffect> type, PacketByteBuf buf) {
+        SealType sealType = buf.readEnumConstant(SealType.class);
+        return new SealParticleEffect(type, sealType, readVec3d(buf));
+    }
+
+    @Override
+    public String writeParameters() {
+        return zoneType.name() + " " + writeVec3d(endPos);
+    }
+
+    @Override
+    public void write(PacketByteBuf buf) {
+        buf.writeEnumConstant(zoneType);
+        writeVec3d(buf, endPos);
     }
 }

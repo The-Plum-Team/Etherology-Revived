@@ -1,10 +1,9 @@
 package ru.feytox.etherology.world.structure;
 
 import com.mojang.datafixers.util.Either;
-import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.registry.entry.RegistryEntry;
-import net.minecraft.structure.StructureLiquidSettings;
 import net.minecraft.structure.StructurePlacementData;
 import net.minecraft.structure.StructureTemplate;
 import net.minecraft.structure.StructureTemplateManager;
@@ -24,18 +23,17 @@ import net.minecraft.world.gen.chunk.ChunkGenerator;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 
 public class RotatedPoolElement extends SinglePoolElement {
 
     private static final RegistryEntry<StructureProcessorList> EMPTY_PROCESSORS;
-    public static final MapCodec<RotatedPoolElement> CODEC;
+    public static final Codec<RotatedPoolElement> CODEC;
 
     protected final BlockRotation rotation;
 
-    private RotatedPoolElement(Either<Identifier, StructureTemplate> location, RegistryEntry<StructureProcessorList> processors, StructurePool.Projection projection, Optional<StructureLiquidSettings> overrideLiquidSettings, BlockRotation rotation) {
-        super(location, processors, projection, overrideLiquidSettings);
+    private RotatedPoolElement(Either<Identifier, StructureTemplate> location, RegistryEntry<StructureProcessorList> processors, StructurePool.Projection projection, BlockRotation rotation) {
+        super(location, processors, projection);
         this.rotation = rotation;
     }
 
@@ -45,8 +43,8 @@ public class RotatedPoolElement extends SinglePoolElement {
     }
 
     @Override
-    public boolean generate(StructureTemplateManager structureTemplateManager, StructureWorldAccess world, StructureAccessor structureAccessor, ChunkGenerator chunkGenerator, BlockPos pos, BlockPos pivot, BlockRotation rotation, BlockBox box, Random random, StructureLiquidSettings liquidSettings, boolean keepJigsaws) {
-        return super.generate(structureTemplateManager, world, structureAccessor, chunkGenerator, pos, pivot, this.rotation, box, random, liquidSettings, keepJigsaws);
+    public boolean generate(StructureTemplateManager structureTemplateManager, StructureWorldAccess world, StructureAccessor structureAccessor, ChunkGenerator chunkGenerator, BlockPos pos, BlockPos pivot, BlockRotation rotation, BlockBox box, Random random, boolean keepJigsaws) {
+        return super.generate(structureTemplateManager, world, structureAccessor, chunkGenerator, pos, pivot, this.rotation, box, random, keepJigsaws);
     }
 
     @Override
@@ -55,8 +53,8 @@ public class RotatedPoolElement extends SinglePoolElement {
     }
 
     @Override
-    protected StructurePlacementData createPlacementData(BlockRotation rotation, BlockBox box, StructureLiquidSettings liquidSettings, boolean keepJigsaws) {
-        return super.createPlacementData(this.rotation, box, liquidSettings, keepJigsaws);
+    protected StructurePlacementData createPlacementData(BlockRotation rotation, BlockBox box, boolean keepJigsaws) {
+        return super.createPlacementData(this.rotation, box, keepJigsaws);
     }
 
     @Override
@@ -69,7 +67,7 @@ public class RotatedPoolElement extends SinglePoolElement {
     }
 
     public static Function<StructurePool.Projection, RotatedPoolElement> of(Identifier id, BlockRotation rotation, RegistryEntry<StructureProcessorList> processors) {
-        return projection -> new RotatedPoolElement(Either.left(id), processors, projection, Optional.empty(), rotation);
+        return projection -> new RotatedPoolElement(Either.left(id), processors, projection, rotation);
     }
 
     protected static <E extends RotatedPoolElement> RecordCodecBuilder<E, BlockRotation> rotationGetter() {
@@ -83,8 +81,8 @@ public class RotatedPoolElement extends SinglePoolElement {
 
     static {
         EMPTY_PROCESSORS = RegistryEntry.of(new StructureProcessorList(List.of()));
-        CODEC = RecordCodecBuilder.mapCodec(instance ->
-                instance.group(locationGetter(), processorsGetter(), projectionGetter(), overrideLiquidSettingsGetter(), rotationGetter())
+        CODEC = RecordCodecBuilder.create(instance ->
+                instance.group(locationGetter(), processorsGetter(), projectionGetter(), rotationGetter())
                         .apply(instance, RotatedPoolElement::new));
     }
 }

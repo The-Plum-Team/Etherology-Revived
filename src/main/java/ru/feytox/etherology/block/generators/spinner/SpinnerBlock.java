@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.generators.spinner;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FacingBlock;
@@ -14,7 +13,6 @@ import static ru.feytox.etherology.registry.block.EBlocks.SPINNER_BLOCK_ENTITY;
 
 public class SpinnerBlock extends AbstractGenerator {
 
-    private static final MapCodec<SpinnerBlock> CODEC = MapCodec.unit(SpinnerBlock::new);
 
     public SpinnerBlock() {
         super(Settings.copy(Blocks.IRON_BLOCK),
@@ -32,8 +30,4 @@ public class SpinnerBlock extends AbstractGenerator {
         return new SpinnerBlockEntity(pos, state);
     }
 
-    @Override
-    protected MapCodec<? extends FacingBlock> getCodec() {
-        return CODEC;
-    }
 }

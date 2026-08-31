@@ -2,10 +2,10 @@ package ru.feytox.etherology.item;
 
 import lombok.Getter;
 import lombok.val;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.particle.ItemStackParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
@@ -49,7 +49,7 @@ public abstract class LensItem extends Item {
     private final float chargeCost;
 
     protected LensItem(@Nullable StaffLenses lensType, Rarity rarity, float streamCost, float chargeCost) {
-        super(new Settings().rarity(rarity).maxCount(1).component(ComponentTypes.LENS, LensComponent.EMPTY).component(ComponentTypes.PSEUDO_DAMAGE, 0));
+        super(new Settings().rarity(rarity).maxCount(1));
         this.lensType = lensType;
         this.streamCost = streamCost;
         this.chargeCost = chargeCost;
@@ -108,8 +108,8 @@ public abstract class LensItem extends Item {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-        super.appendTooltip(stack, context, tooltip, type);
+    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        super.appendTooltip(stack, world, tooltip, context);
         val lensData = LensComponent.get(stack).orElse(null);
         if (lensData == null) return;
 
@@ -158,11 +158,11 @@ public abstract class LensItem extends Item {
     }
 
     private static int getDamage(ItemStack stack) {
-        return stack.getOrDefault(ComponentTypes.PSEUDO_DAMAGE, 0);
+        return ComponentTypes.PSEUDO_DAMAGE.getOrDefault(stack, 0);
     }
 
     private static void setDamage(ItemStack stack, int damage) {
-        stack.set(ComponentTypes.PSEUDO_DAMAGE, damage);
+        ComponentTypes.PSEUDO_DAMAGE.set(stack, damage);
     }
 
     public static void playLensBrakeSound(ServerWorld world, Vec3d pos) {
@@ -226,7 +226,7 @@ public abstract class LensItem extends Item {
         ItemStack lensStack = getStaffLens(staffStack);
         StaffComponent.getWrapper(staffStack)
                 .ifPresent(staff -> staff.set(StaffPart.LENS, StaffComponent::removePartInfo).save());
-        staffStack.remove(ComponentTypes.STAFF_LENS);
+        ComponentTypes.STAFF_LENS.remove(staffStack);
 
         return lensStack;
     }
@@ -239,7 +239,7 @@ public abstract class LensItem extends Item {
 
     @Nullable
     public static ItemStack getStaffLens(ItemStack staffStack) {
-        return Optional.ofNullable(staffStack.get(ComponentTypes.STAFF_LENS))
+        return ComponentTypes.STAFF_LENS.get(staffStack)
                 .map(ItemComponent::stack).filter(stack -> !stack.isEmpty()).orElse(null);
     }
 

@@ -1,0 +1,210 @@
+{
+  "schema": 2,
+  "profile": {
+    "id": "etherology-e2e-fabric-1.20.1-v19",
+    "runtime_directory": "etherology-e2e-fabric-1.20.1-v19",
+    "game_directory": "game",
+    "launcher_directory": "launcher"
+  },
+  "release": {
+    "matrix": "release/release-matrix.json",
+    "artifact_node": "fabric-1.20.1"
+  },
+  "launch": {
+    "offline_username": "EtherologyE2E",
+    "resolution": {
+      "width": 960,
+      "height": 540
+    },
+    "maximum_memory_mb": 4096
+  },
+  "artifacts": {
+    "lock_file": "artifact-lock.json",
+    "production": {
+      "file_name": "etherology-under-test.jar",
+      "mod_id": "etherology",
+      "version_property": "mod_version",
+      "source": {
+        "kind": "release-matrix"
+      },
+      "required_nested_mod_ids": [
+        "mm",
+        "mixinsquared",
+        "owo-sentinel"
+      ]
+    },
+    "harness": {
+      "file_name": "etherology-e2e-harness.jar",
+      "mod_id": "etherology_e2e_harness",
+      "version_property": "mod_version",
+      "client_entrypoint": "dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness",
+      "source": {
+        "kind": "gradle-remap-task",
+        "build_file": "fabric/build.gradle.kts",
+        "task_name": "remapE2eHarnessJar"
+      }
+    }
+  },
+  "evidence": {
+    "directory": "evidence",
+    "capture": {
+      "kind": "composed-minecraft-framebuffer",
+      "width": 1920,
+      "height": 1080
+    },
+    "scenarios": [
+      "phase0-smoke",
+      "progression-oculus",
+      "seals-aspects",
+      "golden-forest",
+      "alchemy",
+      "ether-network",
+      "staff-lenses",
+      "spiritual-energy",
+      "armillary",
+      "storage-utilities",
+      "combat-equipment",
+      "persistence",
+      "multiplayer-sync"
+    ]
+  },
+  "profile_directories": [
+    "config",
+    "crash-reports",
+    "logs",
+    "mods",
+    "resourcepacks",
+    "saves",
+    "screenshots"
+  ],
+  "options": [
+    "version:3465",
+    "fullscreen:false",
+    "enableVsync:false",
+    "maxFps:60",
+    "graphicsMode:1",
+    "ao:true",
+    "renderClouds:\"true\"",
+    "particles:0",
+    "entityShadows:true",
+    "entityDistanceScaling:1.0",
+    "biomeBlendRadius:2",
+    "mipmapLevels:4",
+    "guiScale:2",
+    "renderDistance:12",
+    "simulationDistance:10",
+    "fov:0.0",
+    "fovEffectScale:1.0",
+    "screenEffectScale:1.0",
+    "darknessEffectScale:1.0",
+    "gamma:0.5",
+    "bobView:false",
+    "hideLightningFlashes:false",
+    "damageTiltStrength:1.0",
+    "glintSpeed:0.5",
+    "glintStrength:0.75",
+    "mainHand:right",
+    "attackIndicator:1",
+    "mouseSensitivity:0.5",
+    "mouseWheelSensitivity:1.0",
+    "rawMouseInput:false",
+    "autoJump:false",
+    "narrator:0",
+    "onboardAccessibility:false",
+    "pauseOnLostFocus:false",
+    "tutorialStep:none",
+    "lang:en_us",
+    "resourcePacks:[\"fabric\"]",
+    "incompatibleResourcePacks:[]"
+  ],
+  "dependencies": [
+    {
+      "file_name": "fabric-api-0.92.6+1.20.1.jar",
+      "mod_id": "fabric-api",
+      "version_property": "fabric_api_version_1_20_1",
+      "url": "https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/0.92.6+1.20.1/fabric-api-0.92.6+1.20.1.jar",
+      "size": 2107873,
+      "sha256": "0ece50476da3692111ab04b75945c5458e70d98cd069eefc044ab3e57977deeb"
+    },
+    {
+      "file_name": "architectury-fabric-9.2.14.jar",
+      "mod_id": "architectury",
+      "version_property": "architectury_api_version_1_20_1",
+      "url": "https://maven.architectury.dev/dev/architectury/architectury-fabric/9.2.14/architectury-fabric-9.2.14.jar",
+      "size": 605016,
+      "sha256": "51df74fd4c4f8dbd8742fc76139d30c2b96e0c4181521d5d8e3b33a30ac93581"
+    },
+    {
+      "file_name": "owo-lib-0.11.2+1.20.jar",
+      "mod_id": "owo",
+      "version_property": "owo_lib_version_1_20_1",
+      "url": "https://maven.wispforest.io/io/wispforest/owo-lib/0.11.2+1.20/owo-lib-0.11.2+1.20.jar",
+      "size": 905424,
+      "sha256": "8d07ed58d9133ed186c206256be835961dbdce1574f87e56534e298c857cd56c"
+    },
+    {
+      "file_name": "cardinal-components-base-5.2.3.jar",
+      "mod_id": "cardinal-components-base",
+      "version_property": "cardinal_components_version_1_20_1",
+      "url": "https://maven.ladysnake.org/releases/dev/onyxstudios/cardinal-components-api/cardinal-components-base/5.2.3/cardinal-components-base-5.2.3.jar",
+      "size": 69265,
+      "sha256": "2f36b690bbee952b9b67f287a64551eee186c6ba7f123045c5722fa307cc603e"
+    },
+    {
+      "file_name": "cardinal-components-entity-5.2.3.jar",
+      "mod_id": "cardinal-components-entity",
+      "version_property": "cardinal_components_version_1_20_1",
+      "url": "https://maven.ladysnake.org/releases/dev/onyxstudios/cardinal-components-api/cardinal-components-entity/5.2.3/cardinal-components-entity-5.2.3.jar",
+      "size": 41051,
+      "sha256": "e3269790700a4e4877da92a88b7b6d64b167556ff9fa8996f85757730158d14d"
+    },
+    {
+      "file_name": "cardinal-components-chunk-5.2.3.jar",
+      "mod_id": "cardinal-components-chunk",
+      "version_property": "cardinal_components_version_1_20_1",
+      "url": "https://maven.ladysnake.org/releases/dev/onyxstudios/cardinal-components-api/cardinal-components-chunk/5.2.3/cardinal-components-chunk-5.2.3.jar",
+      "size": 24883,
+      "sha256": "a30b4c586b60df281e78500575719eb199eec24de8b800e4ea0fe4b0de9ce748"
+    },
+    {
+      "file_name": "trinkets-3.7.2.jar",
+      "mod_id": "trinkets",
+      "version_property": "trinkets_version_1_20_1",
+      "url": "https://cdn.modrinth.com/data/5aaWibi9/versions/AHxQGtuC/trinkets-3.7.2.jar",
+      "size": 238532,
+      "sha256": "a6f11a4206c1285cd260a60d9bfe9cefa9914d2190d08b3c52050f42044b53b3"
+    },
+    {
+      "file_name": "geckolib-fabric-1.20.1-4.8.4.jar",
+      "mod_id": "geckolib",
+      "version_property": "geckolib_version_1_20_1",
+      "url": "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/software/bernie/geckolib/geckolib-fabric-1.20.1/4.8.4/geckolib-fabric-1.20.1-4.8.4.jar",
+      "size": 969016,
+      "sha256": "e2a8ef67d37cddaf0296dc873fa64cf7753399a5830ca30a25a5ee18ad11bd7a"
+    },
+    {
+      "file_name": "Fabric-Shield-Lib-v1.7.2-1.20.1.jar",
+      "mod_id": "fabricshieldlib",
+      "version_property": "fabric_shield_lib_version_1_20_1",
+      "url": "https://jitpack.io/com/github/CrimsonDawn45/Fabric-Shield-Lib/v1.7.2-1.20.1/Fabric-Shield-Lib-v1.7.2-1.20.1.jar",
+      "size": 182186,
+      "sha256": "542a76694dc43a39707a68e847dc194b5249706dc7a2e3819dc372df6e19c473"
+    },
+    {
+      "file_name": "biolith-fabric-1.0.1-alpha.1.jar",
+      "mod_id": "biolith",
+      "version_property": "biolith_version_1_20_1",
+      "url": "https://maven.terraformersmc.com/releases/com/terraformersmc/biolith-fabric/1.0.1-alpha.1/biolith-fabric-1.0.1-alpha.1.jar",
+      "size": 150625,
+      "sha256": "2a327a70cbfa18ffcc444cfc88442bbdffb951bcd1a0df0361ffa5409ac25169"
+    }
+  ],
+  "forbidden_mod_ids": [
+    "quickskin",
+    "cpm",
+    "ears",
+    "modmenu",
+    "roughlyenoughitems",
+    "emi"
+  ]
+}

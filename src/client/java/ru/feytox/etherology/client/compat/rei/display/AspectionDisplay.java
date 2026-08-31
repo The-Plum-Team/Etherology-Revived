@@ -7,9 +7,10 @@ import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.util.EntryStacks;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.potion.PotionUtil;
 import net.minecraft.registry.Registries;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.client.compat.rei.EtherREIPlugin;
@@ -56,7 +57,7 @@ public class AspectionDisplay extends BasicDisplay {
     }
 
     private static EntryStack<?> getPotion(Item item, AspectContainerId id) {
-        return Registries.POTION.getEntry(id.getId()).map(potion -> PotionContentsComponent.createStack(item, potion))
+        return Registries.POTION.getOrEmpty(id.getId()).map(potion -> PotionUtil.setPotion(new ItemStack(item), potion))
                 .map(EntryStacks::of).orElse(null);
     }
 }

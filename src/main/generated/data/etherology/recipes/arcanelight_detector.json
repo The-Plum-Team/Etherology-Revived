@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "A": {
+      "item": "minecraft:amethyst_shard"
+    },
+    "G": {
+      "item": "minecraft:glass"
+    },
+    "P": {
+      "tag": "minecraft:wooden_slabs"
+    }
+  },
+  "pattern": [
+    "GGG",
+    "AAA",
+    "PPP"
+  ],
+  "result": {
+    "item": "etherology:arcanelight_detector"
+  },
+  "show_notification": true
+}

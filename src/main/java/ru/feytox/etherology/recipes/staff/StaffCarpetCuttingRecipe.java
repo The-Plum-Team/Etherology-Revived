@@ -1,12 +1,13 @@
 package ru.feytox.etherology.recipes.staff;
 
+import net.minecraft.inventory.RecipeInputInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ShearsItem;
 import net.minecraft.recipe.RecipeSerializer;
 import net.minecraft.recipe.SpecialCraftingRecipe;
 import net.minecraft.recipe.book.CraftingRecipeCategory;
-import net.minecraft.recipe.input.CraftingRecipeInput;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
@@ -21,28 +22,28 @@ import static ru.feytox.etherology.registry.misc.RecipesRegistry.STAFF_CARPET_CU
 
 public class StaffCarpetCuttingRecipe extends SpecialCraftingRecipe {
 
-    public StaffCarpetCuttingRecipe(CraftingRecipeCategory category) {
-        super(category);
+    public StaffCarpetCuttingRecipe(Identifier id, CraftingRecipeCategory category) {
+        super(id, category);
     }
 
     @Override
-    public boolean matches(CraftingRecipeInput inventory, World world) {
+    public boolean matches(RecipeInputInventory inventory, World world) {
         Pair<Integer, Integer> result = getIndexesOfStaffAndShears(inventory);
         if (result == null) return false;
-        ItemStack staffStack = inventory.getStackInSlot(result.getLeft());
+        ItemStack staffStack = inventory.getStack(result.getLeft());
 
         return StaffComponent.get(staffStack).map(StaffComponent::parts)
                 .map(parts -> parts.containsKey(StaffPart.HANDLE)).orElse(false);
     }
 
     @Override
-    public ItemStack craft(CraftingRecipeInput inventory, RegistryWrapper.WrapperLookup lookup) {
+    public ItemStack craft(RecipeInputInventory inventory, DynamicRegistryManager registryManager) {
         Pair<Integer, Integer> pair = getIndexesOfStaffAndShears(inventory);
         if (pair == null) {
             throw new NullPointerException("Could not find staff and/or shears");
         }
 
-        ItemStack staffStack = inventory.getStackInSlot(pair.getLeft());
+        ItemStack staffStack = inventory.getStack(pair.getLeft());
         ItemStack resultStack = staffStack.copy();
 
         StaffComponent.getWrapper(resultStack).ifPresent(data ->
@@ -51,18 +52,18 @@ public class StaffCarpetCuttingRecipe extends SpecialCraftingRecipe {
     }
 
     @Nullable
-    private static Pair<Integer, Integer> getIndexesOfStaffAndShears(CraftingRecipeInput inventory) {
+    private static Pair<Integer, Integer> getIndexesOfStaffAndShears(RecipeInputInventory inventory) {
         return getIndexesOfPair(inventory, stack -> stack.isOf(ToolItems.STAFF), stack -> stack.getItem() instanceof ShearsItem);
     }
 
     @Override
-    public DefaultedList<ItemStack> getRemainder(CraftingRecipeInput inventory) {
-        DefaultedList<ItemStack> items = DefaultedList.ofSize(inventory.getSize(), ItemStack.EMPTY);
+    public DefaultedList<ItemStack> getRemainder(RecipeInputInventory inventory) {
+        DefaultedList<ItemStack> items = DefaultedList.ofSize(inventory.size(), ItemStack.EMPTY);
         Pair<Integer, Integer> pair = getIndexesOfStaffAndShears(inventory);
         if (pair == null) return items;
 
         int shearsIndex = pair.getRight();
-        ItemStack shearsStack = inventory.getStackInSlot(shearsIndex).copy();
+        ItemStack shearsStack = inventory.getStack(shearsIndex).copy();
         ItemUtils.damage(shearsStack, 1);
         items.set(shearsIndex, shearsStack);
         return items;

@@ -6,7 +6,6 @@ import net.minecraft.client.world.ClientWorld;
 import ru.feytox.etherology.client.particle.utility.FeyParticle;
 import ru.feytox.etherology.client.util.FeyColor;
 import ru.feytox.etherology.particle.effects.ElectricityParticleEffect;
-import ru.feytox.etherology.particle.subtype.ElectricitySubtype;
 import ru.feytox.etherology.util.misc.RGBColor;
 
 public class ElectricityParticle extends FeyParticle<ElectricityParticleEffect> {
@@ -27,14 +26,14 @@ public class ElectricityParticle extends FeyParticle<ElectricityParticleEffect> 
 
         val electricityType = parameters.getElectricityType();
         switch (electricityType) {
-            case ElectricitySubtype.MATRIX -> {
+            case MATRIX -> {
                 maxAge = 6;
                 age = random.nextBetween(0, 2);
                 setRGB(RGBColor.of(0xF965FF));
                 scale(1.75f);
                 deltaAngle = 0.0f;
             }
-            case ElectricitySubtype.JEWELRY -> {
+            case JEWELRY -> {
                 maxAge = 7;
                 age = random.nextBetween(0, 3);
                 setRGB(FeyColor.getRandomColor(RGBColor.of(0xA24CFF), RGBColor.of(0xD866FF), random));

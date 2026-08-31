@@ -7,8 +7,8 @@ public class GlintTooltipComponent extends BundleTooltipComponent {
     private final int maxEther;
 
     public GlintTooltipComponent(GlintTooltipData data) {
-        super(data.component());
-        maxEther = data.maxEther();
+        super(data);
+        maxEther = data.getMaxEther();
     }
 
     @Override

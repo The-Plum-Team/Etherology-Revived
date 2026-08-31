@@ -1,6 +1,6 @@
 package ru.feytox.etherology.registry.item;
 
-import net.fabricmc.fabric.api.registry.FuelRegistry;
+import dev.architectury.registry.fuel.FuelRegistry;
 import net.minecraft.item.BoatItem;
 import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
@@ -62,7 +62,6 @@ public class EItems {
     }
 
     private static void registerFuel() {
-        FuelRegistry.INSTANCE.add(THUJA_OIL, 200);
-        FuelRegistry.INSTANCE.add(ToolItems.WOODEN_BATTLE_PICKAXE, 200);
+        FuelRegistry.register(200, THUJA_OIL, ToolItems.WOODEN_BATTLE_PICKAXE);
     }
 }

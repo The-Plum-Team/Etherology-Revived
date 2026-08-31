@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.forestLantern;
 
-import com.mojang.serialization.MapCodec;
 import lombok.val;
 import net.minecraft.block.*;
 import net.minecraft.block.piston.PistonBehavior;
@@ -36,7 +35,6 @@ import java.util.Map;
  */
 public class ForestLanternBlock extends HorizontalFacingBlock implements RegistrableBlock, Fertilizable {
 
-    private static final MapCodec<ForestLanternBlock> CODEC = MapCodec.unit(ForestLanternBlock::new);
     private static final Map<Direction, VoxelShape[]> SHAPES;
     private static final float BREAK_CHANCE = 0.4f;
 
@@ -94,12 +92,12 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Registr
     }
 
     @Override
-    protected boolean hasRandomTicks(BlockState state) {
+    public boolean hasRandomTicks(BlockState state) {
         return state.get(AGE) < MAX_AGE;
     }
 
     @Override
-    protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+    public void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
         if (random.nextInt(GROW_FREQUENCY) != 0)
             return;
 
@@ -124,7 +122,7 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Registr
     }
 
     @Override
-    protected float calcBlockBreakingDelta(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
+    public float calcBlockBreakingDelta(BlockState state, PlayerEntity player, BlockView world, BlockPos pos) {
         return state.get(AGE) == 0 ? 1.0f : super.calcBlockBreakingDelta(state, player, world, pos);
     }
 
@@ -143,11 +141,6 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Registr
         return true;
     }
 
-    @Override
-    protected MapCodec<? extends HorizontalFacingBlock> getCodec() {
-        return CODEC;
-    }
-
     public BlockState rotate(BlockState state, BlockRotation rotation) {
         return state.with(FACING, rotation.rotate(state.get(FACING)));
     }
@@ -162,7 +155,7 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Registr
     }
 
     @Override
-    public boolean isFertilizable(WorldView world, BlockPos pos, BlockState state) {
+    public boolean isFertilizable(WorldView world, BlockPos pos, BlockState state, boolean isClient) {
         return state.get(AGE) <= MAX_AGE;
     }
 

@@ -43,7 +43,7 @@ public class WorldGenRegistry {
     public static final Feature<DefaultFeatureConfig> THUJA = registerFeature("thuja", new ThujaFeature(DefaultFeatureConfig.CODEC));
     public static final RegistryKey<Biome> GOLDEN_FOREST = of("golden_forest");
 
-    public static final PlacementModifierType<StructurePlacementModifier> STRUCTURE_PLACEMENT_MODIFIER = PlacementModifierTypeAccessor.callRegister(EIdentifier.strId("structure_placement_modifier"), StructurePlacementModifier.CODEC);
+    public static final PlacementModifierType<StructurePlacementModifier> STRUCTURE_PLACEMENT_MODIFIER = PlacementModifierTypeAccessor.callRegister(EIdentifier.strId("structure_placement_modifier"), StructurePlacementModifier.CODEC.codec());
     public static final StructurePoolElementType<RotatedPoolElement> ROTATED_POOL_ELEMENT = StructurePoolElementTypeAccessor.callRegister(EIdentifier.strId("rotated_pool_element"), RotatedPoolElement.CODEC);
 
     public static void registerWorldGen() {
@@ -84,7 +84,7 @@ public class WorldGenRegistry {
     }
 
     private static <C extends FeatureConfig, F extends Feature<C>> F registerFeature(String name, F feature) {
-        return Registry.register(Registries.FEATURE, name, feature);
+        return Registry.register(Registries.FEATURE, EIdentifier.of(name), feature);
     }
 
     private static RegistryKey<Biome> of(String name) {

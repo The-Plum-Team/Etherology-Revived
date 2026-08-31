@@ -1,6 +1,12 @@
-**English** | [Russian](https://github.com/feytox/Etherology/blob/HEAD/README-ru.md)
+**English** | [Russian](https://github.com/The-Plum-Team/Etherology-Revived/blob/main/README-ru.md)
 
-# Etherology
+# Etherology Revived
+
+> Etherology Revived is the multi-version, multi-loader continuation of
+> [feytox/Etherology](https://github.com/feytox/Etherology). Fabric 1.20.1 is an active port with
+> build, datagen, unit-test, and three real-client E2E slices passing; broader parity remains in
+> progress. Forge 1.20.1 is not releasable yet. Source and exact status live in the
+> [revived repository](https://github.com/The-Plum-Team/Etherology-Revived).
 
 **Etherology** is a fabulous mod that plays on immersion and disclosure of its *global lore*. This project is bound to give you an unforgettable feeling of exploring a new world with detailed *mechanics* and eye-pleasing *vanilla* design.
 
@@ -8,7 +14,7 @@ Immerse yourself in the study of ancient knowledge and try to curb all the myste
 
 Etherology is not strict on attention, play for fun, and the mod will only *sweeten* your stay in the game. But if you are ready to discover this world in a new way - *go for the truth*!
 
-## Mod requirements
+## Fabric requirements
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 - [oωo (owo-lib)](https://modrinth.com/mod/owo-lib)
 - [Cardinal Components API](https://modrinth.com/mod/cardinal-components-api)
@@ -30,8 +36,8 @@ This project is under development and a lot of things can be changed. Considerin
 ## Contributing
 See a bug, an issue or want to fix/refactor something? We welcome any contributions to improve **Etherology**.
 
-## Mod guide
-[Guide on Github Wiki](https://github.com/feytox/Etherology/wiki/Guide)
+## Original mod guide
+[Guide on the original Etherology Wiki](https://github.com/feytox/Etherology/wiki/Guide)
 
 ## Discord
 - [Developer's Server](https://discord.gg/U23C6ewP2X)

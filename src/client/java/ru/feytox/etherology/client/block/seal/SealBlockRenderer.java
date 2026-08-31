@@ -134,7 +134,7 @@ public class SealBlockRenderer {
                 return;
 
             var random = context.world().getRandom();
-            var tickDelta = context.tickCounter().getTickDelta(false);
+            var tickDelta = context.tickDelta();
 
             matrices.push();
             applyTransform(context, pos, simplified, matrices);

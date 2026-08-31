@@ -1,12 +1,10 @@
 package ru.feytox.etherology.block.shelf;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Hand;
 import net.minecraft.util.collection.DefaultedList;
@@ -15,8 +13,9 @@ import net.minecraft.util.math.Vec2f;
 import net.minecraft.world.World;
 import ru.feytox.etherology.block.furniture.FurnitureData;
 import ru.feytox.etherology.block.pedestal.PedestalBlockEntity;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 
-public class ShelfData extends FurnitureData implements ImplementedInventory {
+public class ShelfData extends FurnitureData implements ListBackedInventory {
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(2, ItemStack.EMPTY);
 
@@ -48,11 +47,14 @@ public class ShelfData extends FurnitureData implements ImplementedInventory {
 
         } else if (!currentStack.isEmpty() && !playerStack.isEmpty()) {
             // кладём предмет на НЕПУСТУЮ полку
-            ItemStack takingStack = playerStack.copy();
-            takingStack.setCount(currentStack.getMaxCount() - currentStack.getCount());
+            int transferCount = getTransferCount(
+                    currentStack.getCount(),
+                    currentStack.getMaxCount(),
+                    playerStack.getCount()
+            );
 
-            playerStack.decrement(takingStack.getCount());
-            currentStack.increment(takingStack.getCount());
+            playerStack.decrement(transferCount);
+            currentStack.increment(transferCount);
             updateData(serverWorld, pos);
             PedestalBlockEntity.playItemPlaceSound(serverWorld, pos);
 
@@ -67,19 +69,24 @@ public class ShelfData extends FurnitureData implements ImplementedInventory {
         }
     }
 
+    static int getTransferCount(int currentCount, int maxCount, int availableCount) {
+        int remainingCapacity = Math.max(0, maxCount - currentCount);
+        return Math.min(Math.max(0, availableCount), remainingCapacity);
+    }
+
     @Override
     public DefaultedList<ItemStack> getItems() {
         return inventory;
     }
 
     @Override
-    public void writeNbt(NbtCompound nbtCompound, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbtCompound, inventory, registryLookup);
+    public void writeNbt(NbtCompound nbtCompound) {
+        Inventories.writeNbt(nbtCompound, inventory);
     }
 
     @Override
-    public void readNbt(NbtCompound nbtCompound, RegistryWrapper.WrapperLookup registryLookup) {
+    public void readNbt(NbtCompound nbtCompound) {
         inventory.clear();
-        Inventories.readNbt(nbtCompound, inventory, registryLookup);
+        Inventories.readNbt(nbtCompound, inventory);
     }
 }

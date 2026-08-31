@@ -1,15 +1,15 @@
 package ru.feytox.etherology.particle.effects;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.particle.subtype.SparkSubtype;
-import ru.feytox.etherology.util.misc.CodecUtil;
 
 @Getter
 public class SparkParticleEffect extends FeyParticleEffect<SparkParticleEffect> {
@@ -28,18 +28,35 @@ public class SparkParticleEffect extends FeyParticleEffect<SparkParticleEffect> 
     }
 
     @Override
-    public MapCodec<SparkParticleEffect> createCodec() {
-        return RecordCodecBuilder.mapCodec(instance -> instance.group(
+    public Codec<SparkParticleEffect> createCodec() {
+        return RecordCodecBuilder.create(instance -> instance.group(
                 Vec3d.CODEC.fieldOf("moveVec").forGetter(SparkParticleEffect::getMoveVec),
                 SparkSubtype.CODEC.fieldOf("sparkType").forGetter(SparkParticleEffect::getSparkType)
         ).apply(instance, biFactory(SparkParticleEffect::new)));
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, SparkParticleEffect> createPacketCodec() {
-        return PacketCodec.tuple(CodecUtil.VEC3D_PACKET, SparkParticleEffect::getMoveVec,
-                SparkSubtype.PACKET_CODEC, SparkParticleEffect::getSparkType, biFactory(SparkParticleEffect::new));
+    public SparkParticleEffect read(ParticleType<SparkParticleEffect> type, StringReader reader) throws CommandSyntaxException {
+        reader.expect(' ');
+        Vec3d moveVec = readVec3d(reader);
+        reader.expect(' ');
+        return new SparkParticleEffect(type, moveVec, readEnum(reader, SparkSubtype.class));
     }
 
+    @Override
+    public SparkParticleEffect read(ParticleType<SparkParticleEffect> type, PacketByteBuf buf) {
+        Vec3d moveVec = readVec3d(buf);
+        return new SparkParticleEffect(type, moveVec, buf.readEnumConstant(SparkSubtype.class));
+    }
 
+    @Override
+    public String writeParameters() {
+        return writeVec3d(moveVec) + " " + sparkType.name();
+    }
+
+    @Override
+    public void write(PacketByteBuf buf) {
+        writeVec3d(buf, moveVec);
+        buf.writeEnumConstant(sparkType);
+    }
 }

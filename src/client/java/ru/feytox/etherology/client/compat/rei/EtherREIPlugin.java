@@ -154,10 +154,8 @@ public class EtherREIPlugin implements REIClientPlugin {
     private static EntryStack<?> toEntryStack(FeyIngredient ingredient) {
         Object content = ingredient.getContent();
         if (content == null) return null;
-        return switch (content) {
-            case ItemStack stack -> EntryStacks.of(stack);
-            case CountedAspect aspectPair -> AspectPair.entry(aspectPair.aspect(), aspectPair.count());
-            default -> null;
-        };
+        if (content instanceof ItemStack stack) return EntryStacks.of(stack);
+        if (content instanceof CountedAspect aspectPair) return AspectPair.entry(aspectPair.aspect(), aspectPair.count());
+        return null;
     }
 }

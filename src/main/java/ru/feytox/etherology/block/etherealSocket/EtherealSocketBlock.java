@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.etherealSocket;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
@@ -13,6 +12,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
@@ -31,7 +31,6 @@ import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_SOCKET_BLOCK_
 
 public class EtherealSocketBlock extends FacingBlock implements RegistrableBlock, BlockEntityProvider, Waterloggable {
 
-    private static final MapCodec<EtherealSocketBlock> CODEC = MapCodec.unit(EtherealSocketBlock::new);
     public static final BooleanProperty WITH_GLINT = BooleanProperty.of("with_glint");
     private static final VoxelShape DOWN_SHAPE;
     private static final VoxelShape UP_SHAPE;
@@ -49,7 +48,7 @@ public class EtherealSocketBlock extends FacingBlock implements RegistrableBlock
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (world.isClient) return ActionResult.SUCCESS;
 
         if (world.getBlockEntity(pos) instanceof EtherealSocketBlockEntity socket) {
@@ -163,8 +162,4 @@ public class EtherealSocketBlock extends FacingBlock implements RegistrableBlock
         );
     }
 
-    @Override
-    protected MapCodec<? extends FacingBlock> getCodec() {
-        return CODEC;
-    }
 }

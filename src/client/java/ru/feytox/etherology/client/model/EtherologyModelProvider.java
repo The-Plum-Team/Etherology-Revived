@@ -21,14 +21,14 @@ import java.util.function.Supplier;
 public class EtherologyModelProvider {
 
     public static final ModelIdentifier STAFF = EtherologyModels.createItemModelId("staff");
-    public static final ModelIdentifier STAFF_STREAM = EtherologyModels.createItemModelId(STAFF.id().getPath() + "_stream");
-    public static final ModelIdentifier STAFF_CHARGE = EtherologyModels.createItemModelId(STAFF.id().getPath() + "_charge");
-    public static final ModelIdentifier STAFF_CORE = EtherologyModels.createItemModelId("item/staff_core_oak");
+    public static final ModelIdentifier STAFF_STREAM = EtherologyModels.createItemModelId(STAFF.getPath() + "_stream");
+    public static final ModelIdentifier STAFF_CHARGE = EtherologyModels.createItemModelId(STAFF.getPath() + "_charge");
+    public static final ModelIdentifier STAFF_CORE = EtherologyModels.createItemModelId("staff_core_oak");
 
     public static void register() {
         ModelLoadingPlugin.register(context -> {
-            context.addModels(STAFF_CORE.id());
-            context.addModels(STAFF.id(), STAFF_CHARGE.id(), STAFF_STREAM.id());
+            context.addModels(STAFF_CORE);
+            context.addModels(STAFF, STAFF_CHARGE, STAFF_STREAM);
             StaffModel.loadPartModels(context);
 
             context.resolveModel().register(resolver -> {
@@ -37,11 +37,11 @@ public class EtherologyModelProvider {
 
                 modelId = modelId.withPath(path -> path.replace("item/", ""));
 
-                if (modelId.equals(STAFF.id()))
+                if (modelId.equals(STAFF))
                     return new UnbakedMultiItemModel(() -> new StaffModel(ModelComponents.STAFF_ITEM));
-                if (modelId.equals(STAFF_CHARGE.id()))
+                if (modelId.equals(STAFF_CHARGE))
                     return new UnbakedMultiItemModel(() -> new StaffModel(ModelComponents.STAFF_ITEM_CHARGE));
-                if (modelId.equals(STAFF_STREAM.id()))
+                if (modelId.equals(STAFF_STREAM))
                     return new UnbakedMultiItemModel(() -> new StaffModel(ModelComponents.STAFF_ITEM_STREAM));
                 return null;
             });
@@ -61,7 +61,7 @@ public class EtherologyModelProvider {
 
         @Nullable
         @Override
-        public BakedModel bake(Baker baker, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings rotationContainer) {
+        public BakedModel bake(Baker baker, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings rotationContainer, Identifier modelId) {
             return modelSupplier.get();
         }
     }

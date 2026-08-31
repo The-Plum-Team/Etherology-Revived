@@ -7,9 +7,9 @@ import net.minecraft.block.entity.BlockEntity;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.network.animation.StopBlockAnimS2C;
 import ru.feytox.etherology.network.animation.SwitchBlockAnimS2C;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.PlayState;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
+import software.bernie.geckolib.core.object.PlayState;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class EGeoAnimation {

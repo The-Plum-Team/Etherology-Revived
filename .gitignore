@@ -1,9 +1,11 @@
 # gradle
 
 .gradle/
+.architectury-transformer/
 build/
 out/
 classes/
+versions/
 
 # eclipse
 
@@ -31,6 +33,8 @@ bin/
 # fabric
 
 run/
+logs/
+crash-reports/
 
 # java
 
@@ -39,3 +43,8 @@ replay_*.log
 *.hprof
 *.jfr
 /src/main/generated/.cache/
+
+# python
+
+__pycache__/
+*.py[cod]

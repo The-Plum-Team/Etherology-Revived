@@ -6,7 +6,6 @@ import me.shedaniel.rei.api.common.display.basic.BasicDisplay;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
 import me.shedaniel.rei.api.common.util.EntryStacks;
-import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.util.Identifier;
 import ru.feytox.etherology.client.compat.rei.EtherREIPlugin;
 import ru.feytox.etherology.client.compat.rei.misc.AspectPair;
@@ -23,13 +22,12 @@ public class AlchemyDisplay extends BasicDisplay {
         super(inputs, outputs, Optional.of(recipeId));
     }
 
-    public static AlchemyDisplay of(RecipeEntry<AlchemyRecipe> entry) {
-        AlchemyRecipe recipe = entry.value();
+    public static AlchemyDisplay of(AlchemyRecipe recipe) {
         List<EntryIngredient> inputs = ObjectArrayList.of(EntryIngredient.of(Arrays.stream(recipe.getInputItem().getMatchingStacks())
                 .map(stack -> stack.copyWithCount(recipe.getInputAmount())).map(EntryStacks::of).toList()));
         recipe.getInputAspects().getAspects().forEach((aspect, value) -> inputs.add(EntryIngredient.of(AspectPair.entry(aspect, value))));
         List<EntryIngredient> output = Collections.singletonList(EntryIngredients.of(recipe.getOutput()));
-        return new AlchemyDisplay(inputs, output, entry.id());
+        return new AlchemyDisplay(inputs, output, recipe.getId());
     }
 
     @Override

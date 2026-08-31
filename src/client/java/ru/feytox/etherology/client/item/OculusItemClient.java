@@ -101,9 +101,9 @@ public class OculusItemClient {
     private static HitResult getTrueCrosshairTarget(MinecraftClient client) {
         var firstTarget = client.crosshairTarget;
         var camera = client.getCameraEntity();
-        if (camera == null || client.player == null) return firstTarget;
+        if (camera == null || client.interactionManager == null) return firstTarget;
 
-        var reachDistance = client.player.getEntityInteractionRange();
+        double reachDistance = client.interactionManager.getReachDistance();
         var cameraPos = camera.getCameraPosVec(1.0F);
         var cameraRotation = camera.getRotationVec(1.0F);
         var vec = cameraPos.add(cameraRotation.x * reachDistance, cameraRotation.y * reachDistance, cameraRotation.z * reachDistance);

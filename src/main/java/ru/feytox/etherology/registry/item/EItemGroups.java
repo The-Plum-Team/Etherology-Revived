@@ -1,10 +1,9 @@
 package ru.feytox.etherology.registry.item;
 
+import dev.architectury.registry.CreativeTabOutput;
+import dev.architectury.registry.CreativeTabRegistry;
 import lombok.experimental.UtilityClass;
 import lombok.val;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroupEntries;
-import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
@@ -31,10 +30,9 @@ import static ru.feytox.etherology.registry.item.ToolItems.*;
 public class EItemGroups {
 
     private static final RegistryKey<ItemGroup> ETHEROLOGY_GROUP_KEY = RegistryKey.of(Registries.ITEM_GROUP.getKey(), EIdentifier.of("etherology_items"));
-    private static final ItemGroup ETHEROLOGY_GROUP = FabricItemGroup.builder()
-            .icon(() -> new ItemStack(TELDECORE))
-            .displayName(Text.of("Etherology"))
-            .build();
+    private static final ItemGroup ETHEROLOGY_GROUP = CreativeTabRegistry.create(
+            Text.of("Etherology"),
+            () -> new ItemStack(TELDECORE));
 
     public static void registerAll() {
         Registry.register(Registries.ITEM_GROUP, ETHEROLOGY_GROUP_KEY, ETHEROLOGY_GROUP);
@@ -81,7 +79,7 @@ public class EItemGroups {
         etherItems.with(STAFF, UNADJUSTED_LENS).with(LENSES);
 
         val fullGlint = GLINT.getDefaultStack();
-        fullGlint.apply(ComponentTypes.STORED_ETHER, GLINT.getMaxEther(), oldValue -> GLINT.getMaxEther());
+        ComponentTypes.STORED_ETHER.apply(fullGlint, GLINT.getMaxEther(), oldValue -> GLINT.getMaxEther());
 
         // magic
         // TODO: 12.04.2024 fix corruption bucket
@@ -93,7 +91,9 @@ public class EItemGroups {
         // plants
         etherItems.with(FOREST_LANTERN, FOREST_LANTERN_CRUMB, LIGHTELET, BEAMER_SEEDS, THUJA_SEEDS, BEAM_FRUIT);
 
-        ItemGroupEvents.modifyEntriesEvent(ETHEROLOGY_GROUP_KEY).register(etherItems::addToContent);
+        CreativeTabRegistry.modify(
+                CreativeTabRegistry.defer(ETHEROLOGY_GROUP_KEY),
+                (flags, output, canUseGameMasterBlocks) -> etherItems.addToContent(output));
     }
 
     private class Builder {
@@ -110,18 +110,18 @@ public class EItemGroups {
             return this;
         }
 
-        public void addToContent(FabricItemGroupEntries content) {
+        public void addToContent(CreativeTabOutput content) {
             components.forEach(component -> component.addToContent(content));
         }
     }
 
     private record GroupComponent<T>(T value) {
 
-        public void addToContent(FabricItemGroupEntries content) {
+        public void addToContent(CreativeTabOutput content) {
             if (value instanceof ItemStack stack)
-                content.add(stack);
+                content.acceptAfter(ItemStack.EMPTY, stack);
             if (value instanceof ItemConvertible item)
-                content.add(item);
+                content.acceptAfter(ItemStack.EMPTY, item);
         }
     }
 }

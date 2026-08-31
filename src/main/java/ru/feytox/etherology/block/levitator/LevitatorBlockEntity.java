@@ -4,7 +4,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
@@ -43,9 +42,10 @@ public class LevitatorBlockEntity extends TickableBlockEntity implements EtherSt
 
     @Override
     public void serverTick(ServerWorld world, BlockPos blockPos, BlockState state) {
+        int previousFuel = fuel;
         if (tickFuel(world, blockPos, state))
             tickLevitation(world, blockPos, state);
-        markDirty();
+        if (fuel != previousFuel) markDirty();
     }
 
     private boolean tickFuel(ServerWorld world, BlockPos pos, BlockState state) {
@@ -189,7 +189,10 @@ public class LevitatorBlockEntity extends TickableBlockEntity implements EtherSt
 
     @Override
     public void setStoredEther(float value) {
+        if (storedEther == value) return;
+
         storedEther = value;
+        markDirty();
     }
 
     @Override
@@ -218,16 +221,16 @@ public class LevitatorBlockEntity extends TickableBlockEntity implements EtherSt
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putInt("fuel", fuel);
         nbt.putFloat("stored_ether", storedEther);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         fuel = nbt.getInt("fuel");
         storedEther = nbt.getFloat("stored_ether");

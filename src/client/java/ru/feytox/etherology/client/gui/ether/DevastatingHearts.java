@@ -12,14 +12,14 @@ import ru.feytox.etherology.util.misc.EIdentifier;
 
 @UtilityClass
 public class DevastatingHearts {
-    private static final Identifier FULL_HEART = EIdentifier.of("hud/heart/devastating_full");
-    private static final Identifier FULL_BLINKING_HEART = EIdentifier.of("hud/heart/devastating_full_blinking");
-    private static final Identifier HALF_HEART = EIdentifier.of("hud/heart/devastating_half");
-    private static final Identifier HALF_BLINKING_HEART = EIdentifier.of("hud/heart/devastating_half_blinking");
-    private static final Identifier HARDCORE_FULL_HEART = EIdentifier.of("hud/heart/devastating_hardcore_full");
-    private static final Identifier HARDCORE_FULL_BLINKING_HEART = EIdentifier.of("hud/heart/devastating_hardcore_full_blinking");
-    private static final Identifier HARDCORE_HALF_HEART = EIdentifier.of("hud/heart/devastating_hardcore_half");
-    private static final Identifier HARDCORE_HALF_BLINKING_HEART = EIdentifier.of("hud/heart/devastating_hardcore_half_blinking");
+    private static final Identifier FULL_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_full.png");
+    private static final Identifier FULL_BLINKING_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_full_blinking.png");
+    private static final Identifier HALF_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_half.png");
+    private static final Identifier HALF_BLINKING_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_half_blinking.png");
+    private static final Identifier HARDCORE_FULL_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_hardcore_full.png");
+    private static final Identifier HARDCORE_FULL_BLINKING_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_hardcore_full_blinking.png");
+    private static final Identifier HARDCORE_HALF_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_hardcore_half.png");
+    private static final Identifier HARDCORE_HALF_BLINKING_HEART = EIdentifier.of("textures/gui/sprites/hud/heart/devastating_hardcore_half_blinking.png");
 
     public static boolean hasCurse(PlayerEntity player) {
         return EtherologyComponents.ETHER.maybeGet(player).map(EtherComponent::isHasCurse).orElse(false);

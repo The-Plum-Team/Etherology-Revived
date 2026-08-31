@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.etherealSocket;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.block.BlockState;
@@ -10,7 +9,6 @@ import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -24,12 +22,13 @@ import ru.feytox.etherology.item.glints.GlintItem;
 import ru.feytox.etherology.magic.ether.EtherDisplay;
 import ru.feytox.etherology.magic.ether.EtherGlint;
 import ru.feytox.etherology.magic.ether.EtherStorage;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import static ru.feytox.etherology.block.etherealSocket.EtherealSocketBlock.WITH_GLINT;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_SOCKET_BLOCK_ENTITY;
 
-public class EtherealSocketBlockEntity extends TickableBlockEntity implements EtherStorage, EtherDisplay, ImplementedInventory, SidedInventory {
+public class EtherealSocketBlockEntity extends TickableBlockEntity implements EtherStorage, EtherDisplay, ListBackedInventory, SidedInventory {
 
     private final DefaultedList<ItemStack> inventory = DefaultedList.ofSize(1, ItemStack.EMPTY);
     // TODO: 09.08.2023 deprecate
@@ -175,18 +174,18 @@ public class EtherealSocketBlockEntity extends TickableBlockEntity implements Et
     public void setStoredEther(float value) {}
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, inventory, registryLookup);
+    protected void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, inventory);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         inventory.clear();
-        Inventories.readNbt(nbt, inventory, registryLookup);
+        Inventories.readNbt(nbt, inventory);
     }
 
     @Override

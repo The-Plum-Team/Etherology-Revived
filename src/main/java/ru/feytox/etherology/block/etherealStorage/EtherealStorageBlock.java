@@ -1,7 +1,5 @@
 package ru.feytox.etherology.block.etherealStorage;
 
-import com.mojang.serialization.MapCodec;
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
@@ -13,6 +11,7 @@ import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.DirectionProperty;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
@@ -29,10 +28,9 @@ import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_STORAGE_BLOCK
 public class EtherealStorageBlock extends HorizontalFacingBlock implements RegistrableBlock, BlockEntityProvider {
 
     protected static final DirectionProperty FACING = HorizontalFacingBlock.FACING;
-    private static final MapCodec<EtherealStorageBlock> CODEC = MapCodec.unit(EtherealStorageBlock::new);
 
     public EtherealStorageBlock() {
-        super(Settings.copy(Blocks.STONE).nonOpaque());
+        super(AbstractBlock.Settings.copy(Blocks.STONE).nonOpaque());
         setDefaultState(getDefaultState().with(FACING, Direction.NORTH));
     }
 
@@ -42,7 +40,7 @@ public class EtherealStorageBlock extends HorizontalFacingBlock implements Regis
     }
 
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (!world.isClient) {
             NamedScreenHandlerFactory screenHandlerFactory = (NamedScreenHandlerFactory) world.getBlockEntity(pos);
             if (screenHandlerFactory != null) player.openHandledScreen(screenHandlerFactory);
@@ -96,8 +94,4 @@ public class EtherealStorageBlock extends HorizontalFacingBlock implements Regis
         return world.isClient ? null : EtherealStorageBlockEntity::serverTicker;
     }
 
-    @Override
-    protected MapCodec<? extends HorizontalFacingBlock> getCodec() {
-        return CODEC;
-    }
 }

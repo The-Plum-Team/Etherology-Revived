@@ -114,10 +114,10 @@ public class ResearchTreePage extends AbstractPage {
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-        if (verticalAmount == 0.0f) return false;
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
+        if (amount == 0.0f) return false;
 
-        deltaY = Math.clamp(deltaY + (float) (verticalAmount * 10f), -maxY, 0);
+        deltaY = Math.clamp(deltaY + (float) (amount * 10f), -maxY, 0);
         if (maxY != 0) slider.setDeltaY(-deltaY * SLIDER_LENGTH / maxY);
         updateButtonsPos();
         return true;

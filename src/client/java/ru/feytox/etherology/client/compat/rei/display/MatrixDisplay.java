@@ -5,7 +5,6 @@ import me.shedaniel.rei.api.common.category.CategoryIdentifier;
 import me.shedaniel.rei.api.common.display.basic.BasicDisplay;
 import me.shedaniel.rei.api.common.entry.EntryIngredient;
 import me.shedaniel.rei.api.common.util.EntryIngredients;
-import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.util.Identifier;
 import ru.feytox.etherology.client.compat.rei.EtherREIPlugin;
 import ru.feytox.etherology.client.compat.rei.misc.AspectPair;
@@ -21,12 +20,11 @@ public class MatrixDisplay extends BasicDisplay {
         super(inputs, outputs, Optional.of(recipeId));
     }
 
-    public static MatrixDisplay of(RecipeEntry<MatrixRecipe> entry) {
-        MatrixRecipe recipe = entry.value();
+    public static MatrixDisplay of(MatrixRecipe recipe) {
         List<EntryIngredient> inputs = ObjectArrayList.of(EntryIngredients.ofIngredient(recipe.getCenterInput()));
         recipe.getAspects().forEach(aspect -> inputs.add(EntryIngredient.of(AspectPair.entry(aspect, 1))));
         List<EntryIngredient> output = Collections.singletonList(EntryIngredients.of(recipe.getOutput()));
-        return new MatrixDisplay(inputs, output, entry.id());
+        return new MatrixDisplay(inputs, output, recipe.getId());
     }
 
     @Override

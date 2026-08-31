@@ -62,7 +62,7 @@ public class MatrixCategory implements DisplayCategory<MatrixDisplay> {
 
         widgets.add(Widgets.createArrow(start.add(dx+4, 13)));
         widgets.add(Widgets.createResultSlotBackground(start.add(dx+39, 14)));
-        widgets.add(Widgets.createSlot(start.add(dx+39, 14)).entries(display.getOutputEntries().getFirst()).disableBackground().markOutput());
+        widgets.add(Widgets.createSlot(start.add(dx+39, 14)).entries(display.getOutputEntries().get(0)).disableBackground().markOutput());
 
         return widgets;
     }

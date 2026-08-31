@@ -24,16 +24,16 @@ public class PedestalDispenserBehavior extends ItemDispenserBehavior {
 
     public static boolean testDispenser(BlockPointer pointer, ItemStack stack) {
         if (stack.isEmpty()) return false;
-        Direction direction = pointer.state().get(DispenserBlock.FACING);
+        Direction direction = pointer.getBlockState().get(DispenserBlock.FACING);
 
-        return pointer.world().getBlockEntity(pointer.pos().add(direction.getVector())) instanceof PedestalBlockEntity;
+        return pointer.getWorld().getBlockEntity(pointer.getPos().add(direction.getVector())) instanceof PedestalBlockEntity;
     }
 
     private boolean tryUseOnPedestal(BlockPointer pointer, ItemStack stack) {
         if (stack.isEmpty()) return false;
-        Direction direction = pointer.state().get(DispenserBlock.FACING);
-        BlockPos checkPos = pointer.pos().add(direction.getVector());
-        ServerWorld world = pointer.world();
+        Direction direction = pointer.getBlockState().get(DispenserBlock.FACING);
+        BlockPos checkPos = pointer.getPos().add(direction.getVector());
+        ServerWorld world = pointer.getWorld();
 
         if (!(world.getBlockEntity(checkPos) instanceof PedestalBlockEntity pedestal)) return false;
 

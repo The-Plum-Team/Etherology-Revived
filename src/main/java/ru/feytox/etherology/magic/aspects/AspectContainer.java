@@ -3,7 +3,6 @@ package ru.feytox.etherology.magic.aspects;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
-import io.netty.buffer.ByteBuf;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -12,11 +11,9 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.util.StringIdentifiable;
 import org.slf4j.helpers.CheckReturnValue;
-import ru.feytox.etherology.util.misc.CodecUtil;
+import ru.feytox.etherology.Etherology;
 
 import java.util.Comparator;
 import java.util.List;
@@ -33,7 +30,6 @@ public class AspectContainer {
 
     public static final Codec<AspectContainer> CODEC;
     public static final MapCodec<AspectContainer> MAP_CODEC;
-    public static final PacketCodec<ByteBuf, AspectContainer> PACKET_CODEC;
 
     @NonNull
     private final ImmutableMap<Aspect, Integer> aspects;
@@ -138,7 +134,9 @@ public class AspectContainer {
 
     public static <T> AspectContainer parse(DynamicOps<T> ops, Stream<Pair<T, T>> input) {
         return new AspectContainer(input.map(pair -> pair.mapFirst(first -> Aspect.CODEC.parse(ops, first)).mapSecond(second -> Codec.INT.parse(ops, second)))
-                .map(pair -> pair.mapFirst(DataResult::getOrThrow).mapSecond(DataResult::getOrThrow))
+                .map(pair -> pair
+                        .mapFirst(result -> result.getOrThrow(false, Etherology.ELOGGER::error))
+                        .mapSecond(result -> result.getOrThrow(false, Etherology.ELOGGER::error)))
                 .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond, Integer::min)));
     }
 
@@ -149,6 +147,5 @@ public class AspectContainer {
     static {
         CODEC = Codec.unboundedMap(Aspect.CODEC, Codec.INT).xmap(AspectContainer::new, AspectContainer::getAspects).stable();
         MAP_CODEC = Codec.simpleMap(Aspect.CODEC, Codec.INT, StringIdentifiable.toKeyable(Aspect.values())).xmap(AspectContainer::new, AspectContainer::getAspects);
-        PACKET_CODEC = CodecUtil.map(Object2IntOpenHashMap::new, Aspect.PACKET_CODEC, PacketCodecs.VAR_INT).xmap(AspectContainer::new, AspectContainer::getAspects);
     }
 }

@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.etherealStorage;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -9,7 +8,6 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.world.ServerWorld;
@@ -27,10 +25,11 @@ import ru.feytox.etherology.magic.ether.EtherStorage;
 import ru.feytox.etherology.network.animation.StartBlockAnimS2C;
 import ru.feytox.etherology.network.animation.StopBlockAnimS2C;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ import java.util.List;
 import static ru.feytox.etherology.block.etherealStorage.EtherealStorageBlock.FACING;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_STORAGE_BLOCK_ENTITY;
 
-public class EtherealStorageBlockEntity extends TickableBlockEntity implements EtherStorage, EGeoBlockEntity, ImplementedInventory, NamedScreenHandlerFactory, EtherCounter, SidedInventory {
+public class EtherealStorageBlockEntity extends TickableBlockEntity implements EtherStorage, EGeoBlockEntity, ListBackedInventory, NamedScreenHandlerFactory, EtherCounter, SidedInventory {
 
     private static final RawAnimation OPEN_ANIM;
     private static final RawAnimation CLOSE_ANIM;
@@ -101,10 +100,13 @@ public class EtherealStorageBlockEntity extends TickableBlockEntity implements E
     public float decrement(float value) {
         if (storageEther >= value) return EtherStorage.super.decrement(value);
         if (getGlintEther() >= value) return decrementGlint(value);
-        return EtherStorage.super.decrement(value);
+
+        float storageValue = EtherStorage.super.decrement(value);
+        return storageValue + decrementGlint(value - storageValue);
     }
 
     public float incrementGlint(float value) {
+        float initialValue = value;
         List<EtherGlint> glints = getGlints();
         for (EtherGlint glint : glints) {
             if (!glint.isFull()) {
@@ -113,6 +115,7 @@ public class EtherealStorageBlockEntity extends TickableBlockEntity implements E
             if (value == 0) break;
         }
 
+        if (value < initialValue) markDirty();
         return value;
     }
 
@@ -122,12 +125,14 @@ public class EtherealStorageBlockEntity extends TickableBlockEntity implements E
         for (int i = glints.size()-1; i > -1; i--) {
             EtherGlint glint = glints.get(i);
             if (glint.getStoredEther() > 0) {
-                needValue -= glint.decrement(value);
+                needValue -= glint.decrement(needValue);
             }
-            if (needValue == 0) break;
+            if (needValue <= 0) break;
         }
 
-        return value - needValue;
+        float decrementedValue = value - needValue;
+        if (decrementedValue > 0) markDirty();
+        return decrementedValue;
     }
 
     @Override
@@ -172,20 +177,20 @@ public class EtherealStorageBlockEntity extends TickableBlockEntity implements E
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, inventory, registryLookup);
+    protected void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, inventory);
         nbt.putFloat("storage_ether", storageEther);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         storageEther = nbt.getFloat("storage_ether");
         inventory.clear();
-        Inventories.readNbt(nbt, inventory, registryLookup);
+        Inventories.readNbt(nbt, inventory);
     }
 
     @Override
@@ -275,7 +280,7 @@ public class EtherealStorageBlockEntity extends TickableBlockEntity implements E
 
     @Override
     public boolean canInsert(int slot, ItemStack stack, @Nullable Direction dir) {
-        return true;
+        return slot >= 0 && slot < 3 && stack.getItem() instanceof GlintItem;
     }
 
     @Override

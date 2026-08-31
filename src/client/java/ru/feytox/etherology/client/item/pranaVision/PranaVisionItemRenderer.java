@@ -27,14 +27,14 @@ public class PranaVisionItemRenderer implements TrinketRenderer {
         model.animateModel(entity, limbAngle, limbDistance, tickDelta);
         TrinketRenderer.followBodyRotations(entity, model);
         var vertexConsumer = vertexConsumers.getBuffer(model.getLayer(TEXTURE));
-        model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 0xFFFFFFFF);
+        model.render(matrices, vertexConsumer, light, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
 
         renderEyes(model, matrices, vertexConsumers);
     }
 
     private void renderEyes(BipedEntityModel<LivingEntity> model, MatrixStack matrices, VertexConsumerProvider vertexConsumers) {
         var vertexConsumer = vertexConsumers.getBuffer(EYES_LAYER);
-        model.render(matrices, vertexConsumer, 15728640, OverlayTexture.DEFAULT_UV);
+        model.render(matrices, vertexConsumer, 15728640, OverlayTexture.DEFAULT_UV, 1.0f, 1.0f, 1.0f, 1.0f);
     }
 
     private BipedEntityModel<LivingEntity> getModel() {

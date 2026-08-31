@@ -2,10 +2,11 @@ package ru.feytox.etherology.data.aspects;
 
 import com.google.common.collect.ImmutableMap;
 import lombok.val;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.*;
+import net.minecraft.potion.Potion;
+import net.minecraft.potion.PotionUtil;
+import net.minecraft.potion.Potions;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
@@ -72,20 +73,20 @@ public class AspectsLoader {
         if (potionStack.getItem() instanceof SplashPotionItem) type = AspectContainerType.SPLASH_POTION;
         if (potionStack.getItem() instanceof LingeringPotionItem) type = AspectContainerType.LINGERING_POTION;
 
-        val potion = potionStack.getOrDefault(DataComponentTypes.POTION_CONTENTS, PotionContentsComponent.DEFAULT).potion().orElse(null);
-        if (potion == null) return Optional.empty();
+        Potion potion = PotionUtil.getPotion(potionStack);
+        if (potion == Potions.EMPTY) return Optional.empty();
 
-        Identifier id = Registries.POTION.getId(potion.value());
+        Identifier id = Registries.POTION.getId(potion);
         if (id == null) return Optional.empty();
 
         return get(world, AspectContainerId.of(id, type), force);
     }
 
     public static Optional<AspectContainer> getTippedAspects(World world, ItemStack tippedStack, boolean force) {
-        val potion = tippedStack.getOrDefault(DataComponentTypes.POTION_CONTENTS, PotionContentsComponent.DEFAULT).potion().orElse(null);
-        if (potion == null) return Optional.empty();
+        Potion potion = PotionUtil.getPotion(tippedStack);
+        if (potion == Potions.EMPTY) return Optional.empty();
 
-        Identifier id = Registries.POTION.getId(potion.value());
+        Identifier id = Registries.POTION.getId(potion);
         if (id == null) return Optional.empty();
 
         return get(world, AspectContainerId.of(id, AspectContainerType.TIPPED_ARROW), force);

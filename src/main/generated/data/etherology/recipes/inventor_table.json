@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": {
+      "item": "minecraft:iron_ingot"
+    },
+    "S": {
+      "tag": "minecraft:wooden_slabs"
+    }
+  },
+  "pattern": [
+    "##",
+    "SS",
+    "SS"
+  ],
+  "result": {
+    "item": "etherology:inventor_table"
+  },
+  "show_notification": true
+}

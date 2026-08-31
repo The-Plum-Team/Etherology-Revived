@@ -20,8 +20,8 @@ public class SmeltingRecipeDisplay extends AbstractRecipeDisplay<SmeltingRecipe>
     public List<FeySlot> toSlots(float x, float y) {
         List<FeySlot> slots = new ObjectArrayList<>();
 
-        slots.add(FeySlot.of(recipe.getIngredients().getFirst(), x+18, y+11));
-        slots.add(FeySlot.of(recipe.getResult(null), x+95, y+30));
+        slots.add(FeySlot.of(recipe.getIngredients().get(0), x+18, y+11));
+        slots.add(FeySlot.of(recipe.getOutput(null), x+95, y+30));
         
         return slots;
     }

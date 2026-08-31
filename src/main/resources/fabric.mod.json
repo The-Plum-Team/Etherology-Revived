@@ -2,18 +2,18 @@
   "schemaVersion": 1,
   "id": "etherology",
   "version": "${version}",
-  "name": "Etherology",
+  "name": "Etherology Revived",
   "description": "Science is indistinguishable from magic!",
   "authors": [
     "Faradey",
     "Feytox"
   ],
   "contact": {
-    "homepage": "https://modrinth.com/mod/etherology",
-    "sources": "https://github.com/feytox/etherology",
-    "issues": "https://github.com/feytox/etherology/issues"
+    "homepage": "https://github.com/The-Plum-Team/Etherology-Revived",
+    "sources": "https://github.com/The-Plum-Team/Etherology-Revived",
+    "issues": "https://github.com/The-Plum-Team/Etherology-Revived/issues"
   },
-  "license": "MIT",
+  "license": "LGPL-2.1-only",
   "icon": "assets/etherology/icon.png",
   "environment": "*",
   "entrypoints": {
@@ -24,10 +24,10 @@
       "ru.feytox.etherology.client.EtherologyClient"
     ],
     "main": [
-      "ru.feytox.etherology.Etherology"
+      "ru.feytox.etherology.EtherologyFabric"
     ],
     "cardinal-components": [
-      "ru.feytox.etherology.registry.misc.EtherologyComponents"
+      "ru.feytox.etherology.registry.misc.FabricEtherologyComponents"
     ],
     "mm:early_risers": [
       "ru.feytox.etherology.mixin.EarlyRisers"
@@ -50,22 +50,26 @@
     }
   ],
   "depends": {
-    "fabricloader": "*",
-    "fabric-api": "*",
-    "minecraft": "1.21.x",
-
-    "biolith": "*",
-    "fabricshieldlib": "*",
-    "owo": "*",
-    "trinkets": "*",
-    "geckolib": "*",
-    "cardinal-components-base": "*",
-    "cardinal-components-entity": "*",
-    "cardinal-components-chunk": "*"
+    "fabricloader": ">=${fabric_loader_version}",
+    "fabric-api": ">=${fabric_api_version}",
+    "minecraft": "=${minecraft_version}",
+    "java": ">=${java_version}",
+    "architectury": ">=${architectury_api_version}",
+    "biolith": ">=${biolith_version}",
+    "fabricshieldlib": ">=${fabric_shield_lib_version}",
+    "owo": ">=${owo_lib_version}",
+    "trinkets": ">=${trinkets_version}",
+    "geckolib": ">=${geckolib_version}",
+    "cardinal-components-base": ">=${cardinal_components_version}",
+    "cardinal-components-entity": ">=${cardinal_components_version}",
+    "cardinal-components-chunk": ">=${cardinal_components_version}",
+    "mm": ">=${fabric_asm_metadata_version}"
   },
   "suggests": {
-    "modmenu": "*",
-    "rei": "*"
+    "modmenu": ">=${mod_menu_version}",
+    "roughlyenoughitems": ">=${rei_version}",
+    "emi": ">=${emi_version}",
+    "cloth-config": ">=${cloth_config_version}"
   },
   "custom": {
     "cardinal-components": [
@@ -73,18 +77,7 @@
       "etherology:ether",
       "etherology:teldecore",
       "etherology:visited"
-    ],
-    "mc-publish": {
-      "game-versions": [
-        "1.21", "1.21.1"
-      ],
-      "dependencies": [
-        "owo{modrinth:owo-lib}{curseforge:owo-lib}",
-        "cardinal-components-base{modrinth:cardinal-components-api}{curseforge:cardinal-components-api}",
-        "cardinal-components-entity#(ignore:modrinth)(ignore:curseforge)",
-        "cardinal-components-chunk#(ignore:modrinth)(ignore:curseforge)"
-      ]
-    }
+    ]
   },
-  "accessWidener" : "etherology.accesswidener"
+  "accessWidener": "etherology.accesswidener"
 }

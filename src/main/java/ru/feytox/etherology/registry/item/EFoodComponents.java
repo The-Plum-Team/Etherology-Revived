@@ -1,10 +1,10 @@
 package ru.feytox.etherology.registry.item;
 
 import lombok.experimental.UtilityClass;
-import net.minecraft.component.type.FoodComponent;
+import net.minecraft.item.FoodComponent;
 
 @UtilityClass
 public class EFoodComponents {
 
-    public static final FoodComponent CRUMB = new FoodComponent.Builder().nutrition(3).saturationModifier(2).build();
+    public static final FoodComponent CRUMB = new FoodComponent.Builder().hunger(3).saturationModifier(2).build();
 }

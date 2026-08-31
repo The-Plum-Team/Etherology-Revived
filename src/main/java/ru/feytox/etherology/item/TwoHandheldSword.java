@@ -9,11 +9,7 @@ import net.minecraft.item.ToolMaterial;
 public abstract class TwoHandheldSword extends SwordItem {
 
     public TwoHandheldSword(ToolMaterial toolMaterial, int attackDamage, float attackSpeed, Settings settings) {
-        this(toolMaterial, settings.attributeModifiers(SwordItem.createAttributeModifiers(toolMaterial, attackDamage, attackSpeed)));
-    }
-
-    public TwoHandheldSword(ToolMaterial toolMaterial, Settings settings) {
-        super(toolMaterial, settings);
+        super(toolMaterial, attackDamage, attackSpeed, settings);
     }
 
     public static <T extends TwoHandheldSword> boolean isUsing(PlayerEntity player, Class<T> cls) {

@@ -1,17 +1,16 @@
 package ru.feytox.etherology.item.glints;
 
 import lombok.Getter;
-import net.minecraft.component.type.BundleContentsComponent;
+import net.minecraft.client.item.TooltipContext;
+import net.minecraft.client.item.TooltipData;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipData;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.MathHelper;
-import org.apache.commons.lang3.math.Fraction;
-import ru.feytox.etherology.mixin.BundleContentsComponentAccessor;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.registry.misc.ComponentTypes;
 
 import java.util.List;
@@ -25,7 +24,7 @@ public class GlintItem extends Item {
     private final float maxEther;
 
     public GlintItem(float maxEther) {
-        super(new Settings().maxCount(1).component(ComponentTypes.STORED_ETHER, 0f));
+        super(new Settings().maxCount(1));
         this.maxEther = maxEther;
     }
 
@@ -44,12 +43,11 @@ public class GlintItem extends Item {
             defaultedList.add(etherStack);
         }
 
-        BundleContentsComponent component = BundleContentsComponentAccessor.createBundleContentsComponent(defaultedList, Fraction.getFraction(MathHelper.floor(storedEther), MathHelper.floor(maxEther)));
-        return Optional.of(new GlintTooltipData(component, MathHelper.floor(maxEther)));
+        return Optional.of(new GlintTooltipData(defaultedList, MathHelper.floor(storedEther), MathHelper.floor(maxEther)));
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         float storedEther = getStoredEther(stack);
         int etherValue = MathHelper.floor(storedEther);
 
@@ -74,11 +72,11 @@ public class GlintItem extends Item {
     }
 
     public static Float getStoredEther(ItemStack stack) {
-        return stack.getOrDefault(ComponentTypes.STORED_ETHER, 0.0f);
+        return ComponentTypes.STORED_ETHER.getOrDefault(stack, 0.0f);
     }
 
     private static void setStoredEther(ItemStack stack, float value) {
-        stack.set(ComponentTypes.STORED_ETHER, value);
+        ComponentTypes.STORED_ETHER.set(stack, value);
     }
 
     /**

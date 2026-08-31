@@ -18,7 +18,7 @@ public class RegistriesGeneration extends FabricDynamicRegistryProvider {
     @Override
     protected void configure(RegistryWrapper.WrapperLookup registries, Entries entries) {
         Stream.of(CONFIGURED_FEATURE, PLACED_FEATURE, STRUCTURE_SET, STRUCTURE, TEMPLATE_POOL, PROCESSOR_LIST,
-                        BIOME, ENCHANTMENT)
+                        BIOME)
                 .map(registries::getWrapperOrThrow)
                 .forEach(entries::addAll);
     }

@@ -15,7 +15,7 @@ public class DevBlocks {
     public static final BlockEntityType<UnlimitedEtherStorageBlockEntity> UNLIMITED_ETHER_STORAGE_BLOCK_ENTITY_TYPE = Registry.register(
             Registries.BLOCK_ENTITY_TYPE,
             EIdentifier.of("unlimited_ether_storage_block_entity"),
-            BlockEntityType.Builder.create(UnlimitedEtherStorageBlockEntity::new, UNLIMITED_ETHER_STORAGE_BLOCK).build()
+            BlockEntityType.Builder.create(UnlimitedEtherStorageBlockEntity::new, UNLIMITED_ETHER_STORAGE_BLOCK).build(null)
     );
 
     public static void registerAll() {}

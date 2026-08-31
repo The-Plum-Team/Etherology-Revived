@@ -78,7 +78,7 @@ public class RevelationRenderer {
             refreshData(world, client.player, hitResult);
         }
 
-        progress = MathHelper.lerp(0.1f * context.tickCounter().getTickDelta(false), progress, 1.0f);
+        progress = MathHelper.lerp(0.1f * context.tickDelta(), progress, 1.0f);
         var matrices = context.matrixStack();
         if (data == null || data.isEmpty() || targetPos == null || offsetVec == null || matrices == null) return;
 

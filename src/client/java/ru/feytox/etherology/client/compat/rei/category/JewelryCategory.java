@@ -53,8 +53,8 @@ public abstract class JewelryCategory implements DisplayCategory<JewelryDisplay<
         widgets.add(Widgets.createArrow(start.add(125, 47)));
         widgets.add(Widgets.createResultSlotBackground(start.add(160, 48)));
 
-        widgets.add(Widgets.createSlot(start.add(1, 48)).entries(display.getInputEntries().getFirst()).markInput());
-        widgets.add(Widgets.createSlot(start.add(160, 48)).entries(display.getOutputEntries().getFirst()).disableBackground().markOutput());
+        widgets.add(Widgets.createSlot(start.add(1, 48)).entries(display.getInputEntries().get(0)).markInput());
+        widgets.add(Widgets.createSlot(start.add(160, 48)).entries(display.getOutputEntries().get(0)).disableBackground().markOutput());
 
         return widgets;
     }

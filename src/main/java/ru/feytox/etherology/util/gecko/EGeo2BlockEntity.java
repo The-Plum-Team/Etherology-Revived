@@ -3,8 +3,7 @@ package ru.feytox.etherology.util.gecko;
 import lombok.val;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.core.animation.AnimationController;
 
 public interface EGeo2BlockEntity extends GeoBlockEntity {
 

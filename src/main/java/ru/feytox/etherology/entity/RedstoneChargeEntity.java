@@ -2,7 +2,6 @@ package ru.feytox.etherology.entity;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.projectile.ProjectileUtil;
@@ -11,7 +10,6 @@ import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.EntitySpawnS2CPacket;
 import net.minecraft.particle.DustParticleEffect;
-import net.minecraft.server.network.EntityTrackerEntry;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -20,12 +18,12 @@ import net.minecraft.world.World;
 import ru.feytox.etherology.magic.lens.RedstoneLensEffects;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.registry.entity.EntityRegistry;
-import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.AnimationController;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animatable.GeoAnimatable;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.AnimationController;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 public class RedstoneChargeEntity extends ProjectileEntity implements GeoEntity {
@@ -60,7 +58,7 @@ public class RedstoneChargeEntity extends ProjectileEntity implements GeoEntity 
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
+    protected void initDataTracker() {
     }
 
     /**
@@ -167,7 +165,7 @@ public class RedstoneChargeEntity extends ProjectileEntity implements GeoEntity 
 
     // TODO: 11.06.2024 replace this with more efficient way to create and receive packet
     @Override
-    public Packet<ClientPlayPacketListener> createSpawnPacket(EntityTrackerEntry entityTrackerEntry) {
+    public Packet<ClientPlayPacketListener> createSpawnPacket() {
         return new EntitySpawnS2CPacket(getId(), getUuid(), getX(), getY(), getZ(), getPitch(), getYaw(), getType(), getId(), flyDirection, 0.0);
     }
 

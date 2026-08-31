@@ -1,6 +1,6 @@
 package ru.feytox.etherology.block.devblocks;
 
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockEntityProvider;
 import net.minecraft.block.BlockState;
@@ -17,7 +17,7 @@ import static ru.feytox.etherology.registry.block.DevBlocks.UNLIMITED_ETHER_STOR
 
 public class UnlimitedEtherStorageBlock extends Block implements RegistrableBlock, BlockEntityProvider {
     public UnlimitedEtherStorageBlock() {
-        super(Settings.copy(Blocks.BEDROCK));
+        super(AbstractBlock.Settings.copy(Blocks.BEDROCK));
     }
 
     @Nullable

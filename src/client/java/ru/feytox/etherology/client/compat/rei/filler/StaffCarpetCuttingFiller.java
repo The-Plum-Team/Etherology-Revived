@@ -8,7 +8,6 @@ import me.shedaniel.rei.plugin.client.categories.crafting.filler.CraftingRecipeF
 import me.shedaniel.rei.plugin.common.displays.crafting.DefaultCustomShapelessDisplay;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.recipe.RecipeEntry;
 import ru.feytox.etherology.magic.staff.StaffColors;
 import ru.feytox.etherology.magic.staff.StaffComponent;
 import ru.feytox.etherology.magic.staff.StaffPart;
@@ -25,13 +24,13 @@ import java.util.List;
 public class StaffCarpetCuttingFiller implements CraftingRecipeFiller<StaffCarpetCuttingRecipe> {
 
     @Override
-    public Collection<Display> apply(RecipeEntry<StaffCarpetCuttingRecipe> recipe) {
+    public Collection<Display> apply(StaffCarpetCuttingRecipe recipe) {
         List<EntryIngredient> resultStaff = Collections.singletonList(EntryIngredients.of(ToolItems.STAFF));
         EntryIngredient shears = EntryIngredients.of(Items.SHEARS);
 
         EntryIngredient staffs = EntryIngredient.of(Arrays.stream(StaffColors.values()).map(color -> {
             ItemStack inputStaff = ToolItems.STAFF.getDefaultStack();
-            inputStaff.apply(ComponentTypes.STAFF, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
+            ComponentTypes.STAFF.apply(inputStaff, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
             return EntryStacks.of(inputStaff);
         }).toList());
 

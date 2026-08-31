@@ -8,7 +8,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.recipe.Recipe;
-import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +45,7 @@ public class RecipeWidget {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.world == null) throw new NullPointerException("Failed to get current client world.");
 
-        Recipe<?> recipe = RecipesRegistry.maybeGet(client.world, recipeId).map(RecipeEntry::value)
+        Recipe<?> recipe = RecipesRegistry.maybeGet(client.world, recipeId)
                 .orElseThrow(() -> new NoSuchElementException("Failed to get recipe %s".formatted(recipeId.toString())));
 
         AbstractRecipeDisplay<?> display = Optional.ofNullable(DISPLAYS).flatMap(registry -> registry.getDisplay(recipe))
@@ -62,9 +61,9 @@ public class RecipeWidget {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.world == null) return Optional.empty();
 
-        Optional<Recipe<?>> recipe = RecipesRegistry.maybeGet(client.world, recipeId).map(RecipeEntry::value);
+        Optional<? extends Recipe<?>> recipe = RecipesRegistry.maybeGet(client.world, recipeId);
         recipe.ifPresent(content::setCachedRecipe);
-        return recipe;
+        return recipe.map(value -> value);
     }
 
     private static void registerDisplays() {

@@ -1,11 +1,10 @@
 package ru.feytox.etherology.network.animation;
 
+import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.network.packet.CustomPayload;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import ru.feytox.etherology.network.util.AbstractS2CPacket;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
@@ -13,8 +12,12 @@ import ru.feytox.etherology.util.misc.EIdentifier;
 
 public record StartBlockAnimS2C(BlockPos pos, String animName) implements AbstractS2CPacket {
 
-    public static final Id<StartBlockAnimS2C> ID = new Id<>(EIdentifier.of("start_block_anim"));
-    public static final PacketCodec<RegistryByteBuf, StartBlockAnimS2C> CODEC = PacketCodec.tuple(BlockPos.PACKET_CODEC, StartBlockAnimS2C::pos, PacketCodecs.STRING, StartBlockAnimS2C::animName, StartBlockAnimS2C::new);
+    public static final Identifier ID = EIdentifier.of("start_block_anim");
+    public static final PacketType<StartBlockAnimS2C> TYPE = PacketType.create(ID, StartBlockAnimS2C::new);
+
+    public StartBlockAnimS2C(PacketByteBuf buf) {
+        this(buf.readBlockPos(), buf.readString());
+    }
 
     public static <T extends BlockEntity & EGeoBlockEntity> void sendForTracking(T blockEntity, String animName) {
         new StartBlockAnimS2C(blockEntity.getPos(), animName).sendForTracking(blockEntity);
@@ -25,7 +28,13 @@ public record StartBlockAnimS2C(BlockPos pos, String animName) implements Abstra
     }
 
     @Override
-    public Id<? extends CustomPayload> getId() {
-        return ID;
+    public void write(PacketByteBuf buf) {
+        buf.writeBlockPos(pos);
+        buf.writeString(animName);
+    }
+
+    @Override
+    public PacketType<?> getType() {
+        return TYPE;
     }
 }

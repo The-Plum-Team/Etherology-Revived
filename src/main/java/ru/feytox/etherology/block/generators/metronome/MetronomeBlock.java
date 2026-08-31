@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.generators.metronome;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.FacingBlock;
@@ -14,7 +13,6 @@ import static ru.feytox.etherology.registry.block.EBlocks.METRONOME_BLOCK_ENTITY
 
 public class MetronomeBlock extends AbstractGenerator {
 
-    private static final MapCodec<MetronomeBlock> CODEC = MapCodec.unit(MetronomeBlock::new);
 
     public MetronomeBlock() {
         super(Settings.copy(Blocks.GOLD_BLOCK),
@@ -32,8 +30,4 @@ public class MetronomeBlock extends AbstractGenerator {
         return new MetronomeBlockEntity(pos, state);
     }
 
-    @Override
-    protected MapCodec<? extends FacingBlock> getCodec() {
-        return CODEC;
-    }
 }

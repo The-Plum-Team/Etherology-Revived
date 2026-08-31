@@ -1,0 +1,35 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_forest_lantern": {
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "etherology:forest_lantern"
+            ]
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "etherology:forest_lantern_crumb"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_forest_lantern",
+      "has_the_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "etherology:forest_lantern_crumb"
+    ]
+  },
+  "sends_telemetry_event": false
+}

@@ -3,7 +3,7 @@
   "config": {
     "feature": {
       "feature": {
-        "type": "minecraft:thuja",
+        "type": "etherology:thuja",
         "config": {}
       },
       "placement": [

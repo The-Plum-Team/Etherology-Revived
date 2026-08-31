@@ -1,27 +1,33 @@
 package ru.feytox.etherology.recipes.jewelry;
 
-import com.mojang.serialization.MapCodec;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import com.google.gson.JsonObject;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.Identifier;
 import ru.feytox.etherology.recipes.FeyRecipeSerializer;
 
 public class BrokenRecipeSerializer extends FeyRecipeSerializer<BrokenRecipe> {
 
     public static final BrokenRecipeSerializer INSTANCE = new BrokenRecipeSerializer();
-    private static final MapCodec<BrokenRecipe> CODEC = MapCodec.unit(BrokenRecipe.INSTANCE.value());
-    private static final PacketCodec<RegistryByteBuf, BrokenRecipe> PACKET_CODEC = PacketCodec.unit(BrokenRecipe.INSTANCE.value());
 
     public BrokenRecipeSerializer() {
         super("broken_recipe");
     }
 
     @Override
-    public MapCodec<BrokenRecipe> codec() {
-        return CODEC;
+    public BrokenRecipe read(Identifier id, JsonObject json) {
+        return BrokenRecipe.INSTANCE;
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, BrokenRecipe> packetCodec() {
-        return PACKET_CODEC;
+    public BrokenRecipe read(Identifier id, PacketByteBuf buf) {
+        return BrokenRecipe.INSTANCE;
+    }
+
+    @Override
+    public void write(PacketByteBuf buf, BrokenRecipe recipe) {
+    }
+
+    @Override
+    protected void writeJson(JsonObject json, BrokenRecipe recipe) {
     }
 }

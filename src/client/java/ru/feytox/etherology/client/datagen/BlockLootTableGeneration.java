@@ -9,7 +9,6 @@ import net.minecraft.loot.condition.BlockStatePropertyLootCondition;
 import net.minecraft.loot.entry.ItemEntry;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.predicate.StatePredicate;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.state.property.IntProperty;
 import ru.feytox.etherology.block.beamer.BeamerBlock;
 import ru.feytox.etherology.block.etherealChannel.EtherealChannel;
@@ -18,22 +17,25 @@ import ru.feytox.etherology.registry.block.AutoBlockLootTable;
 import ru.feytox.etherology.registry.item.DecoBlockItems;
 import ru.feytox.etherology.util.misc.RandomChanceWithFortuneCondition;
 
-import java.util.concurrent.CompletableFuture;
-
 import static ru.feytox.etherology.registry.block.DecoBlocks.*;
 import static ru.feytox.etherology.registry.block.EBlocks.CHANNEL_CASE;
 import static ru.feytox.etherology.registry.block.EBlocks.ETHEREAL_CHANNEL;
+import static ru.feytox.etherology.registry.block.EBlocks.SEALS;
+import static ru.feytox.etherology.registry.block.EBlocks.SEDIMENTARY_STONES;
+import static ru.feytox.etherology.registry.block.EBlocks.SPILL_BARREL;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.ENRICHED_ATTRAHITE;
 import static ru.feytox.etherology.registry.item.DecoBlockItems.THUJA_SEEDS;
 
 public class BlockLootTableGeneration extends FabricBlockLootTableProvider {
 
-    protected BlockLootTableGeneration(FabricDataOutput dataOutput, CompletableFuture<RegistryWrapper.WrapperLookup> registryLookup) {
-        super(dataOutput, registryLookup);
+    protected BlockLootTableGeneration(FabricDataOutput dataOutput) {
+        super(dataOutput);
     }
 
     @Override
     public void generate() {
+        excludeBlocksWithoutLootTables();
+
         AutoBlockLootTable.acceptData((block, drop) -> {
             if (drop == null) addDrop(block);
             else addDrop(block, drop);
@@ -47,7 +49,7 @@ public class BlockLootTableGeneration extends FabricBlockLootTableProvider {
         addDrop(PEACH_LEAVES, leavesDrops(PEACH_LEAVES, PEACH_SAPLING, SAPLING_DROP_CHANCE));
         addDrop(WEEPING_PEACH_LOG, drops(WEEPING_PEACH_LOG, PEACH_LOG));
 
-        addDrop(ATTRAHITE, dropsWithSilkTouch(ATTRAHITE, applyExplosionDecay(ATTRAHITE, ItemEntry.builder(ENRICHED_ATTRAHITE).conditionally(RandomChanceWithFortuneCondition.builder(registryLookup, 0.05F, 0.05F)))));
+        addDrop(ATTRAHITE, dropsWithSilkTouch(ATTRAHITE, applyExplosionDecay(ATTRAHITE, ItemEntry.builder(ENRICHED_ATTRAHITE).conditionally(RandomChanceWithFortuneCondition.builder(0.05F, 0.05F)))));
         generateChannelDrop();
 
         addDrop(BEAMER, DecoBlockItems.BEAM_FRUIT);
@@ -63,7 +65,15 @@ public class BlockLootTableGeneration extends FabricBlockLootTableProvider {
                                 .properties(StatePredicate.Builder.create().exactMatch(BeamerBlock.AGE, BeamerBlock.MAX_AGE)))
                         .alternatively(ItemEntry.builder(DecoBlockItems.BEAMER_SEEDS)))));
 
-        addDrop(LIGHTELET, this::shortPlantDrops);
+        addDrop(LIGHTELET, this::grassDrops);
+    }
+
+    private void excludeBlocksWithoutLootTables() {
+        for (Block block : SEDIMENTARY_STONES)
+            excludeFromStrictValidation(block);
+        for (Block block : SEALS)
+            excludeFromStrictValidation(block);
+        excludeFromStrictValidation(SPILL_BARREL);
     }
 
     private void generateChannelDrop() {

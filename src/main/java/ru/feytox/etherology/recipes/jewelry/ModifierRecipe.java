@@ -2,7 +2,8 @@ package ru.feytox.etherology.recipes.jewelry;
 
 import lombok.Getter;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.DynamicRegistryManager;
+import net.minecraft.util.Identifier;
 import ru.feytox.etherology.block.jewelryTable.JewelryTableInventory;
 import ru.feytox.etherology.item.LensItem;
 import ru.feytox.etherology.magic.lens.LensComponent;
@@ -15,8 +16,8 @@ public class ModifierRecipe extends AbstractJewelryRecipe {
 
     private final LensModifier modifier;
 
-    public ModifierRecipe(Pattern pattern, LensModifier modifier, int ether) {
-        super(pattern, ether);
+    public ModifierRecipe(Pattern pattern, LensModifier modifier, int ether, Identifier id) {
+        super(pattern, ether, id);
         this.modifier = modifier;
     }
 
@@ -38,7 +39,7 @@ public class ModifierRecipe extends AbstractJewelryRecipe {
     }
 
     @Override
-    public ItemStack getResult(RegistryWrapper.WrapperLookup registriesLookup) {
+    public ItemStack getOutput(DynamicRegistryManager registryManager) {
         return ItemStack.EMPTY;
     }
 

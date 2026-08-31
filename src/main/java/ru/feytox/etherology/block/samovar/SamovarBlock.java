@@ -1,7 +1,6 @@
 package ru.feytox.etherology.block.samovar;
 
 import net.minecraft.block.*;
-import net.minecraft.component.type.PotionContentsComponent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
@@ -9,12 +8,13 @@ import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ItemUsage;
 import net.minecraft.item.Items;
+import net.minecraft.potion.PotionUtil;
 import net.minecraft.potion.Potions;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -45,7 +45,8 @@ public class SamovarBlock extends Block implements RegistrableBlock, Waterloggab
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+        ItemStack stack = player.getStackInHand(hand);
         if (stack.isOf(Items.BUCKET)) {
             if (stack.getCount() > 1) {
                 stack.decrement(1);
@@ -55,17 +56,17 @@ public class SamovarBlock extends Block implements RegistrableBlock, Waterloggab
             }
             world.playSound(null, pos, SoundEvents.ITEM_BUCKET_FILL, SoundCategory.BLOCKS, 1.0f, 1.0f);
             world.emitGameEvent(null, GameEvent.FLUID_PICKUP, pos);
-            return ItemActionResult.CONSUME;
+            return ActionResult.CONSUME;
         }
 
         if (stack.isOf(Items.GLASS_BOTTLE)) {
-            player.setStackInHand(hand, ItemUsage.exchangeStack(stack, player, PotionContentsComponent.createStack(Items.POTION, Potions.WATER)));
+            player.setStackInHand(hand, ItemUsage.exchangeStack(stack, player, PotionUtil.setPotion(Items.POTION.getDefaultStack(), Potions.WATER)));
             world.playSound(null, pos, SoundEvents.ITEM_BOTTLE_FILL, SoundCategory.BLOCKS, 1.0f, 1.0f);
             world.emitGameEvent(null, GameEvent.FLUID_PICKUP, pos);
-            return ItemActionResult.CONSUME;
+            return ActionResult.CONSUME;
         }
 
-        return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return ActionResult.PASS;
     }
 
     @Override

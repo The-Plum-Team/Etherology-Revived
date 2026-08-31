@@ -40,7 +40,7 @@ public class QuestButton extends AbstractButton {
 
     @Override
     public boolean onClick(double mouseX, double mouseY, int button) {
-        parent.executeOnPlayer(player -> player.playSound(active ? SoundEvents.ENTITY_VILLAGER_YES : SoundEvents.ENTITY_VILLAGER_NO));
+        parent.executeOnPlayer(player -> player.playSound(active ? SoundEvents.ENTITY_VILLAGER_YES : SoundEvents.ENTITY_VILLAGER_NO, 1.0f, 1.0f));
         ClientPlayNetworking.send(new QuestCompleteC2S(chapterId));
 
         // client-side quest completing

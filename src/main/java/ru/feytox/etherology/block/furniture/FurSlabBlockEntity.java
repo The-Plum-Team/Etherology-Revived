@@ -1,19 +1,18 @@
 package ru.feytox.etherology.block.furniture;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.enums.FurnitureType;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 
 import static ru.feytox.etherology.block.furniture.AbstractFurSlabBlock.BOTTOM_TYPE;
@@ -42,9 +41,9 @@ public class FurSlabBlockEntity extends TickableBlockEntity {
     }
 
     @Nullable
-    public ImplementedInventory getInventory(boolean isBottom) {
+    public ListBackedInventory getInventory(boolean isBottom) {
         FurnitureData data = isBottom ? bottomData : topData;
-        return data instanceof ImplementedInventory inv ? inv : null;
+        return data instanceof ListBackedInventory inv ? inv : null;
     }
 
     public void onUpdateState(BlockState newState) {
@@ -88,8 +87,8 @@ public class FurSlabBlockEntity extends TickableBlockEntity {
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
         NbtCompound bottomCompound = nbt.getCompound("bottom");
         NbtCompound bottomDataCompound = bottomCompound.getCompound("data");
         NbtCompound topCompound = nbt.getCompound("top");
@@ -98,34 +97,34 @@ public class FurSlabBlockEntity extends TickableBlockEntity {
         bottomType = FurnitureType.readFromNbt(bottomCompound);
         bottomData = bottomType.createDataInstance(true);
         if (bottomData != null && !bottomType.isEmpty() && !bottomDataCompound.isEmpty()) {
-            bottomData.readNbt(bottomDataCompound, registryLookup);
+            bottomData.readNbt(bottomDataCompound);
         } else bottomData = null;
 
         topType = FurnitureType.readFromNbt(topCompound);
         topData = topType.createDataInstance(false);
         if (topData != null && !topType.isEmpty() && !topDataCompound.isEmpty()) {
-            topData.readNbt(topDataCompound, registryLookup);
+            topData.readNbt(topDataCompound);
         } else topData = null;
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         NbtCompound bottomCompound = new NbtCompound();
         NbtCompound bottomDataCompound = new NbtCompound();
         NbtCompound topCompound = new NbtCompound();
         NbtCompound topDataCompound = new NbtCompound();
 
         bottomType.writeNbt(bottomCompound);
-        if (bottomData != null) bottomData.writeNbt(bottomDataCompound, registryLookup);
+        if (bottomData != null) bottomData.writeNbt(bottomDataCompound);
         bottomCompound.put("data", bottomDataCompound);
         nbt.put("bottom", bottomCompound);
 
         topType.writeNbt(topCompound);
-        if (topData != null) topData.writeNbt(topDataCompound, registryLookup);
+        if (topData != null) topData.writeNbt(topDataCompound);
         topCompound.put("data", topDataCompound);
         nbt.put("top", topCompound);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override

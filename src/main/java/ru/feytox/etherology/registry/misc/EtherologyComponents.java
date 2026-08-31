@@ -1,43 +1,32 @@
 package ru.feytox.etherology.registry.misc;
 
 import net.minecraft.entity.LivingEntity;
-import org.jetbrains.annotations.NotNull;
-import org.ladysnake.cca.api.v3.chunk.ChunkComponentFactoryRegistry;
-import org.ladysnake.cca.api.v3.chunk.ChunkComponentInitializer;
-import org.ladysnake.cca.api.v3.component.ComponentKey;
-import org.ladysnake.cca.api.v3.component.ComponentRegistryV3;
-import org.ladysnake.cca.api.v3.entity.EntityComponentFactoryRegistry;
-import org.ladysnake.cca.api.v3.entity.EntityComponentInitializer;
-import org.ladysnake.cca.api.v3.entity.RespawnCopyStrategy;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.chunk.Chunk;
 import ru.feytox.etherology.gui.teldecore.data.TeldecoreComponent;
 import ru.feytox.etherology.gui.teldecore.data.VisitedComponent;
 import ru.feytox.etherology.magic.corruption.CorruptionComponent;
 import ru.feytox.etherology.magic.ether.EtherComponent;
 import ru.feytox.etherology.util.misc.EIdentifier;
 
-public class EtherologyComponents implements EntityComponentInitializer, ChunkComponentInitializer {
+public final class EtherologyComponents {
 
-    public static final ComponentKey<CorruptionComponent> CORRUPTION =
-            ComponentRegistryV3.INSTANCE.getOrCreate(EIdentifier.of("corruption"), CorruptionComponent.class);
+    /** Provides the corruption state attached to a chunk. */
+    public static final ComponentHandle<CorruptionComponent, Chunk> CORRUPTION =
+            new ComponentHandle<>(EIdentifier.of("corruption"));
 
-    public static final ComponentKey<EtherComponent> ETHER =
-            ComponentRegistryV3.INSTANCE.getOrCreate(EIdentifier.of("ether"), EtherComponent.class);
+    /** Provides the ether state attached to a living entity. */
+    public static final ComponentHandle<EtherComponent, LivingEntity> ETHER =
+            new ComponentHandle<>(EIdentifier.of("ether"));
 
-    public static final ComponentKey<TeldecoreComponent> TELDECORE =
-            ComponentRegistryV3.INSTANCE.getOrCreate(EIdentifier.of("teldecore"), TeldecoreComponent.class);
+    /** Provides Teldecore progress attached to a player. */
+    public static final ComponentHandle<TeldecoreComponent, PlayerEntity> TELDECORE =
+            new ComponentHandle<>(EIdentifier.of("teldecore"));
 
-    public static final ComponentKey<VisitedComponent> VISITED =
-            ComponentRegistryV3.INSTANCE.getOrCreate(EIdentifier.of("visited"), VisitedComponent.class);
+    /** Provides location discoveries attached to a player. */
+    public static final ComponentHandle<VisitedComponent, PlayerEntity> VISITED =
+            new ComponentHandle<>(EIdentifier.of("visited"));
 
-    @Override
-    public void registerEntityComponentFactories(EntityComponentFactoryRegistry registry) {
-        registry.registerFor(LivingEntity.class, ETHER, EtherComponent::new);
-        registry.registerForPlayers(TELDECORE, TeldecoreComponent::new, RespawnCopyStrategy.ALWAYS_COPY);
-        registry.registerForPlayers(VISITED, VisitedComponent::new, RespawnCopyStrategy.ALWAYS_COPY);
-    }
-
-    @Override
-    public void registerChunkComponentFactories(@NotNull ChunkComponentFactoryRegistry registry) {
-        registry.register(CORRUPTION, CorruptionComponent::new);
+    private EtherologyComponents() {
     }
 }

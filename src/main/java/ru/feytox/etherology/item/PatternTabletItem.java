@@ -1,11 +1,13 @@
 package ru.feytox.etherology.item;
 
 import lombok.Getter;
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.screen.ScreenTexts;
 import net.minecraft.text.Text;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.magic.staff.StaffStyles;
 import ru.feytox.etherology.mixin.SmithingTemplateItemAccessor;
 
@@ -25,8 +27,8 @@ public class PatternTabletItem extends Item {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-        super.appendTooltip(stack, context, tooltip, type);
+    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        super.appendTooltip(stack, world, tooltip, context);
         tooltip.add(Text.translatable(getTranslationKey()).formatted(SmithingTemplateItemAccessor.getTitleFormatting()));
         tooltip.add(ScreenTexts.EMPTY);
         tooltip.add(SmithingTemplateItemAccessor.getAppliesToText());

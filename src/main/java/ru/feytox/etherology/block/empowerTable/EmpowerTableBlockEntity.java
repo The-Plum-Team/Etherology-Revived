@@ -11,8 +11,6 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.listener.ClientPlayPacketListener;
 import net.minecraft.network.packet.Packet;
 import net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket;
-import net.minecraft.recipe.RecipeEntry;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
@@ -101,10 +99,14 @@ public class EmpowerTableBlockEntity extends BlockEntity implements UpdatableInv
 
     public void craftAll(ItemStack resultStack) {
         craft(true);
-        while (canCraft() && resultStack.getCount() + currentRecipe.getOutput().getCount() < resultStack.getMaxCount()) {
+        while (canCraft() && canFitOutput(resultStack.getCount(), currentRecipe.getOutput().getCount(), resultStack.getMaxCount())) {
             if (craft(false)) resultStack.increment(currentRecipe.getOutput().getCount());
         }
         updateResult();
+    }
+
+    static boolean canFitOutput(int resultCount, int outputCount, int maxCount) {
+        return resultCount + outputCount <= maxCount;
     }
 
     public boolean craft(boolean shouldUpdate) {
@@ -147,8 +149,7 @@ public class EmpowerTableBlockEntity extends BlockEntity implements UpdatableInv
     @Nullable
     public EmpowerRecipe getRecipe() {
         if (world == null) return null;
-        return RecipesRegistry.maybeGetFirstMatch(world, this, EmpowerRecipeSerializer.INSTANCE)
-                .map(RecipeEntry::value).orElse(null);
+        return RecipesRegistry.getFirstMatch(world, this, EmpowerRecipeSerializer.INSTANCE);
     }
 
     @Override
@@ -167,8 +168,8 @@ public class EmpowerTableBlockEntity extends BlockEntity implements UpdatableInv
     }
 
     @Override
-    public NbtCompound toInitialChunkDataNbt(RegistryWrapper.WrapperLookup registryLookup) {
-        return createNbt(registryLookup);
+    public NbtCompound toInitialChunkDataNbt() {
+        return createNbt();
     }
 
     @Nullable
@@ -178,23 +179,23 @@ public class EmpowerTableBlockEntity extends BlockEntity implements UpdatableInv
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, inventory, registryLookup);
+    protected void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, inventory);
         nbt.putBoolean("has_result", hasResult);
         nbt.putInt("cached_rela", cachedRela);
         nbt.putInt("cached_via", cachedVia);
         nbt.putInt("cached_clos", cachedClos);
         nbt.putInt("cached_keta", cachedKeta);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         inventory.clear();
-        Inventories.readNbt(nbt, inventory, registryLookup);
+        Inventories.readNbt(nbt, inventory);
         hasResult = nbt.getBoolean("has_result");
         cachedRela = nbt.getInt("cached_rela");
         cachedVia = nbt.getInt("cached_via");

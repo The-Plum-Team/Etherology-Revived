@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 @UtilityClass
 public class EntityRegistry {
 
-    public static final EntityType<RedstoneChargeEntity> REDSTONE_CHARGE = registerType("redstone_charge", SpawnGroup.MISC, RedstoneChargeEntity::new, builder -> builder.dimensions(0.5f, 0.5f).maxTrackingRange(4).trackingTickInterval(10));
+    public static final EntityType<RedstoneChargeEntity> REDSTONE_CHARGE = registerType("redstone_charge", SpawnGroup.MISC, RedstoneChargeEntity::new, builder -> builder.setDimensions(0.5f, 0.5f).maxTrackingRange(4).trackingTickInterval(10));
 
     public static void registerServerSide() {
     }
@@ -23,6 +23,6 @@ public class EntityRegistry {
     private static <T extends Entity> EntityType<T> registerType(String id, SpawnGroup spawnGroup, EntityType.EntityFactory<T> factory, Consumer<EntityType.Builder<T>> extraOptions) {
         val builder = EntityType.Builder.create(factory, spawnGroup);
         extraOptions.accept(builder);
-        return Registry.register(Registries.ENTITY_TYPE, EIdentifier.of(id), builder.build());
+        return Registry.register(Registries.ENTITY_TYPE, EIdentifier.of(id), builder.build(id));
     }
 }

@@ -1,17 +1,14 @@
 package ru.feytox.etherology.magic.seal;
 
 import com.mojang.serialization.Codec;
-import io.netty.buffer.ByteBuf;
 import lombok.Getter;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
-import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.registry.block.EBlocks;
 import ru.feytox.etherology.registry.item.EItems;
-import ru.feytox.etherology.util.misc.CodecUtil;
 import ru.feytox.etherology.util.misc.EIdentifier;
 import ru.feytox.etherology.util.misc.RGBColor;
 
@@ -26,8 +23,7 @@ public enum SealType implements StringIdentifiable {
     VIA(() -> EItems.PRIMOSHARD_VIA, new RGBColor(248, 122, 95), new RGBColor(205, 58, 76)),
     CLOS(() -> EItems.PRIMOSHARD_CLOS, new RGBColor(106, 182, 81), new RGBColor(208, 158, 89));
 
-    public static final Codec<SealType> CODEC = StringIdentifiable.createBasicCodec(SealType::values);
-    public static final PacketCodec<ByteBuf, SealType> PACKET_CODEC = CodecUtil.ofEnum(values());
+    public static final Codec<SealType> CODEC = StringIdentifiable.createCodec(SealType::values);
 
     @Nullable
     private final Supplier<Item> shardGetter;

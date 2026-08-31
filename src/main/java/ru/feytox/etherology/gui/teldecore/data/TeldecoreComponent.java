@@ -9,13 +9,11 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
-import org.ladysnake.cca.api.v3.component.ComponentV3;
-import org.ladysnake.cca.api.v3.component.CopyableComponent;
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
+import ru.feytox.etherology.component.CopyableComponentState;
+import ru.feytox.etherology.component.PersistentComponentState;
 import ru.feytox.etherology.network.interaction.EntityComponentC2SType;
 import ru.feytox.etherology.registry.misc.EtherologyComponents;
 import ru.feytox.etherology.util.misc.EIdentifier;
@@ -24,7 +22,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor @Getter
-public class TeldecoreComponent implements ComponentV3, CopyableComponent<TeldecoreComponent>, AutoSyncedComponent {
+public class TeldecoreComponent implements PersistentComponentState, CopyableComponentState<TeldecoreComponent> {
 
     // static
     public static final Identifier CHAPTER_MENU = EIdentifier.of("chapter_menu");
@@ -81,27 +79,29 @@ public class TeldecoreComponent implements ComponentV3, CopyableComponent<Teldec
     }
 
     @Override
-    public void copyFrom(TeldecoreComponent other, RegistryWrapper.WrapperLookup registryLookup) {
+    public void copyFrom(TeldecoreComponent other) {
         selected = other.selected;
         page = other.page;
         tab = other.tab;
+        completedQuests = new ObjectOpenHashSet<>(other.completedQuests);
+        openedChapters = new ObjectOpenHashSet<>(other.openedChapters);
     }
 
     @Override
-    public void readFromNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registryLookup) {
-        selected = Identifier.of(tag.getString("selected"));
+    public void readFromNbt(NbtCompound tag) {
+        selected = new Identifier(tag.getString("selected"));
         page = tag.getInt("page");
         String tabStr = tag.getString("tab");
-        tab = tabStr.isEmpty() ? null : Identifier.of(tabStr);
+        tab = tabStr.isEmpty() ? null : new Identifier(tabStr);
 
-        completedQuests = tag.getList("completed", NbtList.STRING_TYPE).stream().map(NbtElement::asString)
-                .map(Identifier::of).collect(Collectors.toCollection(ObjectOpenHashSet::new));
-        openedChapters = tag.getList("opened", NbtList.STRING_TYPE).stream().map(NbtElement::asString)
-                .map(Identifier::of).collect(Collectors.toCollection(ObjectOpenHashSet::new));
+        completedQuests = tag.getList("completed", NbtElement.STRING_TYPE).stream().map(NbtElement::asString)
+                .map(Identifier::new).collect(Collectors.toCollection(ObjectOpenHashSet::new));
+        openedChapters = tag.getList("opened", NbtElement.STRING_TYPE).stream().map(NbtElement::asString)
+                .map(Identifier::new).collect(Collectors.toCollection(ObjectOpenHashSet::new));
     }
 
     @Override
-    public void writeToNbt(NbtCompound tag, RegistryWrapper.WrapperLookup registryLookup) {
+    public void writeToNbt(NbtCompound tag) {
         tag.putString("selected", selected.toString());
         tag.putInt("page", page);
         if (tab != null) tag.putString("tab", tab.toString());
@@ -138,7 +138,6 @@ public class TeldecoreComponent implements ComponentV3, CopyableComponent<Teldec
         packetType.sendToServer(this);
     }
 
-    @Override
     public boolean shouldSyncWith(ServerPlayerEntity player) {
         return this.player.equals(player);
     }

@@ -15,9 +15,9 @@ public class GeneratorDispenserBehavior extends ItemDispenserBehavior {
 
     @Override
     protected ItemStack dispenseSilently(BlockPointer pointer, ItemStack stack) {
-        Direction direction = pointer.state().get(DispenserBlock.FACING);
-        BlockPos checkPos = pointer.pos().add(direction.getVector());
-        ServerWorld world = pointer.world();
+        Direction direction = pointer.getBlockState().get(DispenserBlock.FACING);
+        BlockPos checkPos = pointer.getPos().add(direction.getVector());
+        ServerWorld world = pointer.getWorld();
 
         if (!(world.getBlockEntity(checkPos) instanceof AbstractGeneratorBlockEntity generator)) return super.dispenseSilently(pointer, stack);
 

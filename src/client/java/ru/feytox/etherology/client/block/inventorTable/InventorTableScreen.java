@@ -21,7 +21,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.world.World;
-import org.joml.Matrix4fStack;
 import org.joml.Quaternionf;
 import ru.feytox.etherology.block.inventorTable.InventorTableScreenHandler;
 import ru.feytox.etherology.magic.staff.StaffPart;
@@ -145,11 +144,11 @@ public class InventorTableScreen extends HandledScreen<InventorTableScreenHandle
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         int i = this.getRows() - 4;
         if (!aLotOfParts || i <= 0) return true;
 
-        float f = (float)verticalAmount / i;
+        float f = (float) amount / i;
         scrollPosition = MathHelper.clamp(scrollPosition - f, 0.0F, 1.0F);
         visibleTopRow = Math.max((int) (scrollPosition * i + 0.5F), 0);
 
@@ -176,8 +175,8 @@ public class InventorTableScreen extends HandledScreen<InventorTableScreenHandle
 
     private void drawItem(int x, int y, float tickDelta, ItemStack stack) {
         // TODO: 06.10.2023 fix animation lag
-        Matrix4fStack matrixStack = RenderSystem.getModelViewStack();
-        matrixStack.pushMatrix();
+        MatrixStack matrixStack = RenderSystem.getModelViewStack();
+        matrixStack.push();
         matrixStack.translate(x, y, 1050.0F);
         matrixStack.scale(1.0F, 1.0F, -1.0F);
         RenderSystem.applyModelViewMatrix();
@@ -205,7 +204,7 @@ public class InventorTableScreen extends HandledScreen<InventorTableScreenHandle
         renderItem(renderStack, world, stack, immediate, tickDelta, itemRenderer);
         immediate.draw();
         entityRenderDispatcher.setRenderShadows(true);
-        matrixStack.popMatrix();
+        matrixStack.pop();
         RenderSystem.applyModelViewMatrix();
         DiffuseLighting.enableGuiDepthLighting();
     }

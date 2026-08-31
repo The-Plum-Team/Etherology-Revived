@@ -5,8 +5,10 @@ import lombok.experimental.UtilityClass;
 import net.minecraft.block.Block;
 import net.minecraft.data.family.BlockFamilies;
 import net.minecraft.data.family.BlockFamily;
+import net.minecraft.registry.Registries;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import static ru.feytox.etherology.registry.block.DecoBlocks.*;
@@ -33,6 +35,7 @@ public class EBlockFamilies {
     public static List<Block> getBlocks(BlockFamily blockFamily) {
         List<Block> blocks = new ArrayList<>(blockFamily.getVariants().values().stream().toList());
         blocks.add(blockFamily.getBaseBlock());
+        blocks.sort(Comparator.comparing(block -> Registries.BLOCK.getId(block).toString()));
         return blocks;
     }
 

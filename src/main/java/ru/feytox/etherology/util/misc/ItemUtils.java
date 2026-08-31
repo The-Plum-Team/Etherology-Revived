@@ -29,7 +29,7 @@ public class ItemUtils {
     public static void damage(ItemStack stack, int amount) {
         ServerWorld world = Etherology.getAnyServerWorld();
         if (world != null) {
-            stack.damage(amount, world, null, item -> {});
+            if (stack.damage(amount, world.getRandom(), null)) stack.decrement(1);
             return;
         }
 

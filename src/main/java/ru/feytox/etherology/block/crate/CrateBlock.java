@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.crate;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -12,6 +11,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.state.StateManager;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -20,7 +20,6 @@ import net.minecraft.util.shape.VoxelShape;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
-import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.registry.block.EBlocks;
 import ru.feytox.etherology.util.misc.RegistrableBlock;
@@ -31,7 +30,6 @@ public class CrateBlock extends HorizontalFacingBlock implements RegistrableBloc
 
     private static final VoxelShape NORTH_SHAPE;
     private static final VoxelShape WEST_SHAPE;
-    private static final MapCodec<CrateBlock> CODEC = MapCodec.unit(CrateBlock::new);
 
     public CrateBlock() {
         super(Settings.copy(Blocks.CHEST).nonOpaque());
@@ -70,7 +68,7 @@ public class CrateBlock extends HorizontalFacingBlock implements RegistrableBloc
     }
 
     @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (world.isClient) return ActionResult.SUCCESS;
 
         NamedScreenHandlerFactory screenHandlerFactory = (NamedScreenHandlerFactory) world.getBlockEntity(pos);
@@ -79,7 +77,7 @@ public class CrateBlock extends HorizontalFacingBlock implements RegistrableBloc
     }
 
     @Override
-    public ItemStack getPickStack(WorldView world, BlockPos pos, BlockState state) {
+    public ItemStack getPickStack(BlockView world, BlockPos pos, BlockState state) {
         return EBlocks.CRATE.getItem().getDefaultStack();
     }
 
@@ -134,8 +132,4 @@ public class CrateBlock extends HorizontalFacingBlock implements RegistrableBloc
         WEST_SHAPE = createCuboidShape(3, 0, 1, 13, 10, 15);
     }
 
-    @Override
-    protected MapCodec<? extends HorizontalFacingBlock> getCodec() {
-        return CODEC;
-    }
 }

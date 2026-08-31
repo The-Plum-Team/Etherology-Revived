@@ -1,15 +1,15 @@
 package ru.feytox.etherology.particle.effects;
 
-import com.mojang.serialization.MapCodec;
+import com.mojang.brigadier.StringReader;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import lombok.Getter;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.particle.ParticleType;
 import net.minecraft.util.math.Vec3d;
 import ru.feytox.etherology.particle.effects.misc.FeyParticleEffect;
 import ru.feytox.etherology.particle.subtype.LightSubtype;
-import ru.feytox.etherology.util.misc.CodecUtil;
 
 @Getter
 public class LightParticleEffect extends FeyParticleEffect<LightParticleEffect> {
@@ -28,16 +28,35 @@ public class LightParticleEffect extends FeyParticleEffect<LightParticleEffect> 
     }
 
     @Override
-    public MapCodec<LightParticleEffect> createCodec() {
-        return RecordCodecBuilder.mapCodec(instance -> instance.group(
+    public Codec<LightParticleEffect> createCodec() {
+        return RecordCodecBuilder.create(instance -> instance.group(
                 LightSubtype.CODEC.fieldOf("lightType").forGetter(LightParticleEffect::getLightType),
                 Vec3d.CODEC.fieldOf("moveVec").forGetter(LightParticleEffect::getMoveVec)
         ).apply(instance, biFactory(LightParticleEffect::new)));
     }
 
     @Override
-    public PacketCodec<RegistryByteBuf, LightParticleEffect> createPacketCodec() {
-        return PacketCodec.tuple(LightSubtype.PACKET_CODEC, LightParticleEffect::getLightType,
-                CodecUtil.VEC3D_PACKET, LightParticleEffect::getMoveVec, biFactory(LightParticleEffect::new));
+    public LightParticleEffect read(ParticleType<LightParticleEffect> type, StringReader reader) throws CommandSyntaxException {
+        reader.expect(' ');
+        LightSubtype lightType = readEnum(reader, LightSubtype.class);
+        reader.expect(' ');
+        return new LightParticleEffect(type, lightType, readVec3d(reader));
+    }
+
+    @Override
+    public LightParticleEffect read(ParticleType<LightParticleEffect> type, PacketByteBuf buf) {
+        LightSubtype lightType = buf.readEnumConstant(LightSubtype.class);
+        return new LightParticleEffect(type, lightType, readVec3d(buf));
+    }
+
+    @Override
+    public String writeParameters() {
+        return lightType.name() + " " + writeVec3d(moveVec);
+    }
+
+    @Override
+    public void write(PacketByteBuf buf) {
+        buf.writeEnumConstant(lightType);
+        writeVec3d(buf, moveVec);
     }
 }

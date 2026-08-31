@@ -1,10 +1,9 @@
 package ru.feytox.etherology;
 
 import com.mojang.logging.LogUtils;
+import dev.architectury.event.events.common.LifecycleEvent;
+import dev.architectury.event.events.common.TickEvent;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.minecraft.server.world.ServerWorld;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -26,17 +25,26 @@ import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 import ru.feytox.etherology.util.delayedTask.ServerTaskManager;
 
-public class Etherology implements ModInitializer {
+public class Etherology {
 
     public static final Logger ELOGGER = LogUtils.getLogger();
     public static final String MOD_ID = "etherology";
     private static final ObjectArrayList<ServerWorld> loadedWorlds = new ObjectArrayList<>();
+    private static boolean initialized;
 
-    @Override
-    public void onInitialize() {
+    /**
+     * Registers loader-neutral content and server handlers. Subsequent calls have no effect.
+     */
+    public static void initialize() {
+        if (initialized) {
+            return;
+        }
+        initialized = true;
+
         ExtraBlocksRegistry.registerAll();
         RegistriesRegistry.registerAll();
         EItems.registerItems();
+        EtherEnchantments.registerAll();
         EBlocks.registerAll();
         ResourceReloaders.registerServerData();
         EtherologyNetwork.registerCommonSide();
@@ -61,16 +69,16 @@ public class Etherology implements ModInitializer {
         EtherParticleTypes.registerAll();
         ChannelShapes.cacheAll();
 
-        ServerWorldEvents.LOAD.register((server, world) -> loadedWorlds.add(world));
-        ServerWorldEvents.UNLOAD.register((server, world) -> loadedWorlds.remove(world));
+        LifecycleEvent.SERVER_LEVEL_LOAD.register(loadedWorlds::add);
+        LifecycleEvent.SERVER_LEVEL_UNLOAD.register(loadedWorlds::remove);
 
-        ServerTickEvents.END_SERVER_TICK.register(server -> ServerTaskManager.INSTANCE.tickTasks());
-        ServerTickEvents.END_WORLD_TICK.register(world -> RedstoneLensEffects.getServerState(world).tick(world));
+        TickEvent.SERVER_POST.register(server -> ServerTaskManager.INSTANCE.tickTasks());
+        TickEvent.SERVER_LEVEL_POST.register(world -> RedstoneLensEffects.getServerState(world).tick(world));
     }
 
     // TODO: 16.07.2024 use something else
     @Nullable
     public static ServerWorld getAnyServerWorld() {
-        return loadedWorlds.isEmpty() ? null : loadedWorlds.getFirst();
+        return loadedWorlds.isEmpty() ? null : loadedWorlds.get(0);
     }
 }

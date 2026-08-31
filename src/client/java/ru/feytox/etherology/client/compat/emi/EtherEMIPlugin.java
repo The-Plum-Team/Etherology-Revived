@@ -6,12 +6,11 @@ import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiCraftingRecipe;
 import dev.emi.emi.api.recipe.EmiRecipe;
 import dev.emi.emi.api.stack.EmiStack;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.recipe.Recipe;
-import net.minecraft.recipe.RecipeEntry;
 import net.minecraft.recipe.RecipeType;
-import net.minecraft.recipe.input.RecipeInput;
 import ru.feytox.etherology.client.compat.emi.misc.AspectStack;
 import ru.feytox.etherology.client.compat.emi.misc.FeyEmiCategory;
 import ru.feytox.etherology.client.compat.emi.recipe.*;
@@ -78,11 +77,11 @@ public class EtherEMIPlugin implements EmiPlugin {
         registerRecipe(registry, ModifierRecipeSerializer.INSTANCE, JewelryERecipe.Modifier::of);
     }
 
-    private <T extends Recipe<I>, I extends RecipeInput, R extends EmiRecipe> void registerRecipe(EmiRegistry registry, FeyRecipeSerializer<T> feySerializer, Function<RecipeEntry<T>, R> mapper) {
-        getRecipes(registry, feySerializer.getRecipeType()).forEach(entry -> registry.addRecipe(mapper.apply(entry)));
+    private <I extends Inventory, T extends Recipe<I>, R extends EmiRecipe> void registerRecipe(EmiRegistry registry, FeyRecipeSerializer<T> feySerializer, Function<T, R> mapper) {
+        getRecipes(registry, feySerializer.getRecipeType()).forEach(recipe -> registry.addRecipe(mapper.apply(recipe)));
     }
 
-    private <T extends Recipe<I>, I extends RecipeInput> List<RecipeEntry<T>> getRecipes(EmiRegistry registry, RecipeType<T> recipeType) {
+    private <I extends Inventory, T extends Recipe<I>> List<T> getRecipes(EmiRegistry registry, RecipeType<T> recipeType) {
         return registry.getRecipeManager().listAllOfType(recipeType);
     }
 
@@ -91,7 +90,7 @@ public class EtherEMIPlugin implements EmiPlugin {
 
         Arrays.stream(StaffColors.values()).map(color -> {
             ItemStack resultStaff = ToolItems.STAFF.getDefaultStack();
-            resultStaff.apply(ComponentTypes.STAFF, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
+            ComponentTypes.STAFF.apply(resultStaff, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
             return new EmiCraftingRecipe(List.of(staff, EmiStack.of(color.getCarpet())), EmiStack.of(resultStaff), ItemUtils.suffixId(ToolItems.STAFF, "_" + color.getName() + "_carpeting"), true);
         }).forEach(registry::addRecipe);
     }
@@ -102,7 +101,7 @@ public class EtherEMIPlugin implements EmiPlugin {
 
         Arrays.stream(StaffColors.values()).map(color -> {
             ItemStack inputStaff = ToolItems.STAFF.getDefaultStack();
-            inputStaff.apply(ComponentTypes.STAFF, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
+            ComponentTypes.STAFF.apply(inputStaff, StaffComponent.DEFAULT, component -> component.setPartInfo(StaffPartInfo.of(StaffPart.HANDLE, color)));
             return new EmiCraftingRecipe(List.of(EmiStack.of(inputStaff), shears), resultStaff, ItemUtils.suffixId(ToolItems.STAFF, "_" + color.getName() + "_carpet_cutting"), true);
         }).forEach(registry::addRecipe);
     }

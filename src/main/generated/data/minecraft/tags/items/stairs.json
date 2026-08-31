@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "etherology:attrahite_brick_stairs",
+    "etherology:slitherite_stairs",
+    "etherology:polished_slitherite_stairs",
+    "etherology:polished_slitherite_brick_stairs"
+  ]
+}

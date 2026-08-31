@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.furniture;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -13,14 +12,14 @@ import net.minecraft.loot.LootTables;
 import net.minecraft.loot.context.LootContextParameterSet;
 import net.minecraft.loot.context.LootContextParameters;
 import net.minecraft.loot.context.LootContextTypes;
-import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.EnumProperty;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.ItemScatterer;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -32,6 +31,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.enums.FurnitureType;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.RegistrableBlock;
 
 import java.util.Collections;
@@ -66,7 +66,7 @@ public abstract class AbstractFurSlabBlock extends Block implements RegistrableB
     }
 
     @Override
-    protected List<ItemStack> getDroppedStacks(BlockState state, LootContextParameterSet.Builder builder) {
+    public List<ItemStack> getDroppedStacks(BlockState state, LootContextParameterSet.Builder builder) {
         FurnitureType bottom = state.get(BOTTOM_TYPE);
         FurnitureType top = state.get(TOP_TYPE);
 
@@ -79,21 +79,21 @@ public abstract class AbstractFurSlabBlock extends Block implements RegistrableB
         Block block = furType.getBlock();
         if (block == null) return Collections.emptyList();
 
-        RegistryKey<LootTable> tableKey = block.getLootTableKey();
-        if (tableKey == LootTables.EMPTY) return Collections.emptyList();
+        Identifier tableId = block.getLootTableId();
+        if (tableId.equals(LootTables.EMPTY)) return Collections.emptyList();
 
         LootContextParameterSet parameters = builder.add(LootContextParameters.BLOCK_STATE, state).build(LootContextTypes.BLOCK);
         ServerWorld world = parameters.getWorld();
-        LootTable lootTable = world.getServer().getReloadableRegistries().getLootTable(tableKey);
+        LootTable lootTable = world.getServer().getLootManager().getLootTable(tableId);
         return lootTable.generateLoot(parameters);
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         BlockEntity be = world.getBlockEntity(pos);
         if (be instanceof FurSlabBlockEntity furBlockEntity) {
             Optional<Vec2f> match = getHitPos(hit, state.get(HorizontalFacingBlock.FACING));
-            if (match.isEmpty()) return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+            if (match.isEmpty()) return super.onUse(state, world, pos, player, hand, hit);
 
             Vec2f hitPos = match.get();
             if (hitPos.y >= 0.5f) {
@@ -101,10 +101,10 @@ public abstract class AbstractFurSlabBlock extends Block implements RegistrableB
             } else {
                 furBlockEntity.bottomUse(world, state, player, hitPos, hand);
             }
-            return ItemActionResult.SUCCESS;
+            return ActionResult.SUCCESS;
         }
 
-        return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        return super.onUse(state, world, pos, player, hand, hit);
     }
 
     @Override
@@ -122,8 +122,8 @@ public abstract class AbstractFurSlabBlock extends Block implements RegistrableB
         BlockEntity be = world.getBlockEntity(pos);
         if (!(newState.getBlock() instanceof AbstractFurSlabBlock)) {
             if (be instanceof FurSlabBlockEntity furniture) {
-                ImplementedInventory bottomInv = furniture.getInventory(false);
-                ImplementedInventory topInv = furniture.getInventory(true);
+                ListBackedInventory bottomInv = furniture.getInventory(false);
+                ListBackedInventory topInv = furniture.getInventory(true);
                 if (bottomInv != null) ItemScatterer.spawn(world, pos, bottomInv);
                 if (topInv != null) ItemScatterer.spawn(world, pos, topInv);
             }

@@ -12,7 +12,7 @@ public enum ContentBehaviour implements StringIdentifiable {
     BEFORE(hasQuest -> hasQuest),
     AFTER(hasQuest -> !hasQuest);
 
-    public static final Codec<ContentBehaviour> CODEC = StringIdentifiable.createBasicCodec(ContentBehaviour::values);
+    public static final Codec<ContentBehaviour> CODEC = StringIdentifiable.createCodec(ContentBehaviour::values);
 
     private final Predicate<Boolean> behaviourTest;
 

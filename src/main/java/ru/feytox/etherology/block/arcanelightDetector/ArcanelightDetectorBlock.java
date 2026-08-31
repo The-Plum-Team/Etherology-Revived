@@ -57,7 +57,7 @@ public class ArcanelightDetectorBlock extends Block implements BlockEntityProvid
     }
 
     @Override
-    protected void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
+    public void neighborUpdate(BlockState state, World world, BlockPos pos, Block sourceBlock, BlockPos sourcePos, boolean notify) {
         super.neighborUpdate(state, world, pos, sourceBlock, sourcePos, notify);
         EssenceConsumer.activateSearching(world, pos, ArcanelightDetectorBlockEntity.class);
     }

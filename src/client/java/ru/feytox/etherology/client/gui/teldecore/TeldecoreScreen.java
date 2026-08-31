@@ -82,8 +82,11 @@ public class TeldecoreScreen extends Screen implements FocusedIngredientProvider
         var tabs = getRegistry(RegistriesRegistry.TABS);
         if (tabs == null) return;
 
-        Optional<RegistryEntry.Reference<Tab>> optionalTab = data.getTab() != null ? tabs.getEntry(data.getTab()) : Optional.empty();
-        var tabEntry = optionalTab.or(tabs::getDefaultEntry).orElseThrow(() -> new NoSuchElementException("Could not find any teldecore tab."));
+        Optional<RegistryEntry.Reference<Tab>> optionalTab = data.getTab() != null
+                ? tabs.getEntry(RegistryKey.of(RegistriesRegistry.TABS, data.getTab()))
+                : Optional.empty();
+        var tabEntry = optionalTab.or(() -> tabs.streamEntries().findFirst())
+                .orElseThrow(() -> new NoSuchElementException("Could not find any teldecore tab."));
         initSelectedTab(tabEntry.value());
         initTabs(tabs, tabEntry.registryKey());
     }
@@ -175,7 +178,7 @@ public class TeldecoreScreen extends Screen implements FocusedIngredientProvider
         for (var content : chapter.contents()) {
             if (!content.getBehaviour().test(hasQuest)) continue;
 
-            var lastPage = pages.getLast();
+            var lastPage = pages.get(pages.size()-1);
             if (lastPage.addContent(content, 10)) continue;
 
             var page = new EmptyPage(screen, !lastPage.isLeft());
@@ -199,9 +202,9 @@ public class TeldecoreScreen extends Screen implements FocusedIngredientProvider
     }
 
     @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
+    public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         for (var child : children()) {
-            if (child.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount)) return true;
+            if (child.mouseScrolled(mouseX, mouseY, amount)) return true;
         }
         return false;
     }
@@ -213,8 +216,14 @@ public class TeldecoreScreen extends Screen implements FocusedIngredientProvider
     }
 
     @Override
-    public void renderBackground(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.renderBackground(context, mouseX, mouseY, delta);
+    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        renderBackground(context);
+        super.render(context, mouseX, mouseY, delta);
+    }
+
+    @Override
+    public void renderBackground(DrawContext context) {
+        super.renderBackground(context);
         RenderSystem.setShaderTexture(0, BASE);
         RenderUtils.renderTexture(context, x, y, 0, 0, BASE_WIDTH, BASE_HEIGHT, BASE_WIDTH, BASE_HEIGHT);
     }

@@ -4,9 +4,9 @@ import it.unimi.dsi.fastutil.chars.Char2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import net.minecraft.advancement.AdvancementCriterion;
+import net.minecraft.advancement.criterion.CriterionConditions;
 import net.minecraft.data.server.recipe.CraftingRecipeJsonBuilder;
-import net.minecraft.data.server.recipe.RecipeExporter;
+import net.minecraft.data.server.recipe.RecipeJsonProvider;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.ItemStack;
@@ -18,6 +18,7 @@ import ru.feytox.etherology.Etherology;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 @RequiredArgsConstructor(staticName = "create")
 public class EmpowerRecipeBuilder implements CraftingRecipeJsonBuilder {
@@ -81,7 +82,7 @@ public class EmpowerRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public CraftingRecipeJsonBuilder criterion(String name, AdvancementCriterion<?> criterion) {
+    public CraftingRecipeJsonBuilder criterion(String name, CriterionConditions criterion) {
         Etherology.ELOGGER.warn("Criterion is not yet supported by Empowerment recipe type.");
         return null;
     }
@@ -98,11 +99,11 @@ public class EmpowerRecipeBuilder implements CraftingRecipeJsonBuilder {
     }
 
     @Override
-    public void offerTo(RecipeExporter exporter, Identifier recipeId) {
+    public void offerTo(Consumer<RecipeJsonProvider> exporter, Identifier recipeId) {
         if (!empty && rellaCount == 0 && viaCount == 0 && closCount == 0 && ketaCount == 0) Etherology.ELOGGER.warn("{} recipe does not have any primoshard requirements", recipeId);
         if (this.pattern.size() != 3) throw new IllegalArgumentException("Empowerment Pattern must have exactly 3x3 size");
         EmpowerRecipe.Pattern pattern = EmpowerRecipe.Pattern.create(inputs, this.pattern);
-        EmpowerRecipe recipe = new EmpowerRecipe(pattern, rellaCount, viaCount, closCount, ketaCount, outputStack);
-        exporter.accept(recipeId, recipe, null);
+        EmpowerRecipe recipe = new EmpowerRecipe(pattern, rellaCount, viaCount, closCount, ketaCount, outputStack, recipeId);
+        exporter.accept(EmpowerRecipeSerializer.INSTANCE.toProvider(recipe));
     }
 }

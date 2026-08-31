@@ -31,7 +31,7 @@ import java.util.stream.StreamSupport;
 public class StaffItem extends Item {
 
     public StaffItem() {
-        super(new Settings().maxCount(1).component(ComponentTypes.STAFF, StaffComponent.DEFAULT));
+        super(new Settings().maxCount(1));
     }
 
     @Override
@@ -56,7 +56,7 @@ public class StaffItem extends Item {
     }
 
     @Override
-    public int getMaxUseTime(ItemStack stack, LivingEntity user) {
+    public int getMaxUseTime(ItemStack stack) {
         return 72000;
     }
 
@@ -73,6 +73,7 @@ public class StaffItem extends Item {
             case STREAM -> lensItem.onStreamUse(world, user, lensData, lensStack, hold, handGetter);
         };
 
+        persistUndamagedLensChanges(staffStack, lensStack, lensData, isDamaged);
         if (!isDamaged) return;
         onLensDamage(world, user, staffStack, lensItem, lensStack);
     }
@@ -87,7 +88,7 @@ public class StaffItem extends Item {
         ItemData<LensComponent> lensData = LensComponent.getWrapper(lensStack).orElse(null);
         if (lensData == null) return;
 
-        int holdTicks = getMaxUseTime(staffStack, user) - remainingUseTicks;
+        int holdTicks = getMaxUseTime(staffStack) - remainingUseTicks;
         Supplier<Hand> handGetter = () -> getHandFromStack(user, staffStack);
 
         boolean isDamaged = switch (lensData.getComponent().mode()) {
@@ -98,8 +99,15 @@ public class StaffItem extends Item {
             case STREAM -> lensItem.onStreamStop(world, user, lensData, lensStack, holdTicks, handGetter);
         };
 
+        persistUndamagedLensChanges(staffStack, lensStack, lensData, isDamaged);
         if (!isDamaged) return;
         onLensDamage(world, user, staffStack, lensItem, lensStack);
+    }
+
+    static void persistUndamagedLensChanges(ItemStack staffStack, ItemStack lensStack,
+                                            ItemData<LensComponent> lensData, boolean isDamaged) {
+        if (isDamaged || !lensData.wasSaved()) return;
+        setLensComponent(staffStack, lensStack);
     }
 
     private static void onLensDamage(World world, LivingEntity user, ItemStack staffStack, LensItem lensItem, ItemStack lensStack) {
@@ -126,7 +134,7 @@ public class StaffItem extends Item {
     }
 
     @Override
-    public boolean allowComponentsUpdateAnimation(PlayerEntity player, Hand hand, ItemStack oldStack, ItemStack newStack) {
+    public boolean allowNbtUpdateAnimation(PlayerEntity player, Hand hand, ItemStack oldStack, ItemStack newStack) {
         return false;
     }
 
@@ -151,6 +159,6 @@ public class StaffItem extends Item {
     }
 
     public static void setLensComponent(ItemStack staffStack, ItemStack lensStack) {
-        staffStack.set(ComponentTypes.STAFF_LENS, new ItemComponent(lensStack));
+        ComponentTypes.STAFF_LENS.set(staffStack, new ItemComponent(lensStack));
     }
 }

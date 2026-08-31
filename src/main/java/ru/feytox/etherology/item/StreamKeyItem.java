@@ -2,7 +2,6 @@ package ru.feytox.etherology.item;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemUsageContext;
 import net.minecraft.item.ToolItem;
 import net.minecraft.server.world.ServerWorld;
@@ -52,8 +51,8 @@ public class StreamKeyItem extends ToolItem {
             rotateChannel(context, world, state, isVertical, pos);
 
         var hand = context.getHand();
-        if (isPlayer) stack.damage(1, player, PlayerEntity.getSlotForHand(hand));
-        else stack.damage(1, world, null, item -> {});
+        if (isPlayer) stack.damage(1, player, entity -> entity.sendToolBreakStatus(hand));
+        else if (stack.damage(1, world.getRandom(), null)) stack.decrement(1);
 
         return ActionResult.SUCCESS;
     }

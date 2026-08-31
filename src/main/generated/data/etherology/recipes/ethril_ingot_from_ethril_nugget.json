@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "group": "ethril_ingot",
+  "key": {
+    "#": {
+      "item": "etherology:ethril_nugget"
+    }
+  },
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "result": {
+    "item": "etherology:ethril_ingot"
+  },
+  "show_notification": true
+}

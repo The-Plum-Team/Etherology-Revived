@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.thuja;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.AbstractPlantStemBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -27,7 +26,6 @@ public class ThujaBlock extends AbstractPlantStemBlock implements RegistrableBlo
 
     // TODO: 02.03.2024 combine code from ThujaBlock and ThujaPlantBlock to avoid copy-pasting
 
-    private static final MapCodec<ThujaBlock> CODEC = MapCodec.unit(ThujaBlock::new);
     public static final EnumProperty<ThujaShape> SHAPE = EnumProperty.of("shape", ThujaShape.class);
     public static final VoxelShape OUTLINE_SHAPE = VoxelShapes.fullCube();
     private static final int MAX_LENGTH = 5;
@@ -53,18 +51,13 @@ public class ThujaBlock extends AbstractPlantStemBlock implements RegistrableBlo
     }
 
     @Override
-    protected MapCodec<? extends AbstractPlantStemBlock> getCodec() {
-        return CODEC;
-    }
-
-    @Override
     public BlockState getStateForNeighborUpdate(BlockState state, Direction direction, BlockState neighborState, WorldAccess world, BlockPos pos, BlockPos neighborPos) {
         state = super.getStateForNeighborUpdate(state, direction, neighborState, world, pos, neighborPos);
         return getThujaStateForNeighborUpdate(state, world, pos, neighborPos);
     }
 
     @Override
-    protected void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
+    public void randomTick(BlockState state, ServerWorld world, BlockPos pos, Random random) {
         if (isMaxLength(world, pos)) return;
         super.randomTick(state, world, pos, random);
     }

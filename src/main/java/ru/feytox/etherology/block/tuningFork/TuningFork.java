@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.tuningFork;
 
-import com.mojang.serialization.MapCodec;
 import lombok.val;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -16,6 +15,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.state.StateManager;
 import net.minecraft.state.property.*;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -32,7 +32,6 @@ import ru.feytox.etherology.util.misc.RegistrableBlock;
 
 public class TuningFork extends FacingBlock implements RegistrableBlock, BlockEntityProvider, Waterloggable {
 
-    private static final MapCodec<TuningFork> CODEC = MapCodec.unit(TuningFork::new);
     public static final EnumProperty<Direction> VERTICAL_FACING = DirectionProperty.of("vertical_facing");
     private static final EnumProperty<Direction> HORIZONTAL_FACING = DirectionProperty.of("horizontal_facing");
     public static final BooleanProperty POWERED = Properties.POWERED;
@@ -64,7 +63,7 @@ public class TuningFork extends FacingBlock implements RegistrableBlock, BlockEn
      * @see NoteBlock#onUse(BlockState, World, BlockPos, PlayerEntity, BlockHitResult)
      */
     @Override
-    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         if (world.isClient) return ActionResult.SUCCESS;
 
         state = state.cycle(NOTE);
@@ -255,8 +254,4 @@ public class TuningFork extends FacingBlock implements RegistrableBlock, BlockEn
         return new TuningForkBlockEntity(pos, state);
     }
 
-    @Override
-    protected MapCodec<? extends FacingBlock> getCodec() {
-        return CODEC;
-    }
 }

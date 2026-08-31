@@ -3,19 +3,18 @@ package ru.feytox.etherology.magic.corruption;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.ladysnake.cca.api.v3.component.sync.AutoSyncedComponent;
-import org.ladysnake.cca.api.v3.component.tick.ServerTickingComponent;
+import ru.feytox.etherology.component.PersistentComponentState;
+import ru.feytox.etherology.component.ServerTickingComponentState;
 import ru.feytox.etherology.registry.misc.EtherologyComponents;
 
 @RequiredArgsConstructor
-public class CorruptionComponent implements ServerTickingComponent, AutoSyncedComponent {
+public class CorruptionComponent implements PersistentComponentState, ServerTickingComponentState {
 
     private static final int INFECTION_TICK_RATE = 60*20;
     private static final int EVAPORATION_TICK_RATE = 20;
@@ -50,17 +49,18 @@ public class CorruptionComponent implements ServerTickingComponent, AutoSyncedCo
 
     public void decrement(float value) {
         if (value <= MIN_CORRUPTION) return;
-        setCorruption(corruption == null ? new Corruption(value) : corruption.increment(-value));
+        if (corruption == null) return;
+        setCorruption(corruption.increment(-value));
     }
 
     @Override
-    public void readFromNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    public void readFromNbt(NbtCompound nbt) {
         NbtCompound corruptionNbt = nbt.getCompound("Corruption");
         corruption = Corruption.readFromNbt(corruptionNbt);
     }
 
     @Override
-    public void writeToNbt(@NotNull NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    public void writeToNbt(@NotNull NbtCompound nbt) {
         NbtCompound corruptionNbt = new NbtCompound();
         if (corruption != null && !corruption.isEmpty()) corruption.writeNbt(corruptionNbt);
         nbt.put("Corruption", corruptionNbt);
@@ -91,7 +91,7 @@ public class CorruptionComponent implements ServerTickingComponent, AutoSyncedCo
             for (int z = -1; z <= 1; z++) {
                 if (x == z || x == -z) continue;
                 Chunk sideChunk = world.getChunk(x + chunkPos.x, z + chunkPos.z);
-                CorruptionComponent component = sideChunk.getComponent(EtherologyComponents.CORRUPTION);
+                CorruptionComponent component = EtherologyComponents.CORRUPTION.getNullable(sideChunk);
                 component.increment(tipValue / 4);
             }
         }

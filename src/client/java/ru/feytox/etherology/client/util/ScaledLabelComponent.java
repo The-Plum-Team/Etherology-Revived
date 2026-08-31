@@ -47,9 +47,10 @@ public class ScaledLabelComponent extends LabelComponent {
             y += this.verticalSizing.get().value;
         }
 
+        int textHeight = (this.wrappedText.size() * (this.lineHeight() + 2)) - 2;
         switch (this.verticalTextAlignment) {
-            case CENTER -> y += (this.height - (this.textHeight())) / 2;
-            case BOTTOM -> y += this.height - (this.textHeight());
+            case CENTER -> y += (this.height - textHeight) / 2;
+            case BOTTOM -> y += this.height - textHeight;
         }
 
         final int lambdaX = x;
@@ -65,7 +66,7 @@ public class ScaledLabelComponent extends LabelComponent {
                     case RIGHT -> renderX += this.width - this.textRenderer.getWidth(renderText);
                 }
 
-                int renderY = lambdaY + i * (this.lineHeight() + this.lineSpacing());
+                int renderY = lambdaY + i * (this.lineHeight() + 2);
                 renderY += this.lineHeight() - this.textRenderer.fontHeight;
 
                 matrices.push();

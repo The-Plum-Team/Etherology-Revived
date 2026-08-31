@@ -14,7 +14,7 @@ public enum ChapterType implements StringIdentifiable {
     SUB_TAB(EIdentifier.of("textures/gui/teldecore/icon/chapter_square.png"), EIdentifier.of("textures/gui/teldecore/icon/chapter_square_hidden.png")),
     NEW_TAB(EIdentifier.of("textures/gui/teldecore/icon/chapter_star.png"), EIdentifier.of("textures/gui/teldecore/icon/chapter_star_hidden.png"));
 
-    public static final Codec<ChapterType> CODEC = StringIdentifiable.createBasicCodec(ChapterType::values);
+    public static final Codec<ChapterType> CODEC = StringIdentifiable.createCodec(ChapterType::values);
 
     private final Identifier texture;
     private final Identifier hiddenTexture;

@@ -1,6 +1,30 @@
 **English** | [Russian](README-ru.md)
 
-# Etherology
+# Etherology Revived
+
+Etherology Revived is a multi-version, multi-loader continuation of
+[feytox/Etherology](https://github.com/feytox/Etherology). The repository uses
+Stonecutter version branches with loader-neutral Common code and thin loader
+modules. The exact branch, Java, loader, and API roadmap is tracked in
+[`release/support-catalog.json`](release/support-catalog.json) and explained in
+[`docs/porting/VERSION-MATRIX.md`](docs/porting/VERSION-MATRIX.md).
+
+## Port status
+
+| Minecraft | Loader | Status |
+| --- | --- | --- |
+| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and three real-client E2E slices pass; broader parity is pending |
+| 1.20.1 | Forge | Active port; bootstrap and persistent storage/menu core accepted, release gate still closed |
+| 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
+| 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
+
+Forge artifacts are intentionally blocked until the remaining gameplay,
+client, native-loader, and E2E parity gates pass. See
+[`BUILDING.md`](BUILDING.md), the
+[`Forge 1.20.1 completion plan`](docs/porting/FORGE-1.20.1-COMPLETION-PLAN.md),
+and the frozen [Fabric 1.20.1 runtime evidence](docs/evidence/fabric-1.20.1/README.md).
+
+## About Etherology
 
 **Etherology** is a fabulous mod that plays on immersion and disclosure of its *global lore*. This project is bound to give you an unforgettable feeling of exploring a new world with detailed *mechanics* and eye-pleasing *vanilla* design.
 
@@ -8,7 +32,7 @@ Immerse yourself in the study of ancient knowledge and try to curb all the myste
 
 Etherology is not strict on attention, play for fun, and the mod will only *sweeten* your stay in the game. But if you are ready to discover this world in a new way - *go for the truth*!
 
-## Mod requirements
+## Fabric requirements
 - [Fabric API](https://modrinth.com/mod/fabric-api)
 - [oωo (owo-lib)](https://modrinth.com/mod/owo-lib)
 - [Cardinal Components API](https://modrinth.com/mod/cardinal-components-api)

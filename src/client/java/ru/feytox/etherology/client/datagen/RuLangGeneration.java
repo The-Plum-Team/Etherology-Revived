@@ -2,7 +2,6 @@ package ru.feytox.etherology.client.datagen;
 
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
-import net.minecraft.registry.RegistryWrapper;
 import ru.feytox.etherology.Etherology;
 import ru.feytox.etherology.client.datagen.util.RuTranslationBuilder;
 import ru.feytox.etherology.client.datagen.util.RuTranslationPart;
@@ -18,7 +17,6 @@ import ru.feytox.etherology.registry.misc.EtherEnchantments;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
 
 import static ru.feytox.etherology.registry.block.DecoBlocks.*;
 import static ru.feytox.etherology.registry.block.EBlocks.*;
@@ -31,13 +29,13 @@ public class RuLangGeneration extends FabricLanguageProvider {
 
     private final String langCode;
 
-    protected RuLangGeneration(FabricDataOutput dataOutput, CompletableFuture<RegistryWrapper.WrapperLookup> registryLookup) {
-        super(dataOutput, "ru_ru", registryLookup);
+    protected RuLangGeneration(FabricDataOutput dataOutput) {
+        super(dataOutput, "ru_ru");
         langCode = "ru_ru";
     }
 
     @Override
-    public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder translationBuilder) {
+    public void generateTranslations(TranslationBuilder translationBuilder) {
         RuTranslationBuilder builder = new RuTranslationBuilder(translationBuilder);
 
         builder.add(DecoBlocks.SLITHERITE, "Слизерит");

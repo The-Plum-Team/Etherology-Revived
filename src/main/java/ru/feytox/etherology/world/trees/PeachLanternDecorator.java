@@ -30,7 +30,7 @@ public class PeachLanternDecorator extends TreeDecorator {
         int count = random.nextBetween(0, 2);
         if (count == 0) return;
 
-        int bottomY = generator.getLogPositions().getFirst().getY();
+        int bottomY = generator.getLogPositions().get(0).getY();
         // TODO: 19.06.2024 optimize and combine with same method in BirchBranchesDecorator
         List<LogSidePos> poses = generator.getLogPositions().stream()
                 .filter(pos -> pos.getY()-bottomY < 6)

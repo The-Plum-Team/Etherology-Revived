@@ -6,7 +6,7 @@ import net.minecraft.registry.Registerable;
 import net.minecraft.registry.RegistryEntryLookup;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.sound.BiomeMoodSound;
-import net.minecraft.sound.MusicType;
+import net.minecraft.sound.MusicSound;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeEffects;
@@ -63,7 +63,7 @@ public class BiomesGen {
                         .waterFogColor(1129027).grassColor(0x4FE768).foliageColor(4122414)
                         .grassColorModifier(GOLDEN_FOREST_MODIFIER.get())
                         .moodSound(BiomeMoodSound.CAVE)
-                        .music(MusicType.createIngameMusic(SoundEvents.MUSIC_OVERWORLD_FOREST))
+                        .music(new MusicSound(SoundEvents.MUSIC_OVERWORLD_FOREST, 12000, 24000, false))
                         .build())
                 .spawnSettings(baseSpawnerBuilder.build())
                 .generationSettings(generationBuilder.build())

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "#": {
+      "item": "etherology:slitherite"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  },
+  "pattern": [
+    " I ",
+    "###"
+  ],
+  "result": {
+    "item": "minecraft:stonecutter"
+  },
+  "show_notification": true
+}

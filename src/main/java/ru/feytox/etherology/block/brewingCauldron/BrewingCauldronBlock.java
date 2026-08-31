@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.brewingCauldron;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityTicker;
@@ -19,7 +18,6 @@ import net.minecraft.state.StateManager;
 import net.minecraft.state.property.IntProperty;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
-import net.minecraft.util.ItemActionResult;
 import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.function.BooleanBiFunction;
 import net.minecraft.util.hit.BlockHitResult;
@@ -42,7 +40,6 @@ public class BrewingCauldronBlock extends HorizontalFacingBlock implements Regis
     public static final IntProperty LEVEL = IntProperty.of("level", 0, 8);
     public static final IntProperty ASPECTS_LVL = IntProperty.of("aspects_lvl", 0, 100);
 
-    private static final MapCodec<BrewingCauldronBlock> CODEC = MapCodec.unit(BrewingCauldronBlock::new);
     private static final VoxelShape RAYCAST_SHAPE;
     private static final VoxelShape OUTLINE_SHAPE;
     private static final VoxelShape INPUT_SHAPE;
@@ -93,37 +90,31 @@ public class BrewingCauldronBlock extends HorizontalFacingBlock implements Regis
     }
 
     @Override
-    protected ItemActionResult onUseWithItem(ItemStack stack, BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
+    public ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hit) {
         ItemStack handStack = player.getStackInHand(hand);
         if (handStack.isOf(Items.BUCKET)) {
             return fillBucketWithCorruption(world, state, pos, player, handStack, hand);
         }
 
-        if (!handStack.isOf(Items.WATER_BUCKET)) {
-            return ItemActionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        if (handStack.isOf(Items.WATER_BUCKET)) {
+            int waterLevel = state.get(LEVEL);
+            if (waterLevel == 8) return ActionResult.PASS;
+            if (world.isClient) return ActionResult.SUCCESS;
+            fillCauldron(state, world, pos, player, hand, handStack);
+            return ActionResult.CONSUME;
         }
 
-        int waterLevel = state.get(LEVEL);
-        if (waterLevel == 8) return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
-        if (world.isClient) return ItemActionResult.SUCCESS;
-        fillCauldron(state, world, pos, player, hand, handStack);
-
-        return ItemActionResult.CONSUME;
-    }
-
-    @Override
-    protected ActionResult onUse(BlockState state, World world, BlockPos pos, PlayerEntity player, BlockHitResult hit) {
         return player.isSneaking() ? tryTakeLastItem(world, player, state, pos) : mixWater(world, state, pos);
     }
 
     @NotNull
-    private ItemActionResult fillBucketWithCorruption(World world, BlockState state, BlockPos pos, PlayerEntity player, ItemStack handStack, Hand hand) {
-        if (world.isClient || state.get(LEVEL) == 0) return ItemActionResult.SUCCESS;
-        if (!(world.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity cauldron)) return ItemActionResult.SKIP_DEFAULT_BLOCK_INTERACTION;
+    private ActionResult fillBucketWithCorruption(World world, BlockState state, BlockPos pos, PlayerEntity player, ItemStack handStack, Hand hand) {
+        if (world.isClient || state.get(LEVEL) == 0) return ActionResult.SUCCESS;
+        if (!(world.getBlockEntity(pos) instanceof BrewingCauldronBlockEntity cauldron)) return ActionResult.PASS;
 
         boolean wasWithAspects = cauldron.isWasWithAspects();
         ItemStack filledStack = wasWithAspects ? CorruptionBucket.createBucketStack(cauldron.getAspects()) : Items.WATER_BUCKET.getDefaultStack();
-        if (filledStack == null) return ItemActionResult.CONSUME;
+        if (filledStack == null) return ActionResult.CONSUME;
         ItemStack newStack = ItemUsage.exchangeStack(handStack, player, filledStack);
         player.setStackInHand(hand, newStack);
 
@@ -131,7 +122,7 @@ public class BrewingCauldronBlock extends HorizontalFacingBlock implements Regis
         cauldron.clearAspects((ServerWorld) world);
         ItemScatterer.spawn(world, pos.up(), cauldron);
         world.playSound(null, pos, SoundEvents.ITEM_BUCKET_FILL, SoundCategory.BLOCKS, 1.0F, 1.0F);
-        return ItemActionResult.CONSUME;
+        return ActionResult.CONSUME;
     }
 
     private ActionResult tryTakeLastItem(World world, PlayerEntity player, BlockState state, BlockPos pos) {
@@ -205,8 +196,4 @@ public class BrewingCauldronBlock extends HorizontalFacingBlock implements Regis
                 BooleanBiFunction.ONLY_FIRST);
     }
 
-    @Override
-    protected MapCodec<? extends HorizontalFacingBlock> getCodec() {
-        return CODEC;
-    }
 }

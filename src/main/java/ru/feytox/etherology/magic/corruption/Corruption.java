@@ -2,9 +2,6 @@ package ru.feytox.etherology.magic.corruption;
 
 import com.mojang.serialization.Codec;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.network.RegistryByteBuf;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
@@ -16,7 +13,6 @@ import ru.feytox.etherology.registry.misc.EtherologyComponents;
 public record Corruption(float corruptionValue) {
 
     public static final Codec<Corruption> CODEC = Codec.FLOAT.xmap(Corruption::new, Corruption::corruptionValue).stable();
-    public static final PacketCodec<RegistryByteBuf, Corruption> PACKET_CODEC = PacketCodec.tuple(PacketCodecs.FLOAT, Corruption::corruptionValue, Corruption::new);
 
     @Nullable
     public static Corruption ofAspects(AspectContainer aspects) {
@@ -37,7 +33,7 @@ public record Corruption(float corruptionValue) {
     }
 
     public void placeInChunk(ServerWorld world, BlockPos pos) {
-        CorruptionComponent component = world.getChunk(pos).getComponent(EtherologyComponents.CORRUPTION);
+        CorruptionComponent component = EtherologyComponents.CORRUPTION.getNullable(world.getChunk(pos));
         component.setCorruption(this.add(component.getCorruption()));
     }
 

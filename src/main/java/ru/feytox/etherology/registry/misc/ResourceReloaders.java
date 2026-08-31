@@ -1,14 +1,18 @@
 package ru.feytox.etherology.registry.misc;
 
+import dev.architectury.registry.ReloadListenerRegistry;
 import lombok.experimental.UtilityClass;
-import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.resource.ResourceType;
 import ru.feytox.etherology.data.ethersource.EtherSourceLoader;
+import ru.feytox.etherology.util.misc.EIdentifier;
 
 @UtilityClass
 public class ResourceReloaders {
 
     public static void registerServerData() {
-        ResourceManagerHelper.get(ResourceType.SERVER_DATA).registerReloadListener(EtherSourceLoader.INSTANCE);
+        ReloadListenerRegistry.register(
+                ResourceType.SERVER_DATA,
+                EtherSourceLoader.INSTANCE,
+                EIdentifier.of("ether_sources"));
     }
 }

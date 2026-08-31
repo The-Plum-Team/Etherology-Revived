@@ -1,8 +1,8 @@
 package ru.feytox.etherology.item;
 
+import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.*;
-import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -22,7 +22,7 @@ import java.util.List;
 public class CorruptionBucket extends Item {
     
     public CorruptionBucket() {
-        super(new Settings().maxCount(1).component(ComponentTypes.CORRUPTION, new Corruption(0)));
+        super(new Settings().maxCount(1));
     }
 
     @Nullable
@@ -31,14 +31,14 @@ public class CorruptionBucket extends Item {
         Corruption corruption = Corruption.ofAspects(aspects);
         if (corruption == null) return null;
 
-        stack.set(ComponentTypes.CORRUPTION, corruption);
+        ComponentTypes.CORRUPTION.set(stack, corruption);
         return stack;
     }
 
     @Nullable
     public static Corruption getCorruptionFromBucket(ItemStack bucketStack) {
         if (!bucketStack.isOf(EItems.CORRUPTION_BUCKET)) return null;
-        Corruption corruption = bucketStack.get(ComponentTypes.CORRUPTION);
+        Corruption corruption = ComponentTypes.CORRUPTION.get(bucketStack).orElse(null);
         return corruption == null || corruption.isEmpty() ? null : corruption;
     }
 
@@ -61,8 +61,8 @@ public class CorruptionBucket extends Item {
     }
 
     @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-        var corruption = stack.get(ComponentTypes.CORRUPTION);
+    public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+        var corruption = ComponentTypes.CORRUPTION.get(stack).orElse(null);
         if (corruption == null)
             return;
 

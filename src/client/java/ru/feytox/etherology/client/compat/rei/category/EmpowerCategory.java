@@ -61,7 +61,7 @@ public class EmpowerCategory implements DisplayCategory<EmpowerDisplay> {
         widgets.add(Widgets.createSlot(start.add(1, 41)).entries(display.getInputEntries().get(11)).markInput());
         widgets.add(Widgets.createSlot(start.add(41, 41)).entries(display.getInputEntries().get(12)).markInput());
 
-        widgets.add(Widgets.createSlot(start.add(95, 19)).entries(display.getOutputEntries().getFirst()).disableBackground().markOutput());
+        widgets.add(Widgets.createSlot(start.add(95, 19)).entries(display.getOutputEntries().get(0)).disableBackground().markOutput());
 
         return widgets;
     }

@@ -1,0 +1,356 @@
+{
+  "schema": 2,
+  "scenario": "ether-network",
+  "lane": "fabric-1.20.1",
+  "role": "host",
+  "status": "passed",
+  "client_ticks": 223,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "fixture_registry_preflight",
+      "passed": true,
+      "expected": "all fixture registries and state network ids present",
+      "actual": "true"
+    },
+    {
+      "name": "registry:block:etherology:spinner",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:ethereal_channel",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:ethereal_storage",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:levitator",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:spinner_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:ethereal_channel_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:ethereal_storage_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:levitator_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_e2e_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "server_fixture_chunks_loaded",
+      "passed": true,
+      "expected": "full chunks [[-1, 0], [0, 0]]",
+      "actual": "true"
+    },
+    {
+      "name": "server_fixture_chunks_forced",
+      "passed": true,
+      "expected": "forced chunks [[-1, 0], [0, 0]]",
+      "actual": "true"
+    },
+    {
+      "name": "server_player_creative",
+      "passed": true,
+      "expected": "creative",
+      "actual": "true"
+    },
+    {
+      "name": "server_initial_fixture_blocks_placed",
+      "passed": true,
+      "expected": "all expected identifiers",
+      "actual": "[-2, 124, 2\u003detherology:spinner, -1, 124, 2\u003detherology:ethereal_channel, 0, 124, 2\u003detherology:ethereal_storage, 0, 122, 2\u003detherology:levitator]"
+    },
+    {
+      "name": "server_initial_fixture_block_entities_present",
+      "passed": true,
+      "expected": "all expected block-entity identifiers",
+      "actual": "[-2, 124, 2\u003detherology:spinner_block_entity, -1, 124, 2\u003detherology:ethereal_channel_block_entity, 0, 124, 2\u003detherology:ethereal_storage_block_entity, 0, 122, 2\u003detherology:levitator_block_entity]"
+    },
+    {
+      "name": "server_initial_network_state",
+      "passed": true,
+      "expected": "empty network, powered unfueled Levitator, output path absent",
+      "actual": "fixture_chunks_loaded\u003dtrue, fixture_chunks_forced\u003dtrue, output_path_absent\u003dtrue, armor_stand_spawned\u003dtrue, armor_stand_uuid\u003dc3c4a834-54dc-4d2e-93c3-a69755fb942d, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d0, output_present\u003dfalse, output_block\u003dminecraft:air, output_state\u003d{absent}, with_fuel\u003dfalse, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.5, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.0"
+    },
+    {
+      "name": "server_force_probe_entity_spawned",
+      "passed": true,
+      "expected": "minecraft:armor_stand named \u0027Ether-network load\u0027 with UUID c3c4a834-54dc-4d2e-93c3-a69755fb942d",
+      "actual": "spawned\u003dtrue, uuid\u003dc3c4a834-54dc-4d2e-93c3-a69755fb942d"
+    },
+    {
+      "name": "spinner_generated_first_ether_unit",
+      "passed": true,
+      "expected": "one completed generation and reset cooldown",
+      "actual": "cycles\u003d1, next_gen_time\u003d1212, generator_paused\u003dtrue, generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d0, output_present\u003dfalse, output_block\u003dminecraft:air, output_state\u003d{absent}, with_fuel\u003dfalse, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.5, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.0"
+    },
+    {
+      "name": "directional_channel_charged_storage",
+      "passed": true,
+      "expected": "1 ether in storage, no ether elsewhere, output path absent",
+      "actual": "generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d0, output_present\u003dfalse, output_block\u003dminecraft:air, output_state\u003d{absent}, with_fuel\u003dfalse, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.5, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.0"
+    },
+    {
+      "name": "spinner_paused_after_source_charge",
+      "passed": true,
+      "expected": "stalled after exactly one generated unit",
+      "actual": "true"
+    },
+    {
+      "name": "client_charged_storage_mirror",
+      "passed": true,
+      "expected": "server charged-storage state",
+      "actual": "output\u003dminecraft:air, generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d0, output_present\u003dfalse, output_block\u003dminecraft:air, output_state\u003d{absent}, with_fuel\u003dfalse, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.5, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.0"
+    },
+    {
+      "name": "levitator_consumed_ether",
+      "passed": true,
+      "expected": "positive fuel after the first transported unit",
+      "actual": "96"
+    },
+    {
+      "name": "levitator_applied_real_force",
+      "passed": true,
+      "expected": "\u003e\u003d0.75 blocks on +X",
+      "actual": "0.7676404465781816"
+    },
+    {
+      "name": "redstone_gate_closed_after_force_probe",
+      "passed": true,
+      "expected": "power\u003d0, powered\u003dfalse",
+      "actual": "power\u003d0, powered\u003dfalse"
+    },
+    {
+      "name": "generator_cycles_completed",
+      "passed": true,
+      "expected": "4",
+      "actual": "4"
+    },
+    {
+      "name": "retained_ether_distribution",
+      "passed": true,
+      "expected": "storage\u003d1, output channel\u003d1, Levitator\u003d1, upstream empty",
+      "actual": "generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d1.0, levitator\u003d1.0, fuel\u003d81, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816"
+    },
+    {
+      "name": "output_channel_created_by_activation",
+      "passed": true,
+      "expected": "etherology:ethereal_channel",
+      "actual": "etherology:ethereal_channel"
+    },
+    {
+      "name": "client_retained_network_mirror",
+      "passed": true,
+      "expected": "server retained-network state and moved armor stand",
+      "actual": "output\u003detherology:ethereal_channel, generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d1.0, levitator\u003d1.0, fuel\u003d81, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.267578125, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.767578125"
+    },
+    {
+      "name": "block_entity_nbt_round_trip:spinner",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:spinner_block_entity, matching_type\u003dtrue, stored_ether\u003d0.0, next_gen_time\u003d2278, is_mess\u003dfalse"
+    },
+    {
+      "name": "block_entity_nbt_round_trip:source_channel",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:ethereal_channel_block_entity, matching_type\u003dtrue, stored_ether\u003d0.0, evaporating\u003dfalse, cross_evaporating\u003dfalse"
+    },
+    {
+      "name": "block_entity_nbt_round_trip:storage",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:ethereal_storage_block_entity, matching_type\u003dtrue, storage_ether\u003d1.0"
+    },
+    {
+      "name": "block_entity_nbt_round_trip:output_channel",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:ethereal_channel_block_entity, matching_type\u003dtrue, stored_ether\u003d1.0, evaporating\u003dfalse, cross_evaporating\u003dfalse"
+    },
+    {
+      "name": "block_entity_nbt_round_trip:levitator",
+      "passed": true,
+      "expected": "matching type and retained mechanic state",
+      "actual": "etherology:levitator_block_entity, matching_type\u003dtrue, stored_ether\u003d1.0, fuel\u003d81"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "completed_world_renders_before_capture:before",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "framebuffer_dimensions:before",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:before",
+      "passed": true,
+      "expected": "non-empty PNG",
+      "actual": "739824 bytes, sha256\u003d5e0293c53a0b6f9f219866512e6a9c3a250509afbd7577fc44f638fbacc9b090"
+    },
+    {
+      "name": "completed_world_renders_before_capture:after",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "framebuffer_dimensions:after",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:after",
+      "passed": true,
+      "expected": "non-empty PNG",
+      "actual": "662854 bytes, sha256\u003ddc1bb5f6eab2d42e76f7c1981f9391b02a5090aa7ce4e6ade39466d75a5bf2ec"
+    },
+    {
+      "name": "before_after_native_screenshots_differ",
+      "passed": true,
+      "expected": "different SHA-256 digests",
+      "actual": "5e0293c53a0b6f9f219866512e6a9c3a250509afbd7577fc44f638fbacc9b090 !\u003d dc1bb5f6eab2d42e76f7c1981f9391b02a5090aa7ce4e6ade39466d75a5bf2ec"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "ether_network_retained_after_forced_save",
+      "passed": true,
+      "expected": "retained non-zero storage, transport, machine ether and moved entity",
+      "actual": "generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d1.0, levitator\u003d1.0, fuel\u003d77, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-e2e-ether-network-world",
+      "actual": "etherology-e2e-ether-network-world"
+    }
+  ],
+  "network_diagnostics": {
+    "step": 3,
+    "step_ticks": 5,
+    "max_output_channel_ether": 1.0,
+    "max_levitator_ether": 1.0,
+    "max_levitator_fuel": 100,
+    "max_displacement": 0.7676404465781816,
+    "history": [
+      "network step\u003d0, step_ticks\u003d0, activation, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, levitator_facing\u003dwest, levitator_pushing\u003dtrue",
+      "network step\u003d0, step_ticks\u003d1, cycles\u003d1, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d1.0, fuel\u003d0, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dfalse, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.5, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.0, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d0, max_displacement\u003d0.0",
+      "network step\u003d0, step_ticks\u003d2, cycles\u003d1, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d100, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.5, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.0, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.0",
+      "network step\u003d0, step_ticks\u003d3, cycles\u003d1, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d99, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d2.62, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.1200000000000001, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.1200000000000001",
+      "network step\u003d0, step_ticks\u003d6, cycles\u003d1, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d96, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d15, powered\u003dtrue, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816",
+      "network step\u003d1, step_ticks\u003d1, cycles\u003d2, generator\u003d1.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d0.0, fuel\u003d95, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816",
+      "network step\u003d1, step_ticks\u003d5, cycles\u003d2, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d1.0, fuel\u003d91, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816",
+      "network step\u003d2, step_ticks\u003d1, cycles\u003d3, generator\u003d1.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d0.0, levitator\u003d1.0, fuel\u003d90, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d0.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816",
+      "network step\u003d2, step_ticks\u003d5, cycles\u003d3, generator\u003d0.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d1.0, levitator\u003d1.0, fuel\u003d86, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d1.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816",
+      "network step\u003d3, step_ticks\u003d1, cycles\u003d4, generator\u003d1.0, source_channel\u003d0.0, storage\u003d0.0, output_channel\u003d1.0, levitator\u003d1.0, fuel\u003d85, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d1.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816",
+      "network step\u003d3, step_ticks\u003d5, cycles\u003d4, generator\u003d0.0, source_channel\u003d0.0, storage\u003d1.0, output_channel\u003d1.0, levitator\u003d1.0, fuel\u003d81, output_present\u003dtrue, output_block\u003detherology:ethereal_channel, output_state\u003d{facing\u003ddown, activated\u003dfalse, north\u003dEMPTY, south\u003dEMPTY, east\u003dEMPTY, west\u003dEMPTY, up\u003dIN, down\u003dOUT}, with_fuel\u003dtrue, power\u003d0, powered\u003dfalse, levitator_facing\u003dwest, levitator_pushing\u003dtrue, armor_stand_x\u003d3.2676404465781816, armor_stand_y\u003d122.0, armor_stand_z\u003d2.5, displacement\u003d0.7676404465781816, max_output_channel_ether\u003d1.0, max_levitator_ether\u003d1.0, max_levitator_fuel\u003d100, max_displacement\u003d0.7676404465781816"
+    ]
+  },
+  "world": {
+    "save_directory": "etherology-e2e-ether-network-world",
+    "display_name": "Etherology E2E Ether Network",
+    "seed": 76228292072012,
+    "dimension": "minecraft:overworld",
+    "integrated": true
+  },
+  "ready_resources": [
+    "etherology:models/item/oculus.json"
+  ],
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "etherology-under-test.jar",
+      "size": 2851222,
+      "sha256": "c0bc7c54d5d2efd3f9632efc4e047e4694a03e7d0725b3e1ca3ab2517454b3c0"
+    },
+    {
+      "mod_id": "etherology_e2e_harness",
+      "origin_kind": "PATH",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 133500,
+      "sha256": "b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "ether-network-storage-charged",
+      "role": "host",
+      "file": "screenshots/ether-network-before.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 739824,
+      "sha256": "5e0293c53a0b6f9f219866512e6a9c3a250509afbd7577fc44f638fbacc9b090",
+      "completed_render_count": 2
+    },
+    {
+      "step": "ether-network-transport-and-machine-retained",
+      "role": "host",
+      "file": "screenshots/ether-network-after.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 662854,
+      "sha256": "dc1bb5f6eab2d42e76f7c1981f9391b02a5090aa7ce4e6ade39466d75a5bf2ec",
+      "completed_render_count": 2
+    }
+  ]
+}

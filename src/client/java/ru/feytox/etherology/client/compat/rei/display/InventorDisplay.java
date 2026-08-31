@@ -39,7 +39,7 @@ public class InventorDisplay extends BasicDisplay {
 
                 List<EntryStack<ItemStack>> output = Arrays.stream(StaffMetals.values()).map(metal -> {
                     ItemStack staffStack = ToolItems.STAFF.getDefaultStack();
-                    staffStack.apply(ComponentTypes.STAFF, StaffComponent.DEFAULT, component -> component.setPartInfo(new StaffPartInfo(part, style, metal)));
+                    ComponentTypes.STAFF.apply(staffStack, StaffComponent.DEFAULT, component -> component.setPartInfo(new StaffPartInfo(part, style, metal)));
                     return EntryStacks.of(staffStack);
                 }).toList();
                 registry.add(new InventorDisplay(List.of(inputStaff, tabletInput, metals), Collections.singletonList(EntryIngredient.of(output))));

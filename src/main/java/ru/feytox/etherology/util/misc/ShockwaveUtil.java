@@ -4,10 +4,10 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import lombok.val;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityGroup;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
@@ -20,8 +20,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import ru.feytox.etherology.item.TuningMaceItem;
 import ru.feytox.etherology.item.TwoHandheldSword;
-import ru.feytox.etherology.mixin.LivingEntityAccessor;
-import ru.feytox.etherology.mixin.PlayerEntityAccessor;
 import ru.feytox.etherology.particle.effects.ScalableParticleEffect;
 import ru.feytox.etherology.registry.misc.EtherEnchantments;
 import ru.feytox.etherology.registry.misc.EtherSounds;
@@ -41,7 +39,6 @@ public class ShockwaveUtil {
         if (!TwoHandheldSword.isUsing(attacker, TuningMaceItem.class)) return false;
 
         World world = attacker.getWorld();
-        DamageSource damageSource = attacker.getDamageSources().playerAttack(attacker);
         spawnResonationParticle(world, target);
         playAttackSound(world, attacker, target);
 
@@ -52,10 +49,11 @@ public class ShockwaveUtil {
 
         boolean moreDamage = attacker.fallDistance > 0.0F && !attacker.isOnGround() && !attacker.isClimbing() && !attacker.isTouchingWater() && !attacker.hasStatusEffect(StatusEffects.BLINDNESS) && !attacker.hasVehicle() && !attacker.isSprinting();
         float baseDamage = (float) attacker.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE);
-        float damage = ((PlayerEntityAccessor) attacker).callGetDamageAgainst(target, baseDamage, damageSource) - baseDamage;
+        EntityGroup targetGroup = target instanceof LivingEntity livingTarget ? livingTarget.getGroup() : EntityGroup.DEFAULT;
+        float damage = EnchantmentHelper.getAttackDamage(attacker.getMainHandStack(), targetGroup);
         if (moreDamage) damage *= 1.2f;
 
-        float knockback = 2 + ((LivingEntityAccessor) attacker).callGetKnockbackAgainst(target, damageSource);
+        float knockback = 2 + EnchantmentHelper.getKnockback(attacker);
         if (attacker.isSprinting()) knockback++;
 
         damage += baseDamage;
@@ -92,19 +90,21 @@ public class ShockwaveUtil {
         }
 
         trySchedulePeal(world, attacker, targetForPeal, shockPos, 0.5 * knockback);
-        postShockWave(attacker, firstTarget, world, damageSource, firstTargetHealth);
+        postShockWave(attacker, firstTarget, world, firstTargetHealth);
         return true;
     }
 
-    private static void postShockWave(PlayerEntity attacker, LivingEntity firstTarget, World world, DamageSource damageSource, float firstTargetHealth) {
+    private static void postShockWave(PlayerEntity attacker, LivingEntity firstTarget, World world, float firstTargetHealth) {
         attacker.setVelocity(attacker.getVelocity().multiply(0.6, 1.0, 0.6));
         attacker.setSprinting(false);
         if (firstTarget == null) return;
 
         attacker.onAttacking(firstTarget);
+        EnchantmentHelper.onUserDamaged(firstTarget, attacker);
+        EnchantmentHelper.onTargetDamaged(attacker, firstTarget);
         ItemStack handStack = attacker.getMainHandStack();
         if (!world.isClient && !handStack.isEmpty()) {
-            handStack.postDamageEntity(firstTarget, attacker);
+            handStack.postHit(firstTarget, attacker);
             if (handStack.isEmpty()) {
                 attacker.setStackInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
             }
@@ -115,7 +115,6 @@ public class ShockwaveUtil {
 
         if (world instanceof ServerWorld serverWorld) {
             serverWorld.spawnParticles(ParticleTypes.DAMAGE_INDICATOR, firstTarget.getX(), firstTarget.getBodyY(0.5), firstTarget.getZ(), (int) (m * 0.5), 0.1, 0.0, 0.1, 0.2);
-            EnchantmentHelper.onTargetDamaged(serverWorld, firstTarget, damageSource);
         }
 
         attacker.addExhaustion(0.1f);
@@ -131,11 +130,15 @@ public class ShockwaveUtil {
     }
 
     private static void takeKnockback(LivingEntity target, double strength, Vec3d attackVec, double vecLen) {
-        if (!(strength > 0))
+        if (!(strength > 0) || !canNormalize(vecLen))
             return;
         double knockSin = attackVec.x / vecLen;
         double knockCos = attackVec.z / vecLen;
         target.takeKnockback(0.6 * strength, knockSin, knockCos);
+    }
+
+    static boolean canNormalize(double vectorLength) {
+        return vectorLength > 0.0d && Double.isFinite(vectorLength);
     }
 
     private static void spawnResonationParticle(World world, Entity target) {

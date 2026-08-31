@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.pedestal;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.block.BlockState;
@@ -11,7 +10,6 @@ import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -25,13 +23,14 @@ import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.data.aspects.AspectsLoader;
 import ru.feytox.etherology.magic.aspects.AspectContainer;
 import ru.feytox.etherology.magic.aspects.RevelationAspectProvider;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
 import ru.feytox.etherology.util.misc.UniqueProvider;
 
 import static ru.feytox.etherology.registry.block.EBlocks.PEDESTAL_BLOCK_ENTITY;
 
 public class PedestalBlockEntity extends TickableBlockEntity
-        implements ImplementedInventory, RevelationAspectProvider, UniqueProvider, SidedInventory {
+        implements ListBackedInventory, RevelationAspectProvider, UniqueProvider, SidedInventory {
     // 0 - item, 1 - carpet
     private final DefaultedList<ItemStack> items = DefaultedList.ofSize(2, ItemStack.EMPTY);
     @Getter
@@ -71,7 +70,7 @@ public class PedestalBlockEntity extends TickableBlockEntity
             }
 
             // взятие похожего предмета с пьедестала
-            if (ItemStack.areItemsAndComponentsEqual(handStack, pedestalStack) && handStack.getCount() < handStack.getMaxCount()) {
+            if (ItemStack.canCombine(handStack, pedestalStack) && handStack.getCount() < handStack.getMaxCount()) {
                 setStack(0, ItemStack.EMPTY);
                 handStack.increment(1);
                 player.setStackInHand(hand, handStack);
@@ -103,7 +102,7 @@ public class PedestalBlockEntity extends TickableBlockEntity
         if (!(blockItem.getBlock() instanceof DyedCarpetBlock carpet)) return false;
 
         // взятие ковра в стак с коврами
-        if (ItemStack.areItemsAndComponentsEqual(handStack, carpetStack) && handStack.getCount() < handStack.getMaxCount()) {
+        if (ItemStack.canCombine(handStack, carpetStack) && handStack.getCount() < handStack.getMaxCount()) {
             setStack(1, ItemStack.EMPTY);
             handStack.increment(1);
             player.setStackInHand(hand, handStack);
@@ -155,18 +154,18 @@ public class PedestalBlockEntity extends TickableBlockEntity
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        Inventories.writeNbt(nbt, items, registryLookup);
+    protected void writeNbt(NbtCompound nbt) {
+        Inventories.writeNbt(nbt, items);
         nbt.putBoolean("removed", removed);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    public void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
         items.clear();
-        Inventories.readNbt(nbt, items, registryLookup);
+        Inventories.readNbt(nbt, items);
         removed = nbt.getBoolean("removed");
     }
 
@@ -177,8 +176,8 @@ public class PedestalBlockEntity extends TickableBlockEntity
 
     @Override
     public AspectContainer getRevelationAspects(World world) {
-        if (items.getFirst().isEmpty()) return null;
-        return AspectsLoader.getAspects(world, items.getFirst(), false, false).orElse(null);
+        if (items.get(0).isEmpty()) return null;
+        return AspectsLoader.getAspects(world, items.get(0), false, false).orElse(null);
     }
 
     @Override

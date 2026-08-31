@@ -4,7 +4,6 @@ import lombok.Getter;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
@@ -27,7 +26,7 @@ public abstract class FurnitureData {
 
     public void onUse(World world, BlockState state, BlockPos pos, PlayerEntity player, Vec2f hitPos, Hand hand) {}
 
-    public abstract void readNbt(NbtCompound nbtCompound, RegistryWrapper.WrapperLookup registryLookup);
+    public abstract void readNbt(NbtCompound nbtCompound);
 
-    public abstract void writeNbt(NbtCompound nbtCompound, RegistryWrapper.WrapperLookup registryLookup);
+    public abstract void writeNbt(NbtCompound nbtCompound);
 }

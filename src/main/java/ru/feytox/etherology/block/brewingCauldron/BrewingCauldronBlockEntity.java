@@ -1,6 +1,5 @@
 package ru.feytox.etherology.block.brewingCauldron;
 
-import io.wispforest.owo.util.ImplementedInventory;
 import lombok.Getter;
 import lombok.val;
 import net.minecraft.block.BlockState;
@@ -12,7 +11,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
-import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -38,10 +36,11 @@ import ru.feytox.etherology.registry.misc.EtherSounds;
 import ru.feytox.etherology.registry.misc.RecipesRegistry;
 import ru.feytox.etherology.registry.particle.EtherParticleTypes;
 import ru.feytox.etherology.util.gecko.EGeoBlockEntity;
+import ru.feytox.etherology.util.inventory.ListBackedInventory;
 import ru.feytox.etherology.util.misc.TickableBlockEntity;
-import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
-import software.bernie.geckolib.animation.AnimatableManager;
-import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.core.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.core.animation.AnimatableManager;
+import software.bernie.geckolib.core.animation.RawAnimation;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.Objects;
@@ -50,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static ru.feytox.etherology.registry.block.EBlocks.BREWING_CAULDRON_BLOCK_ENTITY;
 import static ru.feytox.etherology.registry.particle.EtherParticleTypes.STEAM;
 
-public class BrewingCauldronBlockEntity extends TickableBlockEntity implements ImplementedInventory, SidedInventory, EGeoBlockEntity, RevelationAspectProvider {
+public class BrewingCauldronBlockEntity extends TickableBlockEntity implements ListBackedInventory, SidedInventory, EGeoBlockEntity, RevelationAspectProvider {
 
     private static final RawAnimation MIXING = RawAnimation.begin().thenPlay("brewing_cauldron.mixing");
     public static final int VAPORIZATION_COOLDOWN = 200;
@@ -73,7 +72,11 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements I
 
     @Override
     public void serverTick(ServerWorld world, BlockPos blockPos, BlockState state) {
-        if (!BrewingCauldronBlock.isFilled(state)) return;
+        if (!BrewingCauldronBlock.isFilled(state)) {
+            tickAspects(world, state);
+            return;
+        }
+
         tickMixingItems(world, state);
         tickAspects(world, state);
         tickTemperature(world, blockPos);
@@ -88,7 +91,7 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements I
 
     private void tickAspects(ServerWorld world, BlockState state) {
         if (!BrewingCauldronBlock.isFilled(state)) {
-            clearAspects(world);
+            if (!aspects.isEmpty() || wasWithAspects) clearAspects(world);
             updateAspectsLvl(world, state, 0);
             return;
         }
@@ -206,10 +209,10 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements I
 
     private boolean tryCraft(ServerWorld world, ItemStack inputStack, BlockState state) {
         AlchemyRecipeInventory inventory = new AlchemyRecipeInventory(aspects, inputStack);
-        val recipeEntry = RecipesRegistry.getFirstMatch(world, inventory, AlchemyRecipeSerializer.INSTANCE);
-        if (recipeEntry == null) return false;
+        AlchemyRecipe recipe = RecipesRegistry.getFirstMatch(world, inventory, AlchemyRecipeSerializer.INSTANCE);
+        if (recipe == null) return false;
 
-        ItemStack resultStack = craft(world, inputStack, recipeEntry.value(), state);
+        ItemStack resultStack = craft(world, inputStack, recipe, state);
         CauldronItemEntity.spawn(world, pos.up().toCenterPos(), resultStack);
         syncData(world);
         spawnCraftParticle(world);
@@ -249,24 +252,24 @@ public class BrewingCauldronBlockEntity extends TickableBlockEntity implements I
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
+    protected void writeNbt(NbtCompound nbt) {
         nbt.putInt("temperature", temperature);
         nbt.putBoolean("wasWithAspects", wasWithAspects);
         aspects.writeNbt(nbt);
-        Inventories.writeNbt(nbt, items, registryLookup);
+        Inventories.writeNbt(nbt, items);
 
-        super.writeNbt(nbt, registryLookup);
+        super.writeNbt(nbt);
     }
 
     @Override
-    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
+    public void readNbt(NbtCompound nbt) {
+        super.readNbt(nbt);
 
         temperature = nbt.getInt("temperature");
         wasWithAspects = nbt.getBoolean("wasWithAspects");
         aspects = aspects.readNbt(nbt);
         items.clear();
-        Inventories.readNbt(nbt, items, registryLookup);
+        Inventories.readNbt(nbt, items);
     }
 
     @Override

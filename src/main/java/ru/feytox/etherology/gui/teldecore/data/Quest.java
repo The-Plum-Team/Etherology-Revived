@@ -44,7 +44,7 @@ public record Quest(String titleKey, List<AbstractTask> tasks, List<AbstractCont
 
     static {
         TASK_TYPES = Map.of("item", ItemTask.CODEC, "biome", BiomeTask.CODEC);
-        TASK_CODEC = Codec.STRING.dispatch(AbstractTask::getType, TASK_TYPES::get);
+        TASK_CODEC = Codec.STRING.dispatch(AbstractTask::getType, type -> TASK_TYPES.get(type).codec());
 
         CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.STRING.fieldOf("title").forGetter(q -> q.titleKey),

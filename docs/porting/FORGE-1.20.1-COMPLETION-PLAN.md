@@ -402,10 +402,10 @@ Accepted bounded food-item-registry milestone:
   `4ec610688bf030ea722772c40d871ec1b954fcbc0b15f90cbad41acec6278ad0`, completion-marker SHA-256
   `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`, and server-log SHA-256
   `e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`.
-- All 82 current Python runner/verifier safety tests pass. Separately,
-  `:forge:1.20.1:serverProbeSafetyInterlockTest` passes 15 non-Minecraft Gradle interlock fixture
+- All 87 current Python runner/verifier safety tests pass. Separately,
+  `:forge:1.20.1:serverProbeSafetyInterlockTest` passes 20 non-Minecraft Gradle interlock fixture
   cases and is wired into `forgeFoodItemRegistryServerSafetyTest`; these are distinct suites, not
-  one 97-test count. The sealed archive durably blocks normal
+  one 107-test count. The sealed archive durably blocks normal
   reprovisioning and environment checks for that identity, even after runtime removal; the raw
   Gradle launch also requires the runner's exact token/lock, profile marker, and pristine evidence
   directories. These are accidental-misuse interlocks, not provenance authentication;

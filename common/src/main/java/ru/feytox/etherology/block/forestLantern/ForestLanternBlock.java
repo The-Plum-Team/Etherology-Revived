@@ -8,15 +8,8 @@ import net.minecraft.block.Fertilizable;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.ShapeContext;
 import net.minecraft.block.piston.PistonBehavior;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffectUtil;
-import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ShearsItem;
-import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
@@ -50,11 +43,13 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Fertili
 
     private static final float BREAK_CHANCE = 0.4F;
     private static final int GROW_FREQUENCY = 30;
-    private static final float SHEARS_MINING_SPEED = 15.0F;
     private static final Map<Direction, VoxelShape[]> SHAPES;
 
     /** The greatest growth stage and the initially placed stage. */
     public static final int MAX_AGE = Properties.AGE_4_MAX;
+
+    /** The exact mining-speed multiplier used by shears on every growth stage. */
+    public static final float SHEARS_MINING_SPEED = 15.0F;
 
     /** Stores one of the five Forest Lantern growth stages. */
     public static final IntProperty AGE = Properties.AGE_4;
@@ -148,22 +143,9 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Fertili
             BlockView world,
             BlockPos pos
     ) {
-        if (state.get(AGE) == 0) {
-            return 1.0F;
-        }
-
-        ItemStack tool = player.getMainHandStack();
-        if (!(tool.getItem() instanceof ShearsItem)) {
-            return super.calcBlockBreakingDelta(state, player, world, pos);
-        }
-
-        float hardness = state.getHardness(world, pos);
-        if (hardness == -1.0F) {
-            return 0.0F;
-        }
-
-        int harvestDivisor = player.canHarvest(state) ? 30 : 100;
-        return getShearsBlockBreakingSpeed(player, tool) / hardness / harvestDivisor;
+        return state.get(AGE) == 0
+                ? 1.0F
+                : super.calcBlockBreakingDelta(state, player, world, pos);
     }
 
     @Override
@@ -273,42 +255,6 @@ public class ForestLanternBlock extends HorizontalFacingBlock implements Fertili
         }
 
         return logState.isIn(SharedForestLanternBlockTags.PEACH_LOGS);
-    }
-
-    private static float getShearsBlockBreakingSpeed(PlayerEntity player, ItemStack tool) {
-        float speed = SHEARS_MINING_SPEED;
-        int efficiencyLevel = EnchantmentHelper.getEfficiency(player);
-        if (efficiencyLevel > 0 && !tool.isEmpty()) {
-            speed += efficiencyLevel * efficiencyLevel + 1;
-        }
-
-        if (StatusEffectUtil.hasHaste(player)) {
-            speed *= 1.0F + (StatusEffectUtil.getHasteAmplifier(player) + 1) * 0.2F;
-        }
-
-        if (player.hasStatusEffect(StatusEffects.MINING_FATIGUE)) {
-            StatusEffectInstance miningFatigue = player.getStatusEffect(
-                    StatusEffects.MINING_FATIGUE
-            );
-            float multiplier = switch (miningFatigue.getAmplifier()) {
-                case 0 -> 0.3F;
-                case 1 -> 0.09F;
-                case 2 -> 0.0027F;
-                default -> 0.00081F;
-            };
-            speed *= multiplier;
-        }
-
-        if (player.isSubmergedIn(FluidTags.WATER)
-                && !EnchantmentHelper.hasAquaAffinity(player)) {
-            speed /= 5.0F;
-        }
-
-        if (!player.isOnGround()) {
-            speed /= 5.0F;
-        }
-
-        return speed;
     }
 
     private void tryPlaceNewLanterns(ServerWorld world, Random random, BlockPos centerPos) {

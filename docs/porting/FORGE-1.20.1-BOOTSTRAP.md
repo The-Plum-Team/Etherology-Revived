@@ -175,10 +175,10 @@ client systems have been registered.
 - `validateForgeFoodItemRegistryServerEvidenceArchiveIntegrity` is expected to pass. It runs the
   active v14 runner/verifier safety suite and validates the immutable five-file schema-9,
   219-assertion archive without consulting ignored live runtime state.
-- `:forge:1.20.1:serverProbeSafetyInterlockTest` is expected to pass. It executes 15 non-Minecraft Gradle fixture
+- `:forge:1.20.1:serverProbeSafetyInterlockTest` is expected to pass. It executes 20 non-Minecraft Gradle fixture
   cases for the launch safety interlocks and is wired into
-  `forgeFoodItemRegistryServerSafetyTest`. Those cases are separate from the 82 Python
-  runner/verifier safety tests, not an aggregate 97-test suite.
+  `forgeFoodItemRegistryServerSafetyTest`. Those cases are separate from the 87 Python
+  runner/verifier safety tests, not an aggregate 107-test suite.
 - `validateForgeFoodItemRegistryMilestone` is the current combined positive gate. It requires
   the exact static/resource/artifact proof and frozen v14 native reload/player-consumption
   evidence before the remaining authoritative registry gate may run.
@@ -651,10 +651,10 @@ binds archive-manifest SHA-256
 `4ec610688bf030ea722772c40d871ec1b954fcbc0b15f90cbad41acec6278ad0`, completion-marker SHA-256
 `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`, and server-log SHA-256
 `e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d599db`. The current Python runner
-and verifier suite passes all 82 safety tests. Separately,
-`:forge:1.20.1:serverProbeSafetyInterlockTest` passes 15 non-Minecraft Gradle interlock fixture
+and verifier suite passes all 87 safety tests. Separately,
+`:forge:1.20.1:serverProbeSafetyInterlockTest` passes 20 non-Minecraft Gradle interlock fixture
 cases and is wired into `forgeFoodItemRegistryServerSafetyTest`; the two suites are not combined
-into a misleading 97-test count. The strict verifier is
+into a misleading 107-test count. The strict verifier is
 `scripts/e2e/forge_server_food_item_evidence_v14.py`; the integrated gate is
 `:forge:1.20.1:validateForgeFoodItemRegistryMilestone`, and
 `:forge:1.20.1:verifyForgePortGateClosed` confirms the broader authoritative registry spine is

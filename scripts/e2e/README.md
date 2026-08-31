@@ -5,7 +5,7 @@ copies, registers, inspects, or launches an existing game profile. Its only
 game directory is below the ignored repository path:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23/game/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v24/game/
 ```
 
 The parent runtime must contain the exact provenance marker written by this
@@ -13,15 +13,13 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
-The tracked v23 profile names the consumed repository-owned runtime whose one
-accepted `metal-block-registry` capture is now sealed. The v20, v21, v22, and
-v23 profiles, runtimes, and archives are immutable. `client.py validate` and
-archive-only validation are safe because they do not mutate or launch the
-runtime. Do not rerun `provision`, `stage`, `start`, live capture, or
-archive-manifest creation while any active literal still names v23. Before
-another lifecycle action or native launch, advance the profile ID, runtime
-directory, snapshots, tests, verifier, and archive target to a new unused
-v24-or-newer version.
+The tracked v24 profile reserves a fresh repository-owned runtime for the
+`forest-lantern` capture. It has not been provisioned, staged, checked, or
+launched by the implementation/build workflow. The v20 through v23 profiles,
+runtimes, and accepted archives remain immutable history. `client.py validate`
+and archive-only validation are safe because they do not mutate or launch a
+runtime. After v24 is consumed, advance the profile ID, runtime directory,
+snapshot, tests, verifier, and archive target before another lifecycle action.
 
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
@@ -47,8 +45,8 @@ python3 -B scripts/e2e/client.py validate
 ```
 
 The remaining preparation and lifecycle commands in this document describe the
-next-profile workflow. They must not run until every pinned v23 literal has been
-advanced to one fresh v24-or-newer profile.
+explicit future v24 capture workflow. They are not part of the build/unit-test
+gate.
 
 ## Prepare a future profile without launching
 
@@ -82,7 +80,7 @@ then stage them together:
 ./gradlew :fabric:1.20.1:buildE2eHarness \
   :fabric:1.20.1:verifyE2eHarnessIsolation --no-daemon --console=plain
 python3 -B scripts/e2e/client.py stage
-python3 -B scripts/e2e/client.py check
+python3 -B scripts/e2e/client.py check --scenario forest-lantern
 ```
 
 `buildE2eHarness` runs the dispatcher/controller unit tests before validating the
@@ -126,16 +124,24 @@ python3 -B scripts/e2e/client.py start --scenario phase0-smoke
 ```
 
 The implemented scenarios are `phase0-smoke`, `storage-utilities`,
-`ether-network`, and `metal-block-registry`. The storage scenario creates a
-fresh integrated world and
-exercises crate, shelf, spill-barrel, and tuning-fork interactions and
-persistence. The ether scenario creates a separate fresh world and exercises a
+`ether-network`, `metal-block-registry`, and `forest-lantern`. The storage
+scenario creates a fresh integrated world and exercises crate, shelf,
+spill-barrel, and tuning-fork interactions and persistence. The ether scenario
+creates a separate fresh world and exercises a
 Spinner, directional channels, Ethereal Storage, a redstone gate, and a
 Levitator force/retention path. The metal-block scenario captures the empty
 three-pedestal fixture, places the exact azel, ethril, and ebony blocks directly
 on the integrated-server thread, waits for the exact client mirror and 120
 consecutive stable renders, then captures the populated fixture from the same
-camera. An explicit empty, whitespace-padded, or unknown value aborts harness
+camera. The Forest Lantern scenario uses raw registry/property APIs to build a
+four-row checker-backed matrix containing every age 0–4 × north/east/south/west
+state, rejects one unsupported real `BlockItem` placement, performs four
+supported mature real `BlockItem` placements, captures every cumulative
+placement facing from one fixed camera after 120 stable completed renders, and
+proves exact matrix and placement mirrors across a full save/disconnect/reopen.
+Random ticks are disabled so the sixteen forced age 0–3 states cannot advance
+during capture. An
+explicit empty, whitespace-padded, or unknown value aborts harness
 initialization before any client callbacks are registered; it is never silently
 normalized or replaced with another scenario.
 The stable Fabric entrypoint remains
@@ -144,13 +150,18 @@ identity and staged-artifact contract do not change.
 
 ## Future-profile client lifecycle
 
-Only after `check` succeeds for the fresh v24-or-newer profile:
+Only after `check` succeeds for the fresh v24 profile:
 
 ```bash
-python3 -B scripts/e2e/client.py start --scenario phase0-smoke
+python3 -B scripts/e2e/client.py start --scenario forest-lantern
 python3 -B scripts/e2e/client.py status
-python3 -B scripts/e2e/client.py stop
 ```
+
+After read-only preflight succeeds, `start` durably reserves one profile-specific
+attempt marker before creating the client log or process. That marker is never
+removed and blocks another provision, stage, check, or start for v24, including
+after an early launch failure. `status` remains available; `stop` is an
+abort-only command and must not be used for a normally auto-completing capture.
 
 The client uses a deterministic offline test identity, a 960x540 logical window,
 and the repository-owned game directory. On the baseline Mac's 2x Retina display,
@@ -178,7 +189,7 @@ Minecraft's `ScreenshotRecorder` writes the native captures directly into the
 fail-closed scenario evidence tree created by `provision`:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v23/evidence/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v24/evidence/
   <scenario>/
     reports/
     screenshots/
@@ -196,10 +207,55 @@ download dependencies, create a game runtime, or launch a process:
 
 ```bash
 python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
-  scripts/e2e/test_fabric_metal_block_evidence.py
+  scripts/e2e/test_fabric_metal_block_evidence.py \
+  scripts/e2e/test_fabric_forest_lantern_evidence.py
 ./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
   --no-daemon --console=plain
+./gradlew :fabric:1.20.1:fabricForestLanternEvidenceSafetyTest \
+  --no-daemon --console=plain
 ```
+
+## Prepared Fabric Forest Lantern evidence (v24)
+
+The packaged v24 scenario and fail-closed verifier are ready for a future native
+capture. The verifier requires 68 exact ordered assertions and seven unedited
+1920×1080 framebuffer PNGs: empty, the full twenty-state age×facing matrix,
+cumulative north/east/south/west mature placements, and reopened persistence.
+Every capture records 120 completed stable renders, exact twenty-cell
+server/client snapshots and camera state, all thirteen effective assets, cutout
+rendering and baked models, twenty unique raw state IDs, all sixteen forced
+age 0–3 fixture states, real `BlockItem` action/stack/support evidence, and no
+missing-texture magenta. Each of the five fixture/placement transitions must
+materially change.
+
+After the harness stops itself, validate the live capture, copy only its exact
+scenario payload while preserving modification times, and seal it once:
+
+```bash
+python3 -B scripts/e2e/fabric_forest_lantern_evidence.py --live
+/bin/mkdir docs/evidence/fabric-1.20.1/forest-lantern-v24
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v24/evidence/forest-lantern/. \
+  docs/evidence/fabric-1.20.1/forest-lantern-v24/
+python3 -B scripts/e2e/fabric_forest_lantern_evidence.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/forest-lantern-v24 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v24 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
+```
+
+Archive-only verification is repeatable and never consults live profile state:
+
+```bash
+python3 -B scripts/e2e/fabric_forest_lantern_evidence.py \
+  --archive docs/evidence/fabric-1.20.1/forest-lantern-v24
+./gradlew :fabric:1.20.1:validateFabricForestLanternV24Milestone \
+  --no-daemon --console=plain
+```
+
+The archive and milestone intentionally do not pass before that real capture is
+present. Manifest creation binds the exact active/snapshot profile bytes,
+repository-owned runtime and destination, artifact lock, copied payload bytes,
+and completion-marker publication order, and refuses replacement.
 
 ## Accepted Fabric metal-block-registry evidence (v23)
 
@@ -253,9 +309,10 @@ direct server-side placement and exact client rendering only. It does not prove
 enforcement, beacon activation, recipe execution, creative tabs, restart
 persistence, multiplayer, or release readiness.
 
-The active v23 identity is consumed. A future capture must first advance every
-active profile, runtime, snapshot, test, verifier, and archive literal to a
-fresh unused v24-or-newer identity.
+The v23 identity is consumed and remains archive-only history. The active v24
+identity is reserved solely for Forest Lantern; after it is consumed, advance
+every active profile, runtime, snapshot, test, verifier, and archive literal to
+a fresh unused v25-or-newer identity.
 
 ### Historical Phase 0 archive (v22)
 
@@ -280,8 +337,12 @@ The Forge lane is a separate repository-owned profile described by
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
 an external launcher profile. The current runtime is the fresh isolated
-`etherology-e2e-forge-1.20.1-v11` profile. Its exact ordered scenarios are
-`ethereal-storage` and `ethereal-channel`; selection defaults to storage.
+`etherology-e2e-forge-1.20.1-v12` profile. Its exact ordered scenarios are
+`ethereal-storage`, `ethereal-channel`, and `forest-lantern`; selection defaults
+to storage. The v12 profile is reserved for the Forest Lantern capture and has
+not been provisioned, staged, checked, or launched by the implementation and
+build-only workflow. The v11 profile and Channel archive remain immutable
+history.
 The launcher-created runtime marker also records the tracked profile manifest's
 repository path, exact byte size, and SHA-256. Every readiness and launch action
 recomputes that descriptor and rejects a mismatched marker.
@@ -292,10 +353,9 @@ local artifacts, stage them, and run the fail-closed readiness check:
 ```bash
 python3 -B scripts/e2e/forge_client.py validate
 python3 -B scripts/e2e/forge_client.py provision
-./gradlew :forge:1.20.1:remapE2eUnderTestJar :forge:1.20.1:remapE2eHarnessJar
+./gradlew :forge:1.20.1:buildE2eHarness --no-daemon --console=plain
 python3 -B scripts/e2e/forge_client.py stage
-python3 -B scripts/e2e/forge_client.py check --scenario ethereal-storage
-python3 -B scripts/e2e/forge_client.py check --scenario ethereal-channel
+python3 -B scripts/e2e/forge_client.py check --scenario forest-lantern
 ```
 
 Only `start` launches Minecraft. The lifecycle commands manage processes only
@@ -303,17 +363,31 @@ after matching the Forge version id, isolated game directory, scenario property,
 and BootstrapLauncher command:
 
 ```bash
-python3 -B scripts/e2e/forge_client.py start --scenario ethereal-storage
-python3 -B scripts/e2e/forge_client.py start --scenario ethereal-channel
+python3 -B scripts/e2e/forge_client.py start --scenario forest-lantern
 python3 -B scripts/e2e/forge_client.py status
-python3 -B scripts/e2e/forge_client.py stop
-python3 -B scripts/e2e/forge_client.py stop-all-owned
 ```
+
+After read-only preflight succeeds, `start` durably reserves one profile-specific
+attempt marker before creating the client log or process. It is never removed
+and blocks another provision, stage, check, or start for v12, including after an
+early launch failure. `status` remains available; `stop` and `stop-all-owned`
+are abort-only recovery commands, not part of successful capture publication.
 
 The storage scenario writes five 1920x1080 composed-framebuffer captures and one
 atomic report below `evidence/ethereal-storage/`. The channel scenario writes
 exactly `ethereal-channel-gated.png`, `ethereal-channel-transferred.png`, and
 `ethereal-channel-reopened.png` below `evidence/ethereal-channel/screenshots/`.
+The Forest Lantern scenario writes exact empty, forced-stage, cumulative
+north/east/south/west placement, and reopened PNGs. Each is 1920x1080 after 120
+consecutive exact mirror/render/camera frames. Its report binds the twenty
+age/facing states and raw IDs, thirteen effective resource SHA-256 values,
+Forge cutout layer, luminance 8, real `BlockItem` outcomes, client/server
+snapshots, staged JARs, and save/disconnect/reopen persistence. Ages 0–3 are
+forced across all north/east/south/west facings against deterministic vanilla
+logs and explicitly remain unsupported. Together with the four mature real
+`BlockItem` placements, the capture exposes all twenty native age/facing states
+in exact server/client mirrors before save and after reopen; the deferred
+peach-log graph is not claimed by this bounded Forge slice.
 Its v11 fixture uses redstone-fed powered repeaters on the full solid arena floor
 as exact strong-power sources. It waits through the first scheduled server tick
 before asserting ACTIVATED, `up=in`, and `east=out`; later power changes are also
@@ -337,6 +411,25 @@ change:
 ```bash
 python3 -B scripts/e2e/forge_evidence.py --scenario ethereal-storage
 python3 -B scripts/e2e/forge_channel_evidence.py --scenario ethereal-channel
+python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
+```
+
+After the harness stops itself, validate the live capture, copy only the report,
+completion marker, and seven PNGs while preserving modification times, seal
+them against that stopped owned capture, then validate the frozen archive:
+
+```bash
+python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
+/bin/mkdir docs/evidence/forge-1.20.1/forest-lantern-v12
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v12/evidence/forest-lantern/. \
+  docs/evidence/forge-1.20.1/forest-lantern-v12/
+python3 -B scripts/e2e/forge_forest_lantern_evidence.py \
+  --create-archive-manifest docs/evidence/forge-1.20.1/forest-lantern-v12 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v12 \
+  --profile-manifest scripts/e2e/forge-1.20.1-profile.json
+python3 -B scripts/e2e/forge_forest_lantern_evidence.py \
+  --archive docs/evidence/forge-1.20.1/forest-lantern-v12
 ```
 
 After copying the seven accepted payload files (the report, completion marker,
@@ -395,9 +488,61 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Forge 1.20.1 dedicated-server metal-block-registry probe
+## Prepared Forge 1.20.1 dedicated-server Forest Lantern probe (v15)
 
-The current cumulative server-only proof is the Forge 1.20.1
+The active server-only profile is the fresh, repository-owned
+`etherology-e2e-forge-server-1.20.1-v15` identity. Its tracked manifest and v15
+snapshot are byte-identical at 1,184 bytes with SHA-256
+`b0ddfd9ac8ac9073d055a492bd71250995b42c69a6c54a30eef0f379319cf58c`.
+It has not been provisioned or launched. The expected schema-10 report contains
+266 ordered assertions: all v14 checks plus the exact Forest Lantern registry,
+twenty states, unique non-negative server network IDs and shapes, tags, loot,
+four recipes and advancements, real
+four-facing `BlockItem` placement/support removal, shears speed `15.0` and
+effective breaking delta across all twenty states, seeded real player-jump
+retain/break/drop outcomes, real reload stability, and fresh players after
+reload. This headless contract creates no screenshots.
+
+Complete every static gate and commit the exact source/harness before reserving
+the one-use runtime. `validate`, the Gradle gate, and the strict Python safety
+tests do not launch Minecraft. After `run` passes its read-only preflight, the
+runner durably reserves the attempt marker before it creates the launch lock or
+starts Gradle. Treat every `run` that reaches that reservation as consuming v15:
+
+```bash
+./gradlew --no-daemon --no-parallel --console=plain \
+  :forge:1.20.1:verifyRegistryFoundationServerProbe
+python3 -B scripts/e2e/forge_server.py validate
+python3 -B scripts/e2e/forge_server.py provision
+python3 -B scripts/e2e/forge_server.py check
+python3 -B scripts/e2e/forge_server.py run
+python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v15.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v15
+```
+
+The runner does not create the tracked archive. After the runtime verifier
+passes, copy only the `evidence/forest-lantern` payload while preserving file
+modification times, then seal and verify it exactly once:
+
+```bash
+server_capture="scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v15/evidence/forest-lantern"
+server_archive="docs/evidence/forge-1.20.1/forest-lantern-server-v15"
+/bin/mkdir "$server_archive"
+/bin/cp -pR "$server_capture"/. "$server_archive"/
+python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v15.py \
+  --create-archive-manifest "$server_archive"
+python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v15.py \
+  --archive "$server_archive"
+```
+
+Creating the exact archive directory blocks another provision/check/run even
+before sealing. Keep the active manifest at v15 through manifest creation. If
+the native launch fails, do not retry v15; advance the profile, snapshot,
+contract, verifier, archive destination, and tests to a fresh v16 identity.
+
+## Historical Forge 1.20.1 dedicated-server metal-block-registry probe (v13)
+
+The accepted historical server-only proof is the Forge 1.20.1
 `metal-block-registry` scenario. It runs Etherology's checked-out production
 source-set output and the isolated server probe in a fresh repository-owned
 profile; it never loads the Forge client harness and never consults, adopts,
@@ -771,6 +916,7 @@ download, provision, build, or launch Minecraft:
 python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_evidence.py \
   scripts/e2e/test_forge_channel_evidence.py \
+  scripts/e2e/test_forge_forest_lantern_evidence.py \
   scripts/e2e/test_forge_server.py \
   scripts/e2e/test_forge_server_evidence.py \
   scripts/e2e/test_forge_server_reload_evidence_v6.py \

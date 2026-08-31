@@ -280,18 +280,18 @@ def build_archive_manifest_fixture(
 
 
 class ActiveProfileTests(unittest.TestCase):
-    def test_active_profile_is_the_exact_v23_snapshot(self) -> None:
-        configuration = client.load_configuration()
-
-        metal_evidence.validate_active_profile(configuration)
-
-        active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
+    def test_v23_snapshot_remains_immutable_history(self) -> None:
         snapshot_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v23.json"
-        self.assertEqual(active_profile.read_bytes(), snapshot_profile.read_bytes())
-        self.assertEqual(metal_evidence.PROFILE_SIZE, active_profile.stat().st_size)
+        configuration = client.load_configuration(snapshot_profile)
+
+        self.assertEqual(
+            metal_evidence.PROFILE_ID,
+            client.profile_spec(configuration)["id"],
+        )
+        self.assertEqual(metal_evidence.PROFILE_SIZE, snapshot_profile.stat().st_size)
         self.assertEqual(
             metal_evidence.PROFILE_SHA256,
-            client.sha256_file(active_profile),
+            client.sha256_file(snapshot_profile),
         )
 
 
@@ -527,7 +527,7 @@ class ArchiveSealingTests(unittest.TestCase):
         scripts_directory = self.repository_root / "scripts" / "e2e"
         scripts_directory.mkdir(parents=True)
         shutil.copy2(
-            SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json",
+            SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v23.json",
             scripts_directory / "fabric-1.20.1-profile.json",
         )
         shutil.copy2(
@@ -535,7 +535,9 @@ class ArchiveSealingTests(unittest.TestCase):
             scripts_directory / "fabric-1.20.1-profile-v23.json",
         )
         self.configuration = replace(
-            client.load_configuration(),
+            client.load_configuration(
+                SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v23.json"
+            ),
             repository_root=self.repository_root,
         )
         self.profile_manifest_path = (

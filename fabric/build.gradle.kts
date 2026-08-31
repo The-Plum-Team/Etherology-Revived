@@ -384,6 +384,15 @@ if (minecraftVersion == "1.20.1") {
     val fabricActiveProfile = rootProject.file("scripts/e2e/fabric-1.20.1-profile.json")
     val fabricProfileSnapshotV23 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v23.json")
+    val fabricForestLanternEvidenceArchive = rootProject.file(
+        "docs/evidence/fabric-1.20.1/forest-lantern-v24",
+    )
+    val fabricForestLanternEvidenceVerifier =
+        rootProject.file("scripts/e2e/fabric_forest_lantern_evidence.py")
+    val fabricForestLanternEvidenceTest =
+        rootProject.file("scripts/e2e/test_fabric_forest_lantern_evidence.py")
+    val fabricProfileSnapshotV24 =
+        rootProject.file("scripts/e2e/fabric-1.20.1-profile-v24.json")
 
     val fabricMetalBlockRegistryEvidenceSafetyTest =
         tasks.register<Exec>("fabricMetalBlockRegistryEvidenceSafetyTest") {
@@ -434,6 +443,65 @@ if (minecraftVersion == "1.20.1") {
             .withPropertyName("fabricMetalBlockEvidenceArchive")
             .optional()
     }
+
+    val fabricForestLanternEvidenceSafetyTest =
+        tasks.register<Exec>("fabricForestLanternEvidenceSafetyTest") {
+            group = "verification"
+            description =
+                "Runs the Fabric Forest Lantern v24 verifier safety tests."
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_fabric_forest_lantern_evidence.py",
+                "scripts/e2e/test_client.py",
+            )
+            inputs.files(
+                fabricForestLanternEvidenceVerifier,
+                fabricForestLanternEvidenceTest,
+                fabricClientRunner,
+                rootProject.file("scripts/e2e/test_client.py"),
+                rootProject.file("scripts/e2e/fabric-1.20.1-profile-v20.json"),
+                rootProject.file("scripts/e2e/fabric-1.20.1-profile-v21.json"),
+                rootProject.file("scripts/e2e/fabric-1.20.1-profile-v22.json"),
+                fabricProfileSnapshotV23,
+                fabricEvidenceLibrary,
+                fabricEvidenceTestLibrary,
+                fabricActiveProfile,
+                fabricProfileSnapshotV24,
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
+                rootProject.file("src/main/resources/fabric.mod.json"),
+                rootProject.file("fabric/build.gradle.kts"),
+                rootProject.file("docs/testing/E2E-CONTRACT.md"),
+            )
+        }
+
+    val validateFabricForestLanternEvidenceArchiveIntegrity =
+        tasks.register<Exec>("validateFabricForestLanternEvidenceArchiveIntegrity") {
+            group = "verification"
+            description =
+                "Validates the immutable Fabric Forest Lantern v24 archive."
+            dependsOn(fabricForestLanternEvidenceSafetyTest)
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                fabricForestLanternEvidenceVerifier.absolutePath,
+                "--archive",
+                fabricForestLanternEvidenceArchive.absolutePath,
+            )
+            inputs.files(
+                fabricForestLanternEvidenceVerifier,
+                fabricClientRunner,
+                fabricEvidenceLibrary,
+            )
+            inputs.dir(fabricForestLanternEvidenceArchive)
+                .withPropertyName("fabricForestLanternEvidenceArchive")
+                .optional()
+        }
 
     val e2eHarness = sourceSets.create("e2eHarness") {
         java.setSrcDirs(
@@ -653,5 +721,16 @@ if (minecraftVersion == "1.20.1") {
         group = "e2e"
         description = "Builds and validates the separate Fabric 1.20.1 packaged E2E harness."
         dependsOn(e2eHarnessTestTask, verifyE2eHarnessArtifact)
+    }
+
+    tasks.register("validateFabricForestLanternV24Milestone") {
+        group = "verification"
+        description =
+            "Validates the packaged harness and frozen Fabric Forest Lantern v24 evidence."
+        dependsOn(
+            e2eHarnessTestTask,
+            verifyE2eHarnessArtifact,
+            validateFabricForestLanternEvidenceArchiveIntegrity,
+        )
     }
 }

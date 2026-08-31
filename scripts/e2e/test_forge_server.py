@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 9,
+        "schema": 10,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -213,6 +213,7 @@ def valid_report() -> dict[str, object]:
             "fresh_player_after_reload": True,
             "stable_after_reload": True,
         },
+        "forest_lantern": copy.deepcopy(forge_server.FOREST_LANTERN),
         "loot_condition": {
             "registry_id": "minecraft:loot_condition_type",
             "condition_id": "etherology:random_chance_with_fortune",
@@ -284,6 +285,12 @@ def valid_report() -> dict[str, object]:
             "food_item_properties_stable": True,
             "food_item_stack_nbt_stable": True,
             "food_consumption_stable": True,
+            "forest_lantern_registry_stable": True,
+            "forest_lantern_states_stable": True,
+            "forest_lantern_tags_stable": True,
+            "forest_lantern_loaded_data_stable": True,
+            "forest_lantern_loaded_data_fresh": True,
+            "forest_lantern_mechanics_stable": True,
             "stop_requested_after_completion": True,
         },
         "tags": {
@@ -341,7 +348,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v14",
+            "etherology-e2e-forge-server-1.20.1-v15",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -367,8 +374,12 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v14_snapshot_and_preserves_prior_versions(self) -> None:
+    def test_active_profile_matches_v15_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
+        v15_snapshot = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v15.json"
+        ).read_bytes()
         v14_snapshot = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v14.json"
@@ -383,9 +394,14 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v14_snapshot, active)
+        self.assertEqual(v15_snapshot, active)
+        self.assertNotEqual(v14_snapshot, active)
         self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v14",
+            json.loads(v14_snapshot)["profile"]["id"],
+        )
         self.assertEqual(
             "etherology-e2e-forge-server-1.20.1-v13",
             json.loads(v13_snapshot)["profile"]["id"],
@@ -514,6 +530,25 @@ class RuntimeIsolationTests(unittest.TestCase):
             forge_server.provision_profile(self.configuration, self.state_root)
 
         self.assertFalse(self.state_root.exists())
+
+    def test_recorded_launch_attempt_permanently_consumes_profile_without_runtime(
+        self,
+    ) -> None:
+        self.state_root.mkdir(parents=True)
+        forge_server.run_attempt_path(
+            self.configuration,
+            self.state_root,
+        ).write_text("attempted\n", encoding="utf-8")
+
+        with self.assertRaisesRegex(
+            forge_server.E2EError,
+            "launch attempt.*consumed",
+        ):
+            forge_server.provision_profile(self.configuration, self.state_root)
+
+        self.assertFalse(
+            forge_server.runtime_root(self.configuration, self.state_root).exists()
+        )
 
     def test_sealed_archive_blocks_check_after_an_existing_runtime(self) -> None:
         forge_server.provision_profile(self.configuration, self.state_root)
@@ -726,7 +761,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(219, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(266, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -950,7 +985,7 @@ class ProbeReportTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            "registry:loot_condition:etherology:random_chance_with_fortune",
+            f"registry:block:{forge_server.FOREST_LANTERN_ID}",
             forge_server.EXPECTED_ASSERTION_NAMES[
                 insertion_index + len(expected_names)
             ],
@@ -991,6 +1026,95 @@ class ProbeReportTests(unittest.TestCase):
             "food assertion inventory": lambda report: report["assertions"].pop(
                 food_assertion_index
             ),
+        }
+        for description, mutate in mutations.items():
+            with self.subTest(description=description):
+                report = valid_report()
+                mutate(report)
+                with self.assertRaises(forge_server.E2EError):
+                    forge_server.validate_probe_report(report, self.configuration)
+
+    def test_forest_lantern_assertions_are_exact_and_probe_ordered(self) -> None:
+        insertion_index = (
+            forge_server.EXPECTED_ASSERTION_NAMES.index(
+                "food_consumption_stable_after_reload"
+            )
+            + 1
+        )
+
+        self.assertEqual(47, len(forge_server.FOREST_LANTERN_ASSERTION_NAMES))
+        self.assertEqual(
+            forge_server.FOREST_LANTERN_ASSERTION_NAMES,
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index : insertion_index
+                + len(forge_server.FOREST_LANTERN_ASSERTION_NAMES)
+            ],
+        )
+        self.assertEqual(
+            forge_server.FOREST_LANTERN_ASSERTION_VALUES,
+            forge_server.EXPECTED_ASSERTION_VALUES[
+                insertion_index : insertion_index
+                + len(forge_server.FOREST_LANTERN_ASSERTION_VALUES)
+            ],
+        )
+        self.assertEqual(
+            "registry:loot_condition:etherology:random_chance_with_fortune",
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index + len(forge_server.FOREST_LANTERN_ASSERTION_NAMES)
+            ],
+        )
+
+    def test_forest_lantern_report_rejects_focused_contract_drift(self) -> None:
+        assertion_index = forge_server.EXPECTED_ASSERTION_NAMES.index(
+            "forest_lantern_contract_exact"
+        )
+        mutations = {
+            "registry": lambda report: report["forest_lantern"].__setitem__(
+                "block_id", "minecraft:air"
+            ),
+            "twenty states": lambda report: report["forest_lantern"][
+                "states"
+            ].pop(),
+            "default": lambda report: report["forest_lantern"].__setitem__(
+                "default_state", "age=0,facing=north"
+            ),
+            "shape": lambda report: report["forest_lantern"][
+                "outline_shapes"
+            ].__setitem__("age=4,facing=north", "0,0,0,1,1,1"),
+            "tag": lambda report: report["forest_lantern"]["tags"].__setitem__(
+                "hoe_mineable", False
+            ),
+            "loot": lambda report: report["forest_lantern"]["loaded_data"][
+                "initial"
+            ]["loot_by_age"].__setitem__("4", ""),
+            "recipe craft": lambda report: report["forest_lantern"]["loaded_data"][
+                "reloaded"
+            ].__setitem__("recipe_matches_and_crafts_exact", False),
+            "advancement": lambda report: report["forest_lantern"][
+                "loaded_data"
+            ]["initial"]["advancements"].pop(
+                "etherology:recipes/food/forest_lantern_crumb"
+            ),
+            "placement": lambda report: report["forest_lantern"]["mechanics"][
+                "server_started"
+            ]["placement"]["facings"].__setitem__("east", "PASS"),
+            "shears": lambda report: report["forest_lantern"]["mechanics"][
+                "reloaded"
+            ]["shears"]["deltas"].__setitem__("4", "1.0"),
+            "retain callback": lambda report: report["forest_lantern"][
+                "mechanics"
+            ]["server_started"]["retain_jump"].__setitem__(
+                "single_callback_guard_exact", False
+            ),
+            "break drop": lambda report: report["forest_lantern"]["mechanics"][
+                "reloaded"
+            ]["break_jump"].__setitem__("new_item_entity_count", 2),
+            "reload freshness": lambda report: report["reload"].__setitem__(
+                "forest_lantern_loaded_data_fresh", False
+            ),
+            "assertion": lambda report: report["assertions"][
+                assertion_index
+            ].__setitem__("actual", "false"),
         }
         for description, mutate in mutations.items():
             with self.subTest(description=description):
@@ -1378,6 +1502,32 @@ class ExecutionTests(unittest.TestCase):
         (game / "world" / "level.dat").write_bytes(b"saved-world")
         output_handle.write(b"BUILD SUCCESSFUL\n")
 
+    def assert_launch_attempt_is_exact(self) -> None:
+        attempt = forge_server.run_attempt_path(
+            self.configuration,
+            self.state_root,
+        )
+        self.assertEqual(
+            (
+                f"profile_id={forge_server.PROFILE_ID}\n"
+                f"scenario={forge_server.SCENARIO_ID}\n"
+                f"pid={os.getpid()}\n"
+            ),
+            attempt.read_text(encoding="utf-8"),
+        )
+
+    def test_exclusive_control_file_is_file_and_directory_synced(self) -> None:
+        path = self.state_root / "durability-fixture"
+        with mock.patch.object(
+            forge_server.os,
+            "fsync",
+            wraps=os.fsync,
+        ) as sync:
+            forge_server.write_bytes_exclusive(path, b"durable\n")
+
+        self.assertEqual(b"durable\n", path.read_bytes())
+        self.assertEqual(2, sync.call_count)
+
     def test_zero_exit_validates_and_publishes_done_last(self) -> None:
         launch: dict[str, object] = {}
 
@@ -1433,6 +1583,7 @@ class ExecutionTests(unittest.TestCase):
             (scenario / "reports/launcher-result.json").stat().st_mtime_ns,
         )
         self.assertFalse(forge_server.run_lock_path(self.configuration, self.state_root).exists())
+        self.assert_launch_attempt_is_exact()
 
     def test_nonzero_exit_publishes_no_runner_evidence(self) -> None:
         def fake_popen(*_args: object, **kwargs: object) -> FakeProcess:
@@ -1461,6 +1612,12 @@ class ExecutionTests(unittest.TestCase):
                 self.configuration, "launcher_result", runtime
             ).exists()
         )
+        self.assert_launch_attempt_is_exact()
+        with self.assertRaisesRegex(
+            forge_server.E2EError,
+            "launch attempt.*consumed",
+        ):
+            forge_server.verify_environment(self.configuration, self.state_root)
 
     def test_timeout_contains_process_group_and_publishes_no_done_marker(self) -> None:
         process = FakeProcess(timeout=True)
@@ -1484,6 +1641,7 @@ class ExecutionTests(unittest.TestCase):
                 self.configuration, "completion_marker", runtime
             ).exists()
         )
+        self.assert_launch_attempt_is_exact()
 
     def test_keyboard_interrupt_stops_the_owned_process_group(self) -> None:
         process = mock.Mock(pid=43210)
@@ -1502,6 +1660,7 @@ class ExecutionTests(unittest.TestCase):
             forge_server.execute_probe(self.configuration, self.state_root)
 
         stop_process.assert_called_once_with(process)
+        self.assert_launch_attempt_is_exact()
 
     def test_process_output_limit_is_enforced_while_process_is_running(self) -> None:
         process = FakeProcess(timeout=True)
@@ -1530,6 +1689,7 @@ class ExecutionTests(unittest.TestCase):
                 self.configuration, "completion_marker", runtime
             ).exists()
         )
+        self.assert_launch_attempt_is_exact()
 
     def test_poll_exit_cannot_race_past_the_process_output_limit(self) -> None:
         class PollAppendingProcess:
@@ -1568,6 +1728,7 @@ class ExecutionTests(unittest.TestCase):
                 self.configuration, "completion_marker", runtime
             ).exists()
         )
+        self.assert_launch_attempt_is_exact()
 
     def test_invalid_report_never_publishes_completion(self) -> None:
         def fake_popen(*_args: object, **kwargs: object) -> FakeProcess:
@@ -1597,6 +1758,28 @@ class ExecutionTests(unittest.TestCase):
             forge_server.evidence_path(
                 self.configuration, "completion_marker", runtime
             ).exists()
+        )
+        self.assert_launch_attempt_is_exact()
+
+    def test_process_spawn_failure_still_consumes_the_profile(self) -> None:
+        with (
+            mock.patch.object(
+                forge_server,
+                "verify_environment",
+                return_value=(Path("/jdk21/bin/java"), ["caffeinate", "gradle"]),
+            ),
+            mock.patch.object(
+                forge_server.subprocess,
+                "Popen",
+                side_effect=OSError("spawn failed"),
+            ),
+            self.assertRaisesRegex(forge_server.E2EError, "Cannot start"),
+        ):
+            forge_server.execute_probe(self.configuration, self.state_root)
+
+        self.assert_launch_attempt_is_exact()
+        self.assertFalse(
+            forge_server.run_lock_path(self.configuration, self.state_root).exists()
         )
 
 

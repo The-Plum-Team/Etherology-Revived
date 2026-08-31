@@ -8,6 +8,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
@@ -25,6 +26,8 @@ final class ChannelLeverSupportMixinTest {
 
     private static final String MIXIN_CLASS =
             "ru/feytox/etherology/forge/mixin/ChannelLeverSupportMixin";
+    private static final String FOREST_LANTERN_SHEARS_MIXIN_CLASS =
+            "ru/feytox/etherology/forge/mixin/ForestLanternShearsItemMixin";
     private static final String WALL_MOUNTED_BLOCK =
             "net/minecraft/block/WallMountedBlock";
     private static final String LEVER_BLOCK = "net/minecraft/block/LeverBlock";
@@ -242,9 +245,84 @@ final class ChannelLeverSupportMixinTest {
         );
     }
 
+    @Test
+    void appliesTheCanonicalShearsSpeedToTheSharedForestLantern()
+            throws IOException {
+        RuntimeResourceAssertions.assertTextContains(
+                "/etherology.forge.mixins.json",
+                "ForestLanternShearsItemMixin"
+        );
+
+        ClassNode mixinClass = readMixinClass(FOREST_LANTERN_SHEARS_MIXIN_CLASS);
+        AnnotationNode mixin = requireAnnotation(
+                classAnnotations(mixinClass),
+                "Lorg/spongepowered/asm/mixin/Mixin;"
+        );
+        assertEquals(
+                List.of(Type.getObjectType("net/minecraft/item/ShearsItem")),
+                annotationValue(mixin, "value")
+        );
+
+        MethodNode injection = requireMethod(
+                mixinClass,
+                "etherology$useForestLanternSpeed",
+                "(Lnet/minecraft/item/ItemStack;Lnet/minecraft/block/BlockState;"
+                        + "Lorg/spongepowered/asm/mixin/injection/callback/"
+                        + "CallbackInfoReturnable;)V"
+        );
+        AnnotationNode inject = requireAnnotation(
+                methodAnnotations(injection),
+                "Lorg/spongepowered/asm/mixin/injection/Inject;"
+        );
+        assertEquals(
+                List.of("getMiningSpeedMultiplier"),
+                annotationValue(inject, "method")
+        );
+        assertEquals(Boolean.TRUE, annotationValue(inject, "cancellable"));
+        List<?> injectionPoints = (List<?>) annotationValue(inject, "at");
+        assertEquals(1, injectionPoints.size());
+        assertEquals(
+                "HEAD",
+                annotationValue((AnnotationNode) injectionPoints.get(0), "value")
+        );
+        assertEquals(
+                1,
+                countFieldAccesses(
+                        injection,
+                        "ru/feytox/etherology/registry/block/SharedForestLanternBlocks",
+                        "FOREST_LANTERN",
+                        Opcodes.GETSTATIC
+                )
+        );
+        assertEquals(
+                1,
+                countInvocations(
+                        injection,
+                        "net/minecraft/block/BlockState",
+                        "isOf",
+                        "(Lnet/minecraft/block/Block;)Z"
+                )
+        );
+        assertEquals(1, countLoadedConstants(injection, 15.0F));
+        assertEquals(
+                1,
+                countInvocations(
+                        injection,
+                        "org/spongepowered/asm/mixin/injection/callback/"
+                                + "CallbackInfoReturnable",
+                        "setReturnValue",
+                        "(Ljava/lang/Object;)V"
+                )
+        );
+    }
+
     private static ClassNode readMixinClass() throws IOException {
+        return readMixinClass(MIXIN_CLASS);
+    }
+
+    private static ClassNode readMixinClass(String className) throws IOException {
         InputStream classStream = ChannelLeverSupportMixinTest.class.getResourceAsStream(
-                "/" + MIXIN_CLASS + ".class"
+                "/" + className + ".class"
         );
         assertNotNull(classStream);
         try (classStream) {
@@ -321,6 +399,17 @@ final class ChannelLeverSupportMixinTest {
             if (instruction instanceof TypeInsnNode typeInstruction
                     && typeInstruction.getOpcode() == opcode
                     && typeInstruction.desc.equals(type)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private static int countLoadedConstants(MethodNode method, Object value) {
+        int count = 0;
+        for (AbstractInsnNode instruction : method.instructions) {
+            if (instruction instanceof LdcInsnNode constant
+                    && constant.cst.equals(value)) {
                 count++;
             }
         }

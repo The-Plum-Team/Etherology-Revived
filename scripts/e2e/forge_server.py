@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded Forge 1.20.1 food-item probe in isolated state."""
+"""Run the bounded Forge 1.20.1 Forest Lantern probe in isolated state."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
-import forge_server_contract_v14 as contract_v14
+import forge_server_contract_v15 as contract_v15
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -34,9 +34,9 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v14.PROFILE_ID
-SCENARIO_ID = contract_v14.SCENARIO_ID
-TASK_PATH = contract_v14.TASK_PATH
+PROFILE_ID = contract_v15.PROFILE_ID
+SCENARIO_ID = contract_v15.SCENARIO_ID
+TASK_PATH = contract_v15.TASK_PATH
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -48,76 +48,80 @@ PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 MAXIMUM_SERVER_LOG_SIZE = 48 * 1024 * 1024
 COMPLETION_MARKER_CONTENT = b"complete\n"
-REQUIRED_MOD_IDS = contract_v14.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v14.FORBIDDEN_MOD_IDS
-RELOAD_PACK_DIRECTORY = contract_v14.RELOAD_PACK_DIRECTORY
-RELOAD_PACK_ENABLED_NAME = contract_v14.RELOAD_PACK_ENABLED_NAME
-RELOAD_PACK_RESOURCES = contract_v14.RELOAD_PACK_RESOURCES
-ETHER_SOURCE_LISTENER_CLASS = contract_v14.ETHER_SOURCE_LISTENER_CLASS
-ENCHANTMENT_REGISTRY_ID = contract_v14.ENCHANTMENT_REGISTRY_ID
-NON_TREASURE_TAG_ID = contract_v14.NON_TREASURE_TAG_ID
-ENCHANTMENT_IDS = contract_v14.ENCHANTMENT_IDS
-ENCHANTMENTS = contract_v14.ENCHANTMENTS
-PARTICLE_REGISTRY_ID = contract_v14.PARTICLE_REGISTRY_ID
-FEY_PARTICLE_TYPE_CLASS = contract_v14.FEY_PARTICLE_TYPE_CLASS
-PARTICLE_IDS = contract_v14.PARTICLE_IDS
-PARTICLE_PAYLOAD_FAMILIES = contract_v14.PARTICLE_PAYLOAD_FAMILIES
-PARTICLES = contract_v14.PARTICLES
-SEAL_TYPE_ORDER = contract_v14.SEAL_TYPE_ORDER
-SEAL_TYPES = contract_v14.SEAL_TYPES
-MATERIAL_ITEM_REGISTRY_ID = contract_v14.MATERIAL_ITEM_REGISTRY_ID
-MATERIAL_ITEM_CLASS = contract_v14.MATERIAL_ITEM_CLASS
-MATERIAL_ITEM_NBT_KEYS = contract_v14.MATERIAL_ITEM_NBT_KEYS
-MATERIAL_ITEM_MAX_COUNTS = contract_v14.MATERIAL_ITEM_MAX_COUNTS
-MATERIAL_ITEM_IDS = contract_v14.MATERIAL_ITEM_IDS
-MATERIAL_ITEMS = contract_v14.MATERIAL_ITEMS
+REQUIRED_MOD_IDS = contract_v15.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v15.FORBIDDEN_MOD_IDS
+RELOAD_PACK_DIRECTORY = contract_v15.RELOAD_PACK_DIRECTORY
+RELOAD_PACK_ENABLED_NAME = contract_v15.RELOAD_PACK_ENABLED_NAME
+RELOAD_PACK_RESOURCES = contract_v15.RELOAD_PACK_RESOURCES
+ETHER_SOURCE_LISTENER_CLASS = contract_v15.ETHER_SOURCE_LISTENER_CLASS
+ENCHANTMENT_REGISTRY_ID = contract_v15.ENCHANTMENT_REGISTRY_ID
+NON_TREASURE_TAG_ID = contract_v15.NON_TREASURE_TAG_ID
+ENCHANTMENT_IDS = contract_v15.ENCHANTMENT_IDS
+ENCHANTMENTS = contract_v15.ENCHANTMENTS
+PARTICLE_REGISTRY_ID = contract_v15.PARTICLE_REGISTRY_ID
+FEY_PARTICLE_TYPE_CLASS = contract_v15.FEY_PARTICLE_TYPE_CLASS
+PARTICLE_IDS = contract_v15.PARTICLE_IDS
+PARTICLE_PAYLOAD_FAMILIES = contract_v15.PARTICLE_PAYLOAD_FAMILIES
+PARTICLES = contract_v15.PARTICLES
+SEAL_TYPE_ORDER = contract_v15.SEAL_TYPE_ORDER
+SEAL_TYPES = contract_v15.SEAL_TYPES
+MATERIAL_ITEM_REGISTRY_ID = contract_v15.MATERIAL_ITEM_REGISTRY_ID
+MATERIAL_ITEM_CLASS = contract_v15.MATERIAL_ITEM_CLASS
+MATERIAL_ITEM_NBT_KEYS = contract_v15.MATERIAL_ITEM_NBT_KEYS
+MATERIAL_ITEM_MAX_COUNTS = contract_v15.MATERIAL_ITEM_MAX_COUNTS
+MATERIAL_ITEM_IDS = contract_v15.MATERIAL_ITEM_IDS
+MATERIAL_ITEMS = contract_v15.MATERIAL_ITEMS
 MATERIAL_ITEM_CANONICAL_MAX_COUNTS = (
-    contract_v14.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
+    contract_v15.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
 )
 MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v14.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v15.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
 )
-METAL_BLOCK_REGISTRY_ID = contract_v14.METAL_BLOCK_REGISTRY_ID
-METAL_BLOCK_ITEM_REGISTRY_ID = contract_v14.METAL_BLOCK_ITEM_REGISTRY_ID
-METAL_BLOCK_CLASS = contract_v14.METAL_BLOCK_CLASS
-BLOCK_ITEM_CLASS = contract_v14.BLOCK_ITEM_CLASS
-METAL_BLOCK_NBT_KEYS = contract_v14.METAL_BLOCK_NBT_KEYS
-METAL_BLOCK_SPECS = contract_v14.METAL_BLOCK_SPECS
-METAL_BLOCK_IDS = contract_v14.METAL_BLOCK_IDS
-METAL_BLOCKS = contract_v14.METAL_BLOCKS
-METAL_BLOCK_CANONICAL_PROPERTIES = contract_v14.METAL_BLOCK_CANONICAL_PROPERTIES
+METAL_BLOCK_REGISTRY_ID = contract_v15.METAL_BLOCK_REGISTRY_ID
+METAL_BLOCK_ITEM_REGISTRY_ID = contract_v15.METAL_BLOCK_ITEM_REGISTRY_ID
+METAL_BLOCK_CLASS = contract_v15.METAL_BLOCK_CLASS
+BLOCK_ITEM_CLASS = contract_v15.BLOCK_ITEM_CLASS
+METAL_BLOCK_NBT_KEYS = contract_v15.METAL_BLOCK_NBT_KEYS
+METAL_BLOCK_SPECS = contract_v15.METAL_BLOCK_SPECS
+METAL_BLOCK_IDS = contract_v15.METAL_BLOCK_IDS
+METAL_BLOCKS = contract_v15.METAL_BLOCKS
+METAL_BLOCK_CANONICAL_PROPERTIES = contract_v15.METAL_BLOCK_CANONICAL_PROPERTIES
 METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v14.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v15.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
 )
-METAL_BLOCK_PLACEMENT_POSITIONS = contract_v14.METAL_BLOCK_PLACEMENT_POSITIONS
+METAL_BLOCK_PLACEMENT_POSITIONS = contract_v15.METAL_BLOCK_PLACEMENT_POSITIONS
 METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS = (
-    contract_v14.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
+    contract_v15.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
 )
-METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v14.METAL_BLOCK_CANONICAL_PLACED_IDS
-FOOD_ITEM_REGISTRY_ID = contract_v14.FOOD_ITEM_REGISTRY_ID
-FOOD_ITEM_ID = contract_v14.FOOD_ITEM_ID
-FOOD_ITEM_IDS = contract_v14.FOOD_ITEM_IDS
-FOOD_ITEM_CLASS = contract_v14.FOOD_ITEM_CLASS
-FOOD_ITEM_NBT_KEYS = contract_v14.FOOD_ITEM_NBT_KEYS
-FOOD_ITEM_PROPERTIES = contract_v14.FOOD_ITEM_PROPERTIES
-FOOD_ITEM_SAVE_REPRESENTATION = contract_v14.FOOD_ITEM_SAVE_REPRESENTATION
-FOOD_ITEM_SAVE_REPRESENTATIONS = contract_v14.FOOD_ITEM_SAVE_REPRESENTATIONS
-FOOD_ITEMS = contract_v14.FOOD_ITEMS
-FOOD_CONSUMPTION_PLAYER_CLASS = contract_v14.FOOD_CONSUMPTION_PLAYER_CLASS
-SERVER_STARTED_FOOD_CONSUMPTION = contract_v14.SERVER_STARTED_FOOD_CONSUMPTION
-RELOADED_FOOD_CONSUMPTION = contract_v14.RELOADED_FOOD_CONSUMPTION
-INITIAL_ETHER_SOURCE_ENTRIES = contract_v14.INITIAL_ETHER_SOURCE_ENTRIES
-RELOADED_ETHER_SOURCE_ENTRIES = contract_v14.RELOADED_ETHER_SOURCE_ENTRIES
-canonical_ether_source_entries = contract_v14.canonical_ether_source_entries
-EXPECTED_LIFECYCLE = contract_v14.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v14.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v14.EXPECTED_ASSERTION_VALUES
-PROBE_LOG_PHASES = contract_v14.PROBE_LOG_PHASES
-SERVER_LOG_TOKENS = contract_v14.SERVER_LOG_TOKENS
-CLIENT_LOG_MARKERS = contract_v14.CLIENT_LOG_MARKERS
-CLIENT_CLASS_PATTERN = contract_v14.CLIENT_CLASS_PATTERN
+METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v15.METAL_BLOCK_CANONICAL_PLACED_IDS
+FOOD_ITEM_REGISTRY_ID = contract_v15.FOOD_ITEM_REGISTRY_ID
+FOOD_ITEM_ID = contract_v15.FOOD_ITEM_ID
+FOOD_ITEM_IDS = contract_v15.FOOD_ITEM_IDS
+FOOD_ITEM_CLASS = contract_v15.FOOD_ITEM_CLASS
+FOOD_ITEM_NBT_KEYS = contract_v15.FOOD_ITEM_NBT_KEYS
+FOOD_ITEM_PROPERTIES = contract_v15.FOOD_ITEM_PROPERTIES
+FOOD_ITEM_SAVE_REPRESENTATION = contract_v15.FOOD_ITEM_SAVE_REPRESENTATION
+FOOD_ITEM_SAVE_REPRESENTATIONS = contract_v15.FOOD_ITEM_SAVE_REPRESENTATIONS
+FOOD_ITEMS = contract_v15.FOOD_ITEMS
+FOOD_CONSUMPTION_PLAYER_CLASS = contract_v15.FOOD_CONSUMPTION_PLAYER_CLASS
+SERVER_STARTED_FOOD_CONSUMPTION = contract_v15.SERVER_STARTED_FOOD_CONSUMPTION
+RELOADED_FOOD_CONSUMPTION = contract_v15.RELOADED_FOOD_CONSUMPTION
+FOREST_LANTERN_ID = contract_v15.FOREST_LANTERN_ID
+FOREST_LANTERN = contract_v15.FOREST_LANTERN
+FOREST_LANTERN_ASSERTION_NAMES = contract_v15.FOREST_LANTERN_ASSERTION_NAMES
+FOREST_LANTERN_ASSERTION_VALUES = contract_v15.FOREST_LANTERN_ASSERTION_VALUES
+INITIAL_ETHER_SOURCE_ENTRIES = contract_v15.INITIAL_ETHER_SOURCE_ENTRIES
+RELOADED_ETHER_SOURCE_ENTRIES = contract_v15.RELOADED_ETHER_SOURCE_ENTRIES
+canonical_ether_source_entries = contract_v15.canonical_ether_source_entries
+EXPECTED_LIFECYCLE = contract_v15.EXPECTED_LIFECYCLE
+EXPECTED_ASSERTION_NAMES = contract_v15.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v15.EXPECTED_ASSERTION_VALUES
+PROBE_LOG_PHASES = contract_v15.PROBE_LOG_PHASES
+SERVER_LOG_TOKENS = contract_v15.SERVER_LOG_TOKENS
+CLIENT_LOG_MARKERS = contract_v15.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v15.CLIENT_CLASS_PATTERN
 ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
-    contract_v14.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+    contract_v15.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
 )
 FATAL_SERVER_LOG_MARKERS = (
     "A mod crashed on startup!",
@@ -371,12 +375,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v14.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v15.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v14.PROFILE_MANIFEST_SHA256
+        != contract_v15.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v14 contract"
+            "The dedicated-server profile bytes differ from the immutable v15 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -480,6 +484,13 @@ def run_lock_path(
     return state_root / f"{profile_spec(configuration)['id']}-run.lock"
 
 
+def run_attempt_path(
+    configuration: ResolvedConfiguration,
+    state_root: Path = STATE_ROOT,
+) -> Path:
+    return state_root / f"{profile_spec(configuration)['id']}-run.attempted"
+
+
 def sealed_archive_path(configuration: ResolvedConfiguration) -> Path:
     """Resolves the immutable archive that permanently consumes this profile."""
     profile_version = PROFILE_ID.rpartition("-")[2]
@@ -500,6 +511,20 @@ def require_unsealed_profile(configuration: ResolvedConfiguration) -> None:
         raise E2EError(
             "The dedicated-server profile already has sealed evidence and is consumed: "
             f"{archive}"
+        )
+
+
+def require_unattempted_profile(
+    configuration: ResolvedConfiguration,
+    state_root: Path = STATE_ROOT,
+) -> None:
+    """Permanently rejects a profile after its first launch invocation."""
+    attempt = run_attempt_path(configuration, state_root)
+    ensure_no_symlink_components(attempt, state_root.parent)
+    if attempt.exists() or attempt.is_symlink():
+        raise E2EError(
+            "The dedicated-server profile already has a launch attempt and is consumed: "
+            f"{attempt}"
         )
 
 
@@ -548,6 +573,13 @@ def write_bytes_exclusive(path: Path, content: bytes) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "wb") as handle:
         handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+    directory_descriptor = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory_descriptor)
+    finally:
+        os.close(directory_descriptor)
 
 
 def publish_bytes_exclusive(path: Path, content: bytes) -> None:
@@ -722,6 +754,7 @@ def provision_profile(
     state_root: Path = STATE_ROOT,
 ) -> None:
     require_unsealed_profile(configuration)
+    require_unattempted_profile(configuration, state_root)
     ensure_owned_state_roots(state_root)
     state_root.mkdir(mode=0o700, parents=True, exist_ok=True)
     runtimes_root = state_root / "runtimes"
@@ -856,6 +889,7 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
         RUN_TOKEN_ENVIRONMENT_VARIABLE,
         "serverProbeSealedArchive",
         "serverProbeRunLock",
+        "serverProbeRunAttempt",
         "serverProbeProfileMarker",
         PROFILE_ID,
         SCENARIO_ID,
@@ -919,6 +953,7 @@ def verify_environment(
     state_root: Path = STATE_ROOT,
 ) -> tuple[Path, list[str]]:
     require_unsealed_profile(configuration)
+    require_unattempted_profile(configuration, state_root)
     verify_runtime(configuration, state_root)
     lock_path = run_lock_path(configuration, state_root)
     if lock_path.exists() or lock_path.is_symlink():
@@ -935,16 +970,16 @@ def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v14 contract."""
+    """Validates a probe report through the immutable profile-v15 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v14.validate_probe_report(
+        contract_v15.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v14.V14ContractError as exception:
+    except contract_v15.V15ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 
@@ -1140,6 +1175,22 @@ def execute_probe(
 ) -> dict[str, object]:
     java_path, command = verify_environment(configuration, state_root)
     target_root = runtime_root(configuration, state_root)
+    attempt_path = run_attempt_path(configuration, state_root)
+    attempt_content = (
+        f"profile_id={PROFILE_ID}\nscenario={SCENARIO_ID}\npid={os.getpid()}\n"
+    ).encode("utf-8")
+    try:
+        write_bytes_exclusive(attempt_path, attempt_content)
+    except FileExistsError as exception:
+        raise E2EError(
+            "The dedicated-server profile already has a launch attempt and is "
+            f"consumed: {attempt_path}"
+        ) from exception
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot durably record the dedicated-server launch attempt: {exception}"
+        ) from exception
+
     lock_path = run_lock_path(configuration, state_root)
     run_token = secrets.token_hex(32)
     lock_content = f"pid={os.getpid()}\ntoken={run_token}\n".encode("utf-8")

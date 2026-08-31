@@ -424,6 +424,17 @@ val forgeFoodItemRegistryServerEvidenceTest =
 val forgeServerContractV14 = rootProject.file("scripts/e2e/forge_server_contract_v14.py")
 val forgeServerProfileSnapshotV14 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v14.json")
+val forgeForestLanternServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "forest-lantern-server-v15",
+    )
+val forgeForestLanternServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_forest_lantern_evidence_v15.py")
+val forgeForestLanternServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_forest_lantern_evidence_v15.py")
+val forgeServerContractV15 = rootProject.file("scripts/e2e/forge_server_contract_v15.py")
+val forgeServerProfileSnapshotV15 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v15.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -434,6 +445,16 @@ val forgeRegistryFoundationServerProbeSource = rootProject.file(
         "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.java",
 )
 val forgeE2eProfileManifest = rootProject.file("scripts/e2e/forge-1.20.1-profile.json")
+val forgeChannelProfileSnapshotV11 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v11.json")
+val forgeForestLanternEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_forest_lantern_evidence.py")
+val forgeForestLanternEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_forest_lantern_evidence.py")
+val forgeForestLanternProfileSnapshotV12 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v12.json")
+val forgeForestLanternClientEvidenceArchive =
+    forgeChannelEvidenceRoot.resolve("forest-lantern-v12")
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
 apply(plugin = "dev.architectury.loom")
@@ -445,9 +466,12 @@ fun Project.versionProperty(base: String): String =
 
 enum class ServerProbeSafetyInterlockFailureKind {
     SEALED_ARCHIVE,
+    OWNED_PATH_LINKED,
     RUN_TOKEN,
     RUN_LOCK_MISSING_OR_LINKED,
     RUN_LOCK_INVALID,
+    RUN_ATTEMPT_MISSING_OR_LINKED,
+    RUN_ATTEMPT_INVALID,
     PROFILE_MARKER_MISSING_OR_LINKED,
     PROFILE_MARKER_MALFORMED,
     PROFILE_MARKER_MISMATCH,
@@ -461,8 +485,10 @@ data class ServerProbeSafetyInterlockFailure(
 
 data class ServerProbeSafetyInterlockSpec(
     val sealedArchive: File,
+    val ownedPathAnchor: File,
     val runToken: String?,
     val runLock: File,
+    val runAttempt: File,
     val profileMarker: File,
     val profileId: String,
     val managedBy: String,
@@ -470,6 +496,27 @@ data class ServerProbeSafetyInterlockSpec(
     val scenarioId: String,
     val evidenceDirectories: List<File>,
 )
+
+fun hasServerProbeSymlinkParentComponent(path: File, anchor: File): Boolean {
+    val normalizedPath = path.toPath().toAbsolutePath().normalize()
+    val normalizedAnchor = anchor.toPath().toAbsolutePath().normalize()
+    if (!normalizedPath.startsWith(normalizedAnchor)) {
+        return true
+    }
+
+    var currentPath = normalizedAnchor
+    if (Files.isSymbolicLink(currentPath)) {
+        return true
+    }
+    val relativePath = normalizedAnchor.relativize(normalizedPath)
+    for (index in 0 until maxOf(0, relativePath.nameCount - 1)) {
+        currentPath = currentPath.resolve(relativePath.getName(index))
+        if (Files.isSymbolicLink(currentPath)) {
+            return true
+        }
+    }
+    return false
+}
 
 fun serverProbeSafetyInterlockFailure(
     spec: ServerProbeSafetyInterlockSpec,
@@ -480,7 +527,23 @@ fun serverProbeSafetyInterlockFailure(
         return ServerProbeSafetyInterlockFailure(
             ServerProbeSafetyInterlockFailureKind.SEALED_ARCHIVE,
             "The dedicated-server probe profile already has sealed evidence and is consumed: " +
-                spec.sealedArchive.absolutePath,
+            spec.sealedArchive.absolutePath,
+        )
+    }
+
+    val ownedPaths = listOf(
+        spec.runLock,
+        spec.runAttempt,
+        spec.profileMarker,
+        *spec.evidenceDirectories.toTypedArray(),
+    )
+    if (ownedPaths.any { path ->
+            hasServerProbeSymlinkParentComponent(path, spec.ownedPathAnchor)
+        }
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.OWNED_PATH_LINKED,
+            "The dedicated-server probe owned path resolves through a symlink",
         )
     }
 
@@ -512,6 +575,34 @@ fun serverProbeSafetyInterlockFailure(
         return ServerProbeSafetyInterlockFailure(
             ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
             "The dedicated-server probe runner safety-interlock lock is invalid",
+        )
+    }
+
+    if (!spec.runAttempt.isFile
+        || Files.isSymbolicLink(spec.runAttempt.toPath())
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_MISSING_OR_LINKED,
+            "The dedicated-server probe launch-attempt marker is missing or linked",
+        )
+    }
+    val runAttemptLines = try {
+        spec.runAttempt.readLines(StandardCharsets.UTF_8)
+    } catch (_: Exception) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_INVALID,
+            "The dedicated-server probe launch-attempt marker is invalid",
+        )
+    }
+    if (runAttemptLines != listOf(
+            "profile_id=${spec.profileId}",
+            "scenario=${spec.scenarioId}",
+            runLockLines[0],
+        )
+    ) {
+        return ServerProbeSafetyInterlockFailure(
+            ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_INVALID,
+            "The dedicated-server probe launch-attempt marker is invalid",
         )
     }
 
@@ -3372,6 +3463,127 @@ fun missingForgeFoodItemRegistryServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeForestLanternServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeForestLanternServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeForestLanternServerEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge Forest Lantern server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("forest-lantern-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeForestLanternServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge Forest Lantern server-v15 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeForestLanternServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeForestLanternServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Forest Lantern server evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Forest Lantern server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
+fun missingForgeForestLanternClientEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeForestLanternEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeForestLanternEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge Forest Lantern client evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeChannelEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("forest-lantern-v[1-9][0-9]*").matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeForestLanternClientEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge Forest Lantern client-v12 evidence archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeForestLanternEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeForestLanternClientEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Forest Lantern client evidence verification failed: " +
+                    detail.take(4_000),
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Forest Lantern client evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, recipe, screen, effect, loot, tree, and " +
@@ -3510,6 +3722,20 @@ fun firstIncompleteForgeMilestone(
     if (missingFoodItemRegistryServerEvidence.isNotEmpty()) {
         return "food-item registry dedicated-server evidence" to
             missingFoodItemRegistryServerEvidence
+    }
+
+    val missingForestLanternServerEvidence =
+        missingForgeForestLanternServerEvidenceMilestone()
+    if (missingForestLanternServerEvidence.isNotEmpty()) {
+        return "Forest Lantern dedicated-server evidence" to
+            missingForestLanternServerEvidence
+    }
+
+    val missingForestLanternClientEvidence =
+        missingForgeForestLanternClientEvidenceMilestone()
+    if (missingForestLanternClientEvidence.isNotEmpty()) {
+        return "Forest Lantern packaged-client evidence" to
+            missingForestLanternClientEvidence
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -4825,6 +5051,13 @@ val serverProbeSafetyInterlockTest =
                     "pid=12345\ntoken=$validToken\n",
                     StandardCharsets.UTF_8,
                 )
+                val runAttempt = fixtureRoot.resolve("run.attempted").toFile()
+                runAttempt.writeText(
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n",
+                    StandardCharsets.UTF_8,
+                )
                 val profileMarker = fixtureRoot.resolve("runtime/profile-marker.json")
                 Files.createDirectories(profileMarker.parent)
                 writeMarker(profileMarker)
@@ -4838,8 +5071,10 @@ val serverProbeSafetyInterlockTest =
                 }
                 return ServerProbeSafetyInterlockSpec(
                     sealedArchive = fixtureRoot.resolve("sealed-archive").toFile(),
+                    ownedPathAnchor = fixtureRoot.parent.toFile(),
                     runToken = validToken,
                     runLock = runLock,
+                    runAttempt = runAttempt,
                     profileMarker = profileMarker.toFile(),
                     profileId = expectedProfileId,
                     managedBy = expectedManagedBy,
@@ -4916,6 +5151,82 @@ val serverProbeSafetyInterlockTest =
                     "malformed lock",
                     ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
                     spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.runAttempt.toPath())
+                requireFailure(
+                    "missing launch-attempt marker",
+                    ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_MISSING_OR_LINKED,
+                    spec,
+                )
+
+                spec = validFixture()
+                Files.delete(spec.runAttempt.toPath())
+                val linkedAttemptTarget = fixtureRoot.resolve("linked-attempt-target")
+                Files.writeString(
+                    linkedAttemptTarget,
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n",
+                    StandardCharsets.UTF_8,
+                )
+                Files.createSymbolicLink(
+                    spec.runAttempt.toPath(),
+                    linkedAttemptTarget,
+                )
+                requireFailure(
+                    "linked launch-attempt marker",
+                    ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_MISSING_OR_LINKED,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.runAttempt.writeText(
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=another-scenario\n" +
+                        "pid=12345\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "mismatched launch-attempt marker",
+                    ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.runAttempt.writeText(
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=54321\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "launch-attempt PID mismatch",
+                    ServerProbeSafetyInterlockFailureKind.RUN_ATTEMPT_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                val realAttemptParent = fixtureRoot.resolve("real-attempt-parent")
+                Files.createDirectories(realAttemptParent)
+                val linkedAttemptParent = fixtureRoot.resolve("linked-attempt-parent")
+                Files.createSymbolicLink(
+                    linkedAttemptParent,
+                    realAttemptParent.fileName,
+                )
+                val parentLinkedAttempt = linkedAttemptParent.resolve("run.attempted")
+                Files.writeString(
+                    realAttemptParent.resolve("run.attempted"),
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "linked launch-attempt parent",
+                    ServerProbeSafetyInterlockFailureKind.OWNED_PATH_LINKED,
+                    spec.copy(runAttempt = parentLinkedAttempt.toFile()),
                 )
 
                 spec = validFixture()
@@ -5006,7 +5317,7 @@ val serverProbeSafetyInterlockTest =
                     "The all-valid server-probe safety-interlock fixture was rejected"
                 }
                 logger.lifecycle(
-                    "Validated 15 Forge server-probe safety-interlock fixture cases without " +
+                    "Validated 20 Forge server-probe safety-interlock fixture cases without " +
                         "launching Minecraft.",
                 )
             } finally {
@@ -5055,6 +5366,45 @@ val forgeFoodItemRegistryServerSafetyTest =
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
         ).withPropertyName("forgeFoodItemRegistryServerProbeTests")
+    }
+
+val forgeForestLanternServerSafetyTest =
+    tasks.register<Exec>("forgeForestLanternServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge Forest Lantern runner and v15 verifier safety tests."
+        dependsOn(
+            forgeFoodItemRegistryServerSafetyTest,
+            serverProbeSafetyInterlockTest,
+        )
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server.py",
+            "scripts/e2e/test_forge_server_forest_lantern_evidence_v15.py",
+        )
+        inputs.files(
+            forgeServerContractV15,
+            forgeServerProfileSnapshotV15,
+            forgeRegistryFoundationServerRunner,
+            forgeRegistryFoundationServerRunnerTest,
+            forgeForestLanternServerEvidenceVerifier,
+            forgeForestLanternServerEvidenceTest,
+            forgeRegistryFoundationServerProfileManifest,
+            forgeRegistryFoundationServerProbeSource,
+            rootProject.file("release/release-matrix.json"),
+            rootProject.file("gradle.properties"),
+            project.buildFile,
+        )
+        inputs.dir(
+            rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
+        ).withPropertyName("forgeForestLanternServerProbeSources")
+        inputs.dir(
+            rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
+        ).withPropertyName("forgeForestLanternServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -5225,6 +5575,57 @@ val validateForgeFoodItemRegistryServerEvidenceArchiveIntegrity =
                 missingForgeFoodItemRegistryServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion food-item-registry server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeForestLanternServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeForestLanternServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Forest Lantern dedicated-server v15 archive."
+        dependsOn(forgeForestLanternServerSafetyTest)
+        inputs.files(
+            forgeServerContractV15,
+            forgeServerProfileSnapshotV15,
+            forgeForestLanternServerEvidenceVerifier,
+        )
+        if (forgeForestLanternServerEvidenceArchive.exists()) {
+            inputs.dir(forgeForestLanternServerEvidenceArchive)
+                .withPropertyName("forgeForestLanternServerEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeForestLanternServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Forest Lantern server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeForestLanternClientEvidenceArchiveIntegrity =
+    tasks.register("validateForgeForestLanternClientEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Forest Lantern packaged-client v12 archive."
+        inputs.files(
+            forgeForestLanternEvidenceVerifier,
+            forgeForestLanternProfileSnapshotV12,
+            forgeE2eProfileManifest,
+        )
+        if (forgeForestLanternClientEvidenceArchive.exists()) {
+            inputs.dir(forgeForestLanternClientEvidenceArchive)
+                .withPropertyName("forgeForestLanternClientEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeForestLanternClientEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Forest Lantern client evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -5859,12 +6260,24 @@ val validateForgeForestLanternStaticMilestone =
         ).withPropertyName("canonicalForestLanternResources")
     }
 
+val validateForgeForestLanternMilestone =
+    tasks.register("validateForgeForestLanternMilestone") {
+        group = "verification"
+        description =
+            "Combines exact static Forest Lantern checks with immutable native Forge proof."
+        dependsOn(
+            validateForgeForestLanternStaticMilestone,
+            validateForgeForestLanternServerEvidenceArchiveIntegrity,
+            validateForgeForestLanternClientEvidenceArchiveIntegrity,
+        )
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeForestLanternStaticMilestone)
+        dependsOn(validateForgeForestLanternMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -5911,7 +6324,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeMaterialItemRegistryMilestone,
         validateForgeMetalBlockRegistryMilestone,
         validateForgeFoodItemRegistryMilestone,
-        validateForgeForestLanternStaticMilestone,
+        validateForgeForestLanternMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -5960,6 +6373,11 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV14,
         forgeServerProfileSnapshotV14,
         forgeFoodItemRegistryServerEvidenceVerifier,
+        forgeServerContractV15,
+        forgeServerProfileSnapshotV15,
+        forgeForestLanternServerEvidenceVerifier,
+        forgeForestLanternEvidenceVerifier,
+        forgeForestLanternProfileSnapshotV12,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -5985,6 +6403,14 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeFoodItemRegistryServerEvidenceArchive.exists()) {
         inputs.dir(forgeFoodItemRegistryServerEvidenceArchive)
             .withPropertyName("forgeFoodItemRegistryServerEvidenceArchive")
+    }
+    if (forgeForestLanternServerEvidenceArchive.exists()) {
+        inputs.dir(forgeForestLanternServerEvidenceArchive)
+            .withPropertyName("forgeForestLanternServerEvidenceArchive")
+    }
+    if (forgeForestLanternClientEvidenceArchive.exists()) {
+        inputs.dir(forgeForestLanternClientEvidenceArchive)
+            .withPropertyName("forgeForestLanternClientEvidenceArchive")
     }
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -6078,6 +6504,9 @@ if (minecraftVersion == "1.20.1") {
     val serverProbeRunLock = rootProject.file(
         "scripts/e2e/.state/$serverProbeProfileId-run.lock",
     )
+    val serverProbeRunAttempt = rootProject.file(
+        "scripts/e2e/.state/$serverProbeProfileId-run.attempted",
+    )
     val serverProbeSealedArchive = forgeRegistryFoundationServerEvidenceRoot.resolve(
         "$serverProbeScenarioId-server-$serverProbeProfileVersion",
     )
@@ -6130,7 +6559,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 food-item server probe")
+            displayName.set("Etherology Forge 1.20.1 Forest Lantern server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -6211,8 +6640,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v14",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v14",
+                "id" to "etherology-e2e-forge-server-1.20.1-v15",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v15",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -6232,14 +6661,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "food-item-registry",
+                "scenario" to "forest-lantern",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "food-item-registry",
+                "scenario_directory" to "forest-lantern",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -6415,6 +6844,25 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/" +
                         "FoodItemProbeState\$FoodItemEntry.class",
                     "dev/theplumteam/etherology/e2e/server/FoodItemProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$JumpKind.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$JumpResult.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$LoadedData.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$MechanicsPhase.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$PlacementResult.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$PlayerRole.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$RecipeCapture.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$ShearsResult.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$WorldMechanics.class",
+                    "dev/theplumteam/etherology/e2e/server/ForestLanternProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/LootConditionProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/" +
                         "MaterialItemProbeState\$MaterialItemEntry.class",
@@ -6457,6 +6905,13 @@ if (minecraftVersion == "1.20.1") {
                         "ru.feytox.etherology.data.ethersource.EtherSourceLoader",
                         "ru.feytox.etherology.registry.misc.PealEnchantment",
                         "ru.feytox.etherology.registry.misc.ReflectionEnchantment",
+                        "ru.feytox.etherology.block.forestLantern.ForestLanternBlock",
+                        "ru.feytox.etherology.block.forestLantern.ForestLanternBlock" +
+                            "|hardness=0.2|blast=0.2|grass_sound=true" +
+                            "|tool_required=false|luminance=8|opaque=false" +
+                            "|full_cube=false|transparent=true|post_process=true" +
+                            "|emissive=true|piston=DESTROY|mature_random_ticks=false" +
+                            "|bud_random_ticks=true",
                         "ru.feytox.etherology.util.misc." +
                             "RandomChanceWithFortuneConditionSerializer",
                         "ru/feytox/etherology/magic/seal/SealType",
@@ -6749,6 +7204,79 @@ if (minecraftVersion == "1.20.1") {
                             .sorted()
                 }
 
+                val forestLanternStateClassEntries = setOf(
+                    "dev/theplumteam/etherology/e2e/server/ForestLanternProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$JumpKind.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$JumpResult.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$LoadedData.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$MechanicsPhase.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$PlacementResult.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$PlayerRole.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$RecipeCapture.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$ShearsResult.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ForestLanternProbeState\$WorldMechanics.class",
+                )
+                val forestLanternStateConstants =
+                    forestLanternStateClassEntries.flatMap { entryName ->
+                        val entry = requireNotNull(probeZip.getEntry(entryName))
+                        readClassUtf8Constants(
+                            probeZip.getInputStream(entry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                    }.toSet()
+                val requiredForestLanternStateConstants = setOf(
+                    "minecraft:block",
+                    "minecraft:item",
+                    "etherology:forest_lantern",
+                    "etherology:peach_logs",
+                    "ru.feytox.etherology.block.forestLantern.ForestLanternBlock",
+                    "net/minecraft/item/BlockItem",
+                    "net/minecraft/item/AutomaticItemPlacementContext",
+                    "net/minecraft/item/ItemStack",
+                    "net/minecraft/nbt/NbtCompound",
+                    "net/minecraft/server/network/ServerPlayerEntity",
+                    "net/minecraft/recipe/AbstractCookingRecipe",
+                    "net/minecraft/recipe/ShapedRecipe",
+                    "etherology:blocks/forest_lantern",
+                    "etherology:forest_lantern_crumb",
+                    "etherology:forest_lantern_crumb_from_campfire",
+                    "etherology:forest_lantern_crumb_from_smoking",
+                    "etherology:leather",
+                    "etherology:recipes/food/forest_lantern_crumb",
+                    "etherology:recipes/food/forest_lantern_crumb_from_campfire",
+                    "etherology:recipes/food/forest_lantern_crumb_from_smoking",
+                    "etherology:recipes/misc/leather",
+                    "getOutlineShape",
+                    "getLootTableId",
+                    "getBlockBreakingSpeed",
+                    "calcBlockBreakingDelta",
+                    "writeNbt",
+                    "fromNbt",
+                    "jump",
+                    "setSeed",
+                    "Count",
+                    "id",
+                )
+                check(
+                    requiredForestLanternStateConstants.all(
+                        forestLanternStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its Forest Lantern runtime contract: " +
+                        (requiredForestLanternStateConstants -
+                            forestLanternStateConstants).sorted()
+                }
+
                 val metalBlockStateEntry = requireNotNull(
                     probeZip.getEntry(
                         "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState.class",
@@ -7008,6 +7536,12 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/MaterialItemProbeState",
                     "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState",
                     "dev/theplumteam/etherology/e2e/server/FoodItemProbeState",
+                    "dev/theplumteam/etherology/e2e/server/ForestLanternProbeState",
+                    "registry:block:etherology:forest_lantern",
+                    "registry:block_item:etherology:forest_lantern",
+                    "forest_lantern_loaded_data_fresh_after_reload",
+                    "forest_lantern_mechanics_stable_after_reload",
+                    "forest_lantern_contract_exact",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
@@ -7107,10 +7641,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 food-item server probe."
+                "Builds and validates the Forge 1.20.1 Forest Lantern server probe."
             dependsOn(
-                validateForgeFoodItemRegistryStaticMilestone,
-                forgeFoodItemRegistryServerSafetyTest,
+                validateForgeForestLanternStaticMilestone,
+                forgeForestLanternServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,
@@ -7128,10 +7662,12 @@ if (minecraftVersion == "1.20.1") {
             val failure = serverProbeSafetyInterlockFailure(
                 ServerProbeSafetyInterlockSpec(
                     sealedArchive = serverProbeSealedArchive,
+                    ownedPathAnchor = rootProject.file("scripts/e2e"),
                     runToken = System.getenv(
                         "ETHERLOGY_E2E_FORGE_SERVER_RUN_TOKEN",
                     ),
                     runLock = serverProbeRunLock,
+                    runAttempt = serverProbeRunAttempt,
                     profileMarker = serverProbeProfileMarker,
                     profileId = serverProbeProfileId,
                     managedBy = "scripts/e2e/forge_server.py",
@@ -7196,14 +7732,53 @@ if (minecraftVersion == "1.20.1") {
             inputs.files(
                 forgeChannelEvidenceVerifier,
                 forgeE2eProfileManifest,
+                forgeChannelProfileSnapshotV11,
                 rootProject.file("scripts/e2e/test_forge_channel_evidence.py"),
                 rootProject.file("scripts/e2e/forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
             )
         }
 
+    val forgeForestLanternEvidenceVerifierTest =
+        tasks.register<Exec>("forgeForestLanternEvidenceVerifierTest") {
+            group = "verification"
+            description =
+                "Runs adversarial tests for the Forge Forest Lantern client verifier."
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_forge_forest_lantern_evidence.py",
+                "scripts/e2e/test_forge_client.py",
+            )
+            inputs.files(
+                forgeForestLanternEvidenceVerifier,
+                forgeForestLanternEvidenceTest,
+                forgeE2eProfileManifest,
+                forgeChannelProfileSnapshotV11,
+                forgeForestLanternProfileSnapshotV12,
+                rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/test_forge_client.py"),
+                rootProject.file("scripts/e2e/forge_evidence.py"),
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
+                rootProject.file("forge/build.gradle.kts"),
+                rootProject.file("docs/testing/E2E-CONTRACT.md"),
+            )
+        }
+
     validateForgeChannelImplementationMilestone.configure {
         dependsOn(e2eHarnessTestTask, forgeChannelEvidenceVerifierTest)
+    }
+
+    validateForgeForestLanternStaticMilestone.configure {
+        dependsOn(e2eHarnessTestTask, forgeForestLanternEvidenceVerifierTest)
+    }
+
+    validateForgeForestLanternClientEvidenceArchiveIntegrity.configure {
+        dependsOn(forgeForestLanternEvidenceVerifierTest)
     }
 
     val expandedE2eHarnessMetadata = mapOf(
@@ -7399,6 +7974,11 @@ if (minecraftVersion == "1.20.1") {
     tasks.register("buildE2eHarness") {
         group = "e2e"
         description = "Builds and validates the separate Forge 1.20.1 packaged E2E harness."
-        dependsOn(e2eHarnessTestTask, verifyE2eHarnessArtifact, verifyE2eUnderTestIsolation)
+        dependsOn(
+            e2eHarnessTestTask,
+            forgeForestLanternEvidenceVerifierTest,
+            verifyE2eHarnessArtifact,
+            verifyE2eUnderTestIsolation,
+        )
     }
 }

@@ -1,7 +1,5 @@
-package ru.feytox.etherology.mixin;
+package ru.feytox.etherology.forge.mixin;
 
-import com.llamalad7.mixinextras.injector.ModifyReturnValue;
-import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.block.BlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.ShearsItem;
@@ -10,11 +8,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ru.feytox.etherology.block.forestLantern.ForestLanternBlock;
-import ru.feytox.etherology.registry.block.DecoBlocks;
 import ru.feytox.etherology.registry.block.SharedForestLanternBlocks;
 
 @Mixin(ShearsItem.class)
-public class ShearsItemMixin {
+public abstract class ForestLanternShearsItemMixin {
 
     @Inject(method = "getMiningSpeedMultiplier", at = @At("HEAD"), cancellable = true)
     private void etherology$useForestLanternSpeed(
@@ -25,10 +22,5 @@ public class ShearsItemMixin {
         if (state.isOf(SharedForestLanternBlocks.FOREST_LANTERN.get())) {
             callback.setReturnValue(ForestLanternBlock.SHEARS_MINING_SPEED);
         }
-    }
-
-    @ModifyReturnValue(method = "postMine", at = @At("RETURN"))
-    private boolean injectLightelet(boolean original, @Local(argsOnly = true) BlockState state) {
-        return original || state.isOf(DecoBlocks.LIGHTELET);
     }
 }

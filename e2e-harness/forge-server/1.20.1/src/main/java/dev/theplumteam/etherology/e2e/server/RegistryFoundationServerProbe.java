@@ -108,6 +108,20 @@ public final class RegistryFoundationServerProbe {
             FoodItemProbeState.FoodConsumptionState.missing(
                     FoodItemProbeState.ConsumptionPhase.RELOADED
             );
+    private ForestLanternProbeState initialForestLanternState =
+            ForestLanternProbeState.missing();
+    private ForestLanternProbeState reloadedForestLanternState =
+            ForestLanternProbeState.missing();
+    private ForestLanternProbeState serverStartedForestLanternState =
+            ForestLanternProbeState.missing();
+    private ForestLanternProbeState.WorldMechanics initialForestLanternMechanics =
+            ForestLanternProbeState.WorldMechanics.missing(
+                    ForestLanternProbeState.MechanicsPhase.SERVER_STARTED
+            );
+    private ForestLanternProbeState.WorldMechanics reloadedForestLanternMechanics =
+            ForestLanternProbeState.WorldMechanics.missing(
+                    ForestLanternProbeState.MechanicsPhase.RELOADED
+            );
     private MetalBlockProbeState initialMetalBlockState = MetalBlockProbeState.missing();
     private MetalBlockProbeState reloadedMetalBlockState = MetalBlockProbeState.missing();
     private MetalBlockProbeState serverStartedMetalBlockState =
@@ -151,12 +165,14 @@ public final class RegistryFoundationServerProbe {
     private boolean particlesCapturedAfterServerDataLoad;
     private boolean materialItemsCapturedAfterServerDataLoad;
     private boolean foodItemsCapturedAfterServerDataLoad;
+    private boolean forestLanternCapturedAfterServerDataLoad;
     private boolean metalBlocksCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
     private boolean serverStartedParticlesRechecked;
     private boolean serverStartedMaterialItemsRechecked;
     private boolean serverStartedFoodItemsRechecked;
+    private boolean serverStartedForestLanternRechecked;
     private boolean serverStartedMetalBlocksRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
@@ -181,6 +197,13 @@ public final class RegistryFoundationServerProbe {
     private boolean foodItemStackNbtStableAfterReload;
     private boolean foodConsumptionFreshPlayerAfterReload;
     private boolean foodConsumptionStableAfterReload;
+    private boolean forestLanternRegistryStableAfterReload;
+    private boolean forestLanternStatesStableAfterReload;
+    private boolean forestLanternTagsStableAfterReload;
+    private boolean forestLanternLoadedDataStableAfterReload;
+    private boolean forestLanternLoadedDataFreshAfterReload;
+    private boolean forestLanternMechanicsFreshPlayersAfterReload;
+    private boolean forestLanternMechanicsStableAfterReload;
     private boolean metalBlockRegistryStableAfterReload;
     private boolean metalBlockPropertiesStableAfterReload;
     private boolean metalBlockTagsStableAfterReload;
@@ -262,6 +285,9 @@ public final class RegistryFoundationServerProbe {
         reloadedMaterialItemState = MaterialItemProbeState.capture();
         reloadedFoodItemState = FoodItemProbeState.capture();
         reloadedMetalBlockState = MetalBlockProbeState.capture();
+        reloadedForestLanternState = startedServer == null
+                ? ForestLanternProbeState.missing()
+                : ForestLanternProbeState.capture(startedServer);
         reloadedFoodConsumption = startedServer == null
                 ? FoodItemProbeState.FoodConsumptionState.missing(
                         FoodItemProbeState.ConsumptionPhase.RELOADED
@@ -329,6 +355,45 @@ public final class RegistryFoundationServerProbe {
                 && reloadedFoodConsumption.hasExactConsumption()
                 && serverStartedFoodConsumption.hasSameOutcome(reloadedFoodConsumption)
                 && foodConsumptionFreshPlayerAfterReload;
+        reloadedForestLanternMechanics = startedServer == null
+                ? ForestLanternProbeState.WorldMechanics.missing(
+                        ForestLanternProbeState.MechanicsPhase.RELOADED
+                )
+                : ForestLanternProbeState.exerciseWorld(
+                        startedServer,
+                        ForestLanternProbeState.MechanicsPhase.RELOADED
+                );
+        forestLanternRegistryStableAfterReload = reloadTagsObserved
+                && initialForestLanternState.hasSameRegistry(
+                        reloadedForestLanternState
+                );
+        forestLanternStatesStableAfterReload = reloadTagsObserved
+                && initialForestLanternState.hasSameStatesAndProperties(
+                        reloadedForestLanternState
+                );
+        forestLanternTagsStableAfterReload = reloadTagsObserved
+                && initialForestLanternState.hasSameTags(
+                        reloadedForestLanternState
+                );
+        forestLanternLoadedDataStableAfterReload = reloadTagsObserved
+                && initialForestLanternState.hasReloadedDataOutcome(
+                        reloadedForestLanternState
+                );
+        forestLanternLoadedDataFreshAfterReload = reloadTagsObserved
+                && initialForestLanternState.hasFreshReloadedData(
+                        reloadedForestLanternState
+                );
+        forestLanternMechanicsFreshPlayersAfterReload = reloadTagsObserved
+                && initialForestLanternMechanics.hasFreshPlayers(
+                        reloadedForestLanternMechanics
+                );
+        forestLanternMechanicsStableAfterReload = reloadTagsObserved
+                && initialForestLanternMechanics.hasExactContract()
+                && reloadedForestLanternMechanics.hasExactContract()
+                && initialForestLanternMechanics.sameOutcome(
+                        reloadedForestLanternMechanics
+                )
+                && forestLanternMechanicsFreshPlayersAfterReload;
         metalBlockRegistryStableAfterReload = reloadTagsObserved
                 && initialMetalBlockState.hasSameRegistry(reloadedMetalBlockState);
         metalBlockPropertiesStableAfterReload = reloadTagsObserved
@@ -371,6 +436,9 @@ public final class RegistryFoundationServerProbe {
         foodItemsCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialFoodItemState.hasExactRegistry()
                 && initialFoodItemState.hasExactContract();
+        initialForestLanternState = ForestLanternProbeState.capture(event.getServer());
+        forestLanternCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
+                && initialForestLanternState.hasExactContract();
         metalBlocksCapturedAfterServerDataLoad = lootConditionCapturedAfterServerDataLoad
                 && initialMetalBlockState.hasExactRegistry()
                 && initialMetalBlockState.hasExactContract();
@@ -441,6 +509,15 @@ public final class RegistryFoundationServerProbe {
         serverStartedFoodConsumption = FoodItemProbeState.FoodConsumptionState.consume(
                 event.getServer(),
                 FoodItemProbeState.ConsumptionPhase.SERVER_STARTED
+        );
+        serverStartedForestLanternState = ForestLanternProbeState.capture(
+                event.getServer()
+        );
+        serverStartedForestLanternRechecked = initialForestLanternState
+                .sameStateAtServerStarted(serverStartedForestLanternState);
+        initialForestLanternMechanics = ForestLanternProbeState.exerciseWorld(
+                event.getServer(),
+                ForestLanternProbeState.MechanicsPhase.SERVER_STARTED
         );
         serverStartedMetalBlockState = MetalBlockProbeState.capture();
         serverStartedMetalBlocksRechecked = initialMetalBlockState
@@ -1226,6 +1303,313 @@ public final class RegistryFoundationServerProbe {
         );
         addAssertion(
                 assertions,
+                "registry:block:" + ForestLanternProbeState.BLOCK_ID,
+                "present",
+                presentState(initialForestLanternState.blockIdentity() != null)
+        );
+        addAssertion(
+                assertions,
+                "registry:block_item:" + ForestLanternProbeState.BLOCK_ID,
+                "present",
+                presentState(initialForestLanternState.itemIdentity() != null)
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_capture_error",
+                "none",
+                errorState(initialForestLanternState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_block_class_exact",
+                ForestLanternProbeState.BLOCK_CLASS,
+                initialForestLanternState.blockClass()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_item_class_exact",
+                ForestLanternProbeState.ITEM_CLASS,
+                initialForestLanternState.itemClass()
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_block_item_mapping_exact",
+                initialForestLanternState.blockItemMapsToBlock()
+                        && initialForestLanternState.blockAsItemMatches()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_default_state_exact",
+                ForestLanternProbeState.EXPECTED_DEFAULT_STATE,
+                initialForestLanternState.defaultState()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_state_count_exact",
+                Integer.toString(ForestLanternProbeState.EXPECTED_STATE_COUNT),
+                Integer.toString(initialForestLanternState.states().size())
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_states_exact",
+                ForestLanternProbeState.expectedCanonicalStates(),
+                initialForestLanternState.canonicalStates()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_state_network_ids_exact",
+                "20 unique non-negative raw IDs",
+                initialForestLanternState.hasExactStateNetworkIds()
+                        ? "20 unique non-negative raw IDs"
+                        : initialForestLanternState.stateNetworkIds().toString()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_outline_shapes_exact",
+                ForestLanternProbeState.expectedCanonicalOutlineShapes(),
+                initialForestLanternState.canonicalOutlineShapes()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_properties_exact",
+                ForestLanternProbeState.EXPECTED_PROPERTIES,
+                initialForestLanternState.properties()
+        );
+        addBooleanAssertion(
+                assertions,
+                "tag:hoe_mineable_contains_forest_lantern",
+                initialForestLanternState.hoeMineable()
+        );
+        addAssertion(
+                assertions,
+                "tag:peach_logs_entries_exact",
+                "none",
+                initialForestLanternState.peachLogIds().isEmpty()
+                        ? "none"
+                        : String.join(",", initialForestLanternState.peachLogIds())
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_registry_contract_exact",
+                initialForestLanternState.hasExactRegistry()
+                        && initialForestLanternState.hasExactStatesAndProperties()
+                        && initialForestLanternState.hasExactTags()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_loaded_data_capture_error",
+                "none",
+                errorState(initialForestLanternState.loadedData().captureError())
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_loot_table_id_exact",
+                "etherology:blocks/forest_lantern",
+                initialForestLanternState.loadedData().lootTableId()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_loot_by_age_exact",
+                ForestLanternProbeState.canonicalStringMap(
+                        ForestLanternProbeState.LoadedData.EXPECTED_LOOT_BY_AGE
+                ),
+                ForestLanternProbeState.canonicalStringMap(
+                        initialForestLanternState.loadedData().lootByAge()
+                )
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_loot_contract_exact",
+                initialForestLanternState.loadedData().hasExactLoot()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_recipe_ids_exact",
+                String.join(
+                        ",",
+                        ForestLanternProbeState.LoadedData.EXPECTED_RECIPE_IDS
+                ),
+                String.join(",", initialForestLanternState.loadedData().recipeIds())
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_recipes_exact",
+                ForestLanternProbeState.canonicalStringMap(
+                        ForestLanternProbeState.LoadedData.EXPECTED_RECIPES
+                ),
+                ForestLanternProbeState.canonicalStringMap(
+                        initialForestLanternState.loadedData().recipes()
+                )
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_recipes_match_and_craft_exact",
+                initialForestLanternState.loadedData().recipeMatchesAndCraftsExact()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_advancement_ids_exact",
+                String.join(
+                        ",",
+                        ForestLanternProbeState.LoadedData.EXPECTED_ADVANCEMENT_IDS
+                ),
+                String.join(",", initialForestLanternState.loadedData().advancementIds())
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_advancements_exact",
+                ForestLanternProbeState.canonicalStringMap(
+                        ForestLanternProbeState.LoadedData.EXPECTED_ADVANCEMENTS
+                ),
+                ForestLanternProbeState.canonicalStringMap(
+                        initialForestLanternState.loadedData().advancements()
+                )
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_loaded_data_contract_exact",
+                initialForestLanternState.loadedData().hasExactContract()
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_captured_after_server_data_load",
+                forestLanternCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_forest_lantern_rechecked",
+                serverStartedForestLanternRechecked
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_placement_exact",
+                ForestLanternProbeState.canonicalStringMap(
+                        ForestLanternProbeState.PlacementResult.EXPECTED_PLACEMENTS
+                ),
+                ForestLanternProbeState.canonicalStringMap(
+                        initialForestLanternMechanics.placement().placements()
+                )
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_support_removal_exact",
+                initialForestLanternMechanics.placement().supportsRemoved()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_shears_speeds_exact",
+                ForestLanternProbeState.canonicalStringMap(
+                        ForestLanternProbeState.ShearsResult.EXPECTED_SPEEDS
+                ),
+                ForestLanternProbeState.canonicalStringMap(
+                        initialForestLanternMechanics.shears().speeds()
+                )
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_shears_deltas_exact",
+                ForestLanternProbeState.canonicalStringMap(
+                        ForestLanternProbeState.ShearsResult.EXPECTED_DELTAS
+                ),
+                ForestLanternProbeState.canonicalStringMap(
+                        initialForestLanternMechanics.shears().deltas()
+                )
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_shears_contract_exact",
+                initialForestLanternMechanics.shears().exact()
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_jump_retain_exact",
+                initialForestLanternMechanics.retainJump().exact()
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_jump_single_callback_guard_exact",
+                initialForestLanternMechanics.retainJump()
+                        .singleCallbackGuardExact()
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_jump_break_exact",
+                initialForestLanternMechanics.breakJump().exact()
+        );
+        addAssertion(
+                assertions,
+                "forest_lantern_jump_break_drop_exact",
+                ForestLanternProbeState.BLOCK_ID + "x1",
+                String.join(",", initialForestLanternMechanics.breakJump().newDrops())
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_server_mechanics_contract_exact",
+                initialForestLanternMechanics.hasExactContract()
+        );
+        addAssertion(
+                assertions,
+                "reloaded_forest_lantern_capture_error",
+                "none",
+                errorState(reloadedForestLanternState.captureError())
+        );
+        addAssertion(
+                assertions,
+                "reloaded_forest_lantern_mechanics_capture_error",
+                "none",
+                errorState(reloadedForestLanternMechanics.captureError())
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_registry_stable_after_reload",
+                forestLanternRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_states_stable_after_reload",
+                forestLanternStatesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_tags_stable_after_reload",
+                forestLanternTagsStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_loaded_data_stable_after_reload",
+                forestLanternLoadedDataStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_loaded_data_fresh_after_reload",
+                forestLanternLoadedDataFreshAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_mechanics_fresh_players_after_reload",
+                forestLanternMechanicsFreshPlayersAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_mechanics_stable_after_reload",
+                forestLanternMechanicsStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "forest_lantern_contract_exact",
+                initialForestLanternState.hasExactContract()
+                        && initialForestLanternMechanics.hasExactContract()
+                        && reloadedForestLanternState.hasExactContract()
+                        && reloadedForestLanternMechanics.hasExactContract()
+                        && forestLanternRegistryStableAfterReload
+                        && forestLanternStatesStableAfterReload
+                        && forestLanternTagsStableAfterReload
+                        && forestLanternLoadedDataStableAfterReload
+                        && forestLanternLoadedDataFreshAfterReload
+                        && forestLanternMechanicsStableAfterReload
+        );
+        addAssertion(
+                assertions,
                 "registry:loot_condition:etherology:random_chance_with_fortune",
                 "present",
                 presentState(lootConditionState.conditionTypeIdentity() != null)
@@ -1524,7 +1908,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 9);
+        report.addProperty("schema", 10);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -1543,6 +1927,7 @@ public final class RegistryFoundationServerProbe {
         report.add("material_items", buildMaterialItems());
         report.add("food_items", buildFoodItems());
         report.add("food_consumption", buildFoodConsumption());
+        report.add("forest_lantern", buildForestLantern());
         report.add("metal_blocks", buildMetalBlocks());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
@@ -1847,6 +2232,264 @@ public final class RegistryFoundationServerProbe {
         return foodConsumption;
     }
 
+    private JsonObject buildForestLantern() {
+        JsonObject forestLantern = new JsonObject();
+        forestLantern.addProperty(
+                "block_registry_id",
+                ForestLanternProbeState.BLOCK_REGISTRY_ID
+        );
+        forestLantern.addProperty(
+                "item_registry_id",
+                ForestLanternProbeState.ITEM_REGISTRY_ID
+        );
+        forestLantern.addProperty("block_id", initialForestLanternState.blockId());
+        forestLantern.addProperty("item_id", initialForestLanternState.itemId());
+        forestLantern.addProperty(
+                "capture_error",
+                initialForestLanternState.captureError()
+        );
+        forestLantern.addProperty(
+                "block_class",
+                initialForestLanternState.blockClass()
+        );
+        forestLantern.addProperty(
+                "item_class",
+                initialForestLanternState.itemClass()
+        );
+        forestLantern.addProperty(
+                "block_item_maps_to_block",
+                initialForestLanternState.blockItemMapsToBlock()
+        );
+        forestLantern.addProperty(
+                "block_as_item_matches",
+                initialForestLanternState.blockAsItemMatches()
+        );
+        JsonObject itemStack = new JsonObject();
+        itemStack.addProperty("max_count", initialForestLanternState.itemMaxCount());
+        itemStack.addProperty(
+                "serialized_id",
+                initialForestLanternState.serializedItemId()
+        );
+        itemStack.addProperty(
+                "serialized_count",
+                initialForestLanternState.serializedItemCount()
+        );
+        itemStack.add(
+                "serialized_keys",
+                buildStringArray(initialForestLanternState.serializedItemKeys())
+        );
+        itemStack.addProperty(
+                "round_trip_exact",
+                initialForestLanternState.itemNbtRoundTripExact()
+        );
+        forestLantern.add("item_stack", itemStack);
+        forestLantern.addProperty(
+                "default_state",
+                initialForestLanternState.defaultState()
+        );
+        forestLantern.addProperty(
+                "state_count",
+                initialForestLanternState.states().size()
+        );
+        forestLantern.add(
+                "states",
+                buildStringArray(initialForestLanternState.states())
+        );
+        forestLantern.add(
+                "state_network_ids",
+                buildIntegerArray(initialForestLanternState.stateNetworkIds())
+        );
+        forestLantern.add(
+                "outline_shapes",
+                buildStringMap(initialForestLanternState.outlineShapes())
+        );
+        forestLantern.addProperty(
+                "properties",
+                initialForestLanternState.properties()
+        );
+        JsonObject tags = new JsonObject();
+        tags.addProperty("hoe_mineable", initialForestLanternState.hoeMineable());
+        tags.addProperty(
+                "peach_logs_tag_id",
+                ForestLanternProbeState.PEACH_LOGS_TAG_ID
+        );
+        tags.add(
+                "peach_log_ids",
+                buildStringArray(initialForestLanternState.peachLogIds())
+        );
+        forestLantern.add("tags", tags);
+        JsonObject loadedData = new JsonObject();
+        loadedData.add(
+                "initial",
+                buildForestLanternLoadedData(initialForestLanternState.loadedData())
+        );
+        loadedData.add(
+                "reloaded",
+                buildForestLanternLoadedData(reloadedForestLanternState.loadedData())
+        );
+        loadedData.addProperty(
+                "stable_after_reload",
+                forestLanternLoadedDataStableAfterReload
+        );
+        loadedData.addProperty(
+                "fresh_instances_after_reload",
+                forestLanternLoadedDataFreshAfterReload
+        );
+        forestLantern.add("loaded_data", loadedData);
+        JsonObject mechanics = new JsonObject();
+        mechanics.add(
+                "server_started",
+                buildForestLanternWorldMechanics(initialForestLanternMechanics)
+        );
+        mechanics.add(
+                "reloaded",
+                buildForestLanternWorldMechanics(reloadedForestLanternMechanics)
+        );
+        mechanics.addProperty(
+                "fresh_players_after_reload",
+                forestLanternMechanicsFreshPlayersAfterReload
+        );
+        mechanics.addProperty(
+                "stable_after_reload",
+                forestLanternMechanicsStableAfterReload
+        );
+        forestLantern.add("mechanics", mechanics);
+        forestLantern.addProperty(
+                "same_state_at_server_started",
+                serverStartedForestLanternRechecked
+        );
+        forestLantern.addProperty(
+                "registry_stable_after_reload",
+                forestLanternRegistryStableAfterReload
+        );
+        forestLantern.addProperty(
+                "states_stable_after_reload",
+                forestLanternStatesStableAfterReload
+        );
+        forestLantern.addProperty(
+                "tags_stable_after_reload",
+                forestLanternTagsStableAfterReload
+        );
+        forestLantern.addProperty(
+                "contract_exact",
+                initialForestLanternState.hasExactContract()
+                        && initialForestLanternMechanics.hasExactContract()
+                        && reloadedForestLanternState.hasExactContract()
+                        && reloadedForestLanternMechanics.hasExactContract()
+                        && forestLanternLoadedDataStableAfterReload
+                        && forestLanternLoadedDataFreshAfterReload
+                        && forestLanternMechanicsStableAfterReload
+        );
+        return forestLantern;
+    }
+
+    private static JsonObject buildForestLanternLoadedData(
+            ForestLanternProbeState.LoadedData loadedData
+    ) {
+        JsonObject result = new JsonObject();
+        result.addProperty("capture_error", loadedData.captureError());
+        result.addProperty("loot_table_id", loadedData.lootTableId());
+        result.add("loot_by_age", buildStringMap(loadedData.lootByAge()));
+        result.add("recipe_ids", buildStringArray(loadedData.recipeIds()));
+        result.add("recipes", buildStringMap(loadedData.recipes()));
+        result.add(
+                "advancement_ids",
+                buildStringArray(loadedData.advancementIds())
+        );
+        result.add(
+                "advancements",
+                buildStringMap(loadedData.advancements())
+        );
+        result.addProperty(
+                "recipe_matches_and_crafts_exact",
+                loadedData.recipeMatchesAndCraftsExact()
+        );
+        result.addProperty("loot_exact", loadedData.hasExactLoot());
+        result.addProperty("recipes_exact", loadedData.hasExactRecipes());
+        result.addProperty(
+                "advancements_exact",
+                loadedData.hasExactAdvancements()
+        );
+        result.addProperty("contract_exact", loadedData.hasExactContract());
+        return result;
+    }
+
+    private static JsonObject buildForestLanternWorldMechanics(
+            ForestLanternProbeState.WorldMechanics mechanics
+    ) {
+        JsonObject result = new JsonObject();
+        result.addProperty("phase", mechanics.phase().name());
+        result.addProperty("capture_error", mechanics.captureError());
+        JsonObject placement = new JsonObject();
+        placement.addProperty(
+                "capture_error",
+                mechanics.placement().captureError()
+        );
+        placement.add(
+                "facings",
+                buildStringMap(mechanics.placement().placements())
+        );
+        placement.addProperty("exact", mechanics.placement().exact());
+        placement.addProperty(
+                "supports_removed",
+                mechanics.placement().supportsRemoved()
+        );
+        result.add("placement", placement);
+
+        ForestLanternProbeState.ShearsResult shears = mechanics.shears();
+        JsonObject shearsResult = new JsonObject();
+        shearsResult.addProperty("capture_error", shears.captureError());
+        shearsResult.addProperty("player_uuid", shears.playerUuid());
+        shearsResult.addProperty("player_name", shears.playerName());
+        shearsResult.addProperty("tool_id", shears.toolId());
+        shearsResult.addProperty("on_ground", shears.onGround());
+        shearsResult.addProperty("can_harvest", shears.canHarvest());
+        shearsResult.add("speeds", buildStringMap(shears.speeds()));
+        shearsResult.add("deltas", buildStringMap(shears.deltas()));
+        shearsResult.addProperty("exact", shears.exact());
+        result.add("shears", shearsResult);
+        result.add("retain_jump", buildForestLanternJump(mechanics.retainJump()));
+        result.add("break_jump", buildForestLanternJump(mechanics.breakJump()));
+        result.addProperty("contract_exact", mechanics.hasExactContract());
+        return result;
+    }
+
+    private static JsonObject buildForestLanternJump(
+            ForestLanternProbeState.JumpResult jump
+    ) {
+        JsonObject result = new JsonObject();
+        result.addProperty("capture_error", jump.captureError());
+        result.addProperty("player_uuid", jump.playerUuid());
+        result.addProperty("player_name", jump.playerName());
+        result.addProperty("kind", jump.kind().name());
+        result.addProperty("seed", jump.seed());
+        result.addProperty(
+                "predicted_first_roll",
+                Float.toString(jump.predictedFirstRoll())
+        );
+        result.addProperty(
+                "predicted_second_roll",
+                Float.toString(jump.predictedSecondRoll())
+        );
+        result.addProperty(
+                "next_roll_after_jump",
+                Float.toString(jump.nextRollAfterJump())
+        );
+        result.addProperty(
+                "stepping_position_exact",
+                jump.steppingPositionExact()
+        );
+        result.addProperty("block_removed", jump.blockRemoved());
+        result.addProperty("new_item_entity_count", jump.newItemEntityCount());
+        result.add("new_drops", buildStringArray(jump.newDrops()));
+        result.addProperty(
+                "single_callback_guard_exact",
+                jump.singleCallbackGuardExact()
+        );
+        result.addProperty("exact", jump.exact());
+        return result;
+    }
+
     private JsonObject buildMetalBlocks() {
         JsonObject metalBlocks = new JsonObject();
         metalBlocks.addProperty(
@@ -2060,6 +2703,30 @@ public final class RegistryFoundationServerProbe {
         reload.addProperty(
                 "food_consumption_stable",
                 foodConsumptionStableAfterReload
+        );
+        reload.addProperty(
+                "forest_lantern_registry_stable",
+                forestLanternRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "forest_lantern_states_stable",
+                forestLanternStatesStableAfterReload
+        );
+        reload.addProperty(
+                "forest_lantern_tags_stable",
+                forestLanternTagsStableAfterReload
+        );
+        reload.addProperty(
+                "forest_lantern_loaded_data_stable",
+                forestLanternLoadedDataStableAfterReload
+        );
+        reload.addProperty(
+                "forest_lantern_loaded_data_fresh",
+                forestLanternLoadedDataFreshAfterReload
+        );
+        reload.addProperty(
+                "forest_lantern_mechanics_stable",
+                forestLanternMechanicsStableAfterReload
         );
         reload.addProperty(
                 "metal_block_registry_stable",

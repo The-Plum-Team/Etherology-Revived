@@ -4,6 +4,7 @@ from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 import io
 import json
+import os
 from pathlib import Path
 import shutil
 import sys
@@ -180,7 +181,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = client.load_configuration()
         profile = client.profile_spec(configuration)
 
-        self.assertEqual("etherology-e2e-fabric-1.20.1-v23", profile["id"])
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v24", profile["id"])
         self.assertEqual(profile["id"], profile["runtime_directory"])
         self.assertEqual("fabric-1.20.1", configuration.artifact_lane["artifact_node"])
         self.assertEqual("1.20.1", configuration.runtime_lane["runtime_version"])
@@ -191,7 +192,7 @@ class ConfigurationTests(unittest.TestCase):
         resolution = client.require_object(launch, "resolution")
         self.assertEqual({"width": 960, "height": 540}, resolution)
 
-    def test_active_profile_matches_v23_and_preserves_v20_through_v22_snapshots(
+    def test_active_profile_matches_v24_and_preserves_v20_through_v23_snapshots(
         self,
     ) -> None:
         active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
@@ -199,9 +200,11 @@ class ConfigurationTests(unittest.TestCase):
         v21_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v21.json"
         v22_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v22.json"
         v23_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v23.json"
+        v24_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v24.json"
 
-        self.assertEqual(active_profile.read_bytes(), v23_profile.read_bytes())
-        self.assertNotEqual(active_profile.read_bytes(), v22_profile.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v24_profile.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v23_profile.read_bytes())
+        self.assertNotEqual(v23_profile.read_bytes(), v22_profile.read_bytes())
         self.assertNotEqual(v22_profile.read_bytes(), v21_profile.read_bytes())
         self.assertNotEqual(v21_profile.read_bytes(), v20_profile.read_bytes())
         snapshots = (
@@ -219,6 +222,11 @@ class ConfigurationTests(unittest.TestCase):
                 v22_profile,
                 "etherology-e2e-fabric-1.20.1-v22",
                 "289eb0c29066990f7ad967b4f141d08bd7823c0cb79bded85faa37907bd1328f",
+            ),
+            (
+                v23_profile,
+                "etherology-e2e-fabric-1.20.1-v23",
+                "36e7ccb7556aaaf0edb01b066de6d5263f3dde3545ac016e84cf07f795403f84",
             ),
         )
         for snapshot, expected_id, expected_sha256 in snapshots:
@@ -327,6 +335,7 @@ class ConfigurationTests(unittest.TestCase):
             "persistence",
             "multiplayer-sync",
             "metal-block-registry",
+            "forest-lantern",
         ]
         contract = (
             configuration.repository_root / "docs/testing/E2E-CONTRACT.md"
@@ -361,6 +370,10 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(
             "storage-utilities",
             client.resolve_scenario_id(configuration, "storage-utilities"),
+        )
+        self.assertEqual(
+            "forest-lantern",
+            client.resolve_scenario_id(configuration, "forest-lantern"),
         )
         with self.assertRaisesRegex(client.E2EError, "Unsupported E2E scenario"):
             client.resolve_scenario_id(configuration, "phase0-smoke ")
@@ -582,6 +595,273 @@ class OwnershipTests(unittest.TestCase):
                 client.clear_stale_and_reject_live_owned_clients(state_root)
 
 
+class StartAttemptTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.configuration = client.load_configuration()
+
+    def test_reservation_records_exact_profile_scenario_and_controller_pid(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory) / "state"
+            state_root.mkdir()
+
+            attempt_path = client.reserve_start_attempt(
+                self.configuration,
+                "forest-lantern",
+                state_root,
+            )
+            expected_attempt_path = (
+                state_root / "etherology-e2e-fabric-1.20.1-v24-start.attempted"
+            )
+
+            self.assertEqual(expected_attempt_path, attempt_path)
+            self.assertEqual(
+                (
+                    "profile_id=etherology-e2e-fabric-1.20.1-v24\n"
+                    "scenario=forest-lantern\n"
+                    f"pid={os.getpid()}\n"
+                ).encode("utf-8"),
+                attempt_path.read_bytes(),
+            )
+
+    def test_reservation_syncs_file_and_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory) / "state"
+            state_root.mkdir()
+
+            with mock.patch.object(
+                client.os,
+                "fsync",
+                wraps=os.fsync,
+            ) as sync:
+                client.reserve_start_attempt(
+                    self.configuration,
+                    "forest-lantern",
+                    state_root,
+                )
+
+            self.assertEqual(2, sync.call_count)
+
+    def test_reservation_is_exclusive_and_preserves_first_attempt(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory) / "state"
+            state_root.mkdir()
+            attempt_path = client.reserve_start_attempt(
+                self.configuration,
+                "forest-lantern",
+                state_root,
+            )
+            first_attempt = attempt_path.read_bytes()
+
+            with self.assertRaisesRegex(client.E2EError, "start attempt.*consumed"):
+                client.reserve_start_attempt(
+                    self.configuration,
+                    "phase0-smoke",
+                    state_root,
+                )
+
+            self.assertEqual(first_attempt, attempt_path.read_bytes())
+
+    def test_start_reserves_before_log_creation_and_failed_spawn_cannot_retry(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            state_root = temporary_root / "state"
+            state_root.mkdir()
+            game_directory = temporary_root / "game"
+            game_directory.mkdir()
+            attempt_path = client.start_attempt_path(
+                self.configuration,
+                state_root,
+            )
+            reserve_start_attempt = client.reserve_start_attempt
+            require_unattempted_profile = client.require_unattempted_profile
+            real_open = os.open
+
+            def inspect_open(
+                path: Path,
+                flags: int,
+                mode: int = 0o777,
+            ) -> int:
+                if Path(path).suffix == ".log":
+                    self.assertTrue(attempt_path.is_file())
+                return real_open(path, flags, mode)
+
+            def fail_spawn(*_args: object, **_kwargs: object) -> None:
+                self.assertTrue(attempt_path.is_file())
+                raise OSError("synthetic spawn failure")
+
+            with (
+                mock.patch.object(client, "STATE_ROOT", state_root),
+                mock.patch.object(client, "ensure_owned_state_roots"),
+                mock.patch.object(
+                    client,
+                    "load_configuration",
+                    return_value=self.configuration,
+                ),
+                mock.patch.object(
+                    client,
+                    "require_unattempted_profile",
+                    side_effect=lambda configuration: require_unattempted_profile(
+                        configuration,
+                        state_root,
+                    ),
+                ),
+                mock.patch.object(
+                    client,
+                    "reserve_start_attempt",
+                    side_effect=lambda configuration, scenario_id: reserve_start_attempt(
+                        configuration,
+                        scenario_id,
+                        state_root,
+                    ),
+                ),
+                mock.patch.object(
+                    client,
+                    "clear_stale_and_reject_live_owned_clients",
+                ),
+                mock.patch.object(
+                    client,
+                    "verify_environment",
+                    return_value=(Path("/test/java"), ["java", "test-client"]),
+                ) as verify_environment,
+                mock.patch.object(client, "assert_runtime_not_running"),
+                mock.patch.object(
+                    client,
+                    "game_directory",
+                    return_value=game_directory,
+                ),
+                mock.patch.object(client.os, "open", side_effect=inspect_open),
+                mock.patch.object(client.subprocess, "Popen", side_effect=fail_spawn),
+            ):
+                with self.assertRaisesRegex(OSError, "synthetic spawn failure"):
+                    client.start_command("forest-lantern")
+                with self.assertRaisesRegex(client.E2EError, "start attempt.*consumed"):
+                    client.start_command("forest-lantern")
+
+            self.assertTrue(attempt_path.is_file())
+            self.assertEqual(1, verify_environment.call_count)
+
+    def test_successful_read_only_preflight_is_repeatable_before_reservation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory) / "state"
+            state_root.mkdir()
+            require_unattempted_profile = client.require_unattempted_profile
+            artifact_lock = {
+                "schema": 2,
+                "artifacts": {
+                    "production": {"sha256": "1" * 64},
+                    "harness": {"sha256": "2" * 64},
+                },
+            }
+
+            with (
+                mock.patch.object(client, "ensure_owned_state_roots"),
+                mock.patch.object(
+                    client,
+                    "load_configuration",
+                    return_value=self.configuration,
+                ),
+                mock.patch.object(
+                    client,
+                    "require_unattempted_profile",
+                    side_effect=lambda configuration: require_unattempted_profile(
+                        configuration,
+                        state_root,
+                    ),
+                ),
+                mock.patch.object(
+                    client,
+                    "verify_environment",
+                    return_value=(Path("/test/java"), ["java", "test-client"]),
+                ),
+                mock.patch.object(
+                    client,
+                    "load_artifact_lock",
+                    return_value=artifact_lock,
+                ),
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(0, client.check_command("forest-lantern"))
+                self.assertEqual(0, client.check_command("forest-lantern"))
+
+            self.assertFalse(
+                client.start_attempt_path(self.configuration, state_root).exists()
+            )
+
+    def test_consumed_profile_cannot_retry_mutating_lifecycle(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory) / "state"
+            state_root.mkdir()
+            attempt_path = client.reserve_start_attempt(
+                self.configuration,
+                "forest-lantern",
+                state_root,
+            )
+
+            with (
+                mock.patch.object(client, "ensure_owned_state_roots"),
+                mock.patch.object(
+                    client,
+                    "start_attempt_path",
+                    return_value=attempt_path,
+                ),
+                mock.patch.object(
+                    client,
+                    "load_configuration",
+                    return_value=self.configuration,
+                ),
+            ):
+                operations = (
+                    lambda: client.provision_profile(self.configuration),
+                    lambda: client.stage_artifacts(self.configuration),
+                    client.check_command,
+                    client.start_command,
+                )
+                for operation in operations:
+                    with self.subTest(operation=operation):
+                        with self.assertRaisesRegex(
+                            client.E2EError,
+                            "start attempt.*consumed",
+                        ):
+                            operation()
+
+    def test_status_and_evidence_validation_remain_available_after_reservation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            state_root = temporary_root / "state"
+            state_root.mkdir()
+            runtime_root = temporary_root / "runtime"
+            runtime_root.mkdir()
+            (runtime_root / client.PROFILE_MARKER_NAME).write_text(
+                json.dumps(client.profile_descriptor(self.configuration)),
+                encoding="utf-8",
+            )
+            client.ensure_evidence_layout(self.configuration, runtime_root)
+            client.reserve_start_attempt(
+                self.configuration,
+                "forest-lantern",
+                state_root,
+            )
+
+            client.verify_evidence_layout(self.configuration, runtime_root)
+            with (
+                mock.patch.object(client, "ensure_owned_state_roots"),
+                mock.patch.object(
+                    client,
+                    "load_configuration",
+                    return_value=self.configuration,
+                ),
+                mock.patch.object(client, "read_process_state", return_value=None),
+                redirect_stdout(io.StringIO()),
+            ):
+                self.assertEqual(1, client.status_command())
+
+
 class IntegrityTests(unittest.TestCase):
     def test_sha256_drift_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -707,6 +987,7 @@ class ArtifactStagingTests(unittest.TestCase):
             lock_path,
         ):
             with (
+                mock.patch.object(client, "require_unattempted_profile"),
                 mock.patch.object(client, "assert_runtime_not_running"),
                 mock.patch.object(client, "verify_runtime", return_value=set()),
                 mock.patch.object(
@@ -757,6 +1038,7 @@ class ArtifactStagingTests(unittest.TestCase):
                 copyfile(source, destination)
 
             with (
+                mock.patch.object(client, "require_unattempted_profile"),
                 mock.patch.object(client, "assert_runtime_not_running"),
                 mock.patch.object(client, "verify_runtime", return_value=set()),
                 mock.patch.object(

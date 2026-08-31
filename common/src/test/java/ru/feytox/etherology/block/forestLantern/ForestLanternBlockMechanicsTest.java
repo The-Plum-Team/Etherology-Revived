@@ -187,66 +187,16 @@ final class ForestLanternBlockMechanicsTest {
     }
 
     @Test
-    void compiledBreakingPathKeepsInstantBudsAndSharedShearsSpeed()
+    void compiledBreakingPathKeepsInstantBudsAndDelegatesMatureStates()
             throws IOException {
         assertTrue(loadsFloat(BLOCK_CLASS, "calcBlockBreakingDelta", 1.0f));
-        assertTrue(containsTypeInstruction(
-                BLOCK_CLASS,
-                "calcBlockBreakingDelta",
-                Opcodes.INSTANCEOF,
-                "net/minecraft/item/ShearsItem"
-        ));
         List<String> breaking = invocations(BLOCK_CLASS, "calcBlockBreakingDelta");
-        assertTrue(containsInvocationNamed(breaking, "getMainHandStack"));
-        assertTrue(containsInvocationNamed(breaking, "getItem"));
-        assertTrue(containsInvocationNamed(breaking, "getHardness"));
-        assertTrue(containsInvocationNamed(breaking, "canHarvest"));
-        assertTrue(containsInvocationNamed(breaking, "getShearsBlockBreakingSpeed"));
-        assertTrue(loadsInteger(BLOCK_CLASS, "calcBlockBreakingDelta", 30));
-        assertTrue(loadsInteger(BLOCK_CLASS, "calcBlockBreakingDelta", 100));
+        assertEquals(1, countNamed(breaking, "calcBlockBreakingDelta"));
         assertTrue(containsSuperInvocation(
                 BLOCK_CLASS,
                 "calcBlockBreakingDelta",
                 "calcBlockBreakingDelta"
         ));
-
-        List<String> shearsSpeed = invocations(
-                BLOCK_CLASS,
-                "getShearsBlockBreakingSpeed"
-        );
-        assertTrue(loadsFloat(BLOCK_CLASS, "getShearsBlockBreakingSpeed", 15.0f));
-        assertTrue(shearsSpeed.contains(
-                "net/minecraft/enchantment/EnchantmentHelper#getEfficiency"
-                        + "(Lnet/minecraft/entity/LivingEntity;)I"
-        ));
-        assertTrue(containsInvocationNamed(shearsSpeed, "isEmpty"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "hasHaste"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "getHasteAmplifier"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "hasStatusEffect"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "getStatusEffect"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "getAmplifier"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "isSubmergedIn"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "hasAquaAffinity"));
-        assertTrue(containsInvocationNamed(shearsSpeed, "isOnGround"));
-        assertTrue(readsField(
-                BLOCK_CLASS,
-                "getShearsBlockBreakingSpeed",
-                "net/minecraft/entity/effect/StatusEffects",
-                "MINING_FATIGUE"
-        ));
-        assertTrue(readsField(
-                BLOCK_CLASS,
-                "getShearsBlockBreakingSpeed",
-                "net/minecraft/registry/tag/FluidTags",
-                "WATER"
-        ));
-        for (float multiplier : List.of(0.2F, 0.3F, 0.09F, 0.0027F, 0.00081F)) {
-            assertTrue(loadsFloat(
-                    BLOCK_CLASS,
-                    "getShearsBlockBreakingSpeed",
-                    multiplier
-            ));
-        }
     }
 
     @Test
@@ -702,24 +652,6 @@ final class ForestLanternBlockMechanicsTest {
                 if (opcode == Opcodes.PUTSTATIC
                         && owner.equals(expectedOwner)
                         && name.equals(expectedName)) {
-                    found.set(true);
-                }
-            }
-        });
-        return found.get();
-    }
-
-    private static boolean containsTypeInstruction(
-            String resource,
-            String methodName,
-            int expectedOpcode,
-            String expectedType
-    ) throws IOException {
-        AtomicBoolean found = new AtomicBoolean();
-        visitMethods(resource, methodName, null, new MethodVisitor(Opcodes.ASM9) {
-            @Override
-            public void visitTypeInsn(int opcode, String type) {
-                if (opcode == expectedOpcode && type.equals(expectedType)) {
                     found.set(true);
                 }
             }

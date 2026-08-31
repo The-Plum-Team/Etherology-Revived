@@ -4,7 +4,8 @@
   "package": "ru.feytox.etherology.forge.mixin",
   "compatibilityLevel": "JAVA_17",
   "mixins": [
-    "ChannelLeverSupportMixin"
+    "ChannelLeverSupportMixin",
+    "ForestLanternShearsItemMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -225,7 +225,7 @@ final class ForestLanternRegistryIsolationTest {
     }
 
     @Test
-    void fabricShearsMixinNoLongerOwnsForestLanternMiningSpeed()
+    void fabricShearsMixinUsesTheSharedForestLanternAndCanonicalSpeed()
             throws IOException {
         assertFalse(declaresMethod(SHEARS_MIXIN, "injectForestLanternSpeed"));
         assertFalse(readsField(
@@ -234,7 +234,17 @@ final class ForestLanternRegistryIsolationTest {
                 DECO_BLOCKS_OWNER,
                 "FOREST_LANTERN"
         ));
-        assertFalse(loadsFloat(SHEARS_MIXIN, 15.0F));
+        assertTrue(declaresMethod(
+                SHEARS_MIXIN,
+                "etherology$useForestLanternSpeed"
+        ));
+        assertTrue(readsField(
+                SHEARS_MIXIN,
+                "etherology$useForestLanternSpeed",
+                SHARED_BLOCKS_OWNER,
+                "FOREST_LANTERN"
+        ));
+        assertTrue(loadsFloat(SHEARS_MIXIN, 15.0F));
         assertTrue(readsField(
                 SHEARS_MIXIN,
                 "injectLightelet",

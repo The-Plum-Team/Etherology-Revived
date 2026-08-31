@@ -1,0 +1,1724 @@
+#!/usr/bin/env python3
+"""Validate live or archived Fabric Forest Lantern evidence."""
+
+from __future__ import annotations
+
+import argparse
+from dataclasses import dataclass
+import json
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+
+
+SCRIPT_DIRECTORY = Path(__file__).resolve().parent
+if str(SCRIPT_DIRECTORY) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIRECTORY))
+
+import client
+import evidence
+
+
+SCENARIO_ID = "forest-lantern"
+PROFILE_ID = "etherology-e2e-fabric-1.20.1-v24"
+ACTIVE_PROFILE_RELATIVE_PATH = "scripts/e2e/fabric-1.20.1-profile.json"
+SNAPSHOT_PROFILE_RELATIVE_PATH = "scripts/e2e/fabric-1.20.1-profile-v24.json"
+PROFILE_SIZE = 7017
+PROFILE_SHA256 = "77b9d33689d76e7b46d849f519337821744a81e3dd287bd4a1339a7c6a801a77"
+ARCHIVE_DIRECTORY_NAME = "forest-lantern-v24"
+FOREST_LANTERN_ARCHIVE_DIRECTORY_PATTERN = re.compile(
+    r"forest-lantern-v[1-9][0-9]*"
+)
+ARCHIVE_MANIFEST_NAME = evidence.ARCHIVE_MANIFEST_NAME
+ARCHIVE_KIND = evidence.ARCHIVE_KIND
+ARCHIVE_VERIFICATION_SCOPE = evidence.ARCHIVE_VERIFICATION_SCOPE
+ARCHIVE_CAPTURE_METADATA_PATH = evidence.ARCHIVE_CAPTURE_METADATA_PATH
+ARCHIVE_DIRECTORIES = {"reports", "screenshots"}
+PHASES = (
+    "empty",
+    "stages",
+    "facing-north",
+    "facing-east",
+    "facing-south",
+    "facing-west",
+    "reopened",
+)
+SCREENSHOT_FILES = tuple(f"forest-lantern-{phase}.png" for phase in PHASES)
+ARCHIVE_PAYLOAD_PATHS = (
+    "reports/report.json",
+    "reports/done.marker",
+    *(f"screenshots/{file_name}" for file_name in SCREENSHOT_FILES),
+)
+ARCHIVE_PUBLICATION_ATTESTATION = {
+    "completion_marker": "reports/done.marker",
+    "verified_last_in_capture_runtime": True,
+    "archive_payloads_match_capture_runtime": True,
+}
+EXPECTED_FRAMEBUFFER_DIMENSIONS = (1920, 1080)
+REQUIRED_STABLE_RENDERS = 120
+EXPECTED_SCENARIOS = (
+    "phase0-smoke",
+    "progression-oculus",
+    "seals-aspects",
+    "golden-forest",
+    "alchemy",
+    "ether-network",
+    "staff-lenses",
+    "spiritual-energy",
+    "armillary",
+    "storage-utilities",
+    "combat-equipment",
+    "persistence",
+    "multiplayer-sync",
+    "metal-block-registry",
+    SCENARIO_ID,
+)
+EXPECTED_WORLD = {
+    "save_directory": "etherology-e2e-forest-lantern-world",
+    "display_name": "Etherology E2E Forest Lantern",
+    "seed": 77306496635732,
+    "dimension": "minecraft:overworld",
+    "integrated": True,
+    "reopened": True,
+}
+EXPECTED_READY_RESOURCES = (
+    "etherology:blockstates/forest_lantern.json",
+    "etherology:models/block/forest_lantern_0.json",
+    "etherology:models/block/forest_lantern_1.json",
+    "etherology:models/block/forest_lantern_2.json",
+    "etherology:models/block/forest_lantern_3.json",
+    "etherology:models/block/forest_lantern.json",
+    "etherology:models/item/forest_lantern.json",
+    "etherology:textures/block/forest_lantern_0.png",
+    "etherology:textures/block/forest_lantern_1.png",
+    "etherology:textures/block/forest_lantern_2.png",
+    "etherology:textures/block/forest_lantern_3.png",
+    "etherology:textures/block/forest_lantern.png",
+    "etherology:textures/item/forest_lantern.png",
+)
+EXPECTED_ASSET_SHA256 = {
+    "etherology:blockstates/forest_lantern.json": "2e73ec0f61ca32b3e5331c2410362ae2df599d41a5d1499cf2fc84de5dcf74e3",
+    "etherology:models/block/forest_lantern_0.json": "ff1afef383ebf725c102a11c36a4bd7671632841bfbdcd788a81824dcbb3af44",
+    "etherology:models/block/forest_lantern_1.json": "026b26bfba8c8cec6de47c6dc6e3b097b66e07be30204ff3a7cad420cd9c349d",
+    "etherology:models/block/forest_lantern_2.json": "a16895bea5f381c16c9454b349d172e527d3be2d639d2d8b05505d9a37a6e709",
+    "etherology:models/block/forest_lantern_3.json": "6d57d90558f8c270a6a6f00ffb43e4f66f69d2042bc0bb18cd34de38285dde8d",
+    "etherology:models/block/forest_lantern.json": "c45939dd725b11d2034406e3ec8b9040a97d6fa9c7c83d3782444a22e7cfd90c",
+    "etherology:models/item/forest_lantern.json": "d57283548233724975a2f7d9aeeee41a00df0c0d73b02c314da8829aa6ab3e34",
+    "etherology:textures/block/forest_lantern_0.png": "c850de55787124203c0176cf43364ad7459418ee401523cb71b733e58eff97a2",
+    "etherology:textures/block/forest_lantern_1.png": "bc9ce2c1e3c310e81c324326b5828924319ebb5c7d23e64fbb9fbf883e930c7f",
+    "etherology:textures/block/forest_lantern_2.png": "5e5d5df51ad75e06b99d3dd84bca8516c6b17b90948217a7a9624321ad1a9d1c",
+    "etherology:textures/block/forest_lantern_3.png": "f4a76d42b1f7ca0106698ea56ee5045012b33c1a1aa1d433e202b8f1433756cd",
+    "etherology:textures/block/forest_lantern.png": "5ab9532f8b9090492a84479b404c4c3c4ac3733a6d867e50534f54fcc8f310b6",
+    "etherology:textures/item/forest_lantern.png": "38bd46a7cb5b35dd28ee2b6ff718c190596f1a2b95a3138f90b6fa19fce7d143",
+}
+EXPECTED_STATE_INVENTORY = tuple(
+    sorted(
+        f"age={age},facing={facing}"
+        for age in range(5)
+        for facing in ("east", "north", "south", "west")
+    )
+)
+EXPECTED_RENDERED_STATE_INVENTORY = tuple(
+    f"age={age},facing={facing}"
+    for facing in ("north", "east", "south", "west")
+    for age in range(5)
+)
+EXPECTED_FORCED_STATE_INVENTORY = tuple(
+    f"age={age},facing={facing}"
+    for facing in ("north", "east", "south", "west")
+    for age in range(4)
+)
+EXPECTED_ARTIFACTS = (
+    ("production", "etherology", "etherology-under-test.jar"),
+    ("harness", "etherology_e2e_harness", "etherology-e2e-harness.jar"),
+)
+STAGE_ROWS = (
+    ("north", 122),
+    ("east", 124),
+    ("south", 126),
+    ("west", 128),
+)
+STAGE_X_COORDINATES = (-8, -4, 0, 4, 8)
+
+
+def stage_support_position(facing: str, x: int, y: int) -> str:
+    return {
+        "north": f"{x},{y},3",
+        "east": f"{x - 1},{y},2",
+        "south": f"{x},{y},1",
+        "west": f"{x + 1},{y},2",
+    }[facing]
+
+
+STAGE_FIXTURES = tuple(
+    {
+        "age": age,
+        "forced": age < 4,
+        "facing": facing,
+        "position": f"{x},{y},2",
+        "support_position": stage_support_position(facing, x, y),
+        "support_id": (
+            "etherology:peach_log"
+            if age % 2 == 0
+            else "etherology:stripped_peach_log"
+        ),
+    }
+    for facing, y in STAGE_ROWS
+    for age, x in enumerate(STAGE_X_COORDINATES)
+)
+PLACEMENT_FIXTURES = (
+    {
+        "facing": "north",
+        "position": "-6,125,2",
+        "support_position": "-6,125,3",
+        "support_id": "minecraft:polished_andesite",
+    },
+    {
+        "facing": "east",
+        "position": "-2,125,2",
+        "support_position": "-3,125,2",
+        "support_id": "minecraft:polished_andesite",
+    },
+    {
+        "facing": "south",
+        "position": "2,125,2",
+        "support_position": "2,125,1",
+        "support_id": "minecraft:polished_andesite",
+    },
+    {
+        "facing": "west",
+        "position": "6,125,2",
+        "support_position": "7,125,2",
+        "support_id": "minecraft:polished_andesite",
+    },
+)
+CAMERA = {
+    "x": 9.5,
+    "y": 121.0,
+    "z": -10.5,
+    "yaw": 38.0,
+    "pitch": -6.0,
+    "first_person": True,
+    "on_ground": True,
+}
+CAPTURE_STATE_FIELDS = (
+    "mirror_exact",
+    "render_ready",
+    "camera_exact",
+    "stable_renders",
+    "framebuffer",
+    "server_snapshot",
+    "client_snapshot",
+)
+OBSERVATION_FIELDS = ("position", "block_id", "age", "facing", "can_place_at")
+SNAPSHOT_FIELDS = (
+    "stages",
+    "stage_support_ids",
+    "placements",
+    "placement_support_ids",
+    "unsupported_target",
+    "unsupported_support_id",
+)
+PLACEMENT_EVIDENCE_FIELDS = (
+    "direction",
+    "action_result",
+    "accepted",
+    "stack_before",
+    "stack_after",
+    "block_item_mapping",
+    "support_valid",
+    "observation",
+    "support_id",
+)
+STAGE_FIXTURE_FIELDS = (
+    "age",
+    "forced",
+    "facing",
+    "position",
+    "support_position",
+    "support_id",
+)
+PLACEMENT_FIXTURE_FIELDS = (
+    "facing",
+    "position",
+    "support_position",
+    "support_id",
+)
+EXPECTED_SCREENSHOTS = tuple(
+    (phase, f"screenshots/{file_name}")
+    for phase, file_name in zip(PHASES, SCREENSHOT_FILES)
+)
+EXPECTED_REPORT_FIELDS = {
+    "schema",
+    "scenario",
+    "lane",
+    "role",
+    "status",
+    "client_ticks",
+    "lifecycle_failure",
+    "assertions",
+    "world",
+    "ready_resources",
+    "artifacts",
+    "screenshots",
+    "forest_lantern",
+}
+EXPECTED_FOREST_LANTERN_FIELDS = (
+    "registry_id",
+    "item_id",
+    "block_item_mapping",
+    "default_state",
+    "state_count",
+    "state_inventory",
+    "raw_state_ids",
+    "render_layer",
+    "models_baked",
+    "luminance",
+    "asset_sha256",
+    "forced_stage_ages",
+    "forced_state_inventory",
+    "rendered_state_inventory",
+    "stage_fixtures",
+    "placement_fixtures",
+    "unsupported_placement",
+    "placements",
+    "persistence_exact",
+    "camera",
+    "required_stable_renders",
+    "captures",
+)
+BASE_ASSERTION_NAMES = (
+    "fabric_mod_loaded:etherology",
+    "registry:block:etherology:forest_lantern",
+    "registry:item:etherology:forest_lantern",
+    "block_item_mapping",
+    "default_state_exact",
+    "state_inventory_exact",
+    "state_network_ids_exact",
+    "client_render_resources",
+    "client_render_layer_cutout",
+    "client_models_baked",
+    "default_luminance",
+    "packaged_root_jar:etherology",
+    "packaged_root_jar:etherology_e2e_harness",
+    "integrated_world_joined",
+    "server_arena_chunks_loaded",
+    "checker_backings_exact",
+    "forced_render_state_matrix_exact",
+    "stage_support_validation",
+    "unsupported_block_item_rejected",
+    "real_block_item_placement:north",
+    "real_block_item_placement:east",
+    "real_block_item_placement:south",
+    "real_block_item_placement:west",
+    "forced_world_save",
+    "restart_exact_state",
+)
+EXPECTED_ASSERTION_NAMES = (
+    *BASE_ASSERTION_NAMES,
+    *(
+        name
+        for phase in PHASES
+        for name in (
+            f"capture_mirror_exact:{phase}",
+            f"capture_render_ready:{phase}",
+            f"capture_camera_exact:{phase}",
+            f"capture_consecutive_stable_renders:{phase}",
+            f"capture_framebuffer_dimensions:{phase}",
+            f"native_screenshot_written:{phase}",
+        )
+    ),
+    "isolated_save_directory_present",
+)
+CAMERA_SUMMARY = (
+    "first_person=true;x=9.5;y=121.0;z=-10.5;yaw=38.0;pitch=-6.0;"
+    "on_ground=true;tolerance=1.0E-4"
+)
+MINIMUM_PLACEMENT_CHANGED_PIXEL_RATIO = 0.00005
+
+
+@dataclass(frozen=True)
+class ForestLanternEvidenceSummary:
+    """Reports the exact evidence inventory accepted by this verifier."""
+
+    profile_id: str
+    assertion_count: int
+    screenshot_count: int
+    minimum_changed_pixel_ratio: float
+    production_sha256: str
+    harness_sha256: str
+
+
+def validate_active_profile(configuration: client.ResolvedConfiguration) -> None:
+    """Requires the immutable v24 profile and exact Fabric runtime contract."""
+
+    active_profile = configuration.repository_root / ACTIVE_PROFILE_RELATIVE_PATH
+    snapshot_profile = configuration.repository_root / SNAPSHOT_PROFILE_RELATIVE_PATH
+    for path in (active_profile, snapshot_profile):
+        if not path.is_file() or path.is_symlink():
+            raise client.E2EError(f"Fabric Forest Lantern profile is missing or linked: {path}")
+        if path.stat().st_size != PROFILE_SIZE or client.sha256_file(path) != PROFILE_SHA256:
+            raise client.E2EError(f"Fabric Forest Lantern profile bytes changed: {path}")
+    if active_profile.read_bytes() != snapshot_profile.read_bytes():
+        raise client.E2EError("The active Fabric profile differs from its v24 snapshot")
+
+    profile = client.profile_spec(configuration)
+    capture = client.require_object(client.evidence_spec(configuration), "capture")
+    if (
+        profile.get("id") != PROFILE_ID
+        or profile.get("runtime_directory") != PROFILE_ID
+        or tuple(client.scenario_ids(configuration)) != EXPECTED_SCENARIOS
+        or configuration.artifact_lane.get("artifact_node") != "fabric-1.20.1"
+        or configuration.runtime_lane.get("runtime_version") != "1.20.1"
+        or configuration.runtime_lane.get("loader") != "fabric"
+        or configuration.runtime_lane.get("loader_version") != "0.17.3"
+        or configuration.runtime_lane.get("java") != 17
+        or capture.get("kind") != "composed-minecraft-framebuffer"
+        or (capture.get("width"), capture.get("height"))
+        != EXPECTED_FRAMEBUFFER_DIMENSIONS
+    ):
+        raise client.E2EError("The Fabric Forest Lantern v24 profile contract changed")
+    for role, mod_id, file_name in EXPECTED_ARTIFACTS:
+        artifact = client.artifact_spec(configuration, role)
+        if artifact.get("mod_id") != mod_id or artifact.get("file_name") != file_name:
+            raise client.E2EError(
+                f"The Fabric Forest Lantern profile has the wrong {role} artifact identity"
+            )
+
+
+def expected_observation(
+    position: str,
+    block_id: str,
+    age: str = "",
+    facing: str = "",
+    can_place_at: bool = False,
+) -> dict[str, object]:
+    return {
+        "position": position,
+        "block_id": block_id,
+        "age": age,
+        "facing": facing,
+        "can_place_at": can_place_at,
+    }
+
+
+def expected_snapshot(phase: str) -> dict[str, object]:
+    if phase not in PHASES:
+        raise client.E2EError(f"Unsupported Forest Lantern capture phase: {phase}")
+    has_stages = phase != "empty"
+    placed_count = {
+        "empty": 0,
+        "stages": 0,
+        "facing-north": 1,
+        "facing-east": 2,
+        "facing-south": 3,
+        "facing-west": 4,
+        "reopened": 4,
+    }[phase]
+    stages = [
+        expected_observation(
+            str(fixture["position"]),
+            "etherology:forest_lantern" if has_stages else "minecraft:air",
+            str(fixture["age"]) if has_stages else "",
+            str(fixture["facing"]) if has_stages else "",
+            has_stages,
+        )
+        for fixture in STAGE_FIXTURES
+    ]
+    placements = [
+        expected_observation(
+            str(fixture["position"]),
+            "etherology:forest_lantern" if index < placed_count else "minecraft:air",
+            "4" if index < placed_count else "",
+            str(fixture["facing"]) if index < placed_count else "",
+            index < placed_count,
+        )
+        for index, fixture in enumerate(PLACEMENT_FIXTURES)
+    ]
+    return {
+        "stages": stages,
+        "stage_support_ids": [str(fixture["support_id"]) for fixture in STAGE_FIXTURES],
+        "placements": placements,
+        "placement_support_ids": [
+            "minecraft:polished_andesite" for _fixture in PLACEMENT_FIXTURES
+        ],
+        "unsupported_target": expected_observation(
+            "9,125,2",
+            "minecraft:air",
+        ),
+        "unsupported_support_id": "minecraft:iron_bars",
+    }
+
+
+def validate_observation(
+    actual: object,
+    expected: dict[str, object],
+    description: str,
+) -> None:
+    if (
+        not isinstance(actual, dict)
+        or tuple(actual) != OBSERVATION_FIELDS
+        or actual != expected
+        or type(actual.get("can_place_at")) is not bool
+    ):
+        raise client.E2EError(f"Fabric Forest Lantern {description} changed")
+
+
+def validate_snapshot(actual: object, phase: str, description: str) -> None:
+    expected = expected_snapshot(phase)
+    if not isinstance(actual, dict) or tuple(actual) != SNAPSHOT_FIELDS:
+        raise client.E2EError(f"Fabric Forest Lantern {description} fields changed")
+    stages = actual.get("stages")
+    placements = actual.get("placements")
+    if (
+        not isinstance(stages, list)
+        or len(stages) != len(STAGE_FIXTURES)
+        or not isinstance(placements, list)
+        or len(placements) != len(PLACEMENT_FIXTURES)
+    ):
+        raise client.E2EError(f"Fabric Forest Lantern {description} inventory changed")
+    for index, observation in enumerate(stages):
+        validate_observation(
+            observation,
+            expected["stages"][index],
+            f"{description} stage {index}",
+        )
+    for index, observation in enumerate(placements):
+        validate_observation(
+            observation,
+            expected["placements"][index],
+            f"{description} placement {index}",
+        )
+    for field_name in (
+        "stage_support_ids",
+        "placement_support_ids",
+        "unsupported_support_id",
+    ):
+        if actual.get(field_name) != expected[field_name]:
+            raise client.E2EError(
+                f"Fabric Forest Lantern {description} {field_name} changed"
+            )
+    validate_observation(
+        actual.get("unsupported_target"),
+        expected["unsupported_target"],
+        f"{description} unsupported target",
+    )
+
+
+def validate_placement_evidence(
+    actual: object,
+    direction: str,
+    accepted: bool,
+) -> None:
+    if not isinstance(actual, dict) or tuple(actual) != PLACEMENT_EVIDENCE_FIELDS:
+        raise client.E2EError("Fabric Forest Lantern placement evidence fields changed")
+    if (
+        type(actual.get("accepted")) is not bool
+        or type(actual.get("stack_before")) is not int
+        or type(actual.get("stack_after")) is not int
+        or type(actual.get("block_item_mapping")) is not bool
+        or type(actual.get("support_valid")) is not bool
+    ):
+        raise client.E2EError("Fabric Forest Lantern placement evidence types changed")
+    if accepted:
+        fixture = next(
+            fixture for fixture in PLACEMENT_FIXTURES if fixture["facing"] == direction
+        )
+        expected = {
+            "direction": direction,
+            "action_result": "CONSUME",
+            "accepted": True,
+            "stack_before": 1,
+            "stack_after": 0,
+            "block_item_mapping": True,
+            "support_valid": True,
+            "observation": expected_observation(
+                str(fixture["position"]),
+                "etherology:forest_lantern",
+                "4",
+                direction,
+                True,
+            ),
+            "support_id": "minecraft:polished_andesite",
+        }
+    else:
+        expected = {
+            "direction": "north",
+            "action_result": "FAIL",
+            "accepted": False,
+            "stack_before": 1,
+            "stack_after": 1,
+            "block_item_mapping": True,
+            "support_valid": False,
+            "observation": expected_observation("9,125,2", "minecraft:air"),
+            "support_id": "minecraft:iron_bars",
+        }
+    if actual != expected:
+        raise client.E2EError(
+            f"Fabric Forest Lantern {direction} placement evidence changed"
+        )
+
+
+def validate_fixture_inventory(
+    actual: object,
+    expected: tuple[dict[str, object], ...],
+    fields: tuple[str, ...],
+    description: str,
+) -> None:
+    if not isinstance(actual, list) or len(actual) != len(expected):
+        raise client.E2EError(
+            f"Fabric Forest Lantern {description} inventory changed"
+        )
+    for row, expected_row in zip(actual, expected):
+        if not isinstance(row, dict) or tuple(row) != fields or row != expected_row:
+            raise client.E2EError(
+                f"Fabric Forest Lantern {description} row changed"
+            )
+        if "age" in row and type(row["age"]) is not int:
+            raise client.E2EError(
+                f"Fabric Forest Lantern {description} age type changed"
+            )
+        if "forced" in row and type(row["forced"]) is not bool:
+            raise client.E2EError(
+                f"Fabric Forest Lantern {description} forced type changed"
+            )
+
+
+def validate_forest_lantern(report: dict[str, object]) -> None:
+    """Requires the exact registry, fixture, placement, and restart contract."""
+
+    forest_lantern = report.get("forest_lantern")
+    if (
+        not isinstance(forest_lantern, dict)
+        or tuple(forest_lantern) != EXPECTED_FOREST_LANTERN_FIELDS
+    ):
+        raise client.E2EError("Fabric Forest Lantern report field inventory changed")
+    raw_state_ids = forest_lantern.get("raw_state_ids")
+    asset_sha256 = forest_lantern.get("asset_sha256")
+    camera = forest_lantern.get("camera")
+    forced_stage_ages = forest_lantern.get("forced_stage_ages")
+    forced_state_inventory = forest_lantern.get("forced_state_inventory")
+    rendered_state_inventory = forest_lantern.get("rendered_state_inventory")
+    if (
+        forest_lantern.get("registry_id") != "etherology:forest_lantern"
+        or forest_lantern.get("item_id") != "etherology:forest_lantern"
+        or forest_lantern.get("block_item_mapping") is not True
+        or forest_lantern.get("default_state") != "age=4,facing=north"
+        or forest_lantern.get("state_count") != 20
+        or forest_lantern.get("state_inventory") != list(EXPECTED_STATE_INVENTORY)
+        or not isinstance(raw_state_ids, list)
+        or len(raw_state_ids) != 20
+        or any(type(raw_id) is not int or raw_id < 0 for raw_id in raw_state_ids)
+        or raw_state_ids != sorted(raw_state_ids)
+        or len(set(raw_state_ids)) != 20
+        or forest_lantern.get("render_layer") != "cutout"
+        or forest_lantern.get("models_baked") is not True
+        or forest_lantern.get("luminance") != 8
+        or not isinstance(asset_sha256, dict)
+        or tuple(asset_sha256) != EXPECTED_READY_RESOURCES
+        or asset_sha256 != EXPECTED_ASSET_SHA256
+        or forced_stage_ages != [0, 1, 2, 3]
+        or not isinstance(forced_stage_ages, list)
+        or any(type(age) is not int for age in forced_stage_ages)
+        or forced_state_inventory != list(EXPECTED_FORCED_STATE_INVENTORY)
+        or not isinstance(forced_state_inventory, list)
+        or any(type(state) is not str for state in forced_state_inventory)
+        or rendered_state_inventory != list(EXPECTED_RENDERED_STATE_INVENTORY)
+        or not isinstance(rendered_state_inventory, list)
+        or any(type(state) is not str for state in rendered_state_inventory)
+        or set(rendered_state_inventory) != set(EXPECTED_STATE_INVENTORY)
+        or forest_lantern.get("stage_fixtures") != list(STAGE_FIXTURES)
+        or forest_lantern.get("placement_fixtures") != list(PLACEMENT_FIXTURES)
+        or forest_lantern.get("persistence_exact") is not True
+        or not isinstance(camera, dict)
+        or tuple(camera) != tuple(CAMERA)
+        or camera != CAMERA
+        or any(
+            type(camera.get(field)) is not float
+            for field in ("x", "y", "z", "yaw", "pitch")
+        )
+        or type(camera.get("first_person")) is not bool
+        or type(camera.get("on_ground")) is not bool
+        or forest_lantern.get("required_stable_renders") != REQUIRED_STABLE_RENDERS
+    ):
+        raise client.E2EError("Fabric Forest Lantern registry/fixture contract changed")
+
+    validate_fixture_inventory(
+        forest_lantern.get("stage_fixtures"),
+        STAGE_FIXTURES,
+        STAGE_FIXTURE_FIELDS,
+        "stage fixture",
+    )
+    validate_fixture_inventory(
+        forest_lantern.get("placement_fixtures"),
+        PLACEMENT_FIXTURES,
+        PLACEMENT_FIXTURE_FIELDS,
+        "placement fixture",
+    )
+
+    validate_placement_evidence(
+        forest_lantern.get("unsupported_placement"),
+        "unsupported",
+        False,
+    )
+    placements = forest_lantern.get("placements")
+    directions = ("north", "east", "south", "west")
+    if not isinstance(placements, dict) or tuple(placements) != directions:
+        raise client.E2EError("Fabric Forest Lantern placement direction order changed")
+    for direction in directions:
+        validate_placement_evidence(placements.get(direction), direction, True)
+
+    captures = forest_lantern.get("captures")
+    if not isinstance(captures, dict) or tuple(captures) != PHASES:
+        raise client.E2EError("Fabric Forest Lantern capture phase order changed")
+    for phase in PHASES:
+        capture = captures.get(phase)
+        if (
+            not isinstance(capture, dict)
+            or tuple(capture) != CAPTURE_STATE_FIELDS
+            or capture.get("mirror_exact") is not True
+            or capture.get("render_ready") is not True
+            or capture.get("camera_exact") is not True
+            or type(capture.get("stable_renders")) is not int
+            or capture.get("stable_renders") != REQUIRED_STABLE_RENDERS
+            or capture.get("framebuffer") != "1920x1080"
+        ):
+            raise client.E2EError(
+                f"Fabric Forest Lantern {phase} capture state changed"
+            )
+        validate_snapshot(capture.get("server_snapshot"), phase, f"{phase} server snapshot")
+        validate_snapshot(capture.get("client_snapshot"), phase, f"{phase} client snapshot")
+        if capture.get("server_snapshot") != capture.get("client_snapshot"):
+            raise client.E2EError(
+                f"Fabric Forest Lantern {phase} server/client mirrors differ"
+            )
+
+
+def validate_artifact_inventory(
+    report: dict[str, object],
+) -> dict[str, dict[str, object]]:
+    artifacts = report.get("artifacts")
+    if not isinstance(artifacts, list) or len(artifacts) != len(EXPECTED_ARTIFACTS):
+        raise client.E2EError("Fabric Forest Lantern artifact inventory changed")
+    validated: dict[str, dict[str, object]] = {}
+    for artifact, (role, mod_id, file_name) in zip(artifacts, EXPECTED_ARTIFACTS):
+        if not isinstance(artifact, dict) or set(artifact) != {
+            "mod_id",
+            "origin_kind",
+            "file_name",
+            "size",
+            "sha256",
+        }:
+            raise client.E2EError(
+                f"Fabric Forest Lantern {role} artifact provenance is malformed"
+            )
+        if (
+            artifact.get("mod_id") != mod_id
+            or artifact.get("origin_kind") != "PATH"
+            or artifact.get("file_name") != file_name
+            or type(artifact.get("size")) is not int
+            or int(artifact["size"]) <= 0
+        ):
+            raise client.E2EError(
+                f"Fabric Forest Lantern {role} artifact identity is invalid"
+            )
+        digest = client.validate_hex_digest(
+            artifact.get("sha256"),
+            f"Fabric Forest Lantern {role} artifact",
+        )
+        validated[role] = {
+            "mod_id": mod_id,
+            "file_name": file_name,
+            "size": artifact["size"],
+            "sha256": digest,
+        }
+    return validated
+
+
+def validate_screenshot_inventory(
+    report: dict[str, object],
+) -> list[dict[str, object]]:
+    screenshots = report.get("screenshots")
+    if not isinstance(screenshots, list) or len(screenshots) != len(
+        EXPECTED_SCREENSHOTS
+    ):
+        raise client.E2EError("Fabric Forest Lantern screenshot inventory changed")
+    validated: list[dict[str, object]] = []
+    for screenshot, (expected_step, expected_file) in zip(
+        screenshots,
+        EXPECTED_SCREENSHOTS,
+    ):
+        if not isinstance(screenshot, dict) or set(screenshot) != {
+            "step",
+            "role",
+            "file",
+            "width",
+            "height",
+            "size",
+            "sha256",
+            "completed_render_count",
+            "source",
+            "edited",
+        }:
+            raise client.E2EError(
+                "Fabric Forest Lantern screenshot provenance is malformed"
+            )
+        if (
+            screenshot.get("step") != expected_step
+            or screenshot.get("role") != "host"
+            or screenshot.get("file") != expected_file
+            or type(screenshot.get("width")) is not int
+            or type(screenshot.get("height")) is not int
+            or (screenshot.get("width"), screenshot.get("height"))
+            != EXPECTED_FRAMEBUFFER_DIMENSIONS
+            or type(screenshot.get("size")) is not int
+            or int(screenshot["size"]) <= 0
+            or type(screenshot.get("completed_render_count")) is not int
+            or screenshot.get("completed_render_count") != REQUIRED_STABLE_RENDERS
+            or screenshot.get("source") != "minecraft-framebuffer"
+            or screenshot.get("edited") is not False
+        ):
+            raise client.E2EError("Fabric Forest Lantern screenshot contract is invalid")
+        client.validate_hex_digest(
+            screenshot.get("sha256"),
+            f"Fabric Forest Lantern screenshot {expected_file}",
+        )
+        validated.append(screenshot)
+    return validated
+
+
+def observation_summary(observation: dict[str, object]) -> str:
+    if observation["block_id"] == "minecraft:air":
+        return f"{observation['position']}=minecraft:air"
+    can_place_at = str(observation["can_place_at"]).lower()
+    return (
+        f"{observation['position']}={observation['block_id']}"
+        f"[age={observation['age']},facing={observation['facing']},"
+        f"can_place_at={can_place_at}]"
+    )
+
+
+def snapshot_summary(snapshot: dict[str, object]) -> str:
+    stages = ";".join(observation_summary(value) for value in snapshot["stages"])
+    placements = ";".join(
+        observation_summary(value) for value in snapshot["placements"]
+    )
+    unsupported = observation_summary(snapshot["unsupported_target"])
+    return f"stages={stages}|placements={placements}|unsupported={unsupported}"
+
+
+def phase_expected_summary(phase: str) -> str:
+    has_stages = phase != "empty"
+    placed_count = {
+        "empty": 0,
+        "stages": 0,
+        "facing-north": 1,
+        "facing-east": 2,
+        "facing-south": 3,
+        "facing-west": 4,
+        "reopened": 4,
+    }[phase]
+    stages = "20-state-age-facing-matrix" if has_stages else "air"
+    return f"stages={stages};mature_placements={placed_count};unsupported=air"
+
+
+def placement_summary(placement: dict[str, object]) -> str:
+    return (
+        f"accepted={str(placement['accepted']).lower()}"
+        f";action={placement['action_result']}"
+        f";stack={placement['stack_before']}->{placement['stack_after']}"
+        f";block_item_mapping={str(placement['block_item_mapping']).lower()}"
+        f";support_valid={str(placement['support_valid']).lower()}"
+        f";state={observation_summary(placement['observation'])}"
+        f";support={placement['support_id']}"
+    )
+
+
+def expected_assertion_evidence(
+    report: dict[str, object],
+    screenshots: list[dict[str, object]],
+) -> dict[str, tuple[str, str]]:
+    forest_lantern = report["forest_lantern"]
+    captures = forest_lantern["captures"]
+    screenshot_by_phase = {
+        str(screenshot["step"]): screenshot for screenshot in screenshots
+    }
+    state_inventory_summary = "[" + ", ".join(EXPECTED_STATE_INVENTORY) + "]"
+    rendered_state_inventory_summary = (
+        "[" + ", ".join(EXPECTED_RENDERED_STATE_INVENTORY) + "]"
+    )
+    raw_ids_summary = "[" + ", ".join(
+        str(raw_id) for raw_id in forest_lantern["raw_state_ids"]
+    ) + "]"
+    expected: dict[str, tuple[str, str]] = {
+        "fabric_mod_loaded:etherology": ("loaded", "loaded"),
+        "registry:block:etherology:forest_lantern": ("present", "present"),
+        "registry:item:etherology:forest_lantern": ("present", "present"),
+        "block_item_mapping": (
+            "vanilla BlockItem mapped to etherology:forest_lantern",
+            "vanilla BlockItem mapped to etherology:forest_lantern",
+        ),
+        "default_state_exact": ("age=4,facing=north", "age=4,facing=north"),
+        "state_inventory_exact": (state_inventory_summary, state_inventory_summary),
+        "state_network_ids_exact": ("20 unique non-negative raw IDs", raw_ids_summary),
+        "client_render_resources": (
+            "13 exact resources with canonical SHA-256 digests",
+            "13 exact resources with canonical SHA-256 digests",
+        ),
+        "client_render_layer_cutout": ("cutout", "cutout"),
+        "client_models_baked": (
+            "20 block states and one item model",
+            "20 block states and one item model",
+        ),
+        "default_luminance": ("8", "8"),
+        "packaged_root_jar:etherology": (
+            "one regular root JAR",
+            "one regular root JAR",
+        ),
+        "packaged_root_jar:etherology_e2e_harness": (
+            "one regular root JAR",
+            "one regular root JAR",
+        ),
+        "integrated_world_joined": (
+            "running server and connected client",
+            "joined",
+        ),
+        "server_arena_chunks_loaded": ("four full chunks", "true"),
+        "checker_backings_exact": (
+            "twenty alternating peach-log matrix supports, four polished-andesite supports, one iron-bars rejection support",
+            "exact",
+        ),
+        "forced_render_state_matrix_exact": (
+            rendered_state_inventory_summary,
+            rendered_state_inventory_summary,
+        ),
+        "stage_support_validation": (
+            "all twenty age-by-facing states canPlaceAt their peach-log backing",
+            "true",
+        ),
+        "unsupported_block_item_rejected": (
+            "not accepted; stack 1->1; target air; support invalid",
+            placement_summary(forest_lantern["unsupported_placement"]),
+        ),
+        "forced_world_save": ("true", "true"),
+        "restart_exact_state": (
+            "saved snapshot equals reopened snapshot",
+            "saved snapshot equals reopened snapshot",
+        ),
+        "isolated_save_directory_present": (
+            "etherology-e2e-forest-lantern-world",
+            "etherology-e2e-forest-lantern-world",
+        ),
+    }
+    for direction in ("north", "east", "south", "west"):
+        expected[f"real_block_item_placement:{direction}"] = (
+            "accepted BlockItem; stack 1->0; mature exact facing; support valid",
+            placement_summary(forest_lantern["placements"][direction]),
+        )
+    for phase in PHASES:
+        capture = captures[phase]
+        screenshot = screenshot_by_phase[phase]
+        expected[f"capture_mirror_exact:{phase}"] = (
+            phase_expected_summary(phase),
+            snapshot_summary(capture["client_snapshot"]),
+        )
+        expected[f"capture_render_ready:{phase}"] = (
+            "terrain complete and all fixture positions rendering-ready",
+            "ready",
+        )
+        expected[f"capture_camera_exact:{phase}"] = (CAMERA_SUMMARY, CAMERA_SUMMARY)
+        expected[f"capture_consecutive_stable_renders:{phase}"] = ("120", "120")
+        expected[f"capture_framebuffer_dimensions:{phase}"] = (
+            "1920x1080",
+            "1920x1080",
+        )
+        expected[f"native_screenshot_written:{phase}"] = (
+            "one non-empty unedited framebuffer PNG",
+            f"{screenshot['size']} bytes, sha256={screenshot['sha256']}",
+        )
+    return expected
+
+
+def validate_assertions(
+    report: dict[str, object],
+    screenshots: list[dict[str, object]],
+) -> None:
+    assertions = report.get("assertions")
+    if not isinstance(assertions, list) or len(assertions) != len(
+        EXPECTED_ASSERTION_NAMES
+    ):
+        raise client.E2EError("Fabric Forest Lantern assertion inventory changed")
+    expected_evidence = expected_assertion_evidence(report, screenshots)
+    for assertion, expected_name in zip(assertions, EXPECTED_ASSERTION_NAMES):
+        if not isinstance(assertion, dict) or set(assertion) != {
+            "name",
+            "passed",
+            "expected",
+            "actual",
+        }:
+            raise client.E2EError("Fabric Forest Lantern assertion fields changed")
+        if assertion.get("name") != expected_name or assertion.get("passed") is not True:
+            raise client.E2EError("Fabric Forest Lantern assertion inventory changed")
+        expected_pair = expected_evidence.get(expected_name)
+        if expected_pair is None or (
+            assertion.get("expected"),
+            assertion.get("actual"),
+        ) != expected_pair:
+            raise client.E2EError("Fabric Forest Lantern assertion evidence changed")
+
+
+def count_missing_texture_pixels(image: evidence.PngImage) -> int:
+    count = 0
+    for offset in range(0, len(image.pixels), 3):
+        red, green, blue = image.pixels[offset : offset + 3]
+        if red >= 180 and blue >= 180 and green <= 80:
+            count += 1
+    return count
+
+
+def validate_screenshot_files(
+    scenario_root: Path,
+    screenshots: list[dict[str, object]],
+) -> float:
+    screenshot_directory = scenario_root / "screenshots"
+    if not screenshot_directory.is_dir() or screenshot_directory.is_symlink():
+        raise client.E2EError(
+            "Fabric Forest Lantern screenshot directory is missing or linked"
+        )
+    expected_names = set(SCREENSHOT_FILES)
+    entries = list(screenshot_directory.iterdir())
+    if (
+        {path.name for path in entries} != expected_names
+        or any(not path.is_file() or path.is_symlink() for path in entries)
+    ):
+        raise client.E2EError("Fabric Forest Lantern screenshot file inventory changed")
+
+    images: list[evidence.PngImage] = []
+    for screenshot in screenshots:
+        path = evidence.safe_screenshot_path(scenario_root, screenshot["file"])
+        if path.stat().st_size != screenshot["size"]:
+            raise client.E2EError(
+                f"Fabric Forest Lantern screenshot size differs from report: {path}"
+            )
+        if evidence.sha256_file(path) != screenshot["sha256"]:
+            raise client.E2EError(
+                f"Fabric Forest Lantern screenshot digest differs from report: {path}"
+            )
+        image = evidence.decode_png(path, EXPECTED_FRAMEBUFFER_DIMENSIONS)
+        evidence.assert_image_is_not_blank(image, str(path))
+        if count_missing_texture_pixels(image) != 0:
+            raise client.E2EError(
+                f"Fabric Forest Lantern screenshot contains missing-texture magenta: {path}"
+            )
+        images.append(image)
+
+    changed_ratios = [
+        evidence.changed_pixel_ratio(left, right)
+        for left, right in zip(images[:5], images[1:6])
+    ]
+    if len(changed_ratios) != 5 or any(
+        ratio < MINIMUM_PLACEMENT_CHANGED_PIXEL_RATIO for ratio in changed_ratios
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern fixture captures lack a material visual transition"
+        )
+    return min(changed_ratios)
+
+
+def validate_report_contract(
+    scenario_root: Path,
+    report: dict[str, object],
+) -> tuple[float, dict[str, dict[str, object]]]:
+    """Validates every scenario-specific report and screenshot field."""
+
+    if set(report) != EXPECTED_REPORT_FIELDS:
+        raise client.E2EError("Fabric Forest Lantern report field inventory changed")
+    world = report.get("world")
+    if (
+        report.get("schema") != 2
+        or report.get("scenario") != SCENARIO_ID
+        or report.get("lane") != "fabric-1.20.1"
+        or report.get("role") != "host"
+        or report.get("status") != "passed"
+        or report.get("lifecycle_failure") != ""
+        or type(report.get("client_ticks")) is not int
+        or int(report["client_ticks"]) <= 0
+        or not isinstance(world, dict)
+        or tuple(world) != tuple(EXPECTED_WORLD)
+        or world != EXPECTED_WORLD
+        or type(world.get("seed")) is not int
+        or type(world.get("integrated")) is not bool
+        or type(world.get("reopened")) is not bool
+        or report.get("ready_resources") != list(EXPECTED_READY_RESOURCES)
+    ):
+        raise client.E2EError("Fabric Forest Lantern report lifecycle contract is invalid")
+    validate_forest_lantern(report)
+    artifacts = validate_artifact_inventory(report)
+    screenshots = validate_screenshot_inventory(report)
+    validate_assertions(report, screenshots)
+    ratio = validate_screenshot_files(scenario_root, screenshots)
+    return ratio, artifacts
+
+
+def validate_live_evidence(
+    configuration: client.ResolvedConfiguration | None = None,
+    runtime: Path | None = None,
+) -> ForestLanternEvidenceSummary:
+    """Validates the exact live v24 capture without launching or changing it."""
+
+    resolved_configuration = configuration or client.load_configuration()
+    validate_active_profile(resolved_configuration)
+    target_runtime = runtime or client.runtime_root(resolved_configuration)
+    scenario_id = client.resolve_scenario_id(
+        resolved_configuration,
+        SCENARIO_ID,
+    )
+    if scenario_id != SCENARIO_ID:
+        raise client.E2EError("Fabric Forest Lantern scenario selection changed")
+    client.verify_evidence_layout(resolved_configuration, target_runtime)
+    scenario_root = (
+        client.evidence_root(resolved_configuration, target_runtime) / SCENARIO_ID
+    )
+    reports_directory = scenario_root / "reports"
+    if (
+        not reports_directory.is_dir()
+        or reports_directory.is_symlink()
+        or {path.name for path in reports_directory.iterdir()}
+        != {"report.json", "done.marker"}
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern report directory inventory changed"
+        )
+    report_path = reports_directory / "report.json"
+    done_path = reports_directory / "done.marker"
+    if report_path.is_symlink() or done_path.is_symlink():
+        raise client.E2EError("Fabric Forest Lantern report or marker is linked")
+    if done_path.read_text(encoding="utf-8") != "complete\n":
+        raise client.E2EError("Fabric Forest Lantern completion marker is invalid")
+
+    report = evidence.require_json_object(
+        report_path,
+        "Fabric Forest Lantern scenario report",
+    )
+    ratio, artifacts = validate_report_contract(scenario_root, report)
+    assertion_count = evidence.validate_assertions(report)
+    production_digest, harness_digest = evidence.validate_artifacts(
+        resolved_configuration,
+        target_runtime,
+        report,
+    )
+    if (
+        assertion_count != len(EXPECTED_ASSERTION_NAMES)
+        or production_digest != artifacts["production"]["sha256"]
+        or harness_digest != artifacts["harness"]["sha256"]
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern strict evidence differs from artifact validation"
+        )
+
+    screenshot_paths = [
+        evidence.safe_screenshot_path(scenario_root, screenshot["file"])
+        for screenshot in report["screenshots"]
+    ]
+    if any(
+        done_path.stat().st_mtime_ns < path.stat().st_mtime_ns
+        for path in (report_path, *screenshot_paths)
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern completion predates its evidence payload"
+        )
+    scenario_size = sum(
+        path.stat().st_size
+        for path in scenario_root.rglob("*")
+        if path.is_file() and not path.is_symlink()
+    )
+    if scenario_size > evidence.MAXIMUM_SCENARIO_EVIDENCE_SIZE:
+        raise client.E2EError("Fabric Forest Lantern evidence exceeds the size bound")
+    evidence.validate_game_lifecycle(
+        resolved_configuration,
+        target_runtime,
+        SCENARIO_ID,
+        report,
+    )
+    return ForestLanternEvidenceSummary(
+        profile_id=PROFILE_ID,
+        assertion_count=assertion_count,
+        screenshot_count=len(EXPECTED_SCREENSHOTS),
+        minimum_changed_pixel_ratio=ratio,
+        production_sha256=production_digest,
+        harness_sha256=harness_digest,
+    )
+
+
+def validate_archive_inventory(
+    archive_root: Path,
+    include_manifest: bool = True,
+) -> None:
+    if not archive_root.is_dir() or archive_root.is_symlink():
+        raise client.E2EError(
+            f"Fabric Forest Lantern evidence archive is missing or linked: {archive_root}"
+        )
+    if archive_root.name != ARCHIVE_DIRECTORY_NAME:
+        raise client.E2EError(
+            "Fabric Forest Lantern archive directory does not identify profile v24"
+        )
+    files: set[str] = set()
+    directories: set[str] = set()
+    for path in archive_root.rglob("*"):
+        relative_path = path.relative_to(archive_root).as_posix()
+        if path.is_symlink():
+            raise client.E2EError(
+                f"Fabric Forest Lantern archive contains a linked entry: {relative_path}"
+            )
+        if path.is_file():
+            files.add(relative_path)
+        elif path.is_dir():
+            directories.add(relative_path)
+        else:
+            raise client.E2EError(
+                f"Fabric Forest Lantern archive contains a special entry: {relative_path}"
+            )
+    expected_files = set(ARCHIVE_PAYLOAD_PATHS)
+    if include_manifest:
+        expected_files.add(ARCHIVE_MANIFEST_NAME)
+    if files != expected_files or directories != ARCHIVE_DIRECTORIES:
+        raise client.E2EError("Fabric Forest Lantern archive inventory changed")
+    archive_size = sum(
+        path.stat().st_size
+        for path in archive_root.rglob("*")
+        if path.is_file()
+    )
+    if archive_size > evidence.MAXIMUM_SCENARIO_EVIDENCE_SIZE:
+        raise client.E2EError("Fabric Forest Lantern archive exceeds the size bound")
+
+
+def validate_no_competing_forest_lantern_archives(archive_root: Path) -> None:
+    """Requires v24 to be the sole versioned Fabric Forest Lantern archive."""
+    candidates = sorted(
+        (
+            entry
+            for entry in archive_root.parent.iterdir()
+            if FOREST_LANTERN_ARCHIVE_DIRECTORY_PATTERN.fullmatch(entry.name)
+        ),
+        key=lambda entry: entry.name,
+    )
+    if (
+        candidates != [archive_root]
+        or not archive_root.is_dir()
+        or archive_root.is_symlink()
+    ):
+        raise client.E2EError(
+            "The exact sole Fabric Forest Lantern v24 archive is required"
+        )
+
+
+def expected_repository_archive_root(
+    configuration: client.ResolvedConfiguration,
+) -> Path:
+    return client.safe_repository_path(
+        configuration.repository_root,
+        f"docs/evidence/fabric-1.20.1/{ARCHIVE_DIRECTORY_NAME}",
+        "Fabric Forest Lantern evidence archive",
+    )
+
+
+def validate_capture_artifact_lock(
+    configuration: client.ResolvedConfiguration,
+    capture_runtime: Path,
+    report_artifacts: dict[str, dict[str, object]],
+) -> Path:
+    lock = client.load_artifact_lock(configuration, capture_runtime)
+    if (
+        not isinstance(lock, dict)
+        or lock.get("schema") != 2
+        or lock.get("profile_id") != PROFILE_ID
+        or lock.get("artifact_node") != "fabric-1.20.1"
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern capture has no exact schema-2 artifact lock"
+        )
+    locked_artifacts = lock.get("artifacts")
+    if not isinstance(locked_artifacts, dict) or set(locked_artifacts) != {
+        "production",
+        "harness",
+    }:
+        raise client.E2EError(
+            "Fabric Forest Lantern capture artifact lock inventory changed"
+        )
+    for role, mod_id, file_name in EXPECTED_ARTIFACTS:
+        locked = locked_artifacts.get(role)
+        reported = report_artifacts[role]
+        if (
+            not isinstance(locked, dict)
+            or locked.get("mod_id") != mod_id
+            or locked.get("target_file") != file_name
+            or locked.get("size") != reported["size"]
+            or locked.get("sha256") != reported["sha256"]
+        ):
+            raise client.E2EError(
+                f"Fabric Forest Lantern capture {role} artifact lock differs from report"
+            )
+    lock_path = client.artifact_lock_path(configuration, capture_runtime)
+    if not lock_path.is_file() or lock_path.is_symlink():
+        raise client.E2EError(
+            f"Fabric Forest Lantern artifact lock is missing or linked: {lock_path}"
+        )
+    return lock_path
+
+
+def build_archive_manifest(
+    configuration: client.ResolvedConfiguration,
+    profile_manifest_path: Path,
+    capture_runtime: Path,
+    archive_root: Path,
+) -> dict[str, object]:
+    """Builds a seal only from the exact live v24 capture and copied payload."""
+
+    validate_active_profile(configuration)
+    validate_no_competing_forest_lantern_archives(archive_root)
+    expected_profile_path = configuration.repository_root / ACTIVE_PROFILE_RELATIVE_PATH
+    if (
+        profile_manifest_path.resolve() != expected_profile_path.resolve()
+        or not profile_manifest_path.is_file()
+        or profile_manifest_path.is_symlink()
+        or profile_manifest_path.stat().st_size != PROFILE_SIZE
+        or client.sha256_file(profile_manifest_path) != PROFILE_SHA256
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern sealing requires the exact active v24 profile"
+        )
+    validate_archive_inventory(archive_root, include_manifest=False)
+    if archive_root.resolve() != expected_repository_archive_root(configuration).resolve():
+        raise client.E2EError(
+            "Fabric Forest Lantern sealing requires the repository archive destination"
+        )
+
+    expected_capture_runtime = client.runtime_root(configuration)
+    client.ensure_owned_state_roots()
+    if (
+        capture_runtime.resolve() != expected_capture_runtime.resolve()
+        or not capture_runtime.is_dir()
+        or capture_runtime.is_symlink()
+        or capture_runtime.name != PROFILE_ID
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern sealing requires the exact owned v24 runtime"
+        )
+    client.verify_runtime(configuration, capture_runtime, artifact_policy="optional")
+    live_summary = validate_live_evidence(configuration, capture_runtime)
+
+    archive_report = evidence.require_json_object(
+        archive_root / "reports" / "report.json",
+        "Fabric Forest Lantern archived scenario report",
+    )
+    ratio, report_artifacts = validate_report_contract(archive_root, archive_report)
+    if (
+        live_summary.assertion_count != len(EXPECTED_ASSERTION_NAMES)
+        or live_summary.screenshot_count != len(EXPECTED_SCREENSHOTS)
+        or abs(live_summary.minimum_changed_pixel_ratio - ratio) > 1e-12
+        or live_summary.production_sha256 != report_artifacts["production"]["sha256"]
+        or live_summary.harness_sha256 != report_artifacts["harness"]["sha256"]
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern archive differs from strict live validation"
+        )
+
+    capture_scenario_root = (
+        client.evidence_root(configuration, capture_runtime) / SCENARIO_ID
+    )
+    capture_mtime_ns: dict[str, int] = {}
+    files: dict[str, dict[str, object]] = {}
+    for relative_path in ARCHIVE_PAYLOAD_PATHS:
+        archive_path = archive_root / relative_path
+        capture_path = capture_scenario_root / relative_path
+        if not capture_path.is_file() or capture_path.is_symlink():
+            raise client.E2EError(
+                f"Fabric Forest Lantern capture payload is missing or linked: {capture_path}"
+            )
+        if (
+            archive_path.stat().st_size != capture_path.stat().st_size
+            or evidence.sha256_file(archive_path) != evidence.sha256_file(capture_path)
+        ):
+            raise client.E2EError(
+                "Fabric Forest Lantern archive payload differs from capture: "
+                f"{relative_path}"
+            )
+        capture_mtime_ns[relative_path] = capture_path.stat().st_mtime_ns
+        files[relative_path] = {
+            "size": archive_path.stat().st_size,
+            "sha256": evidence.sha256_file(archive_path),
+        }
+    completion_mtime = capture_mtime_ns["reports/done.marker"]
+    if any(
+        completion_mtime < capture_mtime_ns[relative_path]
+        for relative_path in ARCHIVE_PAYLOAD_PATHS
+        if relative_path != "reports/done.marker"
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern capture completion predates copied evidence"
+        )
+    artifact_lock_path = validate_capture_artifact_lock(
+        configuration,
+        capture_runtime,
+        report_artifacts,
+    )
+    return {
+        "schema": 1,
+        "kind": ARCHIVE_KIND,
+        "verification_scope": ARCHIVE_VERIFICATION_SCOPE,
+        "scenario": SCENARIO_ID,
+        "profile": {
+            "id": PROFILE_ID,
+            "manifest_path": ACTIVE_PROFILE_RELATIVE_PATH,
+            "manifest_size": PROFILE_SIZE,
+            "manifest_sha256": PROFILE_SHA256,
+        },
+        "runtime": {
+            "artifact_node": "fabric-1.20.1",
+            "minecraft": "1.20.1",
+            "loader": "fabric",
+            "loader_version": "0.17.3",
+            "java": 17,
+            "capture_kind": "composed-minecraft-framebuffer",
+            "framebuffer_width": 1920,
+            "framebuffer_height": 1080,
+        },
+        "publication": {
+            **ARCHIVE_PUBLICATION_ATTESTATION,
+            "capture_mtime_ns": capture_mtime_ns,
+        },
+        "capture_metadata": {
+            "path": ARCHIVE_CAPTURE_METADATA_PATH,
+            "size": artifact_lock_path.stat().st_size,
+            "sha256": evidence.sha256_file(artifact_lock_path),
+        },
+        "assertion_count": len(EXPECTED_ASSERTION_NAMES),
+        "screenshot_count": len(EXPECTED_SCREENSHOTS),
+        "artifacts": report_artifacts,
+        "files": files,
+    }
+
+
+def write_archive_manifest(
+    configuration: client.ResolvedConfiguration,
+    profile_manifest_path: Path,
+    capture_runtime: Path,
+    archive_root: Path,
+) -> Path:
+    """Atomically creates and immediately validates the one-shot archive seal."""
+
+    manifest_path = archive_root / ARCHIVE_MANIFEST_NAME
+    if manifest_path.exists() or manifest_path.is_symlink():
+        raise client.E2EError(
+            f"Fabric Forest Lantern archive manifest already exists: {manifest_path}"
+        )
+    manifest = build_archive_manifest(
+        configuration,
+        profile_manifest_path,
+        capture_runtime,
+        archive_root,
+    )
+    temporary_path: Path | None = None
+    try:
+        descriptor, raw_temporary_path = tempfile.mkstemp(
+            prefix=".forest-lantern-archive-manifest.",
+            dir=archive_root,
+        )
+        temporary_path = Path(raw_temporary_path)
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as handle:
+            json.dump(manifest, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        try:
+            os.link(temporary_path, manifest_path, follow_symlinks=False)
+        except FileExistsError as exception:
+            raise client.E2EError(
+                f"Fabric Forest Lantern archive manifest already exists: {manifest_path}"
+            ) from exception
+    finally:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+    try:
+        validate_archived_evidence(archive_root)
+    except (client.E2EError, OSError, json.JSONDecodeError):
+        manifest_path.unlink(missing_ok=True)
+        raise
+    return manifest_path
+
+
+def validate_archive_manifest(
+    archive_root: Path,
+    manifest: dict[str, object],
+) -> tuple[dict[str, dict[str, object]], dict[str, dict[str, object]]]:
+    if set(manifest) != {
+        "schema",
+        "kind",
+        "verification_scope",
+        "scenario",
+        "profile",
+        "runtime",
+        "publication",
+        "capture_metadata",
+        "assertion_count",
+        "screenshot_count",
+        "artifacts",
+        "files",
+    }:
+        raise client.E2EError("Fabric Forest Lantern archive manifest fields changed")
+    if (
+        manifest.get("schema") != 1
+        or manifest.get("kind") != ARCHIVE_KIND
+        or manifest.get("verification_scope") != ARCHIVE_VERIFICATION_SCOPE
+        or manifest.get("scenario") != SCENARIO_ID
+        or manifest.get("assertion_count") != len(EXPECTED_ASSERTION_NAMES)
+        or manifest.get("screenshot_count") != len(EXPECTED_SCREENSHOTS)
+    ):
+        raise client.E2EError("Fabric Forest Lantern archive identity is invalid")
+
+    profile = manifest.get("profile")
+    if not isinstance(profile, dict) or profile != {
+        "id": PROFILE_ID,
+        "manifest_path": ACTIVE_PROFILE_RELATIVE_PATH,
+        "manifest_size": PROFILE_SIZE,
+        "manifest_sha256": PROFILE_SHA256,
+    }:
+        raise client.E2EError("Fabric Forest Lantern archive profile is invalid")
+    expected_runtime = {
+        "artifact_node": "fabric-1.20.1",
+        "minecraft": "1.20.1",
+        "loader": "fabric",
+        "loader_version": "0.17.3",
+        "java": 17,
+        "capture_kind": "composed-minecraft-framebuffer",
+        "framebuffer_width": 1920,
+        "framebuffer_height": 1080,
+    }
+    if manifest.get("runtime") != expected_runtime:
+        raise client.E2EError("Fabric Forest Lantern archive runtime is invalid")
+
+    publication = manifest.get("publication")
+    if not isinstance(publication, dict) or set(publication) != {
+        *ARCHIVE_PUBLICATION_ATTESTATION,
+        "capture_mtime_ns",
+    }:
+        raise client.E2EError("Fabric Forest Lantern archive publication is malformed")
+    if any(
+        publication.get(key) != value
+        for key, value in ARCHIVE_PUBLICATION_ATTESTATION.items()
+    ):
+        raise client.E2EError("Fabric Forest Lantern archive publication is invalid")
+    capture_mtime_ns = publication.get("capture_mtime_ns")
+    if (
+        not isinstance(capture_mtime_ns, dict)
+        or set(capture_mtime_ns) != set(ARCHIVE_PAYLOAD_PATHS)
+        or any(
+            type(value) is not int or value <= 0
+            for value in capture_mtime_ns.values()
+        )
+    ):
+        raise client.E2EError("Fabric Forest Lantern archive timestamps are invalid")
+    completion_mtime = capture_mtime_ns["reports/done.marker"]
+    if any(
+        completion_mtime < capture_mtime_ns[path]
+        for path in ARCHIVE_PAYLOAD_PATHS
+        if path != "reports/done.marker"
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern archive completion predates its payload"
+        )
+
+    capture_metadata = manifest.get("capture_metadata")
+    if (
+        not isinstance(capture_metadata, dict)
+        or set(capture_metadata) != {"path", "size", "sha256"}
+        or capture_metadata.get("path") != ARCHIVE_CAPTURE_METADATA_PATH
+        or type(capture_metadata.get("size")) is not int
+        or int(capture_metadata["size"]) <= 0
+    ):
+        raise client.E2EError(
+            "Fabric Forest Lantern archive capture metadata is invalid"
+        )
+    client.validate_hex_digest(
+        capture_metadata.get("sha256"),
+        "Fabric Forest Lantern archived capture metadata",
+    )
+
+    artifacts = manifest.get("artifacts")
+    if not isinstance(artifacts, dict) or list(artifacts) != [
+        "production",
+        "harness",
+    ]:
+        raise client.E2EError("Fabric Forest Lantern archive artifacts changed")
+    validated_artifacts: dict[str, dict[str, object]] = {}
+    for role, mod_id, file_name in EXPECTED_ARTIFACTS:
+        artifact = artifacts.get(role)
+        if (
+            not isinstance(artifact, dict)
+            or set(artifact) != {"mod_id", "file_name", "size", "sha256"}
+            or artifact.get("mod_id") != mod_id
+            or artifact.get("file_name") != file_name
+            or type(artifact.get("size")) is not int
+            or int(artifact["size"]) <= 0
+        ):
+            raise client.E2EError(
+                f"Fabric Forest Lantern archived {role} artifact is invalid"
+            )
+        client.validate_hex_digest(
+            artifact.get("sha256"),
+            f"Fabric Forest Lantern archived {role} artifact",
+        )
+        validated_artifacts[role] = artifact
+
+    files = manifest.get("files")
+    if not isinstance(files, dict) or set(files) != set(ARCHIVE_PAYLOAD_PATHS):
+        raise client.E2EError("Fabric Forest Lantern archive payloads changed")
+    validated_files: dict[str, dict[str, object]] = {}
+    for relative_path in ARCHIVE_PAYLOAD_PATHS:
+        record = files.get(relative_path)
+        if (
+            not isinstance(record, dict)
+            or set(record) != {"size", "sha256"}
+            or type(record.get("size")) is not int
+            or int(record["size"]) <= 0
+        ):
+            raise client.E2EError(
+                f"Fabric Forest Lantern payload record is invalid: {relative_path}"
+            )
+        client.validate_hex_digest(
+            record.get("sha256"),
+            f"Fabric Forest Lantern archived payload {relative_path}",
+        )
+        path = archive_root / relative_path
+        if (
+            path.stat().st_size != record["size"]
+            or evidence.sha256_file(path) != record["sha256"]
+        ):
+            raise client.E2EError(
+                "Fabric Forest Lantern payload differs from manifest: "
+                f"{relative_path}"
+            )
+        validated_files[relative_path] = record
+    return validated_artifacts, validated_files
+
+
+def validate_archived_evidence(
+    archive_root: Path,
+) -> ForestLanternEvidenceSummary:
+    """Validates a self-contained v24 archive without consulting live state."""
+
+    validate_no_competing_forest_lantern_archives(archive_root)
+    validate_archive_inventory(archive_root)
+    manifest = evidence.require_json_object(
+        archive_root / ARCHIVE_MANIFEST_NAME,
+        "Fabric Forest Lantern archive manifest",
+    )
+    manifest_artifacts, _manifest_files = validate_archive_manifest(
+        archive_root,
+        manifest,
+    )
+    done_path = archive_root / "reports" / "done.marker"
+    if done_path.read_text(encoding="utf-8") != "complete\n":
+        raise client.E2EError("Fabric Forest Lantern completion marker is invalid")
+    report = evidence.require_json_object(
+        archive_root / "reports" / "report.json",
+        "Fabric Forest Lantern archived scenario report",
+    )
+    ratio, report_artifacts = validate_report_contract(archive_root, report)
+    if report_artifacts != manifest_artifacts:
+        raise client.E2EError(
+            "Fabric Forest Lantern report artifacts differ from manifest"
+        )
+    return ForestLanternEvidenceSummary(
+        profile_id=PROFILE_ID,
+        assertion_count=len(EXPECTED_ASSERTION_NAMES),
+        screenshot_count=len(EXPECTED_SCREENSHOTS),
+        minimum_changed_pixel_ratio=ratio,
+        production_sha256=str(report_artifacts["production"]["sha256"]),
+        harness_sha256=str(report_artifacts["harness"]["sha256"]),
+    )
+
+
+def parse_arguments() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Validate exact Fabric 1.20.1 Forest Lantern evidence."
+    )
+    operation = parser.add_mutually_exclusive_group(required=True)
+    operation.add_argument(
+        "--live",
+        action="store_true",
+        help="validate the repository-owned v24 capture runtime",
+    )
+    operation.add_argument(
+        "--archive",
+        type=Path,
+        help="validate one frozen v24 archive without live state",
+    )
+    operation.add_argument(
+        "--create-archive-manifest",
+        type=Path,
+        metavar="ARCHIVE",
+        help="seal copied v24 payload from one explicit owned runtime",
+    )
+    parser.add_argument(
+        "--capture-runtime",
+        type=Path,
+        help="exact repository-owned runtime used only while sealing",
+    )
+    parser.add_argument(
+        "--profile-manifest",
+        type=Path,
+        help="exact active v24 manifest used only while sealing",
+    )
+    arguments = parser.parse_args()
+    sealing = arguments.create_archive_manifest is not None
+    auxiliary_arguments = (arguments.capture_runtime, arguments.profile_manifest)
+    if sealing and any(value is None for value in auxiliary_arguments):
+        parser.error(
+            "--create-archive-manifest requires --capture-runtime and "
+            "--profile-manifest"
+        )
+    if not sealing and any(value is not None for value in auxiliary_arguments):
+        parser.error(
+            "--capture-runtime and --profile-manifest are valid only with "
+            "--create-archive-manifest"
+        )
+    return arguments
+
+
+def main() -> int:
+    arguments = parse_arguments()
+    try:
+        if arguments.create_archive_manifest is not None:
+            configuration = client.load_configuration(arguments.profile_manifest)
+            manifest_path = write_archive_manifest(
+                configuration,
+                arguments.profile_manifest,
+                arguments.capture_runtime,
+                arguments.create_archive_manifest,
+            )
+            summary = validate_archived_evidence(arguments.create_archive_manifest)
+            print(f"Created and validated archive manifest: {manifest_path}")
+        elif arguments.archive is not None:
+            summary = validate_archived_evidence(arguments.archive)
+        else:
+            summary = validate_live_evidence()
+    except (client.E2EError, OSError, json.JSONDecodeError) as exception:
+        print(f"error: {exception}", file=sys.stderr)
+        return 2
+    print(
+        f"Validated Fabric {SCENARIO_ID} ({summary.profile_id}): "
+        f"{summary.assertion_count} assertions, "
+        f"{summary.screenshot_count} screenshots, "
+        "minimum placement-transition ratio "
+        f"{summary.minimum_changed_pixel_ratio:.6f}"
+    )
+    print(f"Production SHA-256: {summary.production_sha256}")
+    print(f"Harness SHA-256: {summary.harness_sha256}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

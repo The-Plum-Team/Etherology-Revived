@@ -18,6 +18,10 @@ class ScenarioSelectionTest {
                 ScenarioSelection.ETHEREAL_CHANNEL,
                 ScenarioSelection.parse(ScenarioSelection.ETHEREAL_CHANNEL)
         );
+        assertEquals(
+                ScenarioSelection.FOREST_LANTERN,
+                ScenarioSelection.parse(ScenarioSelection.FOREST_LANTERN)
+        );
     }
 
     @Test
@@ -34,6 +38,10 @@ class ScenarioSelectionTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> ScenarioSelection.parse(" ethereal-channel")
+        );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> ScenarioSelection.parse("forest-lantern ")
         );
         assertThrows(
                 IllegalArgumentException.class,

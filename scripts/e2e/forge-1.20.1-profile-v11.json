@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "profile": {
-    "id": "etherology-e2e-forge-1.20.1-v12",
-    "runtime_directory": "etherology-e2e-forge-1.20.1-v12",
+    "id": "etherology-e2e-forge-1.20.1-v11",
+    "runtime_directory": "etherology-e2e-forge-1.20.1-v11",
     "game_directory": "game",
     "launcher_directory": "launcher"
   },
@@ -53,8 +53,7 @@
     },
     "scenarios": [
       "ethereal-storage",
-      "ethereal-channel",
-      "forest-lantern"
+      "ethereal-channel"
     ]
   },
   "profile_directories": [

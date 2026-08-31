@@ -272,13 +272,15 @@ Server log SHA-256: e2bba0e01d27a7f9f4511d00b2d3fa3a12c8d9fa4b5aaa74cca09ca536d5
 Archive integrity only: current sources and rebuilt artifacts were not compared.
 ```
 
-The complete Python runner/verifier safety suite contains 82 passing tests:
+The current food-item runner/verifier safety suite contains 87 passing tests:
 
 ```bash
-python3 -B -m unittest discover -s scripts/e2e -p 'test_*.py'
+python3 -B -m unittest \
+  scripts/e2e/test_forge_server.py \
+  scripts/e2e/test_forge_server_food_item_evidence_v14.py
 ```
 
-Separately, the executable Gradle interlock task passes 15 non-Minecraft
+Separately, the executable Gradle interlock task passes 20 non-Minecraft
 fixture cases and is wired into `forgeFoodItemRegistryServerSafetyTest`:
 
 ```bash
@@ -286,8 +288,8 @@ fixture cases and is wired into `forgeFoodItemRegistryServerSafetyTest`:
   :forge:1.20.1:serverProbeSafetyInterlockTest
 ```
 
-The 15 Gradle fixture cases and 82 Python tests are distinct suites, not one
-97-test count.
+The 20 Gradle fixture cases and 87 Python tests are distinct suites, not one
+107-test count.
 
 The integrated positive milestone and forward-gate diagnostic are:
 

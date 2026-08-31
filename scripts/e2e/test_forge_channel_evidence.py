@@ -51,8 +51,19 @@ def rgb_png(width: int, height: int, pixels: bytes) -> bytes:
     )
 
 
-def small_capture_configuration() -> forge_client.ResolvedConfiguration:
+def channel_configuration() -> forge_client.ResolvedConfiguration:
     configuration = forge_client.load_configuration()
+    snapshot_path = SCRIPT_DIRECTORY / "forge-1.20.1-profile-v11.json"
+    manifest = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    return replace(
+        configuration,
+        manifest=manifest,
+        profile_manifest_path=snapshot_path,
+    )
+
+
+def small_capture_configuration() -> forge_client.ResolvedConfiguration:
+    configuration = channel_configuration()
     manifest = json.loads(json.dumps(configuration.manifest))
     manifest["evidence"]["capture"]["width"] = 64
     manifest["evidence"]["capture"]["height"] = 64
@@ -341,7 +352,7 @@ def create_archive_fixture(
 
 class ForgeChannelReportTests(unittest.TestCase):
     def test_accepts_exact_channel_assertion_inventory(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
 
         assertions = forge_channel_evidence.validate_report(
             configuration,
@@ -356,7 +367,7 @@ class ForgeChannelReportTests(unittest.TestCase):
         )
 
     def test_requires_exact_capture_time_profile_provenance(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         report["profile_manifest_sha256"] = "0" * 64
 
@@ -367,7 +378,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_a_missing_capture_time_profile_field(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         del report["profile_id"]
 
@@ -375,7 +386,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_missing_conservation_assertion(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         report["assertions"] = [
             assertion
@@ -387,7 +398,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_missing_prepowered_placement_assertion(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         report["assertions"] = [
             assertion
@@ -399,7 +410,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_missing_distinct_fixture_positions_assertion(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         report["assertions"] = [
             assertion
@@ -411,7 +422,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_inexact_native_lever_support_topology(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         replace_assertion_actual(
             report,
@@ -429,7 +440,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_inexact_capture_time_renderer_evidence(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         replace_assertion_actual(
             report,
@@ -444,7 +455,7 @@ class ForgeChannelReportTests(unittest.TestCase):
             forge_channel_evidence.validate_report(configuration, report)
 
     def test_rejects_inexact_capture_time_camera_evidence(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         report = valid_report(configuration)
         replace_assertion_actual(
             report,
@@ -845,7 +856,7 @@ class ForgeChannelArchiveTests(unittest.TestCase):
         profile.write_bytes(
             (
                 self.configuration.repository_root
-                / forge_channel_evidence.ARCHIVED_PROFILE_MANIFEST_PATH
+                / "scripts/e2e/forge-1.20.1-profile-v11.json"
             ).read_bytes()
         )
 
@@ -877,7 +888,7 @@ class ForgeChannelArchiveTests(unittest.TestCase):
         harness.write_bytes(b"harness-artifact")
         tracked_profile = (
             self.configuration.repository_root
-            / forge_channel_evidence.ARCHIVED_PROFILE_MANIFEST_PATH
+            / "scripts/e2e/forge-1.20.1-profile-v11.json"
         )
         profile.write_bytes(tracked_profile.read_bytes())
 
@@ -927,7 +938,7 @@ class ForgeChannelArchiveCreationTests(unittest.TestCase):
 
 class ForgeChannelLifecycleTests(unittest.TestCase):
     def test_accepts_normal_stopped_game_log_and_restarted_save(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         with tempfile.TemporaryDirectory() as temporary_directory:
             state_root = Path(temporary_directory) / ".state"
             runtime = state_root / "runtimes" / forge_channel_evidence.PROFILE_ID
@@ -949,7 +960,7 @@ class ForgeChannelLifecycleTests(unittest.TestCase):
             )
 
     def test_rejects_missing_normal_shutdown_marker(self) -> None:
-        configuration = forge_client.load_configuration()
+        configuration = channel_configuration()
         with tempfile.TemporaryDirectory() as temporary_directory:
             state_root = Path(temporary_directory) / ".state"
             runtime = state_root / "runtimes" / forge_channel_evidence.PROFILE_ID

@@ -7,9 +7,11 @@ final class ScenarioSelection {
     static final String PROPERTY_NAME = "etherology.e2e.scenario";
     static final String ETHEREAL_STORAGE = "ethereal-storage";
     static final String ETHEREAL_CHANNEL = "ethereal-channel";
+    static final String FOREST_LANTERN = "forest-lantern";
     private static final Set<String> SCENARIO_IDS = Set.of(
             ETHEREAL_STORAGE,
-            ETHEREAL_CHANNEL
+            ETHEREAL_CHANNEL,
+            FOREST_LANTERN
     );
 
     private ScenarioSelection() {

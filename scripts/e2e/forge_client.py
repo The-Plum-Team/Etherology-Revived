@@ -236,7 +236,7 @@ def validate_manifest_shape(
     profile_id = safe_leaf_name(profile.get("id"), "profile.id")
     if re.fullmatch(r"[a-z0-9][a-z0-9.-]+", profile_id) is None:
         raise E2EError("The Forge profile id is not stable lowercase text")
-    if profile_id != "etherology-e2e-forge-1.20.1-v11":
+    if profile_id != "etherology-e2e-forge-1.20.1-v12":
         raise E2EError("The Forge profile id differs from the isolated profile contract")
     if profile.get("runtime_directory") != profile_id:
         raise E2EError("The Forge runtime directory must equal its unique profile id")
@@ -288,9 +288,9 @@ def validate_manifest_shape(
     }:
         raise E2EError("The Forge evidence capture contract is invalid")
     scenarios = require_list(evidence, "scenarios")
-    if scenarios != ["ethereal-storage", "ethereal-channel"]:
+    if scenarios != ["ethereal-storage", "ethereal-channel", "forest-lantern"]:
         raise E2EError(
-            "The Forge harness must expose ethereal-storage then ethereal-channel"
+            "The Forge harness must expose storage, channel, then Forest Lantern"
         )
 
     directories = require_list(manifest, "profile_directories")
@@ -530,6 +530,12 @@ def process_state_path(
     return state_root / f"{profile_spec(configuration)['id']}-current.json"
 
 
+def launch_attempt_path(
+    configuration: ResolvedConfiguration, state_root: Path = STATE_ROOT
+) -> Path:
+    return state_root / f"{profile_spec(configuration)['id']}-start.attempted"
+
+
 def profile_directories(configuration: ResolvedConfiguration) -> list[str]:
     return [str(value) for value in require_list(configuration.manifest, "profile_directories")]
 
@@ -554,6 +560,52 @@ def write_private_text_exclusive(path: Path, content: str) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+    directory_descriptor = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory_descriptor)
+    finally:
+        os.close(directory_descriptor)
+
+
+def require_unattempted_profile(
+    configuration: ResolvedConfiguration,
+    state_root: Path = STATE_ROOT,
+) -> None:
+    ensure_owned_state_roots(state_root)
+    attempt = launch_attempt_path(configuration, state_root)
+    if attempt.exists() or attempt.is_symlink():
+        raise E2EError(
+            "The Forge E2E profile already has a start attempt and is consumed: "
+            f"{attempt}"
+        )
+
+
+def reserve_launch_attempt(
+    configuration: ResolvedConfiguration,
+    scenario_id: str,
+    state_root: Path = STATE_ROOT,
+) -> Path:
+    require_unattempted_profile(configuration, state_root)
+    attempt = launch_attempt_path(configuration, state_root)
+    content = (
+        f"profile_id={profile_spec(configuration)['id']}\n"
+        f"scenario={scenario_id}\n"
+        f"controller_pid={os.getpid()}\n"
+    )
+    try:
+        write_private_text_exclusive(attempt, content)
+    except FileExistsError as exception:
+        raise E2EError(
+            "The Forge E2E profile already has a start attempt and is consumed: "
+            f"{attempt}"
+        ) from exception
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot durably reserve the Forge E2E start attempt: {exception}"
+        ) from exception
+    return attempt
 
 
 def write_json_atomic(path: Path, value: dict[str, object]) -> None:
@@ -1587,6 +1639,7 @@ def install_isolated_game(
 
 def provision_profile(configuration: ResolvedConfiguration) -> bool:
     ensure_owned_state_roots()
+    require_unattempted_profile(configuration)
     target_root = runtime_root(configuration)
     if target_root.exists() or target_root.is_symlink():
         verify_profile_marker(configuration, target_root)
@@ -1845,6 +1898,7 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     configured_scenario_id: str | None = None,
 ) -> tuple[Path, list[str]]:
+    require_unattempted_profile(configuration)
     verify_runtime(configuration, artifact_policy="required")
     verify_evidence_layout(configuration)
     java_path = resolve_java_17()
@@ -2115,6 +2169,7 @@ def provision_command() -> int:
 def stage_command() -> int:
     ensure_owned_state_roots()
     configuration = load_configuration()
+    require_unattempted_profile(configuration)
     staged, lock = stage_artifacts(configuration)
     message = "Staged" if staged else "Verified already-staged"
     print(f"{message} Forge production and harness JARs")
@@ -2153,6 +2208,7 @@ def start_command(configured_scenario_id: str | None = None) -> int:
     clear_stale_and_reject_live_owned_clients()
     java_path, command = verify_environment(configuration, scenario_id)
     assert_runtime_not_running(configuration)
+    reserve_launch_attempt(configuration, scenario_id)
     logs_directory = STATE_ROOT / "logs"
     ensure_directory_is_not_linked(logs_directory, "Forge E2E logs directory")
     logs_directory.mkdir(mode=0o700, parents=True, exist_ok=True)

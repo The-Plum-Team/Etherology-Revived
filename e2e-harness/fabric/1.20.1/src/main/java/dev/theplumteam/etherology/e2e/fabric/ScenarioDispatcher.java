@@ -18,7 +18,9 @@ final class ScenarioDispatcher {
             EtherNetworkScenario.SCENARIO_ID,
             EtherNetworkScenario::new,
             MetalBlockRegistryScenario.SCENARIO_ID,
-            MetalBlockRegistryScenario::new
+            MetalBlockRegistryScenario::new,
+            ForestLanternScenario.SCENARIO_ID,
+            ForestLanternScenario::new
     );
 
     private ScenarioDispatcher() {

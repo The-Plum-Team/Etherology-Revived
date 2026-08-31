@@ -584,6 +584,13 @@ def process_state_path(
     return state_root / f"{profile_id}-current.json"
 
 
+def start_attempt_path(
+    configuration: ResolvedConfiguration, state_root: Path = STATE_ROOT
+) -> Path:
+    profile_id = str(profile_spec(configuration)["id"])
+    return state_root / f"{profile_id}-start.attempted"
+
+
 def ensure_directory_is_not_linked(path: Path, description: str) -> None:
     if path.is_symlink():
         raise E2EError(f"{description} must not be a symlink: {path}")
@@ -594,6 +601,17 @@ def ensure_directory_is_not_linked(path: Path, description: str) -> None:
 def ensure_owned_state_roots(state_root: Path = STATE_ROOT) -> None:
     ensure_directory_is_not_linked(state_root, "E2E state root")
     ensure_directory_is_not_linked(state_root / "runtimes", "E2E runtimes root")
+
+
+def require_unattempted_profile(
+    configuration: ResolvedConfiguration, state_root: Path = STATE_ROOT
+) -> None:
+    attempt_path = start_attempt_path(configuration, state_root)
+    if attempt_path.exists() or attempt_path.is_symlink():
+        raise E2EError(
+            "The Fabric client profile already has a start attempt and is consumed: "
+            f"{attempt_path}"
+        )
 
 
 def profile_descriptor(configuration: ResolvedConfiguration) -> dict[str, object]:
@@ -661,6 +679,45 @@ def write_private_text_exclusive(path: Path, content: str) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
         handle.write(content)
+
+
+def write_bytes_exclusive(path: Path, content: bytes) -> None:
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(content)
+        handle.flush()
+        os.fsync(handle.fileno())
+    directory_descriptor = os.open(path.parent, os.O_RDONLY)
+    try:
+        os.fsync(directory_descriptor)
+    finally:
+        os.close(directory_descriptor)
+
+
+def reserve_start_attempt(
+    configuration: ResolvedConfiguration,
+    scenario_id: str,
+    state_root: Path = STATE_ROOT,
+) -> Path:
+    resolved_scenario_id = resolve_scenario_id(configuration, scenario_id)
+    attempt_path = start_attempt_path(configuration, state_root)
+    attempt_content = (
+        f"profile_id={profile_spec(configuration)['id']}\n"
+        f"scenario={resolved_scenario_id}\n"
+        f"pid={os.getpid()}\n"
+    ).encode("utf-8")
+    try:
+        write_bytes_exclusive(attempt_path, attempt_content)
+    except FileExistsError as exception:
+        raise E2EError(
+            "The Fabric client profile already has a start attempt and is consumed: "
+            f"{attempt_path}"
+        ) from exception
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot durably record the Fabric client start attempt: {exception}"
+        ) from exception
+    return attempt_path
 
 
 def write_json_atomic(path: Path, value: dict[str, object]) -> None:
@@ -1783,6 +1840,7 @@ def verify_runtime(
 
 def provision_profile(configuration: ResolvedConfiguration) -> bool:
     ensure_owned_state_roots()
+    require_unattempted_profile(configuration)
     target_root = runtime_root(configuration)
     if target_root.exists() or target_root.is_symlink():
         verify_profile_marker(configuration, target_root)
@@ -1871,6 +1929,7 @@ def assert_runtime_not_running(configuration: ResolvedConfiguration) -> None:
 def stage_artifacts(
     configuration: ResolvedConfiguration,
 ) -> tuple[bool, dict[str, object]]:
+    require_unattempted_profile(configuration)
     assert_runtime_not_running(configuration)
     verify_runtime(configuration, artifact_policy="ignore")
     source_paths = {
@@ -2370,6 +2429,7 @@ def stage_command() -> int:
 def check_command(configured_scenario_id: str | None = None) -> int:
     ensure_owned_state_roots()
     configuration = load_configuration()
+    require_unattempted_profile(configuration)
     scenario_id = resolve_scenario_id(configuration, configured_scenario_id)
     java_path, command = verify_environment(configuration, scenario_id)
     lock = load_artifact_lock(configuration)
@@ -2396,6 +2456,7 @@ def check_command(configured_scenario_id: str | None = None) -> int:
 def start_command(configured_scenario_id: str | None = None) -> int:
     ensure_owned_state_roots()
     configuration = load_configuration()
+    require_unattempted_profile(configuration)
     scenario_id = resolve_scenario_id(configuration, configured_scenario_id)
     clear_stale_and_reject_live_owned_clients()
 
@@ -2403,6 +2464,7 @@ def start_command(configured_scenario_id: str | None = None) -> int:
     assert_runtime_not_running(configuration)
     logs_directory = STATE_ROOT / "logs"
     ensure_directory_is_not_linked(logs_directory, "E2E process logs directory")
+    reserve_start_attempt(configuration, scenario_id)
     logs_directory.mkdir(mode=0o700, parents=True, exist_ok=True)
     timestamp = time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
     log_path = logs_directory / f"fabric-1.20.1-{timestamp}.log"

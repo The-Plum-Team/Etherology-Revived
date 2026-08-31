@@ -28,12 +28,19 @@ ARCHIVED_PHASE_ZERO_FIXTURE = (
     / "fabric-1.20.1"
     / "phase0-smoke-v20"
 )
-CURRENT_PHASE_ZERO_FIXTURE = (
+HISTORICAL_PHASE_ZERO_V21_FIXTURE = (
     REPOSITORY_ROOT
     / "docs"
     / "evidence"
     / "fabric-1.20.1"
     / "phase0-smoke-v21"
+)
+CURRENT_PHASE_ZERO_FIXTURE = (
+    REPOSITORY_ROOT
+    / "docs"
+    / "evidence"
+    / "fabric-1.20.1"
+    / "phase0-smoke-v22"
 )
 
 
@@ -209,8 +216,10 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             summary.harness_sha256,
         )
 
-    def test_validates_the_current_v21_archive(self) -> None:
-        summary = evidence.validate_archived_scenario(CURRENT_PHASE_ZERO_FIXTURE)
+    def test_validates_the_historical_v21_archive(self) -> None:
+        summary = evidence.validate_archived_scenario(
+            HISTORICAL_PHASE_ZERO_V21_FIXTURE
+        )
 
         self.assertEqual("etherology-e2e-fabric-1.20.1-v21", summary.profile_id)
         self.assertEqual(42, summary.assertion_count)
@@ -221,11 +230,27 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             summary.production_sha256,
         )
 
+    def test_validates_the_current_v22_archive(self) -> None:
+        summary = evidence.validate_archived_scenario(CURRENT_PHASE_ZERO_FIXTURE)
+
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v22", summary.profile_id)
+        self.assertEqual(42, summary.assertion_count)
+        self.assertEqual(2, summary.screenshot_count)
+        self.assertAlmostEqual(0.9796228780864198, summary.changed_pixel_ratio)
+        self.assertEqual(
+            "5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd",
+            summary.production_sha256,
+        )
+        self.assertEqual(
+            "b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef",
+            summary.harness_sha256,
+        )
+
     def test_sealing_rejects_linked_owned_state_ancestors_before_capture_access(
         self,
     ) -> None:
         self.manifest_path().unlink()
-        active_archive_root = self.archive_root.with_name("phase0-smoke-v21")
+        active_archive_root = self.archive_root.with_name("phase0-smoke-v22")
         self.archive_root.rename(active_archive_root)
         self.archive_root = active_archive_root
         configuration = client.load_configuration()
@@ -295,7 +320,7 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             / "docs"
             / "evidence"
             / "fabric-1.20.1"
-            / "phase0-smoke-v21"
+            / "phase0-smoke-v22"
         )
         archive_root.parent.mkdir(parents=True)
         self.archive_root.rename(archive_root)
@@ -322,7 +347,7 @@ class ArchivedPhaseZeroEvidenceTests(unittest.TestCase):
             / "e2e"
             / ".state"
             / "runtimes"
-            / "etherology-e2e-fabric-1.20.1-v21"
+            / "etherology-e2e-fabric-1.20.1-v22"
         )
         capture_runtime.mkdir(parents=True)
         lock_error = client.E2EError(

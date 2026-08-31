@@ -89,26 +89,39 @@ and logged no `ERROR` or `FATAL` marker. The historical v2 game-event archive re
 v4 superseded it as the registry-foundation proof. The canonical Attrahite block/drop graph
 remains Fabric-only because the full block and item set is not ported; this synthetic result
 proves the condition and serializer, not Attrahite
-gameplay or drop parity. No screenshots or native sound-playback evidence are claimed. The earlier
-Fabric `v20` packaged client archive remains historical.
+gameplay or drop parity. No screenshots or native sound-playback evidence are claimed.
 
-The packaged Fabric artifact at the material-item checkpoint was exercised in the fresh repository-owned
-`etherology-e2e-fabric-1.20.1-v21` profile after the shared material-item
-rebuild. Its packaged Phase 0 smoke passed 42 of 42 ordered assertions, ran for
-211 client ticks, captured two native 1920x1080 screenshots with a
-`0.9796272183641975` changed-pixel ratio, entered and saved an integrated world,
-and shut down normally. The immutable archive is `phase0-smoke-v21`; its
+The packaged Fabric artifact after the metal-block rebuild was exercised in the
+fresh repository-owned `etherology-e2e-fabric-1.20.1-v22` profile. Its packaged
+Phase 0 smoke passed 42 of 42 ordered assertions, ran for 235 client ticks,
+captured two native 1920x1080 screenshots with a
+`0.9796228780864198` changed-pixel ratio, entered and saved an integrated world,
+and shut down normally. The immutable archive is `phase0-smoke-v22`; its
 profile-manifest SHA-256 is
-`d6fa9ac08407128f34473add51c2f75da703c34c73ac985c7af11b024449d722`
-and its production-JAR SHA-256 is
-`287d0b67e09fadd116905a5588615fae38daf43e22af8cdf0e37546595c38d75`.
-This bounded client smoke does not directly exercise the 14 material IDs or
-their fuel, creative-tab, recipe, or other gameplay consumers; exact current
-cross-loader ownership, IDs, properties, and resources are covered by the
-static artifact gates. The migrated Fabric consumers compile and datagen
-completes, but their individual mappings and behavior remain outside this
-bounded native scenario. It predates the later metal-block rebuild and does not
-prove current client rendering or interaction for those blocks.
+`289eb0c29066990f7ad967b4f141d08bd7823c0cb79bded85faa37907bd1328f`,
+its production-JAR SHA-256 is
+`5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`,
+and its harness-JAR SHA-256 is
+`b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef`.
+The report SHA-256 is
+`a6a682db2ad60a5bb59df05a57cad101278def12989dc9cd092df85dc6b484bd`,
+and the archive-manifest SHA-256 is
+`1f0384073101cd9b6794b6322b941a2fbbfc59bd6210382202bea1b16df3df38`.
+
+This bounded client smoke proves capture-time packaged-artifact startup and
+rendering, integrated-world entry, the existing four-machine fixture mirror,
+save, and normal shutdown. The world fixture is composed of machines; neither
+native screenshot shows or directly interacts with the three metal blocks. The
+run does not prove the material items or food, mining/drop behavior, beacon
+activation, recipes, creative-tab behavior, or other unexercised gameplay.
+Those exact current declarations and resources remain the responsibility of
+the static artifact gates until their own mechanic-level E2E scenarios exist.
+Fabric `v21` and `v20` are immutable historical archives.
+
+The v22 archive seals its capture-time profile, artifact, report, and screenshot
+identity. Archive-only validation does not compare or cryptographically bind
+later sources or rebuilt artifacts; another rebuild requires a fresh v23-or-newer
+profile before equivalent native evidence can be claimed.
 
 The current cumulative server proof is the fresh repository-owned
 `etherology-e2e-forge-server-1.20.1-v13` `metal-block-registry` run. Its

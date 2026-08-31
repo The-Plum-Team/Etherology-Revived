@@ -155,18 +155,86 @@ deterministic verifier:
 Validated ether-network: 46 assertions, 2 screenshots, changed-pixel ratio 0.432843
 ```
 
-## Shared material-item current-artifact smoke (v21)
+## Current packaged-artifact Phase 0 smoke (v22)
+
+The accepted metal-block checkpoint changed the packaged Fabric JAR, so the
+baseline scenario ran in another new repository-owned profile. It reached the
+resource-loaded title screen, created and joined an integrated world, mirrored
+the existing four-machine fixture, force-saved the world, and shut down
+normally. Both screenshots are native composed Minecraft framebuffers.
+
+This is bounded capture-time evidence for packaged-artifact startup and
+rendering, integrated-world entry, the machine fixture mirror, save, and normal
+shutdown. The world fixture contains the Brewing Cauldron, Empowerment Table,
+Ethereal Storage, and Armillary Sphere. It does not show or directly interact
+with `azel_block`, `ethril_block`, or `ebony_block`. It also does not prove the
+material items or food, mining/drop behavior, beacon activation, recipes,
+creative-tab behavior, or any other unexercised gameplay mechanic. Exact
+current metal declarations and resources are checked separately by the static
+artifact gates.
+
+- Profile: `etherology-e2e-fabric-1.20.1-v22`
+- Profile manifest SHA-256:
+  `289eb0c29066990f7ad967b4f141d08bd7823c0cb79bded85faa37907bd1328f`
+- Profile manifest size: `6963` bytes
+- Production JAR SHA-256:
+  `5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd`
+- Harness JAR SHA-256:
+  `b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef`
+- Report status: `passed`
+- Assertions: `42` passed, `0` failed
+- Client ticks: `235`
+- Changed-pixel ratio (title to world): `0.9796228780864198`
+- Screenshot pair: native composed Minecraft framebuffers, `1920x1080`
+
+Frozen file digests:
+
+- `phase0-smoke-v22/archive-manifest.json`:
+  `1f0384073101cd9b6794b6322b941a2fbbfc59bd6210382202bea1b16df3df38`
+- `phase0-smoke-v22/reports/report.json`:
+  `a6a682db2ad60a5bb59df05a57cad101278def12989dc9cd092df85dc6b484bd`
+- `phase0-smoke-v22/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `phase0-smoke-v22/screenshots/phase0-smoke-title.png`:
+  `477bd8dc990c9b0c8b885cdd815a6143aebefd15a72fa76a59044c372495f264`
+- `phase0-smoke-v22/screenshots/phase0-smoke-world.png`:
+  `e2eb9f9d1e8f747d4ddc5d343cf0d5bb9ac63adf02f0b6d49a917f8c4275eb97`
+
+The live runtime and immutable archive passed the deterministic verifier:
+
+```text
+Validated phase0-smoke: 42 assertions, 2 screenshots, changed-pixel ratio 0.979623
+Production SHA-256: 5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd
+Harness SHA-256: b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef
+Validated archived phase0-smoke (etherology-e2e-fabric-1.20.1-v22): 42 assertions, 2 screenshots, changed-pixel ratio 0.979623
+```
+
+The active profile configuration and immutable archive can be checked without
+consulting an external launcher profile or mutating the consumed runtime:
+
+```bash
+python3 -B scripts/e2e/client.py validate
+python3 -B scripts/e2e/evidence.py --archive docs/evidence/fabric-1.20.1/phase0-smoke-v22
+```
+
+The archive manifest seals the capture-time profile, artifact, report, and
+screenshot identities and payload integrity. Archive-only validation does not
+compare or cryptographically bind current or later sources and rebuilt JARs.
+Any later rebuild requires a fresh v23-or-newer profile for equivalent native
+runtime evidence.
+
+## Historical shared material-item smoke (v21)
 
 The shared material-item checkpoint moved 14 behavior-free material and tool
 items into one Common deferred owner consumed by both loaders. A completely new
 repository-owned profile reran the packaged Phase 0 scenario against the exact
-current Fabric artifact. It reached the title screen, created and joined an
+artifact current at that checkpoint. It reached the title screen, created and joined an
 integrated world, mirrored the machine fixture, saved, and shut down normally.
 This is bounded loader/startup evidence: the scenario's 42 baseline assertions
 do not directly address the 14 item IDs, maximum counts, fuel behavior,
 creative-tab placement, recipes, or other gameplay consumers. Exact IDs,
-properties, ownership, and packaged resources are covered by the current
-cross-artifact gates. The migrated Fabric consumers compile and datagen
+properties, ownership, and packaged resources were covered by that checkpoint's
+cross-artifact gates. The migrated Fabric consumers compiled and datagen
 completes; this archive does not individually assert their mappings or behavior.
 
 - Profile: `etherology-e2e-fabric-1.20.1-v21`
@@ -206,11 +274,10 @@ Harness SHA-256: b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953e
 Validated archived phase0-smoke (etherology-e2e-fabric-1.20.1-v21): 42 assertions, 2 screenshots, changed-pixel ratio 0.979627
 ```
 
-The active profile and archive can be checked without consulting any external
-launcher profile:
+The historical archive can be checked without consulting any external launcher
+profile:
 
 ```bash
-python3 -B scripts/e2e/client.py validate
 python3 -B scripts/e2e/evidence.py --archive docs/evidence/fabric-1.20.1/phase0-smoke-v21
 ```
 

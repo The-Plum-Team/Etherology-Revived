@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "kind": "etherology-fabric-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "phase0-smoke",
+  "profile": {
+    "id": "etherology-e2e-fabric-1.20.1-v22",
+    "manifest_path": "scripts/e2e/fabric-1.20.1-profile.json",
+    "manifest_size": 6963,
+    "manifest_sha256": "289eb0c29066990f7ad967b4f141d08bd7823c0cb79bded85faa37907bd1328f"
+  },
+  "runtime": {
+    "artifact_node": "fabric-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 17,
+    "capture_kind": "composed-minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788199792468495666,
+      "reports/done.marker": 1788199792468701879,
+      "screenshots/phase0-smoke-title.png": 1788199777094217855,
+      "screenshots/phase0-smoke-world.png": 1788199788344079540
+    }
+  },
+  "capture_metadata": {
+    "path": "artifact-lock.json",
+    "size": 1119,
+    "sha256": "f6f879b59848df4b2f75a177714299061b2deb0ecdaf90c6fe74e0590c7cfa98"
+  },
+  "assertion_count": 42,
+  "screenshot_count": 2,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-under-test.jar",
+      "size": 2882952,
+      "sha256": "5da646a56d326b5ad5492e5ba936758f3c7723f73d6be314cd79d6881fedc1dd"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 133500,
+      "sha256": "b5b2542003866351e3e0cb18d5fa1380aa73c460b1ca6a9214b52952bab953ef"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 12997,
+      "sha256": "a6a682db2ad60a5bb59df05a57cad101278def12989dc9cd092df85dc6b484bd"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/phase0-smoke-title.png": {
+      "size": 2229573,
+      "sha256": "477bd8dc990c9b0c8b885cdd815a6143aebefd15a72fa76a59044c372495f264"
+    },
+    "screenshots/phase0-smoke-world.png": {
+      "size": 687764,
+      "sha256": "e2eb9f9d1e8f747d4ddc5d343cf0d5bb9ac63adf02f0b6d49a917f8c4275eb97"
+    }
+  }
+}

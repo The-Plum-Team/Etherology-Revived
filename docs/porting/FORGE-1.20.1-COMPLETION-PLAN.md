@@ -177,12 +177,15 @@ Accepted bounded game-event and loot-condition foundation:
 - This is a headless registry proof, so it produces no screenshots. It does not satisfy native
   sound playback, Forge's deferred custom sculk frequency, or the full-catalog placement/save
   smoke. The immutable v2 game-event archive remains historical evidence; v4 superseded it as the
-  registry-foundation proof. The repository-owned Fabric `v21` Phase 0 smoke exercised the
-  packaged client artifact at the shared material-item checkpoint and passed 42 of 42
-  baseline assertions. It does not directly exercise those 14 material IDs or their gameplay
-  consumers and predates the metal-block rebuild; current cross-loader declarations remain a
-  static artifact proof, with no current metal-block client-rendering capture. Fabric
-  `v20` remains an immutable historical archive.
+  registry-foundation proof. The repository-owned Fabric `v22` Phase 0 smoke exercised the
+  packaged client artifact after the metal-block rebuild and passed 42 of 42 baseline assertions
+  with two native 1920x1080 screenshots. It proves capture-time startup and rendering,
+  integrated-world entry, the existing four-machine fixture mirror, save, and shutdown. It does
+  not show or directly interact with the three metal blocks and does not prove material or food
+  gameplay, mining, drops, beacon behavior, recipes, creative-tab behavior, or other unexercised
+  consumers. Current cross-loader declarations remain a separate static artifact proof. The
+  immutable Fabric `v21` and `v20` archives are historical. The v22 archive binds capture-time
+  profile, artifact, report, and screenshot identities, not later sources or rebuilt JARs.
 
 Accepted bounded Ether-source reload foundation:
 

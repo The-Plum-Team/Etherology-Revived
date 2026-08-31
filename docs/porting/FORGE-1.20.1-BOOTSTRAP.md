@@ -370,12 +370,17 @@ and works around a proven non-daemon Loom-userdev thread leak that would otherwi
 alive; it does not enter the production artifact. The external runner bounds and validates the
 process log, server log, report, saved world, lifecycle, crash state, completion-marker order, and
 exit result.
-The repository-owned Fabric `v21` Phase 0 smoke ran the packaged production JAR
-at the shared material-item checkpoint and passed 42 of 42
-baseline assertions. It proves bounded client startup, integrated-world entry,
-fixture mirroring, save, and shutdown, not direct gameplay coverage of the 14
-material items. It predates the metal-block rebuild and does not prove current
-client rendering for those blocks. The immutable Fabric `v20` archive remains historical.
+The fresh repository-owned Fabric `v22` Phase 0 smoke ran the packaged
+production JAR after the metal-block rebuild and passed 42 of 42 baseline
+assertions with two native 1920x1080 screenshots. It proves capture-time
+packaged-artifact startup and rendering, integrated-world entry, the existing
+four-machine fixture mirror, save, and shutdown. The fixture screenshots do not
+show or directly interact with the three metal blocks, and the run does not
+prove material or food gameplay, mining, drops, beacon behavior, recipes,
+creative-tab behavior, or other unexercised consumers. Fabric `v21` and `v20`
+remain immutable historical archives. The v22 archive seals capture-time
+artifact and payload identity but does not bind later sources or rebuilt JARs;
+current static artifact gates remain a separate proof boundary.
 
 ## Accepted bounded Ether-source reload milestone
 

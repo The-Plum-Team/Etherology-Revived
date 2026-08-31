@@ -5,7 +5,7 @@ copies, registers, inspects, or launches an existing game profile. Its only
 game directory is below the ignored repository path:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21/game/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v22/game/
 ```
 
 The parent runtime must contain the exact provenance marker written by this
@@ -13,13 +13,14 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
-The tracked v21 profile and its accepted runtime have already been consumed and
-are immutable. The lifecycle commands below document the harness, but
-`provision`, `stage`, `check`, `start`, `stop`, evidence collection, and archive
-creation must not be run against the v21 literals. Before another native launch,
+The tracked v22 profile names the consumed repository-owned runtime whose one
+accepted capture is now sealed. The v20, v21, and v22 profiles, runtimes, and
+archives are immutable. `client.py validate` and archive-only validation are
+safe because they do not mutate or launch the runtime. Do not rerun `provision`,
+`stage`, `start`, live capture, or archive-manifest creation while any active
+literal still names v22. Before another lifecycle action or native launch,
 advance the profile ID, runtime directory, snapshots, tests, and archive target
-to one new unused version. Configuration validation and validation of the frozen
-v21 archive remain safe.
+to a new unused v23-or-newer version.
 
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
@@ -36,7 +37,19 @@ must also be nested in the production Etherology JAR. None of those are added
 as a second root mod. The packaged E2E harness is the only additional local
 root mod.
 
-## Prepare without launching
+## Validate the consumed profile without launching
+
+Validate the tracked configuration without creating or launching a game:
+
+```bash
+python3 -B scripts/e2e/client.py validate
+```
+
+The remaining preparation and lifecycle commands in this document describe the
+next-profile workflow. They must not run until every pinned v22 literal has been
+advanced to one fresh v23-or-newer profile.
+
+## Prepare a future profile without launching
 
 Install the pinned launcher helper into ignored repository state:
 
@@ -45,13 +58,7 @@ python3 -m pip install --target scripts/e2e/.state/python \
   -r scripts/e2e/requirements.txt
 ```
 
-Validate the tracked configuration without creating or launching a game:
-
-```bash
-python3 -B scripts/e2e/client.py validate
-```
-
-Provision the new isolated runtime:
+After advancing every profile literal, provision the new isolated runtime:
 
 ```bash
 python3 -B scripts/e2e/client.py provision
@@ -65,7 +72,7 @@ not search launcher application folders. It also records the inherited vanilla
 client JAR explicitly because the pinned launcher helper otherwise generates a
 Fabric classpath ending in a nonexistent version JAR.
 
-## Pin the current production and harness builds
+## Pin future production and harness builds
 
 Build both separate artifacts, run the focused harness tests, verify isolation,
 then stage them together:
@@ -129,9 +136,9 @@ The stable Fabric entrypoint remains
 `dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness`, so the isolated profile
 identity and staged-artifact contract do not change.
 
-## Client lifecycle
+## Future-profile client lifecycle
 
-Only after `check` succeeds:
+Only after `check` succeeds for the fresh v23-or-newer profile:
 
 ```bash
 python3 -B scripts/e2e/client.py start --scenario phase0-smoke
@@ -161,17 +168,11 @@ after verifying each marker, game directory, PID, and Knot command, use:
 python3 -B scripts/e2e/client.py stop-all-owned
 ```
 
-Minecraft screenshots are isolated at:
+Minecraft's `ScreenshotRecorder` writes the native captures directly into the
+fail-closed scenario evidence tree created by `provision`:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21/game/screenshots/
-```
-
-Those native files are raw captures. `provision` also creates a fail-closed
-scenario evidence tree at:
-
-```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21/evidence/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v22/evidence/
   <scenario>/
     reports/
     screenshots/
@@ -191,23 +192,24 @@ download dependencies, create a game runtime, or launch a process:
 python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py
 ```
 
-After the selected scenario shuts down, validate its frozen report, artifacts,
-screenshots, world, and logs before copying evidence into `docs/evidence`:
+For a future v23-or-newer capture, after the selected scenario shuts down,
+validate its frozen report, artifacts, screenshots, world, and logs before
+copying evidence into `docs/evidence`:
 
 ```bash
 python3 -B scripts/e2e/evidence.py --scenario phase0-smoke
 ```
 
-After first advancing every profile/runtime/archive literal to a new unused
-version, copy only the new accepted Phase 0 report, completion marker, and two
-report-named screenshots into that version's repository archive. Seal the new
-archive once from its exact tracked profile and exact owned runtime. The v21
-command below records the historical accepted workflow and must not be rerun:
+The following v22 command records the already-completed one-time publication
+shape. Do not rerun it. For the next capture, first advance every path and
+profile literal to v23 or newer, copy only the accepted Phase 0 report,
+completion marker, and two report-named screenshots, then seal that archive
+once from the exact tracked profile and exact owned runtime:
 
 ```bash
 python3 -B scripts/e2e/evidence.py \
-  --create-archive-manifest docs/evidence/fabric-1.20.1/phase0-smoke-v21 \
-  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v21 \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/phase0-smoke-v22 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v22 \
   --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
 ```
 
@@ -219,7 +221,7 @@ live runtime state:
 
 ```bash
 python3 -B scripts/e2e/evidence.py \
-  --archive docs/evidence/fabric-1.20.1/phase0-smoke-v21
+  --archive docs/evidence/fabric-1.20.1/phase0-smoke-v22
 ```
 
 ## Forge 1.20.1 packaged client
@@ -696,12 +698,14 @@ Attrahite gameplay or drop parity. This bounded run also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
-47 has no supported equivalent and remains deferred. The Fabric `v21`
-Phase 0 archive proves that the packaged client artifact at the material-item checkpoint boots, enters
-and saves an integrated world, mirrors the fixture, and shuts down normally;
-its 42 baseline assertions do not directly exercise the 14 shared material
-items. It predates the metal-block rebuild and is not current client-rendering
-evidence for those blocks. The immutable Fabric `v20` archive remains historical. The immutable v2
+47 has no supported equivalent and remains deferred. The Fabric `v22` Phase 0
+archive proves capture-time startup and rendering of the packaged artifact
+after the metal-block rebuild, integrated-world entry, the existing
+four-machine fixture mirror, save, and normal shutdown. Its two screenshots do
+not show or directly interact with the three metal blocks, and its 42 baseline
+assertions do not prove food, mining, drops, beacons, recipes, creative-tab
+behavior, or other unexercised gameplay. The immutable Fabric `v21` and `v20`
+archives remain historical. The immutable v2
 game-event-only archive remains historical evidence;
 v4 superseded it as the registry-foundation proof, and the historical v4
 verifier intentionally does not accept v2 as its active archive. The v6

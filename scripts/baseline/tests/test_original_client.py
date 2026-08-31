@@ -301,11 +301,18 @@ def configure_synthetic_runtime_manifest(manifest: dict[str, object]) -> None:
             }
         )
     fabric_content = compact_json_bytes(fixture_fabric_profile(manifest))
+    fabric_snapshot_content = fabric_content + b"\n"
     fabric_profile.update(
         {
             "size": len(fabric_content),
             "sha1": hashlib.sha1(fabric_content).hexdigest(),
             "sha256": hashlib.sha256(fabric_content).hexdigest(),
+            "snapshot": {
+                "path": "scripts/baseline/fixtures/"
+                "fabric-loader-0.17.3-1.21.1-profile.json",
+                "size": len(fabric_snapshot_content),
+                "sha256": hashlib.sha256(fabric_snapshot_content).hexdigest(),
+            },
         }
     )
 
@@ -410,6 +417,12 @@ def reference_fixture(
     state.mkdir(parents=True)
     manifest = json.loads(TRACKED_MANIFEST_PATH.read_text(encoding="utf-8"))
     configure_synthetic_runtime_manifest(manifest)
+    fabric_snapshot = manifest["runtime"]["fabric_profile"]["snapshot"]
+    fabric_snapshot_path = repository / fabric_snapshot["path"]
+    fabric_snapshot_path.parent.mkdir(parents=True)
+    fabric_snapshot_path.write_bytes(
+        compact_json_bytes(fixture_fabric_profile(manifest)) + b"\n"
+    )
     bundle = manifest["reference_bundle"]
     bundle["path"] = "scripts/baseline/.state/reference.mrpack"
     member_contents: dict[str, bytes] = {}
@@ -876,6 +889,21 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertEqual(fabric_profile["size"], 2847)
         self.assertEqual(
             fabric_profile["sha256"],
+            "95904f86cb85064223216f6ff5cd14517bd1a30169f93d88a2857654979561bf",
+        )
+        self.assertEqual(
+            fabric_profile["snapshot"],
+            {
+                "path": "scripts/baseline/fixtures/"
+                "fabric-loader-0.17.3-1.21.1-profile.json",
+                "size": 2848,
+                "sha256": "089b5998a295e3ba5ab6119354f76d2cb57fca4050806cc10329523fb480b9cb",
+            },
+        )
+        fabric_response = client.verify_tracked_fabric_profile_snapshot(configuration)
+        self.assertEqual(len(fabric_response), 2847)
+        self.assertEqual(
+            hashlib.sha256(fabric_response).hexdigest(),
             "95904f86cb85064223216f6ff5cd14517bd1a30169f93d88a2857654979561bf",
         )
         self.assertEqual(
@@ -1798,6 +1826,21 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
             ):
                 with self.assertRaisesRegex(client.BaselineError, "no java fixture"):
                     client.provision_profile(configuration, runtimes_root)
+            self.assertFalse(runtimes_root.exists())
+            self.assertFalse(runtimes_root.parent.exists())
+
+    def test_provision_rejects_a_tampered_fabric_snapshot_before_runtime_mutation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            configuration.fabric_profile_snapshot_path.write_bytes(b"tampered\n")
+            runtimes_root = temporary_root / "new-state" / "runtimes"
+            with mock.patch.object(client, "resolve_java_21") as resolve_java:
+                with self.assertRaisesRegex(client.BaselineError, "Fabric.*snapshot"):
+                    client.provision_profile(configuration, runtimes_root)
+            resolve_java.assert_not_called()
             self.assertFalse(runtimes_root.exists())
             self.assertFalse(runtimes_root.parent.exists())
 

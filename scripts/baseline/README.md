@@ -17,11 +17,15 @@ Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
 Runtime authority is byte-exact as well. The manifest records the official
-Minecraft version JSON, asset index, client JAR, official Fabric loader profile,
-and all eight Fabric library JARs by URL, size, SHA-1, and SHA-256 where the
-upstream format exposes both hashes. The Mojang metadata and asset index are the
-fresh-install responses observed in 2026, not a claim about release-day 2024
-bytes. A changed response at either mutable metadata endpoint fails closed.
+Minecraft version JSON, asset index, client JAR, a tracked official Fabric
+loader-profile response, and all eight Fabric library JARs by URL, size, SHA-1,
+and SHA-256 where the upstream format exposes both hashes. The Mojang metadata
+and asset index are the fresh-install responses observed in 2026, not a claim
+about release-day 2024 bytes. Fabric Meta stamps every profile response with
+the request time, so the exact response captured on 2026-08-30 is committed as
+a separately hash-pinned fixture; the endpoint URL remains provenance, not a
+provisioning input. Any change to a tracked or downloaded authority fails
+closed.
 
 The controller has no profile-path option and no adopt, reset, or delete action.
 It does not read launcher accounts, Modrinth metadata, Modrinth profiles, or any
@@ -116,13 +120,13 @@ python3 -B scripts/baseline/original_client.py run --scenario phase0-smoke
 ```
 
 - `provision` is the controller's explicit dependency-download phase. It
-  preflights the complete pinned Python launcher/HTTP stack and Java 21 before
-  creating a runtime root. It then
+  validates the tracked Fabric response, complete pinned Python launcher/HTTP
+  stack, and Java 21 before creating a runtime root. It then
   installs vanilla Minecraft in a killable owned worker with a hard one-hour
   parent deadline, replaces the generated version JSON with the pinned
-  no-bundled-runtime projection, and
-  downloads the pinned Fabric profile and its eight libraries directly. No
-  Fabric installer or Mojang Java runtime executes or remains. Before atomic
+  no-bundled-runtime projection, copies the validated Fabric response into the
+  owned installer directory, and downloads its eight pinned libraries directly.
+  No Fabric installer or Mojang Java runtime executes or remains. Before atomic
   publication, it verifies 63 selected macOS vanilla libraries, eight Fabric
   libraries, the client JAR, all 16 native-classifier JAR selections, every
   asset object, both source metadata files and their projections, and the

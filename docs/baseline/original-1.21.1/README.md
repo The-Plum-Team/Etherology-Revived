@@ -46,9 +46,12 @@ controller, so this is not original-client runtime proof.
 The runtime contract also pins the official Minecraft version JSON, asset
 index, client JAR, Fabric loader profile, and each of the eight Fabric library
 JARs by exact byte identity. Its Mojang metadata represents a reproducible fresh
-install observed in 2026, not release-day 2024 bytes. Provisioning installs the
-Fabric profile and libraries directly, without executing a Fabric installer or
-installing Mojang's bundled Java runtime.
+install observed in 2026, not release-day 2024 bytes. Because Fabric Meta stamps
+the profile with each request time, the exact official response captured on
+2026-08-30 is a separately hash-pinned repository fixture and its URL is retained
+only as provenance. Provisioning copies that validated response and downloads
+the libraries directly, without executing a Fabric installer or installing
+Mojang's bundled Java runtime.
 
 ### `source-0.1.8`
 

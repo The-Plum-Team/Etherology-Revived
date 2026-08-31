@@ -235,6 +235,7 @@ class Configuration:
     repository_root: Path
     bundle_path: Path
     harness_path: Path
+    fabric_profile_snapshot_path: Path
 
 
 @dataclass(frozen=True)
@@ -585,7 +586,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
     fabric_profile = require_object(runtime, "fabric_profile")
     require_exact_fields(
         fabric_profile,
-        {"url", "size", "sha1", "sha256", "libraries"},
+        {"url", "size", "sha1", "sha256", "snapshot", "libraries"},
         "The pinned Fabric profile object",
     )
     validate_pinned_https_url(
@@ -599,6 +600,28 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         raise BaselineError("The pinned Fabric profile size is invalid")
     validate_sha1(fabric_profile.get("sha1"), "Fabric loader profile")
     validate_sha256(fabric_profile.get("sha256"), "Fabric loader profile")
+    fabric_snapshot = require_object(fabric_profile, "snapshot")
+    require_exact_fields(
+        fabric_snapshot,
+        {"path", "size", "sha256"},
+        "The tracked Fabric profile snapshot object",
+    )
+    if (
+        fabric_snapshot.get("path")
+        != "scripts/baseline/fixtures/fabric-loader-0.17.3-1.21.1-profile.json"
+    ):
+        raise BaselineError("The tracked Fabric profile snapshot path is invalid")
+    fabric_snapshot_size = fabric_snapshot.get("size")
+    if (
+        type(fabric_snapshot_size) is not int
+        or int(fabric_snapshot_size) != int(fabric_profile_size) + 1
+    ):
+        raise BaselineError(
+            "The tracked Fabric profile snapshot must be the pinned response plus one newline"
+        )
+    validate_sha256(
+        fabric_snapshot.get("sha256"), "tracked Fabric loader profile snapshot"
+    )
     fabric_libraries = require_list(fabric_profile, "libraries")
     if len(fabric_libraries) != 8:
         raise BaselineError("The Fabric profile must pin exactly eight libraries")
@@ -799,12 +822,22 @@ def load_configuration(
     harness_path = safe_repository_path(
         repository, harness.get("path"), "capture.harness.path"
     )
+    fabric_profile = require_object(
+        require_object(manifest, "runtime"), "fabric_profile"
+    )
+    fabric_snapshot = require_object(fabric_profile, "snapshot")
+    fabric_profile_snapshot_path = safe_repository_path(
+        repository,
+        fabric_snapshot.get("path"),
+        "runtime.fabric_profile.snapshot.path",
+    )
     return Configuration(
         manifest,
         manifest_file,
         repository,
         bundle_path,
         harness_path,
+        fabric_profile_snapshot_path,
     )
 
 
@@ -1483,6 +1516,12 @@ def write_json_atomic(path: Path, value: dict[str, object]) -> None:
 def write_text_exclusive(path: Path, content: str) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+        handle.write(content)
+
+
+def write_bytes_exclusive(path: Path, content: bytes) -> None:
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "wb") as handle:
         handle.write(content)
 
 
@@ -2671,20 +2710,10 @@ def verify_pinned_launcher_metadata(
         )
 
 
-def verify_official_fabric_profile(
-    configuration: Configuration, root: Path
-) -> dict[str, object]:
+def validate_fabric_profile_contract(
+    configuration: Configuration, profile: dict[str, object]
+) -> None:
     pinned = require_object(runtime_spec(configuration), "fabric_profile")
-    source_path = pinned_fabric_profile_path(configuration, root)
-    verify_exact_file(
-        source_path,
-        str(pinned["sha256"]),
-        int(pinned["size"]),
-        "Pinned official Fabric loader profile",
-    )
-    if sha1_file(source_path) != pinned["sha1"]:
-        raise BaselineError("Pinned Fabric loader profile failed SHA-1 validation")
-    profile = load_json_object(source_path, "Pinned official Fabric loader profile")
     minecraft_version = str(runtime_spec(configuration)["minecraft_version"])
     raw_libraries = profile.get("libraries")
     expected_coordinates = [
@@ -2701,6 +2730,70 @@ def verify_official_fabric_profile(
         or [value.get("name") for value in raw_libraries] != expected_coordinates
     ):
         raise BaselineError("Pinned Fabric loader profile has an unexpected contract")
+
+
+def verify_tracked_fabric_profile_snapshot(configuration: Configuration) -> bytes:
+    pinned = require_object(runtime_spec(configuration), "fabric_profile")
+    snapshot = require_object(pinned, "snapshot")
+    source_path = configuration.fabric_profile_snapshot_path
+    verify_exact_file(
+        source_path,
+        str(snapshot["sha256"]),
+        int(snapshot["size"]),
+        "Tracked Fabric loader profile snapshot",
+    )
+    try:
+        snapshot_content = source_path.read_bytes()
+    except OSError as exception:
+        raise BaselineError(
+            f"Cannot read tracked Fabric loader profile snapshot {source_path}: {exception}"
+        ) from exception
+    if not snapshot_content.endswith(b"\n") or snapshot_content.endswith(b"\n\n"):
+        raise BaselineError(
+            "Tracked Fabric loader profile snapshot must end in exactly one newline"
+        )
+    response_content = snapshot_content[:-1]
+    if len(response_content) != int(pinned["size"]):
+        raise BaselineError(
+            "Tracked Fabric loader profile response has an unexpected byte length"
+        )
+    if hashlib.sha1(response_content).hexdigest() != pinned["sha1"]:
+        raise BaselineError(
+            "Tracked Fabric loader profile response failed SHA-1 validation"
+        )
+    if hashlib.sha256(response_content).hexdigest() != pinned["sha256"]:
+        raise BaselineError(
+            "Tracked Fabric loader profile response failed SHA-256 validation"
+        )
+    try:
+        raw_profile = json.loads(response_content.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exception:
+        raise BaselineError(
+            f"Tracked Fabric loader profile snapshot is invalid JSON: {exception}"
+        ) from exception
+    if not isinstance(raw_profile, dict):
+        raise BaselineError(
+            "Tracked Fabric loader profile snapshot must contain a JSON object"
+        )
+    validate_fabric_profile_contract(configuration, raw_profile)
+    return response_content
+
+
+def verify_official_fabric_profile(
+    configuration: Configuration, root: Path
+) -> dict[str, object]:
+    pinned = require_object(runtime_spec(configuration), "fabric_profile")
+    source_path = pinned_fabric_profile_path(configuration, root)
+    verify_exact_file(
+        source_path,
+        str(pinned["sha256"]),
+        int(pinned["size"]),
+        "Pinned official Fabric loader profile",
+    )
+    if sha1_file(source_path) != pinned["sha1"]:
+        raise BaselineError("Pinned Fabric loader profile failed SHA-1 validation")
+    profile = load_json_object(source_path, "Pinned official Fabric loader profile")
+    validate_fabric_profile_contract(configuration, profile)
     return profile
 
 
@@ -3001,6 +3094,7 @@ def remove_owned_staging_directory(
 def provision_profile(
     configuration: Configuration, runtimes_root: Path = RUNTIMES_ROOT
 ) -> bool:
+    fabric_profile_content = verify_tracked_fabric_profile_snapshot(configuration)
     verify_reference_bundle(configuration)
     verify_harness_artifact(configuration)
     preflight_launcher_import_resolution()
@@ -3052,15 +3146,9 @@ def provision_profile(
             "Official Minecraft metadata",
             int(pinned_metadata["size"]),
         )
-        pinned_fabric_profile = require_object(
-            runtime_spec(configuration), "fabric_profile"
-        )
-        download_pinned_file(
-            str(pinned_fabric_profile["url"]),
+        write_bytes_exclusive(
             pinned_fabric_profile_path(configuration, staging),
-            str(pinned_fabric_profile["sha256"]),
-            "Official Fabric loader profile",
-            int(pinned_fabric_profile["size"]),
+            fabric_profile_content,
         )
         write_pinned_launcher_metadata(configuration, staging)
         install_isolated_game(configuration, staging)
@@ -5586,12 +5674,16 @@ def _run_owned_client_locked(
 
 def validate_command() -> int:
     configuration = load_configuration()
+    verify_tracked_fabric_profile_snapshot(configuration)
     member_mod_ids = verify_reference_bundle(configuration)
     verify_harness_artifact(configuration)
     preflight_launcher_import_resolution()
     print(f"Validated profile: {profile_spec(configuration)['id']}")
     print(f"Published bundle SHA-256: {bundle_spec(configuration)['sha256']}")
     print(f"Harness SHA-256: {harness_spec(configuration)['sha256']}")
+    fabric_profile = require_object(runtime_spec(configuration), "fabric_profile")
+    fabric_snapshot = require_object(fabric_profile, "snapshot")
+    print(f"Fabric profile snapshot SHA-256: {fabric_snapshot['sha256']}")
     print(f"Pinned top-level JAR members: {len(member_mod_ids)}")
     print("External game profiles consulted: 0")
     return 0

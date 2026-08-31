@@ -116,6 +116,11 @@
       "size": 2847,
       "sha1": "45cebc4643ef2ef296e0162334596cdc183def04",
       "sha256": "95904f86cb85064223216f6ff5cd14517bd1a30169f93d88a2857654979561bf",
+      "snapshot": {
+        "path": "scripts/baseline/fixtures/fabric-loader-0.17.3-1.21.1-profile.json",
+        "size": 2848,
+        "sha256": "089b5998a295e3ba5ab6119354f76d2cb57fca4050806cc10329523fb480b9cb"
+      },
       "libraries": [
         {
           "coordinate": "org.ow2.asm:asm:9.9",

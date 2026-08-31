@@ -1,10 +1,12 @@
 package ru.feytox.etherology.bootstrap;
 
 import ru.feytox.etherology.block.forestLantern.ForestLanternBlock;
+import ru.feytox.etherology.registry.block.SharedAttrahiteBlocks;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.block.SharedBlocks;
 import ru.feytox.etherology.registry.block.SharedForestLanternBlocks;
 import ru.feytox.etherology.registry.block.SharedMetalBlocks;
+import ru.feytox.etherology.registry.item.SharedAttrahiteBlockItems;
 import ru.feytox.etherology.registry.item.SharedFoodItems;
 import ru.feytox.etherology.registry.item.SharedForestLanternBlockItems;
 import ru.feytox.etherology.registry.item.SharedItems;
@@ -42,8 +44,10 @@ public final class EtherologyBootstrap {
         SharedBlocks.register();
         SharedMetalBlocks.register();
         SharedForestLanternBlocks.register();
+        SharedAttrahiteBlocks.register();
         SharedMetalBlockItems.register();
         SharedForestLanternBlockItems.register();
+        SharedAttrahiteBlockItems.register();
         SharedItems.register();
         SharedMaterialItems.register();
         SharedFoodItems.register();

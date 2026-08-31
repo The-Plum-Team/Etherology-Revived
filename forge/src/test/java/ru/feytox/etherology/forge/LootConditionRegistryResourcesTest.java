@@ -69,7 +69,8 @@ final class LootConditionRegistryResourcesTest {
     }
 
     @Test
-    void onlyFabricPackagesTheUnportedAttrahiteConsumer() throws IOException {
+    void everyApplicationArtifactPackagesTheCanonicalAttrahiteConsumer()
+            throws IOException {
         Path canonicalLootTable = requiredPath(
                 "etherology.lootConditions.attrahiteLootTable"
         );
@@ -87,7 +88,7 @@ final class LootConditionRegistryResourcesTest {
                 int resourceCount = (int) entryNames.stream()
                         .filter(ATTRAHITE_LOOT_TABLE::equals)
                         .count();
-                int expectedCount = artifact.includesCanonicalFabricResources() ? 1 : 0;
+                int expectedCount = artifact.includesCanonicalApplicationResources() ? 1 : 0;
                 assertEquals(expectedCount, resourceCount, artifact.description());
                 if (expectedCount == 1) {
                     try (InputStream resource = jar.getInputStream(
@@ -615,7 +616,7 @@ final class LootConditionRegistryResourcesTest {
                         "Forge shadow JAR",
                         requiredPath("etherology.lootConditions.forgeShadowJar"),
                         false,
-                        false
+                        true
                 )
         );
     }
@@ -655,7 +656,7 @@ final class LootConditionRegistryResourcesTest {
             String description,
             Path path,
             boolean fabricApplication,
-            boolean includesCanonicalFabricResources
+            boolean includesCanonicalApplicationResources
     ) {
 
         private JarFile open() throws IOException {

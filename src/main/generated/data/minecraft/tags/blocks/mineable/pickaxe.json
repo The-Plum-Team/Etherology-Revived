@@ -1,18 +1,9 @@
 {
   "replace": false,
   "values": [
-    {
-      "id": "etherology:attrahite_brick_slab",
-      "required": false
-    },
-    {
-      "id": "etherology:attrahite_brick_stairs",
-      "required": false
-    },
-    {
-      "id": "etherology:attrahite_bricks",
-      "required": false
-    },
+    "etherology:attrahite_brick_slab",
+    "etherology:attrahite_brick_stairs",
+    "etherology:attrahite_bricks",
     {
       "id": "etherology:polished_slitherite",
       "required": false
@@ -211,10 +202,7 @@
       "id": "etherology:samovar",
       "required": false
     },
-    {
-      "id": "etherology:attrahite",
-      "required": false
-    },
+    "etherology:attrahite",
     {
       "id": "etherology:tuning_fork",
       "required": false

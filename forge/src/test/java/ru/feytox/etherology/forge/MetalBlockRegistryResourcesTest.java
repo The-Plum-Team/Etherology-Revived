@@ -213,6 +213,10 @@ final class MetalBlockRegistryResourcesTest {
                 Files.readString(repositoryRoot.resolve("src/main/generated/" + PICKAXE_TAG)),
                 PICKAXE_TAG,
                 Set.of(
+                        "etherology:attrahite",
+                        "etherology:attrahite_brick_slab",
+                        "etherology:attrahite_brick_stairs",
+                        "etherology:attrahite_bricks",
                         "etherology:azel_block",
                         "etherology:ebony_block",
                         "etherology:ethereal_channel",
@@ -268,6 +272,10 @@ final class MetalBlockRegistryResourcesTest {
                         Set.copyOf(METALS.keySet()),
                         Set.of(),
                         Set.of(
+                                "etherology:attrahite",
+                                "etherology:attrahite_brick_slab",
+                                "etherology:attrahite_brick_stairs",
+                                "etherology:attrahite_bricks",
                                 "etherology:azel_block",
                                 "etherology:ebony_block",
                                 "etherology:ethereal_channel",

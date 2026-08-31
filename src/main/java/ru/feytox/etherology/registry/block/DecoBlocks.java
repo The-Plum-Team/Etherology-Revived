@@ -92,10 +92,16 @@ public class DecoBlocks {
     public static final Block POTTED_PEACH_SAPLING = register("potted_peach_sapling", createFlowerPotBlock(PEACH_SAPLING)).withoutItem();
 
     // attrahite
-    public static final Block ATTRAHITE = registerSimple("attrahite", copy(STONE).sounds(BlockSoundGroup.GILDED_BLACKSTONE)).withItem(false);
-    public static final Block ATTRAHITE_BRICKS = registerSimple("attrahite_bricks", copy(STONE_BRICKS)).withItem();
-    public static final Block ATTRAHITE_BRICK_SLAB = register("attrahite_brick_slab", new SlabBlock(copy(STONE_SLAB))).withItem();
-    public static final Block ATTRAHITE_BRICK_STAIRS = registerStairs("attrahite_brick_stairs", ATTRAHITE_BRICKS).withItem();
+    public static final Block ATTRAHITE = SharedAttrahiteBlocks.ATTRAHITE.get();
+    public static final Block ATTRAHITE_BRICKS = SharedAttrahiteBlocks.ATTRAHITE_BRICKS.get();
+    public static final Block ATTRAHITE_BRICK_SLAB = SharedAttrahiteBlocks.ATTRAHITE_BRICK_SLAB.get();
+    public static final Block ATTRAHITE_BRICK_STAIRS = SharedAttrahiteBlocks.ATTRAHITE_BRICK_STAIRS.get();
+
+    static {
+        AutoBlockLootTable.markAsAuto(ATTRAHITE_BRICKS, null);
+        AutoBlockLootTable.markAsAuto(ATTRAHITE_BRICK_SLAB, null);
+        AutoBlockLootTable.markAsAuto(ATTRAHITE_BRICK_STAIRS, null);
+    }
 
     // signs
     public static final Block[] SIGNS = {PEACH_SIGN, PEACH_WALL_SIGN};

@@ -80,9 +80,42 @@ val canonicalForestLanternDataEntries = setOf(
     "etherology/tags/blocks/peach_logs.json",
     "minecraft/tags/blocks/mineable/hoe.json",
 )
+val canonicalAttrahiteBlockDataEntries = setOf(
+    "etherology/loot_tables/blocks/attrahite.json",
+    "etherology/loot_tables/blocks/attrahite_bricks.json",
+    "etherology/loot_tables/blocks/attrahite_brick_slab.json",
+    "etherology/loot_tables/blocks/attrahite_brick_stairs.json",
+    "etherology/recipes/attrahite_brick.json",
+    "etherology/recipes/attrahite_bricks.json",
+    "etherology/recipes/attrahite_brick_slab.json",
+    "etherology/recipes/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
+    "etherology/recipes/attrahite_brick_stairs.json",
+    "etherology/recipes/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
+    "etherology/recipes/raw_azel.json",
+    "etherology/recipes/azel_ingot.json",
+    "etherology/recipes/azel_ingot_from_blasting.json",
+    "etherology/advancements/recipes/misc/attrahite_brick.json",
+    "etherology/advancements/recipes/building_blocks/attrahite_bricks.json",
+    "etherology/advancements/recipes/building_blocks/attrahite_brick_slab.json",
+    "etherology/advancements/recipes/building_blocks/" +
+        "attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
+    "etherology/advancements/recipes/building_blocks/attrahite_brick_stairs.json",
+    "etherology/advancements/recipes/building_blocks/" +
+        "attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
+    "etherology/advancements/recipes/misc/raw_azel.json",
+    "etherology/advancements/recipes/misc/azel_ingot.json",
+    "etherology/advancements/recipes/misc/azel_ingot_from_blasting.json",
+    "minecraft/tags/blocks/mineable/pickaxe.json",
+    "minecraft/tags/blocks/needs_stone_tool.json",
+    "minecraft/tags/blocks/slabs.json",
+    "minecraft/tags/blocks/stairs.json",
+    "minecraft/tags/items/slabs.json",
+    "minecraft/tags/items/stairs.json",
+)
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
+    canonicalAttrahiteBlockDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
@@ -759,6 +792,9 @@ sourceSets {
                 "data/minecraft/tags/blocks/beacon_base_blocks.json",
             )
             canonicalForestLanternDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+            canonicalAttrahiteBlockDataEntries.forEach { entry ->
                 include("data/$entry")
             }
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
@@ -2572,7 +2608,7 @@ fun missingForgeLootConditionRegistryMilestone(
         true,
         true,
     )
-    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", false, false)
+    inspectArtifact(forgeShadowJarFile, "Forge shadow JAR", false, true)
     return missingConditions
 }
 
@@ -3603,6 +3639,13 @@ fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
         "not accepted",
 )
 
+fun missingForgeAttrahiteNativeEvidenceMilestone(): List<String> = listOf(
+    "dedicated-server registration, placement, loot, recipe, tag, and persistence " +
+        "evidence is not accepted for the four Attrahite block IDs",
+    "packaged-client inventory, model, placement, rendering, and persistence evidence " +
+        "is not accepted for the four Attrahite block IDs",
+)
+
 fun missingForgeReleaseReadinessMilestone(): List<String> = listOf(
     "the complete authoritative Forge gameplay registry and lifecycle graph is not accepted",
     "the remaining components, packets, recipes, entities, worldgen, and client slices " +
@@ -3745,6 +3788,12 @@ fun firstIncompleteForgeMilestone(
     if (missingForestLanternClientEvidence.isNotEmpty()) {
         return "Forest Lantern packaged-client evidence" to
             missingForestLanternClientEvidence
+    }
+
+    val missingAttrahiteNativeAcceptance =
+        missingForgeAttrahiteNativeEvidenceMilestone()
+    if (missingAttrahiteNativeAcceptance.isNotEmpty()) {
+        return "Attrahite native acceptance" to missingAttrahiteNativeAcceptance
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -4000,6 +4049,7 @@ tasks.named<Test>("test").configure {
     exclude("**/FoodItemRegistryResourcesTest.class")
     exclude("**/MetalBlockRegistryResourcesTest.class")
     exclude("**/ForestLanternBlockResourcesTest.class")
+    exclude("**/AttrahiteBlockRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -4653,6 +4703,108 @@ val forestLanternBlockTest = tasks.register<Test>("forestLanternBlockTest") {
         )
         systemProperty(
             "etherology.forestLantern.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
+val attrahiteBlockRegistryTest = tasks.register<Test>("attrahiteBlockRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader Attrahite block ownership and packaged-resource tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.AttrahiteBlockRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("attrahiteBlockCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("attrahiteBlockFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("attrahiteBlockForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("attrahiteBlockFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("attrahiteBlockFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("attrahiteBlockForgeShadowJar")
+    inputs.files(
+        rootProject.fileTree("src/main/generated/assets/etherology") {
+            include(
+                "blockstates/attrahite.json",
+                "blockstates/attrahite_bricks.json",
+                "blockstates/attrahite_brick_slab.json",
+                "blockstates/attrahite_brick_stairs.json",
+                "models/block/attrahite.json",
+                "models/block/attrahite_bricks.json",
+                "models/block/attrahite_brick_slab.json",
+                "models/block/attrahite_brick_slab_top.json",
+                "models/block/attrahite_brick_stairs.json",
+                "models/block/attrahite_brick_stairs_inner.json",
+                "models/block/attrahite_brick_stairs_outer.json",
+                "models/item/attrahite.json",
+                "models/item/attrahite_bricks.json",
+                "models/item/attrahite_brick_slab.json",
+                "models/item/attrahite_brick_stairs.json",
+            )
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/block") {
+            include("attrahite.png", "attrahite_bricks.png")
+        },
+        rootProject.fileTree("src/main/generated") {
+            canonicalAttrahiteBlockDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+        },
+        englishLanguageFile,
+        rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+    ).withPropertyName("canonicalAttrahiteBlockResources")
+    doFirst {
+        systemProperty(
+            "etherology.attrahiteBlocks.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.attrahiteBlocks.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.attrahiteBlocks.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.attrahiteBlocks.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.attrahiteBlocks.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.attrahiteBlocks.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.attrahiteBlocks.repositoryRoot",
             rootProject.projectDir.absolutePath,
         )
     }
@@ -6317,6 +6469,67 @@ val validateForgeForestLanternMilestone =
         )
     }
 
+val validateForgeAttrahiteStaticMilestone =
+    tasks.register("validateForgeAttrahiteStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the shared four-ID Attrahite block family and exact resources."
+        dependsOn(
+            validateForgeForestLanternMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            attrahiteBlockRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("attrahiteFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("attrahiteForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree("src/main/generated/assets/etherology") {
+                include("blockstates/attrahite*.json")
+                include("models/block/attrahite*.json")
+                include("models/item/attrahite*.json")
+                include("lang/ru_ru.json")
+            },
+            rootProject.fileTree("src/client/resources/assets/etherology") {
+                include("textures/block/attrahite*.png")
+                include("lang/en_us.json")
+            },
+            rootProject.fileTree("src/main/generated") {
+                canonicalAttrahiteBlockDataEntries.forEach { entry ->
+                    include("data/$entry")
+                }
+            },
+        ).withPropertyName("canonicalAttrahiteBlockResources")
+    }
+
+val validateForgeAttrahiteMilestone =
+    tasks.register("validateForgeAttrahiteMilestone") {
+        group = "verification"
+        description =
+            "Blocks the Attrahite slice until static checks and native Forge proof are accepted."
+        dependsOn(validateForgeAttrahiteStaticMilestone)
+        doLast {
+            val missingConditions = missingForgeAttrahiteNativeEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Attrahite native acceptance is incomplete:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
@@ -6370,6 +6583,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeMetalBlockRegistryMilestone,
         validateForgeFoodItemRegistryMilestone,
         validateForgeForestLanternMilestone,
+        validateForgeAttrahiteMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -6378,7 +6592,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeForestLanternStaticMilestone)
+    dependsOn(validateForgeAttrahiteStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -6386,6 +6600,23 @@ tasks.register("verifyForgePortGateClosed") {
     inputs.dir(soundDirectory)
     inputs.files(canonicalGameEventTagFiles.values)
     inputs.file(canonicalAttrahiteLootTable)
+    inputs.files(
+        rootProject.fileTree("src/main/generated/assets/etherology") {
+            include("blockstates/attrahite*.json")
+            include("models/block/attrahite*.json")
+            include("models/item/attrahite*.json")
+            include("lang/ru_ru.json")
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology") {
+            include("textures/block/attrahite*.png")
+            include("lang/en_us.json")
+        },
+        rootProject.fileTree("src/main/generated") {
+            canonicalAttrahiteBlockDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+        },
+    ).withPropertyName("canonicalAttrahiteBlockResources")
     inputs.file(canonicalEtherSourceDefault)
     inputs.file(canonicalEnchantmentTagFile)
     inputs.files(legacyFabricEtherSourceOwners)

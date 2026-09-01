@@ -982,7 +982,7 @@ final class AttrahiteBlockRegistryResourcesTest {
                 ),
                 data(
                         "minecraft/tags/blocks/mineable/pickaxe.json",
-                        "d37a64813e7b99a6a96ddb7410a7b33f618c5826b0bc2772fa548d8e7c5929b3"
+                        "dc177566ae1e14f00ee2c4206b085ed839868e80b6d6428c185bbacff7582593"
                 ),
                 data(
                         "minecraft/tags/blocks/needs_stone_tool.json",
@@ -990,19 +990,19 @@ final class AttrahiteBlockRegistryResourcesTest {
                 ),
                 data(
                         "minecraft/tags/blocks/slabs.json",
-                        "75b774ab7593c754ba3b1630703caa96086411a2729eab64446e3f0ab00b24a2"
+                        "e791aab36b9ce7958c6742207c1c5618d87f0079ded952a78973d2d976badcec"
                 ),
                 data(
                         "minecraft/tags/blocks/stairs.json",
-                        "98186b729bb403411256126d96abb46b3b06e96242f986cae537c7784a731b91"
+                        "7ab30520cf4e71f7edf1db18cda063ff4e4ec506c1a70d183c7df6d7724eed88"
                 ),
                 data(
                         "minecraft/tags/items/slabs.json",
-                        "75b774ab7593c754ba3b1630703caa96086411a2729eab64446e3f0ab00b24a2"
+                        "e791aab36b9ce7958c6742207c1c5618d87f0079ded952a78973d2d976badcec"
                 ),
                 data(
                         "minecraft/tags/items/stairs.json",
-                        "98186b729bb403411256126d96abb46b3b06e96242f986cae537c7784a731b91"
+                        "7ab30520cf4e71f7edf1db18cda063ff4e4ec506c1a70d183c7df6d7724eed88"
                 )
         );
     }

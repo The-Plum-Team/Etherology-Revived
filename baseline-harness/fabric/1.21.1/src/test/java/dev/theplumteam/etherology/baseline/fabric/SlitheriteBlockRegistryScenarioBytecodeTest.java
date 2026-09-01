@@ -32,6 +32,8 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
     private static final String SCENARIO =
             "dev/theplumteam/etherology/baseline/fabric/"
                     + "SlitheriteBlockRegistryScenario";
+    private static final String REGISTRY_PROBE = SCENARIO + "$RegistryProbe";
+    private static final String TAG_SNAPSHOT = SCENARIO + "$TagSnapshot";
 
     @Test
     void definitionGalleryClassesStatesAndNetworkCardinalityAreExact()
@@ -191,6 +193,40 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
     }
 
     @Test
+    void titlePreflightExcludesOnlyUnloadedTagsAndLaterStagesRequireFullExact()
+            throws IOException {
+        String registryOnly = REGISTRY_PROBE + ".blockItemRegistryExact";
+        String fullRegistry = REGISTRY_PROBE + ".exact";
+        String tagExact = TAG_SNAPSHOT + ".exact";
+
+        Set<String> titleCalls = invocationKeys(SCENARIO, "tickWaitingForTitle");
+        assertTrue(titleCalls.contains(registryOnly));
+        assertFalse(titleCalls.contains(fullRegistry));
+
+        Set<String> setupCalls = invocationKeys(
+                SCENARIO,
+                "tickWaitingForServerSetup"
+        );
+        assertTrue(setupCalls.contains(fullRegistry));
+        assertFalse(setupCalls.contains(registryOnly));
+
+        Set<String> reopenCalls = invocationKeys(
+                SCENARIO,
+                "tickWaitingForRestartInspection"
+        );
+        assertTrue(reopenCalls.contains(fullRegistry));
+        assertFalse(reopenCalls.contains(registryOnly));
+
+        Set<String> fullRegistryCalls = invocationKeys(REGISTRY_PROBE, "exact");
+        assertTrue(fullRegistryCalls.contains(registryOnly));
+        assertTrue(fullRegistryCalls.contains(tagExact));
+        assertFalse(
+                invocationKeys(REGISTRY_PROBE, "blockItemRegistryExact")
+                        .contains(tagExact)
+        );
+    }
+
+    @Test
     void lightingReadinessResetsAndRequiresExactLevels() {
         assertEquals(
                 0,
@@ -302,6 +338,38 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         return names;
     }
 
+    private static Set<String> invocationKeys(
+            String className,
+            String methodName
+    ) throws IOException {
+        Set<String> keys = new HashSet<>();
+        new ClassReader(classBytes(className)).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor,
+                            boolean isInterface
+                    ) {
+                        keys.add(owner + "." + name);
+                    }
+                };
+            }
+        }, 0);
+        return keys;
+    }
+
     private static Set<String> fieldAccessNames(String methodName) throws IOException {
         Set<String> names = new HashSet<>();
         new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
@@ -331,9 +399,13 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
     }
 
     private static byte[] classBytes() throws IOException {
+        return classBytes(SCENARIO);
+    }
+
+    private static byte[] classBytes(String className) throws IOException {
         try (InputStream input = SlitheriteBlockRegistryScenarioBytecodeTest.class
                 .getClassLoader()
-                .getResourceAsStream(SCENARIO + ".class")) {
+                .getResourceAsStream(className + ".class")) {
             if (input == null) throw new IOException("Scenario class is missing");
             return input.readAllBytes();
         }

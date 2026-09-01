@@ -1,14 +1,15 @@
 # Repository-owned original Fabric 1.21.1 baseline
 
-`original_client.py` controls one versioned runtime and no other game directory:
+`original_client.py` controls one active versioned runtime and no other game
+directory:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v5/
+  etherology-original-fabric-1.21.1-published-0.1.7-v6/
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v5.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v6.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins a separately built,
 client-only capture harness as a ninth root JAR. The controller recursively
@@ -16,8 +17,8 @@ reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quicks
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v5 manifest is `10,321` bytes with SHA-256
-`ff1a5d17607878fdb77f6c3daa3da69185ae6243e853ac26bff446ad2478593b`.
+The v6 manifest is `10,321` bytes with SHA-256
+`a8a6521e2402433cc1ccf56319eb6e26142f1dc2bc42a1f6be56ce07a9d7a399`.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -64,10 +65,10 @@ The separately packaged capture harness is not part of the published reference
 and does not replace it:
 
 - Harness JAR:
-  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.0.jar`
-- Harness size: `210,330` bytes
+  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.1.jar`
+- Harness size: `210,372` bytes
 - Harness SHA-256:
-  `e149747e9ab5c8a9e0c8fa19d291e0916370e77d45bdd886c4ea88f697e6746d`
+  `aee0c1e515b602d45e47e1201a3b79bcdebbb2517803e775107de6de7a18e9b8`
 - Harness mod id: `etherology_original_baseline_harness`
 - Environment: client only
 - Exact dependency: `etherology=1.21-0.1.7`
@@ -204,9 +205,9 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active `slitherite-block-registry` v5 contract
+## Active `slitherite-block-registry` v6 contract
 
-The unconsumed v5 profile is dedicated to the published-0.1.7 Slitherite
+The fresh v6 profile is dedicated to the published-0.1.7 Slitherite
 family. It validates 17 ordered block/item registry pairs, exact intermediary
 runtime classes and default states, 1,262 state network IDs, 79 Etherology
 visual assets plus one vanilla sentinel, grouped block/item tags, 17 self-drop
@@ -230,16 +231,47 @@ Expected evidence, once the one authorized run is eventually performed, is:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v5/
+  etherology-original-fabric-1.21.1-published-0.1.7-v6/
     evidence/slitherite-block-registry/
       reports/{report.json,done.marker}
       screenshots/{slitherite-block-registry-initial.png,
                    slitherite-block-registry-reopened.png}
 ```
 
-At preparation time v5 has no runtime, launch-attempt seal, evidence, or
+At preparation time v6 has no runtime, launch-attempt seal, evidence, or
 archive. Provisioning and launching it are deliberately outside this change.
-The v1-v4 manifests and their historical evidence remain immutable.
+The v1-v5 manifests and their historical evidence remain immutable.
+
+### Consumed v5 preflight failure
+
+The one v5 launch was consumed on 2026-09-01. It stopped at the title screen
+after 112 client ticks with `The Slitherite registry preflight was not exact`.
+All 17 block/item registry descriptions, all 80 canonical resources, and all
+1,262 state network IDs were exact. The harness had incorrectly required
+server-data tags before the integrated server loaded them: all 11 observed tag
+subsets were empty, so the nine expected-nonempty subsets failed while the two
+intentionally empty subsets passed. No world or screenshot was created, and
+failed evidence was not copied into the accepted evidence archive.
+
+The preserved v5 manifest is `10,321` bytes with SHA-256
+`ff1a5d17607878fdb77f6c3daa3da69185ae6243e853ac26bff446ad2478593b`.
+The consumed launch-attempt, report, marker, controller log, and game log are
+respectively pinned as:
+
+- `871,888` bytes,
+  `22daf507aa9791fdfc93296bf33c5e9d82a45f3ee96926c38789294d54298fe3`
+- `63,151` bytes,
+  `0c1238d974e3b4b3bddc26aa854b63b682688423b7b10386dd8aff7bc30d20a9`
+- `112` bytes,
+  `32a05a0069c5f897fb0a1236a0e485da16b2741d39f4439b32b7b2acca4df07b`
+- `12,869` bytes,
+  `4ae116837bc4fd40f9d0a34151a890da004e706662fe22700e36e534b1b1450e`
+- `12,435` bytes,
+  `9f2cb3114248a41242928e3173c611e595b85bc5a53111ef38fccdfda1f5df54`
+
+The v6 harness uses registry-only preflight at the title screen. Full registry
+and loaded-tag exactness remains mandatory after initial server setup and after
+the saved world is reopened.
 
 ## Historical `phase0-smoke` contract
 

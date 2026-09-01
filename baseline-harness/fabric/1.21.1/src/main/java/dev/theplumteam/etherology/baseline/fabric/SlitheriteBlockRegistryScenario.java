@@ -412,7 +412,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             return;
         }
         registryProbe = RegistryProbe.capture();
-        if (!registryProbe.exact()) {
+        if (!registryProbe.blockItemRegistryExact()) {
             fail(client, "The Slitherite registry preflight was not exact");
             return;
         }
@@ -648,6 +648,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         persistenceExact = savedSnapshot != null
                 && savedSnapshot.equals(reopenedSnapshot)
                 && reopenedSnapshot.exact()
+                && result.registryProbe().exact()
                 && result.registryProbe().equals(registryProbe);
         reopenedDataExact = dataProbe != null
                 && reopenedDataProbe.exact()
@@ -2745,11 +2746,10 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             );
         }
 
-        private boolean exact() {
+        private boolean blockItemRegistryExact() {
             if (entries.size() != FIXTURES.size()
                     || aggregateStateCount != EXPECTED_AGGREGATE_STATE_COUNT
-                    || !networkIdsExact
-                    || !tags.exact()) {
+                    || !networkIdsExact) {
                 return false;
             }
             for (BlockFixture fixture : FIXTURES) {
@@ -2769,6 +2769,10 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 }
             }
             return true;
+        }
+
+        private boolean exact() {
+            return blockItemRegistryExact() && tags.exact();
         }
 
         private String networkIdDescription() {

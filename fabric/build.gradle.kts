@@ -395,12 +395,12 @@ if (minecraftVersion == "1.20.1") {
     val fabricProfileSnapshotV24 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v24.json")
     val fabricAttrahiteEvidenceArchive = rootProject.file(
-        "docs/evidence/fabric-1.20.1/attrahite-block-registry-v28",
+        "docs/evidence/fabric-1.20.1/attrahite-block-registry-v29",
     )
     val fabricAttrahiteEvidenceVerifier =
-        rootProject.file("scripts/e2e/fabric_attrahite_evidence_v28.py")
+        rootProject.file("scripts/e2e/fabric_attrahite_evidence_v29.py")
     val fabricAttrahiteEvidenceTest =
-        rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v28.py")
+        rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v29.py")
     val fabricProfileSnapshotV25 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v25.json")
     val fabricProfileSnapshotV26 =
@@ -409,9 +409,11 @@ if (minecraftVersion == "1.20.1") {
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v27.json")
     val fabricProfileSnapshotV28 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v28.json")
-    val fabricAttrahiteHarnessSize = 296299L
+    val fabricProfileSnapshotV29 =
+        rootProject.file("scripts/e2e/fabric-1.20.1-profile-v29.json")
+    val fabricAttrahiteHarnessSize = 296850L
     val fabricAttrahiteHarnessSha256 =
-        "0abc2b77b0090259510f536b0cd8f3f547eab8f2c00b71c7353b28d6947c73ee"
+        "1082487f1a29935b70524d47d6c5e3ac28d78070ea499eb7062e42f2c1fc77da"
 
     val fabricMetalBlockRegistryEvidenceSafetyTest =
         tasks.register<Exec>("fabricMetalBlockRegistryEvidenceSafetyTest") {
@@ -526,14 +528,14 @@ if (minecraftVersion == "1.20.1") {
         tasks.register<Exec>("fabricAttrahiteEvidenceSafetyTest") {
             group = "verification"
             description =
-                "Runs the Fabric Attrahite block-registry v28 verifier safety tests."
+                "Runs the Fabric Attrahite block-registry v29 verifier safety tests."
             workingDir(rootProject.projectDir)
             commandLine(
                 "python3",
                 "-B",
                 "-m",
                 "unittest",
-                "scripts/e2e/test_fabric_attrahite_evidence_v28.py",
+                "scripts/e2e/test_fabric_attrahite_evidence_v29.py",
                 "scripts/e2e/test_client.py",
             )
             inputs.files(
@@ -550,12 +552,15 @@ if (minecraftVersion == "1.20.1") {
                 fabricProfileSnapshotV26,
                 fabricProfileSnapshotV27,
                 fabricProfileSnapshotV28,
+                fabricProfileSnapshotV29,
                 rootProject.file("scripts/e2e/fabric_attrahite_evidence_v25.py"),
                 rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v25.py"),
                 rootProject.file("scripts/e2e/fabric_attrahite_evidence_v26.py"),
                 rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v26.py"),
                 rootProject.file("scripts/e2e/fabric_attrahite_evidence_v27.py"),
                 rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v27.py"),
+                rootProject.file("scripts/e2e/fabric_attrahite_evidence_v28.py"),
+                rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v28.py"),
                 fabricEvidenceLibrary,
                 fabricEvidenceTestLibrary,
                 fabricActiveProfile,
@@ -567,24 +572,24 @@ if (minecraftVersion == "1.20.1") {
             )
             inputs.files(
                 rootProject.file(
-                    "scripts/e2e/.state/etherology-e2e-fabric-1.20.1-v27-start.attempted",
+                    "scripts/e2e/.state/etherology-e2e-fabric-1.20.1-v28-start.attempted",
                 ),
                 rootProject.file(
-                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v27/" +
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v28/" +
                         "evidence/attrahite-block-registry/reports/report.json",
                 ),
                 rootProject.file(
-                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v27/" +
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v28/" +
                         "evidence/attrahite-block-registry/reports/done.marker",
                 ),
                 rootProject.file(
-                    "scripts/e2e/.state/logs/fabric-1.20.1-20260901T014100Z.log",
+                    "scripts/e2e/.state/logs/fabric-1.20.1-20260901T020906Z.log",
                 ),
                 rootProject.file(
-                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v27/" +
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v28/" +
                         "game/logs/latest.log",
                 ),
-            ).withPropertyName("fabricAttrahiteV27FailureHistory").optional()
+            ).withPropertyName("fabricAttrahiteV28FailureHistory").optional()
             inputs.files(
                 rootProject.fileTree("src/main/generated/assets/etherology") {
                     include("blockstates/attrahite*.json")
@@ -601,7 +606,7 @@ if (minecraftVersion == "1.20.1") {
         tasks.register<Exec>("validateFabricAttrahiteEvidenceArchiveIntegrity") {
             group = "verification"
             description =
-                "Validates the immutable Fabric Attrahite block-registry v28 archive."
+                "Validates the immutable Fabric Attrahite block-registry v29 archive."
             dependsOn(fabricAttrahiteEvidenceSafetyTest)
             workingDir(rootProject.projectDir)
             commandLine(
@@ -795,7 +800,7 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyAttrahiteE2eHarnessArtifact") {
             group = "verification"
             description =
-                "Binds the Fabric Attrahite v28 run to its exact packaged harness bytes."
+                "Binds the Fabric Attrahite v29 run to its exact packaged harness bytes."
             dependsOn(verifyE2eHarnessArtifact)
             inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
 
@@ -879,10 +884,10 @@ if (minecraftVersion == "1.20.1") {
         )
     }
 
-    tasks.register("validateFabricAttrahiteV28Milestone") {
+    tasks.register("validateFabricAttrahiteV29Milestone") {
         group = "verification"
         description =
-            "Validates the pinned harness and frozen Fabric Attrahite v28 evidence."
+            "Validates the pinned harness and frozen Fabric Attrahite v29 evidence."
         dependsOn(
             e2eHarnessTestTask,
             verifyAttrahiteE2eHarnessArtifact,

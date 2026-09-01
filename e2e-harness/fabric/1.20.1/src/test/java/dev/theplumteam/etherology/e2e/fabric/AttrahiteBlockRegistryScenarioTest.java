@@ -52,6 +52,7 @@ final class AttrahiteBlockRegistryScenarioTest {
                 "packaged_root_jar:etherology",
                 "packaged_root_jar:etherology_e2e_harness",
                 "integrated_world_joined",
+                "client_arena_chunks_loaded_before_setup",
                 "server_arena_chunks_loaded",
                 "loot_tables_exact",
                 "standard_block_drops_exact",
@@ -78,7 +79,7 @@ final class AttrahiteBlockRegistryScenarioTest {
         expected.add("isolated_save_directory_present");
 
         assertEquals(expected, AttrahiteBlockRegistryScenario.ASSERTION_NAMES);
-        assertEquals(89, AttrahiteBlockRegistryScenario.ASSERTION_NAMES.size());
+        assertEquals(90, AttrahiteBlockRegistryScenario.ASSERTION_NAMES.size());
     }
 
     @Test
@@ -111,6 +112,12 @@ final class AttrahiteBlockRegistryScenarioTest {
 
     @Test
     void galleryAndCaptureInventoryAreStable() {
+        assertEquals(
+                List.of("-1,-1", "-1,0", "0,-1", "0,0"),
+                AttrahiteBlockRegistryScenario.ARENA_CHUNKS.stream()
+                        .map(chunk -> chunk.x + "," + chunk.z)
+                        .toList()
+        );
         assertEquals(
                 List.of(
                         "etherology:attrahite@-3,122,1",
@@ -385,9 +392,18 @@ final class AttrahiteBlockRegistryScenarioTest {
                 "requestServerLightingChecks"
         );
         List<String> serverTickCalls = methodCallsContaining("onEndServerTick");
+        List<String> waitingForWorldCalls = methodCallsContaining("tickWaitingForWorld");
+        List<String> waitingForClientMirrorCalls = methodCallsContaining(
+                "tickWaitingForClientMirror"
+        );
+        List<String> latestClientFixtureCalls = methodCallsContaining(
+                "captureLatestClientFixtureSnapshot"
+        );
 
         assertFalse(constants.contains("ru/feytox/etherology/"));
         assertFalse(constants.contains("executeCommand"));
+        assertFalse(constants.contains("ChunkDataS2CPacket"));
+        assertFalse(constants.contains("LightUpdateS2CPacket"));
         assertTrue(constants.contains("attrahite_brick_slab"));
         assertTrue(constants.contains("azel_ingot_from_blasting"));
         assertTrue(constants.contains("enriched_attrahite"));
@@ -396,6 +412,10 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertFalse(placementCalls.contains("setBlockState"));
         assertTrue(placementConstants.contains("CONSUME"));
         assertTrue(setupCalls.contains("requestServerLightingChecks"));
+        assertTrue(waitingForWorldCalls.contains("areClientArenaChunksLoaded"));
+        assertTrue(waitingForWorldCalls.contains("execute"));
+        assertTrue(waitingForWorldCalls.indexOf("areClientArenaChunksLoaded")
+                < waitingForWorldCalls.indexOf("execute"));
         assertTrue(saveCalls.contains("saveAll"));
         assertTrue(disconnectCalls.contains("disconnect"));
         assertTrue(restartCalls.contains("start"));
@@ -404,6 +424,21 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertTrue(clientLightingCalls.contains("hasUpdates"));
         assertTrue(clientLightingCalls.contains("captureLightSnapshot"));
         assertFalse(clientLightingCalls.contains("doLightUpdates"));
+        assertTrue(waitingForClientMirrorCalls.contains(
+                "captureLatestClientFixtureSnapshot"
+        ));
+        assertTrue(latestClientFixtureCalls.contains("areClientArenaChunksLoaded"));
+        for (String relightCall : List.of(
+                "checkBlock",
+                "doLightUpdates",
+                "enqueueSectionData",
+                "setColumnEnabled"
+        )) {
+            assertFalse(waitingForWorldCalls.contains(relightCall));
+            assertFalse(waitingForClientMirrorCalls.contains(relightCall));
+            assertFalse(latestClientFixtureCalls.contains(relightCall));
+            assertFalse(clientLightingCalls.contains(relightCall));
+        }
         assertTrue(serverLightingCalls.contains("checkBlock"));
         assertFalse(serverLightingCalls.contains("doLightUpdates"));
         assertTrue(serverTickCalls.contains("getOverworld"));

@@ -47,6 +47,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -108,6 +109,12 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private static final double CAMERA_POSE_TOLERANCE = 0.0001;
     private static final BlockPos CAMERA_BLOCK_POS =
             new BlockPos(0, ARENA_FLOOR_Y + 1, -8);
+    static final List<ChunkPos> ARENA_CHUNKS = List.of(
+            new ChunkPos(-1, -1),
+            new ChunkPos(-1, 0),
+            new ChunkPos(0, -1),
+            new ChunkPos(0, 0)
+    );
     private static final Identifier PEDESTAL_ID =
             new Identifier("minecraft", "polished_andesite");
     private static final List<BlockFixture> FIXTURES = List.of(
@@ -179,6 +186,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private int completedRenders;
     private int lightingReadyClientTicks;
     private boolean worldSetupSubmitted;
+    private boolean clientArenaChunksLoadedBeforeSetup;
     private boolean saveSubmitted;
     private boolean restartSubmitted;
     private boolean restartInspectionSubmitted;
@@ -197,6 +205,8 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private FixtureSnapshot reopenedSnapshot;
     private FixtureSnapshot currentServerSnapshot;
     private final Map<CapturePhase, CaptureEvidence> captureEvidence =
+            new LinkedHashMap<>();
+    private final Map<CapturePhase, FixtureSnapshot> latestClientFixtureSnapshots =
             new LinkedHashMap<>();
     private final Map<CapturePhase, LightingEvidence> lightingDiagnostics =
             new LinkedHashMap<>();
@@ -431,6 +441,8 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             return;
         }
         if (!isWorldLifecycleReady(client)) return;
+        boolean clientArenaChunksLoaded = areClientArenaChunksLoaded(client);
+        if (!clientArenaChunksLoaded) return;
 
         IntegratedServer server = client.getServer();
         ServerPlayerEntity serverPlayer = server.getPlayerManager()
@@ -439,6 +451,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
 
         client.options.setPerspective(Perspective.FIRST_PERSON);
         client.setCameraEntity(client.player);
+        clientArenaChunksLoadedBeforeSetup = clientArenaChunksLoaded;
         worldSetupSubmitted = true;
         UUID playerId = client.player.getUuid();
         server.execute(() -> setupFixture(server, playerId));
@@ -471,8 +484,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     private void tickWaitingForClientMirror(MinecraftClient client) {
+        FixtureSnapshot clientSnapshot = captureLatestClientFixtureSnapshot(client);
         boolean mirrorReady = isWorldViewReady(client)
-                && captureSnapshot(client.world).equals(currentServerSnapshot)
+                && clientSnapshot != null
+                && clientSnapshot.equals(currentServerSnapshot)
                 && currentServerLighting != null;
         updateClientLightingReadiness(client, mirrorReady);
         if (lightingReadyClientTicks < REQUIRED_LIGHTING_READY_CLIENT_TICKS) return;
@@ -485,9 +500,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             fail(client, "The integrated world vanished before the Attrahite capture");
             return;
         }
+        FixtureSnapshot clientSnapshot = captureLatestClientFixtureSnapshot(client);
         boolean mirrorReady = isWorldViewReady(client)
                 && currentServerSnapshot != null
-                && currentServerSnapshot.equals(captureSnapshot(client.world));
+                && currentServerSnapshot.equals(clientSnapshot);
         updateClientLightingReadiness(client, mirrorReady);
         if (lightingReadyClientTicks < REQUIRED_LIGHTING_READY_CLIENT_TICKS) {
             completedRenders = 0;
@@ -741,11 +757,9 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
 
     private boolean loadArenaChunks(ServerWorld world) {
         boolean loaded = true;
-        for (int chunkX = -1; chunkX <= 0; chunkX++) {
-            for (int chunkZ = -1; chunkZ <= 0; chunkZ++) {
-                loaded &= world.getChunkManager()
-                        .getChunk(chunkX, chunkZ, ChunkStatus.FULL, true) != null;
-            }
+        for (ChunkPos chunk : ARENA_CHUNKS) {
+            loaded &= world.getChunkManager()
+                    .getChunk(chunk.x, chunk.z, ChunkStatus.FULL, true) != null;
         }
         return loaded;
     }
@@ -780,6 +794,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         }
 
         FixtureSnapshot clientSnapshot = captureSnapshot(client.world);
+        latestClientFixtureSnapshots.put(capturePhase, clientSnapshot);
         LightingEvidence lighting = captureLightingEvidence(client);
         if (!lighting.exact()) {
             completedRenders = 0;
@@ -867,12 +882,18 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     private boolean areClientArenaChunksLoaded(MinecraftClient client) {
-        for (int chunkX = -1; chunkX <= 0; chunkX++) {
-            for (int chunkZ = -1; chunkZ <= 0; chunkZ++) {
-                if (!client.world.getChunkManager().isChunkLoaded(chunkX, chunkZ)) return false;
-            }
+        for (ChunkPos chunk : ARENA_CHUNKS) {
+            if (!client.world.getChunkManager().isChunkLoaded(chunk.x, chunk.z)) return false;
         }
         return true;
+    }
+
+    private FixtureSnapshot captureLatestClientFixtureSnapshot(MinecraftClient client) {
+        if (!isWorldLifecycleReady(client) || !areClientArenaChunksLoaded(client)) return null;
+
+        FixtureSnapshot snapshot = captureSnapshot(client.world);
+        latestClientFixtureSnapshots.put(capturePhase, snapshot);
+        return snapshot;
     }
 
     private boolean hasExpectedFramebuffer(MinecraftClient client) {
@@ -1140,6 +1161,13 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         );
         passed &= addAssertion(
                 assertions,
+                "client_arena_chunks_loaded_before_setup",
+                clientArenaChunksLoadedBeforeSetup,
+                "true",
+                Boolean.toString(clientArenaChunksLoadedBeforeSetup)
+        );
+        passed &= addAssertion(
+                assertions,
                 "server_arena_chunks_loaded",
                 serverSetupResult != null && serverSetupResult.chunksLoaded(),
                 "four full chunks",
@@ -1260,7 +1288,9 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         passed &= addAssertion(assertions, "capture_mirror_exact:" + phase.id(),
                 capture != null && capture.mirrorExact(),
                 FixtureSnapshot.expectedDescription(),
-                capture == null ? "missing" : capture.snapshot().description());
+                capture == null
+                        ? latestClientFixtureDescription(phase)
+                        : capture.snapshot().description());
         passed &= addAssertion(assertions, "capture_render_ready:" + phase.id(),
                 capture != null && capture.renderReady(), "true",
                 capture == null ? "missing" : Boolean.toString(capture.renderReady()));
@@ -1370,7 +1400,20 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             lighting.add(phase.id(), lightingReport(lightingDiagnosticFor(phase)));
         }
         attrahite.add("lighting", lighting);
+        JsonObject latestClientFixtures = new JsonObject();
+        for (CapturePhase phase : CapturePhase.values()) {
+            latestClientFixtures.addProperty(
+                    phase.id(),
+                    latestClientFixtureDescription(phase)
+            );
+        }
+        attrahite.add("latest_client_fixtures", latestClientFixtures);
         return attrahite;
+    }
+
+    private String latestClientFixtureDescription(CapturePhase phase) {
+        FixtureSnapshot snapshot = latestClientFixtureSnapshots.get(phase);
+        return snapshot == null ? "missing" : snapshot.description();
     }
 
     private LightingEvidence lightingDiagnosticFor(CapturePhase phase) {
@@ -1602,6 +1645,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         names.add("packaged_root_jar:etherology");
         names.add("packaged_root_jar:" + HARNESS_MOD_ID);
         names.add("integrated_world_joined");
+        names.add("client_arena_chunks_loaded_before_setup");
         names.add("server_arena_chunks_loaded");
         names.add("loot_tables_exact");
         names.add("standard_block_drops_exact");

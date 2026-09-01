@@ -181,7 +181,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = client.load_configuration()
         profile = client.profile_spec(configuration)
 
-        self.assertEqual("etherology-e2e-fabric-1.20.1-v28", profile["id"])
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v29", profile["id"])
         self.assertEqual(profile["id"], profile["runtime_directory"])
         self.assertEqual("fabric-1.20.1", configuration.artifact_lane["artifact_node"])
         self.assertEqual("1.20.1", configuration.runtime_lane["runtime_version"])
@@ -192,7 +192,7 @@ class ConfigurationTests(unittest.TestCase):
         resolution = client.require_object(launch, "resolution")
         self.assertEqual({"width": 960, "height": 540}, resolution)
 
-    def test_active_profile_matches_v28_and_preserves_v20_through_v27_snapshots(
+    def test_active_profile_matches_v29_and_preserves_v20_through_v28_snapshots(
         self,
     ) -> None:
         active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
@@ -205,9 +205,11 @@ class ConfigurationTests(unittest.TestCase):
         v26_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v26.json"
         v27_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v27.json"
         v28_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v28.json"
+        v29_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v29.json"
 
-        self.assertEqual(active_profile.read_bytes(), v28_profile.read_bytes())
-        self.assertNotEqual(active_profile.read_bytes(), v27_profile.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v29_profile.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v28_profile.read_bytes())
+        self.assertNotEqual(v28_profile.read_bytes(), v27_profile.read_bytes())
         self.assertNotEqual(v27_profile.read_bytes(), v26_profile.read_bytes())
         self.assertNotEqual(v26_profile.read_bytes(), v25_profile.read_bytes())
         self.assertNotEqual(v25_profile.read_bytes(), v24_profile.read_bytes())
@@ -255,6 +257,11 @@ class ConfigurationTests(unittest.TestCase):
                 v27_profile,
                 "etherology-e2e-fabric-1.20.1-v27",
                 "b2ea801d26457b7b3ed807d04997cf76e8eaf2c10ca536231d29858a5ce323da",
+            ),
+            (
+                v28_profile,
+                "etherology-e2e-fabric-1.20.1-v28",
+                "34e187dae9cff37754238ce41b4dc707265d1d083df0a4f133b84b6780fc98e1",
             ),
         )
         for snapshot, expected_id, expected_sha256 in snapshots:
@@ -643,13 +650,13 @@ class StartAttemptTests(unittest.TestCase):
                 state_root,
             )
             expected_attempt_path = (
-                state_root / "etherology-e2e-fabric-1.20.1-v28-start.attempted"
+                state_root / "etherology-e2e-fabric-1.20.1-v29-start.attempted"
             )
 
             self.assertEqual(expected_attempt_path, attempt_path)
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-fabric-1.20.1-v28\n"
+                    "profile_id=etherology-e2e-fabric-1.20.1-v29\n"
                     "scenario=forest-lantern\n"
                     f"pid={os.getpid()}\n"
                 ).encode("utf-8"),

@@ -356,7 +356,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v17",
+            "etherology-e2e-forge-server-1.20.1-v18",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -382,8 +382,13 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v17_snapshot_and_preserves_prior_versions(self) -> None:
+    def test_active_profile_matches_v18_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
+        v18_snapshot_path = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v18.json"
+        )
+        v18_snapshot = v18_snapshot_path.read_bytes()
         v17_snapshot_path = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v17.json"
@@ -412,18 +417,28 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v17_snapshot, active)
+        self.assertEqual(v18_snapshot, active)
+        self.assertNotEqual(v17_snapshot, active)
         self.assertNotEqual(v16_snapshot, active)
         self.assertNotEqual(v15_snapshot, active)
         self.assertNotEqual(v14_snapshot, active)
         self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
         self.assertEqual(
-            forge_server.contract_v17.PROFILE_MANIFEST_SIZE,
-            len(v17_snapshot),
+            forge_server.contract_v18.PROFILE_MANIFEST_SIZE,
+            len(v18_snapshot),
         )
         self.assertEqual(
-            forge_server.contract_v17.PROFILE_MANIFEST_SHA256,
+            forge_server.contract_v18.PROFILE_MANIFEST_SHA256,
+            forge_server.sha256_file(v18_snapshot_path),
+        )
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v17",
+            json.loads(v17_snapshot)["profile"]["id"],
+        )
+        self.assertEqual(1204, len(v17_snapshot))
+        self.assertEqual(
+            "58eef8f07f1457d5a806a53fe0f864019902e1e76eb9d5d0b60ea817388d0042",
             forge_server.sha256_file(v17_snapshot_path),
         )
         self.assertEqual(
@@ -450,6 +465,28 @@ class ConfigurationTests(unittest.TestCase):
             "etherology-e2e-forge-server-1.20.1-v12",
             json.loads(v12_snapshot)["profile"]["id"],
         )
+
+    def test_consumed_v17_contract_files_remain_byte_exact(self) -> None:
+        expected_files = {
+            "scripts/e2e/forge_server_contract_v17.py": (
+                22851,
+                "feff4d6ca72ce32b874031b3bfc448e618c5295342d8bc156825afcd56074a78",
+            ),
+            "scripts/e2e/forge_server_attrahite_evidence_v17.py": (
+                40317,
+                "fee7cb0da615853955f7a2423c594b3f94004c67afbd4b9f5bcb992c238fd763",
+            ),
+            "scripts/e2e/test_forge_server_attrahite_evidence_v17.py": (
+                133658,
+                "41b3fcbb27927968606c0d7b409d25bdf05015c317a05c77b3997cfe4fe992ec",
+            ),
+        }
+
+        for relative_path, (expected_size, expected_sha256) in expected_files.items():
+            with self.subTest(relative_path=relative_path):
+                path = forge_server.REPOSITORY_ROOT / relative_path
+                self.assertEqual(expected_size, path.stat().st_size)
+                self.assertEqual(expected_sha256, forge_server.sha256_file(path))
 
     def test_profile_must_be_loaded_from_tracked_path(self) -> None:
         with temporary_repository() as (root, manifest_path):
@@ -550,6 +587,48 @@ class RuntimeIsolationTests(unittest.TestCase):
             "profile marker",
         )
         self.assertEqual([], marker["isolation"]["source_profiles"])
+
+    def test_consumed_v17_attempt_isolated_from_fresh_v18_before_provision(
+        self,
+    ) -> None:
+        self.state_root.mkdir(parents=True)
+        consumed_attempt = (
+            self.state_root
+            / "etherology-e2e-forge-server-1.20.1-v17-run.attempted"
+        )
+        consumed_attempt_bytes = (
+            "profile_id=etherology-e2e-forge-server-1.20.1-v17\n"
+            "scenario=attrahite-block-registry\n"
+            "pid=12345\n"
+        ).encode("utf-8")
+        consumed_attempt.write_bytes(consumed_attempt_bytes)
+        fresh_attempt = forge_server.run_attempt_path(
+            self.configuration,
+            self.state_root,
+        )
+        fresh_runtime = forge_server.runtime_root(
+            self.configuration,
+            self.state_root,
+        )
+        fresh_evidence = forge_server.evidence_root(
+            self.configuration,
+            fresh_runtime,
+        )
+        fresh_archive = forge_server.sealed_archive_path(self.configuration)
+
+        self.assertTrue(consumed_attempt.is_file())
+        self.assertFalse(fresh_attempt.exists())
+        self.assertFalse(fresh_runtime.exists())
+        self.assertFalse(fresh_evidence.exists())
+        self.assertFalse(fresh_archive.exists())
+
+        forge_server.provision_profile(self.configuration, self.state_root)
+
+        self.assertEqual(consumed_attempt_bytes, consumed_attempt.read_bytes())
+        self.assertTrue(fresh_runtime.is_dir())
+        self.assertTrue(fresh_evidence.is_dir())
+        self.assertFalse(fresh_attempt.exists())
+        self.assertFalse(fresh_archive.exists())
 
     def test_existing_exact_runtime_is_never_reused(self) -> None:
         forge_server.provision_profile(self.configuration, self.state_root)

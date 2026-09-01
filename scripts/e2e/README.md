@@ -501,63 +501,65 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Accepted Forge 1.20.1 dedicated-server Forest Lantern probe (v16)
+## Accepted Forge 1.20.1 dedicated-server Attrahite block-registry probe (v19)
 
-The prior v15 identity is permanently consumed. Its native run reached save,
-reload, normal server stop, and report publication; 262 assertions passed and
-four failed because the prepared oracle incorrectly expected `opaque=false`
-instead of the upstream-derived native 1.20.1 `opaque=true` state flag. No v15
-archive is accepted and v15 must never be relaunched.
+The v18 identity is permanently consumed. Its native run reached save, reload,
+normal server stop, and report publication; 305 assertions passed and five
+Forest Lantern `BREAK`-drop assertions failed because the fixed fixture X/Z
+coordinates were outside the dedicated server's spawn-tracked chunks. No v18
+archive is accepted and v18 must never be relaunched. The v19 probe keeps the
+same report contract while translating its Forest Lantern fixture X/Z
+coordinates relative to the generated world's spawn.
 
 The active server-only profile is the consumed, repository-owned
-`etherology-e2e-forge-server-1.20.1-v16` identity. Its tracked manifest and v16
-snapshot are byte-identical at 1,184 bytes with SHA-256
-`82419a84d0bca220b5032f45fec053265ed5701594af32fd3721d02a66862332`.
-Its native Forge run exited zero and the sealed schema-10 report passes all 266
-ordered assertions: all v14 checks plus the exact Forest Lantern registry,
-twenty states, unique non-negative server network IDs and shapes, tags, loot,
-four recipes and advancements, real
-four-facing `BlockItem` placement/support removal, shears speed `15.0` and
-effective breaking delta across all twenty states, seeded real player-jump
-retain/break/drop outcomes, real reload stability, and fresh players after
-reload. This headless contract creates no screenshots. The archive is
-`docs/evidence/forge-1.20.1/forest-lantern-server-v16`.
+`etherology-e2e-forge-server-1.20.1-v19` identity. Its tracked manifest and v19
+snapshot are byte-identical at 1,204 bytes with SHA-256
+`626cd5354057da6afe426d88de6849f6daef1a95a56ad3e5e4bb7afad2ceceec`.
+The durable launch-attempt marker is 94 bytes with SHA-256
+`924462884dce83b88c46a4c73f0c2fae539b7243b7b1b999cfcc9354683a46de`.
+The native Loom-userdev Forge dedicated server exited zero and the schema-11
+report passes all 310 ordered assertions. The proof covers the exact four
+Attrahite block and `BlockItem` registrations, classes, properties, states,
+tags, NBT round trips, direct world placement and save, four loot tables, nine
+recipes and advancements, and stability through a real reload. It also
+cumulatively re-proves the accepted Forest Lantern registry, data, placement,
+support-removal, shears, seeded player-jump retain/break/drop mechanics, and
+all earlier registry-foundation checks. The exact lifecycle is
+`tags_updated_initial > server_started > reload_requested >
+tags_updated_reload > reload_command_returned > stop_requested >
+server_stopping > server_stopped`.
 
-The recorded one-shot workflow was the following. It is provenance, not an
-instruction to relaunch v16: the durable attempt marker and sealed archive must
-continue to reject every reuse.
+The stopped live evidence and immutable archive contain byte-identical copies
+of the four payload files. The five-file archive is
+`docs/evidence/forge-1.20.1/attrahite-block-registry-server-v19` and records:
+
+```text
+archive-manifest.json          1718 bytes  dfbb3a543e0775c8dbc4e34a4a9e1490de868a4718d54a63ee833ae354099345
+reports/report.json          188827 bytes  35c5912f865bb877b85cdc420e94853ba94a2f156addbfe270c32e393c40a33b
+reports/launcher-result.json    583 bytes  d9ae790ba2b9ea6d990853ced85464a8ddb7ba4d0347dda6d34c92a2dcc4e23f
+reports/done.marker               9 bytes  37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1
+logs/latest.log               18650 bytes  568f811ac98f9675a9352d0dadfe5887afdea70b833da9d6b952b09e46a2cd39
+```
+
+Validate the stopped live runtime or immutable archive without launching
+Minecraft:
 
 ```bash
+python3 -B scripts/e2e/forge_server_attrahite_evidence_v19.py \
+  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v19
+python3 -B scripts/e2e/forge_server_attrahite_evidence_v19.py \
+  --archive docs/evidence/forge-1.20.1/attrahite-block-registry-server-v19
 ./gradlew --no-daemon --no-parallel --console=plain \
-  :forge:1.20.1:verifyRegistryFoundationServerProbe
-python3 -B scripts/e2e/forge_server.py validate
-python3 -B scripts/e2e/forge_server.py provision
-python3 -B scripts/e2e/forge_server.py check
-python3 -B scripts/e2e/forge_server.py run
-python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
-  --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v16
+  :forge:1.20.1:validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity
 ```
 
-The runner did not create the tracked archive. The accepted publication copied
-only the `evidence/forest-lantern` payload with modification times preserved,
-then sealed and verified it exactly once:
-
-```bash
-server_capture="scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v16/evidence/forest-lantern"
-server_archive="docs/evidence/forge-1.20.1/forest-lantern-server-v16"
-/bin/mkdir "$server_archive"
-/bin/cp -pR "$server_capture"/. "$server_archive"/
-python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
-  --create-archive-manifest "$server_archive"
-python3 -B scripts/e2e/forge_server_forest_lantern_evidence_v16.py \
-  --archive "$server_archive"
-```
-
-The exact archive directory and launch-attempt marker now block another
-provision, check, or run. The v15 historical safety task, v16 active safety
-task, strict archive verifier, and integrated Gradle archive gate all pass.
-The Forge packaged-client Forest Lantern archive also passes. The broader
-authoritative registry spine is the next incomplete milestone.
+The exact archive directory and launch-attempt marker block another provision,
+check, or run. This headless contract creates no screenshots and consults no
+external game profile. Archive validation proves capture-time payload integrity
+only; it does not compare current sources or rebuilt artifacts. The immutable
+v16 Forest Lantern archive remains historical evidence, while v19 cumulatively
+re-proves its server contract. Forge packaged-client evidence is a separate
+proof boundary.
 
 ## Historical Forge 1.20.1 dedicated-server metal-block-registry probe (v13)
 
@@ -675,7 +677,7 @@ was captured in the separate fresh v13 runtime.
 
 The immutable v11 predecessor passed all 163 schema-7 assertions for the exact
 14 `SharedMaterialItems` IDs, vanilla runtime classes, maximum counts, and
-in-process `ItemStack` NBT round trips through a real reload. The current v16
+in-process `ItemStack` NBT round trips through a real reload. The current v19
 record re-proves those assertions cumulatively. Validate the frozen v11 archive
 only with its pinned verifier:
 
@@ -700,10 +702,10 @@ The immutable v10 predecessor passed all 138 schema-6 assertions for the exact
 22 `SharedParticleTypes` IDs, eight payload families, concrete types, spawn
 flags, codecs, factories, command/packet/codec round trips, and seal metadata.
 It used the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v16
+`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v19
 re-proves all of its assertions cumulatively. Its five-file archive remains
 frozen at `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not
-be recaptured with the current v16 runner.
+be recaptured with the current v19 runner.
 
 Validate only the completed historical runtime or immutable archive with the
 pinned verifier:
@@ -769,12 +771,12 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
-and forbidden mod-ID inventories. The mutable runner has advanced to v16, so v6
+and forbidden mod-ID inventories. The mutable runner has advanced to v19, so v6
 must be inspected only through its immutable snapshot and verifier. It must
 never be provisioned, reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
-runner lifecycle shown above. Those mutable runner commands now target v16 and
+runner lifecycle shown above. Those mutable runner commands now target v19 and
 must not be used as instructions to recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
@@ -841,7 +843,7 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to v16. They cannot recapture v4, and v4 must not be provisioned,
+advanced to v19. They cannot recapture v4, and v4 must not be provisioned,
 reused, cleaned, or replaced. Only its immutable archive verifier remains an
 active instruction:
 
@@ -905,9 +907,10 @@ current Common/Fabric/Forge artifact structure. The combined
 `validateForgeRegistryFoundationMilestone` requires those boundaries, the
 probe isolation checks, and v4 archive integrity.
 
-The canonical Attrahite resource remains Fabric-only because its items are not
-ported. The synthetic table proves the shared condition and serializer, not
-Attrahite gameplay or drop parity. This bounded run also does not satisfy the
+The v4 synthetic table proves the shared condition and serializer, not
+Attrahite gameplay or drop parity. The current v19 archive supplies the bounded
+Forge dedicated-server Attrahite proof described above. The historical v4 run
+also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
@@ -929,8 +932,9 @@ Ether-source reload and v7 enchantment-registry archives remain immutable
 historical evidence; v10 is the historical particle-registry predecessor, v11
 is the historical material-item predecessor, v13 is the historical
 metal-block-registry proof, v14 is the historical food-item proof, and v16 is
-the current cumulative Forest Lantern dedicated-server proof. Forge client v13
-is the separately accepted packaged-client Forest Lantern proof.
+the historical Forest Lantern dedicated-server proof. The v19 Attrahite archive
+is the current cumulative dedicated-server proof. Forge client v13 is the
+separately accepted packaged-client Forest Lantern proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
@@ -947,5 +951,6 @@ python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_server_particle_evidence_v10.py \
   scripts/e2e/test_forge_server_material_item_evidence_v11.py \
   scripts/e2e/test_forge_server_metal_block_evidence_v12.py \
-  scripts/e2e/test_forge_server_metal_block_evidence_v13.py
+  scripts/e2e/test_forge_server_metal_block_evidence_v13.py \
+  scripts/e2e/test_forge_server_attrahite_evidence_v19.py
 ```

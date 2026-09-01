@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "kind": "etherology-forge-dedicated-server-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "attrahite-block-registry",
+  "profile": {
+    "id": "etherology-e2e-forge-server-1.20.1-v19",
+    "manifest_path": "scripts/e2e/forge-server-1.20.1-profile.json",
+    "manifest_size": 1204,
+    "manifest_sha256": "626cd5354057da6afe426d88de6849f6daef1a95a56ad3e5e4bb7afad2ceceec"
+  },
+  "runtime": {
+    "artifact_node": "forge-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "forge",
+    "loader_version": "47.4.9",
+    "java": 17,
+    "distribution": "DEDICATED_SERVER",
+    "task_path": ":forge:1.20.1:runRegistryFoundationServerProbe",
+    "execution": "loom-userdev-dedicated-server"
+  },
+  "assertion_count": 310,
+  "publication": {
+    "report": "reports/report.json",
+    "launcher_result": "reports/launcher-result.json",
+    "completion_marker": "reports/done.marker",
+    "server_log": "logs/latest.log",
+    "verified_launcher_after_report_and_log_before_sealing": true,
+    "verified_completion_marker_last_before_sealing": true
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 188827,
+      "sha256": "35c5912f865bb877b85cdc420e94853ba94a2f156addbfe270c32e393c40a33b"
+    },
+    "reports/launcher-result.json": {
+      "size": 583,
+      "sha256": "d9ae790ba2b9ea6d990853ced85464a8ddb7ba4d0347dda6d34c92a2dcc4e23f"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "logs/latest.log": {
+      "size": 18650,
+      "sha256": "568f811ac98f9675a9352d0dadfe5887afdea70b833da9d6b952b09e46a2cd39"
+    }
+  }
+}

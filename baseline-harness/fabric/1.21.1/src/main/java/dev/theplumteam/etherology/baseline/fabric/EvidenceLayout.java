@@ -82,8 +82,34 @@ record EvidenceLayout(
         return screenshotsDirectory.resolve(scenario.screenshotFileName());
     }
 
+    Path screenshotPath(String fileName) {
+        if (fileName == null
+                || fileName.isEmpty()
+                || fileName.contains("/")
+                || fileName.contains("\\")
+                || !fileName.endsWith(".png")) {
+            throw new IllegalArgumentException("The screenshot file name is unsafe");
+        }
+        return screenshotsDirectory.resolve(fileName);
+    }
+
     void requireFreshTargets() throws IOException {
         requireMissing(screenshotPath(), "scenario screenshot");
+        requireMissing(reportPath(), "scenario report");
+        requireMissing(completionMarkerPath(), "scenario completion marker");
+    }
+
+    void requireFreshTargets(String... screenshotFileNames) throws IOException {
+        if (screenshotFileNames == null || screenshotFileNames.length == 0) {
+            throw new IOException("The screenshot inventory is empty");
+        }
+        for (String fileName : screenshotFileNames) {
+            try {
+                requireMissing(screenshotPath(fileName), "scenario screenshot");
+            } catch (IllegalArgumentException exception) {
+                throw new IOException(exception.getMessage(), exception);
+            }
+        }
         requireMissing(reportPath(), "scenario report");
         requireMissing(completionMarkerPath(), "scenario completion marker");
     }

@@ -23,6 +23,13 @@ final class ScenarioDefinitions {
             "Etherology Original 0.1.7 Attrahite Blocks",
             0x4554484154543031L
     );
+    static final ScenarioDefinition SLITHERITE_BLOCK_REGISTRY = new ScenarioDefinition(
+            "slitherite-block-registry",
+            "slitherite-block-registry-initial.png",
+            "etherology-original-slitherite-block-registry-world",
+            "Etherology Original 0.1.7 Slitherite Blocks",
+            0x455448534c495430L
+    );
 
     private ScenarioDefinitions() {
     }

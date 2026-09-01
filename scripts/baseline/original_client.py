@@ -99,7 +99,7 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v4.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -627,6 +627,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v2": "v2",
         "etherology-original-fabric-1.21.1-published-0.1.7-v3": "v3",
         "etherology-original-fabric-1.21.1-published-0.1.7-v4": "v4",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v5": "v5",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -920,6 +921,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v2": "1.1.0",
         "v3": "1.2.0",
         "v4": "1.2.0",
+        "v5": "1.3.0",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -998,6 +1000,17 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             ),
             "world_display_name": "Etherology Original 0.1.7 Attrahite Blocks",
             "world_seed": 4995697332085600305,
+        },
+        "v5": {
+            "id": "slitherite-block-registry",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "slitherite-block-registry-initial.png",
+            "world_directory_name": (
+                "etherology-original-slitherite-block-registry-world"
+            ),
+            "world_display_name": "Etherology Original 0.1.7 Slitherite Blocks",
+            "world_seed": 4995697409260082224,
         },
     }
     exact_scenario = exact_scenarios[profile_revision]
@@ -1523,7 +1536,18 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "dev/theplumteam/etherology/baseline/fabric/mixin/"
                 "PlayerEntityJumpInvoker.class"
             )
-            expects_jump_invoker = harness["version"] in {"1.1.0", "1.2.0"}
+            expects_jump_invoker = harness["version"] in {
+                "1.1.0",
+                "1.2.0",
+                "1.3.0",
+            }
+            expected_slitherite_class = (
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "SlitheriteBlockRegistryScenario.class"
+            )
+            expects_slitherite = (
+                scenario_spec(configuration)["id"] == "slitherite-block-registry"
+            )
             class_entries = {
                 name
                 for name, entry in entries.items()
@@ -1535,6 +1559,10 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 or (
                     expects_jump_invoker
                     and expected_jump_invoker_class not in class_entries
+                )
+                or (
+                    expects_slitherite
+                    and expected_slitherite_class not in class_entries
                 )
                 or not class_entries
                 or any(
@@ -1608,7 +1636,7 @@ def profile_descriptor(configuration: Configuration) -> dict[str, object]:
     runtime = runtime_spec(configuration)
     harness = harness_spec(configuration)
     scenario = scenario_spec(configuration)
-    return {
+    descriptor = {
         "schema": 1,
         "profile_id": profile_spec(configuration)["id"],
         "managed_by": "scripts/baseline/original_client.py",
@@ -1656,6 +1684,13 @@ def profile_descriptor(configuration: Configuration) -> dict[str, object]:
             "world_directory_name": scenario["world_directory_name"],
         },
     }
+    if scenario["id"] == "slitherite-block-registry":
+        capture = require_object(descriptor, "capture")
+        capture["screenshot_files"] = [
+            "slitherite-block-registry-initial.png",
+            "slitherite-block-registry-reopened.png",
+        ]
+    return descriptor
 
 
 def evidence_marker_path(configuration: Configuration, root: Path) -> Path:
@@ -1687,9 +1722,20 @@ def completion_marker_path(configuration: Configuration, root: Path) -> Path:
 
 
 def screenshot_path(configuration: Configuration, root: Path) -> Path:
-    return screenshots_directory(configuration, root) / str(
-        scenario_spec(configuration)["screenshot_file"]
+    return screenshot_paths(configuration, root)[0]
+
+
+def screenshot_paths(configuration: Configuration, root: Path) -> tuple[Path, ...]:
+    scenario = scenario_spec(configuration)
+    file_names = (
+        (
+            "slitherite-block-registry-initial.png",
+            "slitherite-block-registry-reopened.png",
+        )
+        if scenario["id"] == "slitherite-block-registry"
+        else (str(scenario["screenshot_file"]),)
     )
+    return tuple(screenshots_directory(configuration, root) / value for value in file_names)
 
 
 def save_directory(configuration: Configuration, root: Path) -> Path:
@@ -1702,7 +1748,7 @@ def evidence_descriptor(configuration: Configuration) -> dict[str, object]:
     scenario = scenario_spec(configuration)
     framebuffer = require_object(scenario, "framebuffer")
     harness = harness_spec(configuration)
-    return {
+    descriptor = {
         "schema": 1,
         "profile_id": profile_spec(configuration)["id"],
         "reference_id": require_object(configuration.manifest, "provenance")[
@@ -1729,6 +1775,13 @@ def evidence_descriptor(configuration: Configuration) -> dict[str, object]:
             "height": framebuffer["height"],
         },
     }
+    if scenario["id"] == "slitherite-block-registry":
+        scenario_descriptor = require_object(descriptor, "scenario")
+        scenario_descriptor["screenshot_files"] = [
+            "slitherite-block-registry-initial.png",
+            "slitherite-block-registry-reopened.png",
+        ]
+    return descriptor
 
 
 def verify_capture_layout(
@@ -5983,6 +6036,55 @@ def verify_assertion_semantics(
     raise BaselineError(f"No assertion contract exists for scenario {scenario_id}")
 
 
+def load_slitherite_evidence_verifier() -> types.ModuleType:
+    verifier_path = SCRIPT_DIRECTORY / "original_slitherite_evidence_v5.py"
+    specification = importlib.util.spec_from_file_location(
+        "etherology_original_slitherite_evidence_v5",
+        verifier_path,
+    )
+    if specification is None or specification.loader is None:
+        raise BaselineError(f"Cannot load Slitherite evidence verifier: {verifier_path}")
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[specification.name] = module
+    previous_bytecode_policy = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        specification.loader.exec_module(module)
+    except (OSError, ImportError, RuntimeError) as exception:
+        raise BaselineError(
+            f"Cannot initialize Slitherite evidence verifier: {exception}"
+        ) from exception
+    finally:
+        sys.dont_write_bytecode = previous_bytecode_policy
+    return module
+
+
+def verify_slitherite_evidence_verifier_binding(
+    configuration: Configuration,
+) -> types.ModuleType:
+    verifier = load_slitherite_evidence_verifier()
+    harness = harness_spec(configuration)
+    profile = profile_spec(configuration)
+    scenario = scenario_spec(configuration)
+    expected_manifest_path = configuration.manifest_path.relative_to(
+        configuration.repository_root
+    ).as_posix()
+    if (
+        verifier.SCENARIO_ID != scenario["id"]
+        or verifier.PROFILE_ID != profile["id"]
+        or verifier.PROFILE_RELATIVE_PATH != expected_manifest_path
+        or verifier.HARNESS_VERSION != harness["version"]
+        or verifier.INITIAL_SCREENSHOT_FILE != scenario["screenshot_file"]
+        or tuple(verifier.SCREENSHOT_FILES)
+        != tuple(path.name for path in screenshot_paths(configuration, Path(".")))
+        or len(verifier.EXPECTED_ASSERTION_NAMES) != 183
+    ):
+        raise BaselineError(
+            "The Slitherite verifier is not bound to the exact active v5 contract"
+        )
+    return verifier
+
+
 def verify_scenario_evidence(
     configuration: Configuration, root: Path
 ) -> dict[str, object]:
@@ -5995,7 +6097,7 @@ def verify_scenario_evidence(
         str(scenario["report_file"]),
         str(scenario["completion_marker_file"]),
     }
-    expected_screenshot_inventory = {str(scenario["screenshot_file"])}
+    expected_screenshot_inventory = {path.name for path in screenshot_paths(configuration, root)}
     actual_report_inventory = {path.name for path in reports.iterdir()}
     actual_screenshot_inventory = {path.name for path in screenshots.iterdir()}
     if actual_report_inventory != expected_report_inventory:
@@ -6015,6 +6117,84 @@ def verify_scenario_evidence(
         report_path(configuration, root), "Original-baseline scenario report"
     )
     scenario_id = str(scenario["id"])
+    if scenario_id == "slitherite-block-registry":
+        etherology = next(
+            member
+            for member in member_specs(configuration)
+            if member["mod_id"] == "etherology"
+        )
+        harness = harness_spec(configuration)
+        expected_artifacts = [
+            {
+                "mod_id": "etherology",
+                "origin_kind": "PATH",
+                "file_name": etherology["file_name"],
+                "size": etherology["size"],
+                "sha256": etherology["sha256"],
+            },
+            {
+                "mod_id": harness["mod_id"],
+                "origin_kind": "PATH",
+                "file_name": harness["file_name"],
+                "size": harness["size"],
+                "sha256": harness["sha256"],
+            },
+        ]
+        verifier = verify_slitherite_evidence_verifier_binding(configuration)
+        try:
+            verifier.validate_evidence(
+                scenario_root=scenario_root(configuration, root),
+                world_path=save_directory(configuration, root),
+                report=report,
+                expected_artifacts=expected_artifacts,
+                decode_png=decode_png,
+                assert_image_is_not_blank=assert_image_is_not_blank,
+                sha256_file=sha256_file,
+                error_type=BaselineError,
+            )
+        except BaselineError:
+            raise
+        except Exception as exception:
+            raise BaselineError(
+                f"Original Slitherite verifier failed closed: {exception}"
+            ) from exception
+
+        marker = completion_marker_path(configuration, root)
+        if marker.is_symlink() or not marker.is_file():
+            raise BaselineError(
+                f"Original-baseline completion marker is missing or linked: {marker}"
+            )
+        expected_marker_content = (
+            "slitherite-block-registry:passed\n"
+            f"report_sha256:{sha256_file(report_path(configuration, root))}\n"
+        )
+        if marker.read_text(encoding="utf-8") != expected_marker_content:
+            raise BaselineError(
+                "Original Slitherite completion marker did not report passed"
+            )
+        initial, reopened = screenshot_paths(configuration, root)
+        report_file = report_path(configuration, root)
+        publication_times = (
+            launch_attempt_path(configuration, root).stat().st_mtime_ns,
+            initial.stat().st_mtime_ns,
+            reopened.stat().st_mtime_ns,
+            report_file.stat().st_mtime_ns,
+            marker.stat().st_mtime_ns,
+        )
+        if not all(
+            earlier < later
+            for earlier, later in zip(publication_times, publication_times[1:])
+        ):
+            raise BaselineError(
+                "Original Slitherite evidence was not published in seal -> initial -> "
+                "reopened -> report -> completion-marker order"
+            )
+        if attempt.get("created_at_unix_ns") > publication_times[0]:
+            raise BaselineError(
+                "Launch-attempt timestamp is newer than its durable seal"
+            )
+        return verify_game_lifecycle(configuration, root)
+
     forest_lantern_scenario = scenario_id == "forest-lantern"
     attrahite_scenario = scenario_id == "attrahite-block-registry"
     schema_two_scenario = forest_lantern_scenario or attrahite_scenario
@@ -6383,6 +6563,9 @@ def verify_game_lifecycle(
         "attrahite-block-registry": (
             "Original Attrahite evidence published with status passed:"
         ),
+        "slitherite-block-registry": (
+            "Original Slitherite evidence published with status passed:"
+        ),
     }
     scenario_id = str(scenario_spec(configuration)["id"])
     success_marker = success_markers.get(scenario_id)
@@ -6430,7 +6613,6 @@ def write_successful_run_verification(
     attempt = launch_attempt_path(configuration, root)
     report = report_path(configuration, root)
     marker = completion_marker_path(configuration, root)
-    screenshot = screenshot_path(configuration, root)
     descriptor = {
         "schema": 1,
         "status": "passed",
@@ -6440,13 +6622,19 @@ def write_successful_run_verification(
         "launch_attempt": file_descriptor(attempt, root),
         "scenario_report": file_descriptor(report, root),
         "completion_marker": file_descriptor(marker, root),
-        "screenshot": file_descriptor(screenshot, root),
         "controller_log": file_descriptor(controller_log, root),
         "immutable_launcher_files_sha256": canonical_json_sha256(
             launcher_file_inventory(configuration, root)
         ),
         "mutable_launcher_outputs": {"skin_cache": skin_cache},
     }
+    screenshots = screenshot_paths(configuration, root)
+    if len(screenshots) == 1:
+        descriptor["screenshot"] = file_descriptor(screenshots[0], root)
+    else:
+        descriptor["screenshots"] = [
+            file_descriptor(screenshot, root) for screenshot in screenshots
+        ]
     write_json_exclusive(verification_path, descriptor)
     if load_json_object(
         verification_path, "Original-baseline successful-run verification"
@@ -6699,6 +6887,8 @@ def validate_command() -> int:
     verify_tracked_fabric_profile_snapshot(configuration)
     member_mod_ids = verify_reference_bundle(configuration)
     verify_harness_artifact(configuration)
+    if scenario_spec(configuration)["id"] == "slitherite-block-registry":
+        verify_slitherite_evidence_verifier_binding(configuration)
     preflight_launcher_import_resolution()
     print(f"Validated profile: {profile_spec(configuration)['id']}")
     print(f"Published bundle SHA-256: {bundle_spec(configuration)['sha256']}")

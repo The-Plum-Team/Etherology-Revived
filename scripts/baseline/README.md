@@ -4,17 +4,20 @@
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v1/
+  etherology-original-fabric-1.21.1-published-0.1.7-v5/
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v1.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v5.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins a separately built,
-client-only phase-zero harness as a ninth root JAR. The controller recursively
+client-only capture harness as a ninth root JAR. The controller recursively
 reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quickskin`),
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
+
+The v5 manifest is `10,321` bytes with SHA-256
+`ff1a5d17607878fdb77f6c3daa3da69185ae6243e853ac26bff446ad2478593b`.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -61,10 +64,10 @@ The separately packaged capture harness is not part of the published reference
 and does not replace it:
 
 - Harness JAR:
-  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.0.0.jar`
-- Harness size: `47,349` bytes
+  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.0.jar`
+- Harness size: `210,330` bytes
 - Harness SHA-256:
-  `5554034a7535b9f324d38cb4c2c79721a8c45f507aac6e450f5d807787506d24`
+  `e149747e9ab5c8a9e0c8fa19d291e0916370e77d45bdd886c4ea88f697e6746d`
 - Harness mod id: `etherology_original_baseline_harness`
 - Environment: client only
 - Exact dependency: `etherology=1.21-0.1.7`
@@ -102,9 +105,8 @@ dedicated baseline project; it does not launch Minecraft:
 ./gradlew -p baseline-harness/fabric/1.21.1 --no-daemon clean buildHarness
 ```
 
-Two clean builds produced the same size and SHA-256 recorded above. The build
-uses Java 21 and pinned Architectury Loom `1.17.480`. Static controller
-validation is then read-only:
+The build uses Java 21 and pinned Architectury Loom `1.17.480`. Static
+controller validation is then read-only:
 
 ```bash
 python3 -B scripts/baseline/original_client.py validate
@@ -116,7 +118,7 @@ The remaining lifecycle is deliberately split into distinct gates:
 python3 -B scripts/baseline/original_client.py provision
 python3 -B scripts/baseline/original_client.py stage
 python3 -B scripts/baseline/original_client.py check
-python3 -B scripts/baseline/original_client.py run --scenario phase0-smoke
+python3 -B scripts/baseline/original_client.py run --scenario slitherite-block-registry
 ```
 
 - `provision` is the controller's explicit dependency-download phase. It
@@ -202,7 +204,44 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## `phase0-smoke` contract
+## Active `slitherite-block-registry` v5 contract
+
+The unconsumed v5 profile is dedicated to the published-0.1.7 Slitherite
+family. It validates 17 ordered block/item registry pairs, exact intermediary
+runtime classes and default states, 1,262 state network IDs, 79 Etherology
+visual assets plus one vanilla sentinel, grouped block/item tags, 17 self-drop
+loot tables (including one item from every double slab), 29 family recipes and
+their 29 advancements, and five related cross-system recipes that are recorded
+but not claimed as Slitherite-owned. All 17 gallery members are placed through
+their real `BlockItem` path.
+
+The native behavior sequence requires a deterministic button pulse and reset,
+an ignored item entity plus an activating living entity on the pressure plate,
+a forced save, a full disconnect/reopen, and exact structural/data equality
+after reopen. Each initial/reopened capture requires 20 fresh paired local
+server/client light samples (sky 15 and block 14), terrain/fixture readiness,
+and 120 consecutive completed renders. Global lighting-provider pending state
+is diagnostic only; timeout reports retain the last local samples and counters.
+The strict controller independently rejects dark images by mean-luminance and
+dark-pixel bounds and compares both the reopened structure and framebuffer
+pixels.
+
+Expected evidence, once the one authorized run is eventually performed, is:
+
+```text
+scripts/baseline/.state/runtimes/
+  etherology-original-fabric-1.21.1-published-0.1.7-v5/
+    evidence/slitherite-block-registry/
+      reports/{report.json,done.marker}
+      screenshots/{slitherite-block-registry-initial.png,
+                   slitherite-block-registry-reopened.png}
+```
+
+At preparation time v5 has no runtime, launch-attempt seal, evidence, or
+archive. Provisioning and launching it are deliberately outside this change.
+The v1-v4 manifests and their historical evidence remain immutable.
+
+## Historical `phase0-smoke` contract
 
 The implemented first scenario creates a brand-new repository-owned integrated
 world named `etherology-original-phase0-smoke-world` with seed

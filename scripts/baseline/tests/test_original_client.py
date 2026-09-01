@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path, PurePosixPath
+import shutil
 import signal
 import struct
 import sys
@@ -29,8 +30,33 @@ client = importlib.util.module_from_spec(SPECIFICATION)
 sys.modules[SPECIFICATION.name] = client
 SPECIFICATION.loader.exec_module(client)
 
+SLITHERITE_EVIDENCE_TEST_PATH = (
+    BASELINE_DIRECTORY / "tests" / "test_original_slitherite_evidence_v5.py"
+)
+SLITHERITE_EVIDENCE_TEST_SPECIFICATION = importlib.util.spec_from_file_location(
+    "etherology_original_slitherite_evidence_v5_fixture",
+    SLITHERITE_EVIDENCE_TEST_PATH,
+)
+if (
+    SLITHERITE_EVIDENCE_TEST_SPECIFICATION is None
+    or SLITHERITE_EVIDENCE_TEST_SPECIFICATION.loader is None
+):
+    raise RuntimeError(
+        f"Cannot load Slitherite evidence fixture: {SLITHERITE_EVIDENCE_TEST_PATH}"
+    )
+slitherite_evidence_fixture = importlib.util.module_from_spec(
+    SLITHERITE_EVIDENCE_TEST_SPECIFICATION
+)
+sys.modules[SLITHERITE_EVIDENCE_TEST_SPECIFICATION.name] = slitherite_evidence_fixture
+SLITHERITE_EVIDENCE_TEST_SPECIFICATION.loader.exec_module(
+    slitherite_evidence_fixture
+)
+
 TRACKED_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v4.json"
+)
+ACTIVE_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
 )
 LEGACY_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
@@ -481,12 +507,14 @@ def reference_fixture(
     nested_forbidden_mod_id: str | None = None,
     extra_entry: tuple[str, bytes] | None = None,
     harness_production_link: bool = False,
+    source_manifest_path: Path = TRACKED_MANIFEST_PATH,
+    fixture_manifest_name: str = "fixture.json",
 ) -> tuple[object, Path, dict[str, bytes]]:
     repository = temporary_root / "repository"
     baseline = repository / "scripts" / "baseline"
     state = baseline / ".state"
     state.mkdir(parents=True)
-    manifest = json.loads(TRACKED_MANIFEST_PATH.read_text(encoding="utf-8"))
+    manifest = json.loads(source_manifest_path.read_text(encoding="utf-8"))
     configure_synthetic_runtime_manifest(manifest)
     fabric_snapshot = manifest["runtime"]["fabric_profile"]["snapshot"]
     fabric_snapshot_path = repository / fabric_snapshot["path"]
@@ -537,7 +565,7 @@ def reference_fixture(
     harness["size"] = len(harness_content)
     harness["sha256"] = hashlib.sha256(harness_content).hexdigest()
     member_contents[str(harness["file_name"])] = harness_content
-    manifest_path = baseline / "fixture.json"
+    manifest_path = baseline / fixture_manifest_name
     write_json(manifest_path, manifest)
     configuration = client.load_configuration(manifest_path, repository)
     return configuration, manifest_path, member_contents
@@ -1011,7 +1039,7 @@ class TrackedManifestTests(unittest.TestCase):
         )
         self.assertEqual(manifest["capture"]["scenario"]["id"], "forest-lantern")
 
-    def test_consumed_v3_manifest_remains_byte_exact_and_v4_is_fresh(self) -> None:
+    def test_consumed_v3_and_v4_manifests_remain_byte_exact(self) -> None:
         self.assertEqual(
             len(LEGACY_ATTRAHITE_MANIFEST_PATH.read_bytes()),
             10309,
@@ -1047,6 +1075,50 @@ class TrackedManifestTests(unittest.TestCase):
             hashlib.sha256(TRACKED_MANIFEST_PATH.read_bytes()).hexdigest(),
             "6f6f84c0c33f4f269dd37d5876f22423cef188b1d49fa873dc1a953870f5bdb0",
         )
+
+    def test_active_v5_profile_is_fresh_and_has_no_runtime_or_archive(self) -> None:
+        self.assertEqual(client.MANIFEST_PATH, ACTIVE_MANIFEST_PATH)
+        self.assertEqual(len(ACTIVE_MANIFEST_PATH.read_bytes()), 10321)
+        self.assertEqual(
+            hashlib.sha256(ACTIVE_MANIFEST_PATH.read_bytes()).hexdigest(),
+            "ff1a5d17607878fdb77f6c3daa3da69185ae6243e853ac26bff446ad2478593b",
+        )
+        manifest = json.loads(ACTIVE_MANIFEST_PATH.read_text(encoding="utf-8"))
+        profile_id = "etherology-original-fabric-1.21.1-published-0.1.7-v5"
+        self.assertEqual(manifest["profile"]["id"], profile_id)
+        self.assertEqual(manifest["profile"]["runtime_directory"], profile_id)
+        self.assertEqual(
+            manifest["capture"]["scenario"]["id"],
+            "slitherite-block-registry",
+        )
+        configuration = client.load_configuration()
+        self.assertEqual(
+            client.profile_descriptor(configuration)["capture"]["screenshot_files"],
+            [
+                "slitherite-block-registry-initial.png",
+                "slitherite-block-registry-reopened.png",
+            ],
+        )
+        runtime_root = BASELINE_DIRECTORY / ".state" / "runtimes" / profile_id
+        for path in (
+            runtime_root,
+            runtime_root / "launch-attempt.json",
+            runtime_root / "evidence",
+            runtime_root / "game" / "saves" / (
+                "etherology-original-slitherite-block-registry-world"
+            ),
+        ):
+            self.assertFalse(path.exists())
+            self.assertFalse(path.is_symlink())
+        archive = (
+            BASELINE_DIRECTORY.parents[1]
+            / "docs"
+            / "evidence"
+            / "original-1.21.1"
+            / "slitherite-block-registry-v5"
+        )
+        self.assertFalse(archive.exists())
+        self.assertFalse(archive.is_symlink())
 
     def test_tracked_original_evidence_archive_is_exact(self) -> None:
         archive_manifest = client.load_json_object(
@@ -1296,13 +1368,21 @@ class TrackedManifestTests(unittest.TestCase):
         client.verify_harness_artifact(configuration)
         self.assertEqual(
             client.profile_spec(configuration)["id"],
-            "etherology-original-fabric-1.21.1-published-0.1.7-v4",
+            "etherology-original-fabric-1.21.1-published-0.1.7-v5",
         )
         self.assertEqual(
             client.scenario_spec(configuration)["id"],
-            "attrahite-block-registry",
+            "slitherite-block-registry",
         )
-        self.assertEqual(len(client.EXPECTED_ASSERTION_NAMES), 49)
+        verifier = client.load_slitherite_evidence_verifier()
+        self.assertEqual(len(verifier.EXPECTED_ASSERTION_NAMES), 183)
+        bound_verifier = client.verify_slitherite_evidence_verifier_binding(
+            configuration
+        )
+        self.assertEqual(
+            bound_verifier.PROFILE_ID,
+            "etherology-original-fabric-1.21.1-published-0.1.7-v5",
+        )
         self.assertEqual(
             ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME,
             "attrahite-block-registry-v4",
@@ -1740,6 +1820,91 @@ class CaptureContractTests(unittest.TestCase):
                     "files": [],
                 },
             )
+
+    def test_machine_verifier_accepts_ordered_slitherite_v5_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(
+                temporary_root,
+                source_manifest_path=ACTIVE_MANIFEST_PATH,
+                fixture_manifest_name=ACTIVE_MANIFEST_PATH.name,
+            )
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            attempt_path = write_launch_attempt_fixture(configuration, root)
+            fixture_scenario, fixture_world, report, _ = (
+                slitherite_evidence_fixture.contract_fixture(
+                    temporary_root / "slitherite-contract"
+                )
+            )
+            scenario = client.scenario_root(configuration, root)
+            for screenshot in (fixture_scenario / "screenshots").iterdir():
+                shutil.copy2(
+                    screenshot,
+                    client.screenshots_directory(configuration, root)
+                    / screenshot.name,
+                )
+            shutil.copytree(
+                fixture_world,
+                client.save_directory(configuration, root),
+            )
+
+            etherology = next(
+                member
+                for member in client.member_specs(configuration)
+                if member["mod_id"] == "etherology"
+            )
+            harness = client.harness_spec(configuration)
+            report["artifacts"] = [
+                {
+                    "mod_id": "etherology",
+                    "origin_kind": "PATH",
+                    "file_name": etherology["file_name"],
+                    "size": etherology["size"],
+                    "sha256": etherology["sha256"],
+                },
+                {
+                    "mod_id": harness["mod_id"],
+                    "origin_kind": "PATH",
+                    "file_name": harness["file_name"],
+                    "size": harness["size"],
+                    "sha256": harness["sha256"],
+                },
+            ]
+            report_file = client.report_path(configuration, root)
+            marker = client.completion_marker_path(configuration, root)
+            write_json(report_file, report)
+            marker.write_text(
+                "slitherite-block-registry:passed\n"
+                f"report_sha256:{client.sha256_file(report_file)}\n",
+                encoding="utf-8",
+            )
+            initial, reopened = client.screenshot_paths(configuration, root)
+            base_time = time.time_ns() - 5_000_000_000
+            for path, offset in (
+                (attempt_path, 0),
+                (initial, 1_000_000),
+                (reopened, 2_000_000),
+                (report_file, 3_000_000),
+                (marker, 4_000_000),
+            ):
+                os.utime(path, ns=(base_time + offset, base_time + offset))
+
+            lifecycle = {"status": "passed", "scenario": scenario.name}
+            with mock.patch.object(
+                client,
+                "decode_png",
+                return_value=slitherite_evidence_fixture.BRIGHT_IMAGE,
+            ):
+                with mock.patch.object(client, "assert_image_is_not_blank"):
+                    with mock.patch.object(
+                        client,
+                        "verify_game_lifecycle",
+                        return_value=lifecycle,
+                    ):
+                        self.assertEqual(
+                            client.verify_scenario_evidence(configuration, root),
+                            lifecycle,
+                        )
 
     def test_machine_verifier_rejects_named_attrahite_class_aliases(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -2483,14 +2648,17 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
     def test_scenario_requires_exact_allowlist_entry(self) -> None:
         configuration = client.load_configuration()
         self.assertEqual(
-            client.resolve_scenario_id(configuration, "attrahite-block-registry"),
-            "attrahite-block-registry",
+            client.resolve_scenario_id(configuration, "slitherite-block-registry"),
+            "slitherite-block-registry",
         )
         for scenario in (
             None,
             "",
+            "slitherite-block-registry ",
+            "../slitherite-block-registry",
             "attrahite-block-registry ",
             "../attrahite-block-registry",
+            "attrahite-block-registry",
             "forest-lantern",
             "other",
         ):
@@ -2503,7 +2671,7 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
         client.require_capture_harness(configuration)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "3d7380b7de06cbbf479535cb30371e5878a6f6602292c038882f9a852d31488a",
+            "e149747e9ab5c8a9e0c8fa19d291e0916370e77d45bdd886c4ea88f697e6746d",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:

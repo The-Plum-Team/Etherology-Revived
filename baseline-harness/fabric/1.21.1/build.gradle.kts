@@ -115,6 +115,12 @@ val validateHarnessArtifact = tasks.register("validateHarnessArtifact") {
                 "Harness JAR has no Attrahite block-registry scenario"
             }
             check(
+                "dev/theplumteam/etherology/baseline/fabric/" +
+                    "SlitheriteBlockRegistryScenario.class" in entries,
+            ) {
+                "Harness JAR has no Slitherite block-registry scenario"
+            }
+            check(
                 "dev/theplumteam/etherology/baseline/fabric/mixin/GameRendererMixin.class" in
                     entries,
             ) {

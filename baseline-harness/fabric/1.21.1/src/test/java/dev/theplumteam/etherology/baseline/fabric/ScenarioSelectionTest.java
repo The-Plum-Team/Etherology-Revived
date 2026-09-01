@@ -23,6 +23,12 @@ final class ScenarioSelectionTest {
                         AttrahiteBlockRegistryScenario.SCENARIO_ID
                 )
         );
+        assertEquals(
+                SlitheriteBlockRegistryScenario.SCENARIO_ID,
+                ScenarioSelection.resolveScenarioId(
+                        SlitheriteBlockRegistryScenario.SCENARIO_ID
+                )
+        );
     }
 
     @Test

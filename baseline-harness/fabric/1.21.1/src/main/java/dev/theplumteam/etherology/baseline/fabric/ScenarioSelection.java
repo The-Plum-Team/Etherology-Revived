@@ -22,6 +22,8 @@ final class ScenarioSelection {
                     new ScenarioController(new ForestLanternScenario());
             case AttrahiteBlockRegistryScenario.SCENARIO_ID ->
                     new ScenarioController(new AttrahiteBlockRegistryScenario());
+            case SlitheriteBlockRegistryScenario.SCENARIO_ID ->
+                    new ScenarioController(new SlitheriteBlockRegistryScenario());
             default -> throw new IllegalStateException("Scenario resolution was not exhaustive");
         };
     }
@@ -29,7 +31,10 @@ final class ScenarioSelection {
     static String resolveScenarioId(String configuredScenarioId) {
         if (PhaseZeroScenario.SCENARIO_ID.equals(configuredScenarioId)
                 || ForestLanternScenario.SCENARIO_ID.equals(configuredScenarioId)
-                || AttrahiteBlockRegistryScenario.SCENARIO_ID.equals(configuredScenarioId)) {
+                || AttrahiteBlockRegistryScenario.SCENARIO_ID.equals(configuredScenarioId)
+                || SlitheriteBlockRegistryScenario.SCENARIO_ID.equals(
+                        configuredScenarioId
+                )) {
             return configuredScenarioId;
         }
 
@@ -38,7 +43,8 @@ final class ScenarioSelection {
                         + configuredScenarioId + "'; expected exactly "
                         + PhaseZeroScenario.SCENARIO_ID + " or "
                         + ForestLanternScenario.SCENARIO_ID + " or "
-                        + AttrahiteBlockRegistryScenario.SCENARIO_ID
+                        + AttrahiteBlockRegistryScenario.SCENARIO_ID + " or "
+                        + SlitheriteBlockRegistryScenario.SCENARIO_ID
         );
     }
 }

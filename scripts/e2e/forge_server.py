@@ -19,7 +19,7 @@ import tempfile
 import time
 from typing import BinaryIO
 
-import forge_server_contract_v18 as contract_v18
+import forge_server_contract_v19 as contract_v19
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -34,10 +34,10 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v18.PROFILE_ID
-SCENARIO_ID = contract_v18.SCENARIO_ID
-TASK_PATH = contract_v18.TASK_PATH
-REPORT_SCHEMA = contract_v18.REPORT_SCHEMA
+PROFILE_ID = contract_v19.PROFILE_ID
+SCENARIO_ID = contract_v19.SCENARIO_ID
+TASK_PATH = contract_v19.TASK_PATH
+REPORT_SCHEMA = contract_v19.REPORT_SCHEMA
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -49,99 +49,179 @@ PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 MAXIMUM_SERVER_LOG_SIZE = 48 * 1024 * 1024
 COMPLETION_MARKER_CONTENT = b"complete\n"
-REQUIRED_MOD_IDS = contract_v18.REQUIRED_MOD_IDS
-FORBIDDEN_MOD_IDS = contract_v18.FORBIDDEN_MOD_IDS
-RELOAD_PACK_DIRECTORY = contract_v18.RELOAD_PACK_DIRECTORY
-RELOAD_PACK_ENABLED_NAME = contract_v18.RELOAD_PACK_ENABLED_NAME
-RELOAD_PACK_RESOURCES = contract_v18.RELOAD_PACK_RESOURCES
-ETHER_SOURCE_LISTENER_CLASS = contract_v18.ETHER_SOURCE_LISTENER_CLASS
-ENCHANTMENT_REGISTRY_ID = contract_v18.ENCHANTMENT_REGISTRY_ID
-NON_TREASURE_TAG_ID = contract_v18.NON_TREASURE_TAG_ID
-ENCHANTMENT_IDS = contract_v18.ENCHANTMENT_IDS
-ENCHANTMENTS = contract_v18.ENCHANTMENTS
-PARTICLE_REGISTRY_ID = contract_v18.PARTICLE_REGISTRY_ID
-FEY_PARTICLE_TYPE_CLASS = contract_v18.FEY_PARTICLE_TYPE_CLASS
-PARTICLE_IDS = contract_v18.PARTICLE_IDS
-PARTICLE_PAYLOAD_FAMILIES = contract_v18.PARTICLE_PAYLOAD_FAMILIES
-PARTICLES = contract_v18.PARTICLES
-SEAL_TYPE_ORDER = contract_v18.SEAL_TYPE_ORDER
-SEAL_TYPES = contract_v18.SEAL_TYPES
-MATERIAL_ITEM_REGISTRY_ID = contract_v18.MATERIAL_ITEM_REGISTRY_ID
-MATERIAL_ITEM_CLASS = contract_v18.MATERIAL_ITEM_CLASS
-MATERIAL_ITEM_NBT_KEYS = contract_v18.MATERIAL_ITEM_NBT_KEYS
-MATERIAL_ITEM_MAX_COUNTS = contract_v18.MATERIAL_ITEM_MAX_COUNTS
-MATERIAL_ITEM_IDS = contract_v18.MATERIAL_ITEM_IDS
-MATERIAL_ITEMS = contract_v18.MATERIAL_ITEMS
+HISTORICAL_V18_PROFILE_ID = "etherology-e2e-forge-server-1.20.1-v18"
+HISTORICAL_V18_RUNTIME_RELATIVE_PATH = (
+    Path("scripts/e2e/.state/runtimes") / HISTORICAL_V18_PROFILE_ID
+)
+HISTORICAL_V18_ATTEMPT_RELATIVE_PATH = (
+    Path("scripts/e2e/.state") / f"{HISTORICAL_V18_PROFILE_ID}-run.attempted"
+)
+HISTORICAL_V18_ARCHIVE_RELATIVE_PATH = Path(
+    "docs/evidence/forge-1.20.1/attrahite-block-registry-server-v18"
+)
+HISTORICAL_V18_FILE_RECORDS = {
+    HISTORICAL_V18_ATTEMPT_RELATIVE_PATH: (
+        94,
+        "79959e5843f34260e657bd19963a8dd98c06f48214ad1cb52bec97ebcc6fdd84",
+    ),
+    HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/report.json": (
+        188710,
+        "ff7ee4ccb6fe62b308be1603a9e9b0a7bc374e72cb3debccbf27004c8fef1030",
+    ),
+    HISTORICAL_V18_RUNTIME_RELATIVE_PATH / "game/logs/latest.log": (
+        18404,
+        "92c3132a408437ff631501c6b38a6bea4df93a3d0e095ad22c377ee08418b87c",
+    ),
+    HISTORICAL_V18_RUNTIME_RELATIVE_PATH / "game/logs/debug.log": (
+        3731895,
+        "68480bd8fff0f14cff3aa11921c22d73ad5a6f0160ee596e21afab16b405f1f4",
+    ),
+}
+HISTORICAL_V18_ABSENT_RELATIVE_PATHS = (
+    HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/done.marker",
+    HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/launcher-result.json",
+    HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/logs/latest.log",
+    HISTORICAL_V18_ARCHIVE_RELATIVE_PATH,
+)
+HISTORICAL_V18_LIFECYCLE = (
+    "tags_updated_initial",
+    "server_started",
+    "reload_requested",
+    "tags_updated_reload",
+    "reload_command_returned",
+    "stop_requested",
+    "server_stopping",
+    "server_stopped",
+)
+HISTORICAL_V18_FAILURES = (
+    {
+        "name": "forest_lantern_jump_break_exact",
+        "passed": False,
+        "expected": "true",
+        "actual": "false",
+    },
+    {
+        "name": "forest_lantern_jump_break_drop_exact",
+        "passed": False,
+        "expected": "etherology:forest_lanternx1",
+        "actual": "",
+    },
+    {
+        "name": "forest_lantern_server_mechanics_contract_exact",
+        "passed": False,
+        "expected": "true",
+        "actual": "false",
+    },
+    {
+        "name": "forest_lantern_mechanics_stable_after_reload",
+        "passed": False,
+        "expected": "true",
+        "actual": "false",
+    },
+    {
+        "name": "forest_lantern_contract_exact",
+        "passed": False,
+        "expected": "true",
+        "actual": "false",
+    },
+)
+REQUIRED_MOD_IDS = contract_v19.REQUIRED_MOD_IDS
+FORBIDDEN_MOD_IDS = contract_v19.FORBIDDEN_MOD_IDS
+RELOAD_PACK_DIRECTORY = contract_v19.RELOAD_PACK_DIRECTORY
+RELOAD_PACK_ENABLED_NAME = contract_v19.RELOAD_PACK_ENABLED_NAME
+RELOAD_PACK_RESOURCES = contract_v19.RELOAD_PACK_RESOURCES
+ETHER_SOURCE_LISTENER_CLASS = contract_v19.ETHER_SOURCE_LISTENER_CLASS
+ENCHANTMENT_REGISTRY_ID = contract_v19.ENCHANTMENT_REGISTRY_ID
+NON_TREASURE_TAG_ID = contract_v19.NON_TREASURE_TAG_ID
+ENCHANTMENT_IDS = contract_v19.ENCHANTMENT_IDS
+ENCHANTMENTS = contract_v19.ENCHANTMENTS
+PARTICLE_REGISTRY_ID = contract_v19.PARTICLE_REGISTRY_ID
+FEY_PARTICLE_TYPE_CLASS = contract_v19.FEY_PARTICLE_TYPE_CLASS
+PARTICLE_IDS = contract_v19.PARTICLE_IDS
+PARTICLE_PAYLOAD_FAMILIES = contract_v19.PARTICLE_PAYLOAD_FAMILIES
+PARTICLES = contract_v19.PARTICLES
+SEAL_TYPE_ORDER = contract_v19.SEAL_TYPE_ORDER
+SEAL_TYPES = contract_v19.SEAL_TYPES
+MATERIAL_ITEM_REGISTRY_ID = contract_v19.MATERIAL_ITEM_REGISTRY_ID
+MATERIAL_ITEM_CLASS = contract_v19.MATERIAL_ITEM_CLASS
+MATERIAL_ITEM_NBT_KEYS = contract_v19.MATERIAL_ITEM_NBT_KEYS
+MATERIAL_ITEM_MAX_COUNTS = contract_v19.MATERIAL_ITEM_MAX_COUNTS
+MATERIAL_ITEM_IDS = contract_v19.MATERIAL_ITEM_IDS
+MATERIAL_ITEMS = contract_v19.MATERIAL_ITEMS
 MATERIAL_ITEM_CANONICAL_MAX_COUNTS = (
-    contract_v18.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
+    contract_v19.MATERIAL_ITEM_CANONICAL_MAX_COUNTS
 )
 MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v18.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v19.MATERIAL_ITEM_CANONICAL_SAVE_REPRESENTATIONS
 )
-METAL_BLOCK_REGISTRY_ID = contract_v18.METAL_BLOCK_REGISTRY_ID
-METAL_BLOCK_ITEM_REGISTRY_ID = contract_v18.METAL_BLOCK_ITEM_REGISTRY_ID
-METAL_BLOCK_CLASS = contract_v18.METAL_BLOCK_CLASS
-BLOCK_ITEM_CLASS = contract_v18.BLOCK_ITEM_CLASS
-METAL_BLOCK_NBT_KEYS = contract_v18.METAL_BLOCK_NBT_KEYS
-METAL_BLOCK_SPECS = contract_v18.METAL_BLOCK_SPECS
-METAL_BLOCK_IDS = contract_v18.METAL_BLOCK_IDS
-METAL_BLOCKS = contract_v18.METAL_BLOCKS
-METAL_BLOCK_CANONICAL_PROPERTIES = contract_v18.METAL_BLOCK_CANONICAL_PROPERTIES
+METAL_BLOCK_REGISTRY_ID = contract_v19.METAL_BLOCK_REGISTRY_ID
+METAL_BLOCK_ITEM_REGISTRY_ID = contract_v19.METAL_BLOCK_ITEM_REGISTRY_ID
+METAL_BLOCK_CLASS = contract_v19.METAL_BLOCK_CLASS
+BLOCK_ITEM_CLASS = contract_v19.BLOCK_ITEM_CLASS
+METAL_BLOCK_NBT_KEYS = contract_v19.METAL_BLOCK_NBT_KEYS
+METAL_BLOCK_SPECS = contract_v19.METAL_BLOCK_SPECS
+METAL_BLOCK_IDS = contract_v19.METAL_BLOCK_IDS
+METAL_BLOCKS = contract_v19.METAL_BLOCKS
+METAL_BLOCK_CANONICAL_PROPERTIES = contract_v19.METAL_BLOCK_CANONICAL_PROPERTIES
 METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS = (
-    contract_v18.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
+    contract_v19.METAL_BLOCK_CANONICAL_SAVE_REPRESENTATIONS
 )
-METAL_BLOCK_PLACEMENT_POSITIONS = contract_v18.METAL_BLOCK_PLACEMENT_POSITIONS
+METAL_BLOCK_PLACEMENT_POSITIONS = contract_v19.METAL_BLOCK_PLACEMENT_POSITIONS
 METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS = (
-    contract_v18.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
+    contract_v19.METAL_BLOCK_CANONICAL_PLACEMENT_POSITIONS
 )
-METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v18.METAL_BLOCK_CANONICAL_PLACED_IDS
-ATTRAHITE_BLOCK_REGISTRY_ID = contract_v18.ATTRAHITE_BLOCK_REGISTRY_ID
-ATTRAHITE_ITEM_REGISTRY_ID = contract_v18.ATTRAHITE_ITEM_REGISTRY_ID
-ATTRAHITE_BLOCK_ITEM_CLASS = contract_v18.ATTRAHITE_BLOCK_ITEM_CLASS
-ATTRAHITE_BLOCK_IDS = contract_v18.ATTRAHITE_BLOCK_IDS
-ATTRAHITE_LOOT_TABLE_IDS = contract_v18.ATTRAHITE_LOOT_TABLE_IDS
-ATTRAHITE_RECIPE_IDS = contract_v18.ATTRAHITE_RECIPE_IDS
-ATTRAHITE_ADVANCEMENT_IDS = contract_v18.ATTRAHITE_ADVANCEMENT_IDS
-ATTRAHITE_PROPERTIES = contract_v18.ATTRAHITE_PROPERTIES
-ATTRAHITE_TAGS = contract_v18.ATTRAHITE_TAGS
-ATTRAHITE_SAVE_REPRESENTATIONS = contract_v18.ATTRAHITE_SAVE_REPRESENTATIONS
-ATTRAHITE_PLACEMENT_POSITIONS = contract_v18.ATTRAHITE_PLACEMENT_POSITIONS
-ATTRAHITE_PLACED_STATES = contract_v18.ATTRAHITE_PLACED_STATES
-ATTRAHITE_STANDARD_LOOT = contract_v18.ATTRAHITE_STANDARD_LOOT
-ATTRAHITE_RAW_FORTUNE_LOOT = contract_v18.ATTRAHITE_RAW_FORTUNE_LOOT
-ATTRAHITE_RECIPES = contract_v18.ATTRAHITE_RECIPES
-ATTRAHITE_ADVANCEMENTS = contract_v18.ATTRAHITE_ADVANCEMENTS
-ATTRAHITE_BLOCKS = contract_v18.ATTRAHITE_BLOCKS
-ATTRAHITE_ASSERTION_NAMES = contract_v18.ATTRAHITE_ASSERTION_NAMES
-ATTRAHITE_ASSERTION_VALUES = contract_v18.ATTRAHITE_ASSERTION_VALUES
-FOOD_ITEM_REGISTRY_ID = contract_v18.FOOD_ITEM_REGISTRY_ID
-FOOD_ITEM_ID = contract_v18.FOOD_ITEM_ID
-FOOD_ITEM_IDS = contract_v18.FOOD_ITEM_IDS
-FOOD_ITEM_CLASS = contract_v18.FOOD_ITEM_CLASS
-FOOD_ITEM_NBT_KEYS = contract_v18.FOOD_ITEM_NBT_KEYS
-FOOD_ITEM_PROPERTIES = contract_v18.FOOD_ITEM_PROPERTIES
-FOOD_ITEM_SAVE_REPRESENTATION = contract_v18.FOOD_ITEM_SAVE_REPRESENTATION
-FOOD_ITEM_SAVE_REPRESENTATIONS = contract_v18.FOOD_ITEM_SAVE_REPRESENTATIONS
-FOOD_ITEMS = contract_v18.FOOD_ITEMS
-FOOD_CONSUMPTION_PLAYER_CLASS = contract_v18.FOOD_CONSUMPTION_PLAYER_CLASS
-SERVER_STARTED_FOOD_CONSUMPTION = contract_v18.SERVER_STARTED_FOOD_CONSUMPTION
-RELOADED_FOOD_CONSUMPTION = contract_v18.RELOADED_FOOD_CONSUMPTION
-FOREST_LANTERN_ID = contract_v18.FOREST_LANTERN_ID
-FOREST_LANTERN = contract_v18.FOREST_LANTERN
-FOREST_LANTERN_ASSERTION_NAMES = contract_v18.FOREST_LANTERN_ASSERTION_NAMES
-FOREST_LANTERN_ASSERTION_VALUES = contract_v18.FOREST_LANTERN_ASSERTION_VALUES
-INITIAL_ETHER_SOURCE_ENTRIES = contract_v18.INITIAL_ETHER_SOURCE_ENTRIES
-RELOADED_ETHER_SOURCE_ENTRIES = contract_v18.RELOADED_ETHER_SOURCE_ENTRIES
-canonical_ether_source_entries = contract_v18.canonical_ether_source_entries
-EXPECTED_LIFECYCLE = contract_v18.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v18.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v18.EXPECTED_ASSERTION_VALUES
-PROBE_LOG_PHASES = contract_v18.PROBE_LOG_PHASES
-SERVER_LOG_TOKENS = contract_v18.SERVER_LOG_TOKENS
-CLIENT_LOG_MARKERS = contract_v18.CLIENT_LOG_MARKERS
-CLIENT_CLASS_PATTERN = contract_v18.CLIENT_CLASS_PATTERN
+METAL_BLOCK_CANONICAL_PLACED_IDS = contract_v19.METAL_BLOCK_CANONICAL_PLACED_IDS
+ATTRAHITE_BLOCK_REGISTRY_ID = contract_v19.ATTRAHITE_BLOCK_REGISTRY_ID
+ATTRAHITE_ITEM_REGISTRY_ID = contract_v19.ATTRAHITE_ITEM_REGISTRY_ID
+ATTRAHITE_BLOCK_ITEM_CLASS = contract_v19.ATTRAHITE_BLOCK_ITEM_CLASS
+ATTRAHITE_BLOCK_IDS = contract_v19.ATTRAHITE_BLOCK_IDS
+ATTRAHITE_LOOT_TABLE_IDS = contract_v19.ATTRAHITE_LOOT_TABLE_IDS
+ATTRAHITE_RECIPE_IDS = contract_v19.ATTRAHITE_RECIPE_IDS
+ATTRAHITE_ADVANCEMENT_IDS = contract_v19.ATTRAHITE_ADVANCEMENT_IDS
+ATTRAHITE_PROPERTIES = contract_v19.ATTRAHITE_PROPERTIES
+ATTRAHITE_TAGS = contract_v19.ATTRAHITE_TAGS
+ATTRAHITE_SAVE_REPRESENTATIONS = contract_v19.ATTRAHITE_SAVE_REPRESENTATIONS
+ATTRAHITE_PLACEMENT_POSITIONS = contract_v19.ATTRAHITE_PLACEMENT_POSITIONS
+ATTRAHITE_PLACED_STATES = contract_v19.ATTRAHITE_PLACED_STATES
+ATTRAHITE_STANDARD_LOOT = contract_v19.ATTRAHITE_STANDARD_LOOT
+ATTRAHITE_RAW_FORTUNE_LOOT = contract_v19.ATTRAHITE_RAW_FORTUNE_LOOT
+ATTRAHITE_RECIPES = contract_v19.ATTRAHITE_RECIPES
+ATTRAHITE_ADVANCEMENTS = contract_v19.ATTRAHITE_ADVANCEMENTS
+ATTRAHITE_BLOCKS = contract_v19.ATTRAHITE_BLOCKS
+ATTRAHITE_ASSERTION_NAMES = contract_v19.ATTRAHITE_ASSERTION_NAMES
+ATTRAHITE_ASSERTION_VALUES = contract_v19.ATTRAHITE_ASSERTION_VALUES
+FOOD_ITEM_REGISTRY_ID = contract_v19.FOOD_ITEM_REGISTRY_ID
+FOOD_ITEM_ID = contract_v19.FOOD_ITEM_ID
+FOOD_ITEM_IDS = contract_v19.FOOD_ITEM_IDS
+FOOD_ITEM_CLASS = contract_v19.FOOD_ITEM_CLASS
+FOOD_ITEM_NBT_KEYS = contract_v19.FOOD_ITEM_NBT_KEYS
+FOOD_ITEM_PROPERTIES = contract_v19.FOOD_ITEM_PROPERTIES
+FOOD_ITEM_SAVE_REPRESENTATION = contract_v19.FOOD_ITEM_SAVE_REPRESENTATION
+FOOD_ITEM_SAVE_REPRESENTATIONS = contract_v19.FOOD_ITEM_SAVE_REPRESENTATIONS
+FOOD_ITEMS = contract_v19.FOOD_ITEMS
+FOOD_CONSUMPTION_PLAYER_CLASS = contract_v19.FOOD_CONSUMPTION_PLAYER_CLASS
+SERVER_STARTED_FOOD_CONSUMPTION = contract_v19.SERVER_STARTED_FOOD_CONSUMPTION
+RELOADED_FOOD_CONSUMPTION = contract_v19.RELOADED_FOOD_CONSUMPTION
+FOREST_LANTERN_ID = contract_v19.FOREST_LANTERN_ID
+FOREST_LANTERN = contract_v19.FOREST_LANTERN
+FOREST_LANTERN_ASSERTION_NAMES = contract_v19.FOREST_LANTERN_ASSERTION_NAMES
+FOREST_LANTERN_ASSERTION_VALUES = contract_v19.FOREST_LANTERN_ASSERTION_VALUES
+INITIAL_ETHER_SOURCE_ENTRIES = contract_v19.INITIAL_ETHER_SOURCE_ENTRIES
+RELOADED_ETHER_SOURCE_ENTRIES = contract_v19.RELOADED_ETHER_SOURCE_ENTRIES
+canonical_ether_source_entries = contract_v19.canonical_ether_source_entries
+EXPECTED_LIFECYCLE = contract_v19.EXPECTED_LIFECYCLE
+EXPECTED_ASSERTION_NAMES = contract_v19.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v19.EXPECTED_ASSERTION_VALUES
+PROBE_LOG_PHASES = contract_v19.PROBE_LOG_PHASES
+SERVER_LOG_TOKENS = contract_v19.SERVER_LOG_TOKENS
+CLIENT_LOG_MARKERS = contract_v19.CLIENT_LOG_MARKERS
+CLIENT_CLASS_PATTERN = contract_v19.CLIENT_CLASS_PATTERN
 ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES = (
-    contract_v18.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
+    contract_v19.ALLOWED_DEDICATED_SERVER_CLIENT_CLASSES
 )
 FATAL_SERVER_LOG_MARKERS = (
     "A mod crashed on startup!",
@@ -381,11 +461,166 @@ def ensure_no_symlink_components(path: Path, anchor: Path) -> None:
             raise E2EError(f"Owned path resolves through a symlink: {current_path}")
 
 
+def validate_consumed_v18_report(report: dict[str, object]) -> None:
+    """Requires the exact failed assertion and shutdown semantics from profile v18."""
+    expected_identity = {
+        "schema": 11,
+        "profile_id": HISTORICAL_V18_PROFILE_ID,
+        "scenario": "attrahite-block-registry",
+        "status": "failed",
+        "distribution": "DEDICATED_SERVER",
+        "runtime_kind": "loom-userdev",
+    }
+    for field_name, expected_value in expected_identity.items():
+        if not exact_json_value(report.get(field_name), expected_value):
+            raise E2EError(
+                f"The consumed v18 report {field_name} value changed"
+            )
+    if not exact_json_value(report.get("lifecycle"), list(HISTORICAL_V18_LIFECYCLE)):
+        raise E2EError("The consumed v18 report clean-shutdown lifecycle changed")
+
+    assertions = report.get("assertions")
+    if not isinstance(assertions, list) or len(assertions) != 310:
+        raise E2EError("The consumed v18 report assertion inventory changed")
+    for assertion in assertions:
+        if not isinstance(assertion, dict) or set(assertion) != {
+            "name",
+            "passed",
+            "expected",
+            "actual",
+        }:
+            raise E2EError("The consumed v18 report contains a malformed assertion")
+        if not isinstance(assertion.get("name"), str):
+            raise E2EError("The consumed v18 report assertion name is invalid")
+        if type(assertion.get("passed")) is not bool:
+            raise E2EError("The consumed v18 report assertion result is invalid")
+        if not isinstance(assertion.get("expected"), str) or not isinstance(
+            assertion.get("actual"),
+            str,
+        ):
+            raise E2EError("The consumed v18 report assertion evidence is invalid")
+
+    passed_assertions = [
+        assertion for assertion in assertions if assertion["passed"] is True
+    ]
+    failed_assertions = [
+        assertion for assertion in assertions if assertion["passed"] is False
+    ]
+    if len(passed_assertions) != 305 or not exact_json_value(
+        failed_assertions,
+        list(HISTORICAL_V18_FAILURES),
+    ):
+        raise E2EError(
+            "The consumed v18 report must retain exactly 305 passes and five "
+            "Forest Lantern BREAK-derived failures"
+        )
+
+
+def validate_consumed_v18_clean_shutdown_log(content: bytes) -> None:
+    """Requires the failed v18 probe to have completed a normal server shutdown."""
+    text = content.decode("utf-8", errors="replace")
+    phases = re.findall(r"\[EtherologyServerProbe\] ([a-z_]+)", text)
+    expected_phases = [
+        "tags_updated_initial",
+        "registry_foundation_checked",
+        "server_started",
+        "reload_requested",
+        "tags_updated_reload",
+        "reload_command_returned",
+        "stop_requested",
+        "server_stopping",
+        "server_stopped",
+        "report_published",
+        "loom_userdev_exit_scheduled",
+    ]
+    if phases != expected_phases:
+        raise E2EError("The consumed v18 server-log lifecycle changed")
+    tokens = (
+        "[EtherologyServerProbe] tags_updated_initial",
+        "[EtherologyServerProbe] registry_foundation_checked",
+        "[EtherologyServerProbe] server_started",
+        "[EtherologyServerProbe] reload_requested",
+        "[EtherologyServerProbe] tags_updated_reload",
+        "[EtherologyServerProbe] reload_command_returned",
+        "[EtherologyServerProbe] stop_requested",
+        "[EtherologyServerProbe] server_stopping",
+        "Stopping server",
+        "Saving worlds",
+        "[EtherologyServerProbe] server_stopped",
+        "[EtherologyServerProbe] report_published",
+        "[EtherologyServerProbe] loom_userdev_exit_scheduled status=1 "
+        "server_thread_join_timeout_ms=30000",
+    )
+    positions: list[int] = []
+    for token in tokens:
+        if text.count(token) != 1:
+            raise E2EError(
+                f"The consumed v18 server-log token count changed: {token}"
+            )
+        positions.append(text.index(token))
+    if positions != sorted(positions) or len(set(positions)) != len(positions):
+        raise E2EError("The consumed v18 server-log tokens are out of order")
+    if "All dimensions are saved" not in text:
+        raise E2EError(
+            "The consumed v18 server log lacks its completed world save"
+        )
+
+
+def validate_consumed_v18_history(repository_root: Path) -> None:
+    """Accepts no v18 state or its one exact, complete failed native-run record."""
+    attempt_path = repository_root / HISTORICAL_V18_ATTEMPT_RELATIVE_PATH
+    runtime_path = repository_root / HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+    archive_path = repository_root / HISTORICAL_V18_ARCHIVE_RELATIVE_PATH
+    history_present = any(
+        path.exists() or path.is_symlink()
+        for path in (attempt_path, runtime_path, archive_path)
+    )
+    if not history_present:
+        return
+
+    if not runtime_path.is_dir() or runtime_path.is_symlink():
+        raise E2EError("The consumed v18 runtime is missing or linked")
+    ensure_no_symlink_components(runtime_path, repository_root)
+    for relative_path in HISTORICAL_V18_ABSENT_RELATIVE_PATHS:
+        path = repository_root / relative_path
+        if path.exists() or path.is_symlink():
+            raise E2EError(
+                f"The consumed v18 failure must leave this artifact absent: {path}"
+            )
+    controller_logs = list(runtime_path.glob(".forge-server-gradle.*.log"))
+    if controller_logs:
+        raise E2EError(
+            "The consumed v18 temporary controller output must remain absent"
+        )
+
+    for relative_path, (expected_size, expected_sha256) in (
+        HISTORICAL_V18_FILE_RECORDS.items()
+    ):
+        path = repository_root / relative_path
+        ensure_regular_unlinked_file(path, "Consumed v18 history artifact")
+        if path.stat().st_size != expected_size or sha256_file(path) != expected_sha256:
+            raise E2EError(
+                f"The consumed v18 history artifact bytes changed: {path}"
+            )
+
+    report_path = (
+        runtime_path
+        / "evidence/attrahite-block-registry/reports/report.json"
+    )
+    validate_consumed_v18_report(
+        load_json_object(report_path, "consumed v18 probe report")
+    )
+    validate_consumed_v18_clean_shutdown_log(
+        (runtime_path / "game/logs/latest.log").read_bytes()
+    )
+
+
 def load_configuration(
     manifest_path: Path = MANIFEST_PATH,
     repository_root: Path = REPOSITORY_ROOT,
 ) -> ResolvedConfiguration:
     root = repository_root.resolve()
+    validate_consumed_v18_history(root)
     expected_manifest_path = root / PROFILE_MANIFEST_RELATIVE_PATH
     if manifest_path.absolute() != expected_manifest_path:
         raise E2EError(
@@ -395,12 +630,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v18.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v19.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v18.PROFILE_MANIFEST_SHA256
+        != contract_v19.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v18 contract"
+            "The dedicated-server profile bytes differ from the immutable v19 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -990,16 +1225,16 @@ def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v18 contract."""
+    """Validates a probe report through the immutable profile-v19 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v18.validate_probe_report(
+        contract_v19.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v18.V18ContractError as exception:
+    except contract_v19.V19ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 

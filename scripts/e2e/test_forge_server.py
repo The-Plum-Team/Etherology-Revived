@@ -351,12 +351,27 @@ def valid_server_log() -> bytes:
     return ("\n".join(lines) + "\n").encode("utf-8")
 
 
+def failed_v18_report() -> dict[str, object]:
+    report = valid_report()
+    report["profile_id"] = forge_server.HISTORICAL_V18_PROFILE_ID
+    report["status"] = "failed"
+    failures = {
+        str(assertion["name"]): assertion
+        for assertion in forge_server.HISTORICAL_V18_FAILURES
+    }
+    for assertion in report["assertions"]:
+        replacement = failures.get(str(assertion["name"]))
+        if replacement is not None:
+            assertion.update(copy.deepcopy(replacement))
+    return report
+
+
 class ConfigurationTests(unittest.TestCase):
     def test_profile_resolves_exact_forge_server_lane(self) -> None:
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v18",
+            "etherology-e2e-forge-server-1.20.1-v19",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -382,8 +397,13 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v18_snapshot_and_preserves_prior_versions(self) -> None:
+    def test_active_profile_matches_v19_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
+        v19_snapshot_path = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v19.json"
+        )
+        v19_snapshot = v19_snapshot_path.read_bytes()
         v18_snapshot_path = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v18.json"
@@ -417,7 +437,8 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v18_snapshot, active)
+        self.assertEqual(v19_snapshot, active)
+        self.assertNotEqual(v18_snapshot, active)
         self.assertNotEqual(v17_snapshot, active)
         self.assertNotEqual(v16_snapshot, active)
         self.assertNotEqual(v15_snapshot, active)
@@ -425,11 +446,20 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
         self.assertEqual(
-            forge_server.contract_v18.PROFILE_MANIFEST_SIZE,
-            len(v18_snapshot),
+            forge_server.contract_v19.PROFILE_MANIFEST_SIZE,
+            len(v19_snapshot),
         )
         self.assertEqual(
-            forge_server.contract_v18.PROFILE_MANIFEST_SHA256,
+            forge_server.contract_v19.PROFILE_MANIFEST_SHA256,
+            forge_server.sha256_file(v19_snapshot_path),
+        )
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v18",
+            json.loads(v18_snapshot)["profile"]["id"],
+        )
+        self.assertEqual(1204, len(v18_snapshot))
+        self.assertEqual(
+            "918a0af4b8794e07d0282e1913341abbad0908ba524714913267972c54481687",
             forge_server.sha256_file(v18_snapshot_path),
         )
         self.assertEqual(
@@ -479,6 +509,28 @@ class ConfigurationTests(unittest.TestCase):
             "scripts/e2e/test_forge_server_attrahite_evidence_v17.py": (
                 133658,
                 "41b3fcbb27927968606c0d7b409d25bdf05015c317a05c77b3997cfe4fe992ec",
+            ),
+        }
+
+        for relative_path, (expected_size, expected_sha256) in expected_files.items():
+            with self.subTest(relative_path=relative_path):
+                path = forge_server.REPOSITORY_ROOT / relative_path
+                self.assertEqual(expected_size, path.stat().st_size)
+                self.assertEqual(expected_sha256, forge_server.sha256_file(path))
+
+    def test_consumed_v18_contract_files_remain_byte_exact(self) -> None:
+        expected_files = {
+            "scripts/e2e/forge_server_contract_v18.py": (
+                1714,
+                "baccf604378d003e0d452be2988f036e5175da069d1f5fe03d42a71e635f2532",
+            ),
+            "scripts/e2e/forge_server_attrahite_evidence_v18.py": (
+                40317,
+                "83b0f025ea533d5ec2bade58a6b80b0e9dc7f1141dd80adef18d3f9853c99a03",
+            ),
+            "scripts/e2e/test_forge_server_attrahite_evidence_v18.py": (
+                133658,
+                "9460210108ec4bbd49c4d9edd3f6235d6d0db1430474c96af93ab7db7ae41dd1",
             ),
         }
 
@@ -554,6 +606,100 @@ class ConfigurationTests(unittest.TestCase):
                 forge_server.verify_probe_source_lifecycle(configuration)
 
 
+class ConsumedV18HistoryTests(unittest.TestCase):
+    def test_exact_failed_report_retains_305_of_310_and_clean_shutdown(self) -> None:
+        report = failed_v18_report()
+
+        forge_server.validate_consumed_v18_report(report)
+        forge_server.validate_consumed_v18_clean_shutdown_log(
+            valid_server_log().replace(b"status=0", b"status=1")
+        )
+
+        self.assertEqual(
+            305,
+            sum(assertion["passed"] is True for assertion in report["assertions"]),
+        )
+        self.assertEqual(
+            list(forge_server.HISTORICAL_V18_FAILURES),
+            [
+                assertion
+                for assertion in report["assertions"]
+                if assertion["passed"] is False
+            ],
+        )
+
+    def test_failed_report_rejects_every_history_semantic_drift(self) -> None:
+        mutations = {
+            "status": lambda report: report.__setitem__("status", "passed"),
+            "lifecycle": lambda report: report["lifecycle"].pop(),
+            "pass count": lambda report: report["assertions"][0].__setitem__(
+                "passed",
+                False,
+            ),
+            "failure evidence": lambda report: next(
+                assertion
+                for assertion in report["assertions"]
+                if assertion["name"] == "forest_lantern_jump_break_drop_exact"
+            ).__setitem__("actual", "etherology:forest_lanternx1"),
+        }
+        for description, mutate in mutations.items():
+            with self.subTest(description=description):
+                report = failed_v18_report()
+                mutate(report)
+                with self.assertRaises(forge_server.E2EError):
+                    forge_server.validate_consumed_v18_report(report)
+
+    def test_failed_server_log_rejects_success_status(self) -> None:
+        with self.assertRaisesRegex(forge_server.E2EError, "token count"):
+            forge_server.validate_consumed_v18_clean_shutdown_log(valid_server_log())
+
+    def test_no_v18_history_is_allowed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            forge_server.validate_consumed_v18_history(
+                Path(temporary_directory).resolve()
+            )
+
+    def test_partial_v18_history_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            attempt_path = root / forge_server.HISTORICAL_V18_ATTEMPT_RELATIVE_PATH
+            attempt_path.parent.mkdir(parents=True)
+            attempt_path.write_bytes(b"partial\n")
+
+            with self.assertRaisesRegex(forge_server.E2EError, "runtime"):
+                forge_server.validate_consumed_v18_history(root)
+
+    def test_v18_post_validation_artifacts_remain_absent(self) -> None:
+        forbidden_paths = (
+            forge_server.HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+            / "evidence/attrahite-block-registry/reports/done.marker",
+            forge_server.HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+            / "evidence/attrahite-block-registry/reports/launcher-result.json",
+            forge_server.HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+            / "evidence/attrahite-block-registry/logs/latest.log",
+            forge_server.HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+            / ".forge-server-gradle.recovered.log",
+            forge_server.HISTORICAL_V18_ARCHIVE_RELATIVE_PATH,
+        )
+        for forbidden_path in forbidden_paths:
+            with self.subTest(forbidden_path=forbidden_path):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    root = Path(temporary_directory).resolve()
+                    runtime = (
+                        root / forge_server.HISTORICAL_V18_RUNTIME_RELATIVE_PATH
+                    )
+                    runtime.mkdir(parents=True)
+                    target = root / forbidden_path
+                    if forbidden_path == forge_server.HISTORICAL_V18_ARCHIVE_RELATIVE_PATH:
+                        target.mkdir(parents=True)
+                    else:
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        target.write_bytes(b"forbidden\n")
+
+                    with self.assertRaises(forge_server.E2EError):
+                        forge_server.validate_consumed_v18_history(root)
+
+
 class RuntimeIsolationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.repository_context = temporary_repository()
@@ -588,16 +734,16 @@ class RuntimeIsolationTests(unittest.TestCase):
         )
         self.assertEqual([], marker["isolation"]["source_profiles"])
 
-    def test_consumed_v17_attempt_isolated_from_fresh_v18_before_provision(
+    def test_consumed_v18_attempt_isolated_from_fresh_v19_before_provision(
         self,
     ) -> None:
         self.state_root.mkdir(parents=True)
         consumed_attempt = (
             self.state_root
-            / "etherology-e2e-forge-server-1.20.1-v17-run.attempted"
+            / "etherology-e2e-forge-server-1.20.1-v18-run.attempted"
         )
         consumed_attempt_bytes = (
-            "profile_id=etherology-e2e-forge-server-1.20.1-v17\n"
+            "profile_id=etherology-e2e-forge-server-1.20.1-v18\n"
             "scenario=attrahite-block-registry\n"
             "pid=12345\n"
         ).encode("utf-8")

@@ -497,6 +497,17 @@ val forgeAttrahiteBlockRegistryServerEvidenceTestV18 =
 val forgeServerContractV18 = rootProject.file("scripts/e2e/forge_server_contract_v18.py")
 val forgeServerProfileSnapshotV18 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v18.json")
+val forgeAttrahiteBlockRegistryServerEvidenceArchiveV19 =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "attrahite-block-registry-server-v19",
+    )
+val forgeAttrahiteBlockRegistryServerEvidenceVerifierV19 =
+    rootProject.file("scripts/e2e/forge_server_attrahite_evidence_v19.py")
+val forgeAttrahiteBlockRegistryServerEvidenceTestV19 =
+    rootProject.file("scripts/e2e/test_forge_server_attrahite_evidence_v19.py")
+val forgeServerContractV19 = rootProject.file("scripts/e2e/forge_server_contract_v19.py")
+val forgeServerProfileSnapshotV19 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v19.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -3616,9 +3627,9 @@ fun missingForgeForestLanternServerEvidenceMilestone(): List<String> {
 
 fun missingForgeAttrahiteBlockRegistryServerEvidenceMilestone(): List<String> {
     val missingConditions = mutableListOf<String>()
-    if (!forgeAttrahiteBlockRegistryServerEvidenceVerifierV18.isFile
+    if (!forgeAttrahiteBlockRegistryServerEvidenceVerifierV19.isFile
         || Files.isSymbolicLink(
-            forgeAttrahiteBlockRegistryServerEvidenceVerifierV18.toPath(),
+            forgeAttrahiteBlockRegistryServerEvidenceVerifierV19.toPath(),
         )
     ) {
         missingConditions.add(
@@ -3635,9 +3646,9 @@ fun missingForgeAttrahiteBlockRegistryServerEvidenceMilestone(): List<String> {
                     .matches(candidate.name)
         }
         .orEmpty()
-    if (archiveDirectories != listOf(forgeAttrahiteBlockRegistryServerEvidenceArchiveV18)) {
+    if (archiveDirectories != listOf(forgeAttrahiteBlockRegistryServerEvidenceArchiveV19)) {
         missingConditions.add(
-            "the exact frozen Forge Attrahite block-registry server-v18 evidence archive " +
+            "the exact frozen Forge Attrahite block-registry server-v19 evidence archive " +
                 "is required",
         )
         return missingConditions
@@ -3646,9 +3657,9 @@ fun missingForgeAttrahiteBlockRegistryServerEvidenceMilestone(): List<String> {
     val command = listOf(
         "python3",
         "-B",
-        forgeAttrahiteBlockRegistryServerEvidenceVerifierV18.absolutePath,
+        forgeAttrahiteBlockRegistryServerEvidenceVerifierV19.absolutePath,
         "--archive",
-        forgeAttrahiteBlockRegistryServerEvidenceArchiveV18.absolutePath,
+        forgeAttrahiteBlockRegistryServerEvidenceArchiveV19.absolutePath,
     )
     try {
         val process = ProcessBuilder(command)
@@ -5773,13 +5784,37 @@ val forgeAttrahiteBlockRegistryServerV17SafetyTest =
         )
     }
 
+val forgeAttrahiteBlockRegistryServerV18SafetyTest =
+    tasks.register<Exec>("forgeAttrahiteBlockRegistryServerV18SafetyTest") {
+        group = "verification"
+        description =
+            "Runs the consumed Forge Attrahite block-registry v18 verifier tests."
+        dependsOn(forgeAttrahiteBlockRegistryServerV17SafetyTest)
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_attrahite_evidence_v18.py",
+        )
+        inputs.files(
+            forgeServerContractV17,
+            forgeServerContractV18,
+            forgeServerProfileSnapshotV17,
+            forgeServerProfileSnapshotV18,
+            forgeAttrahiteBlockRegistryServerEvidenceVerifierV18,
+            forgeAttrahiteBlockRegistryServerEvidenceTestV18,
+        )
+    }
+
 val forgeAttrahiteBlockRegistryServerSafetyTest =
     tasks.register<Exec>("forgeAttrahiteBlockRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge Attrahite block-registry runner and v18 verifier tests."
+            "Runs the active Forge Attrahite block-registry runner and v19 verifier tests."
         dependsOn(
-            forgeAttrahiteBlockRegistryServerV17SafetyTest,
+            forgeAttrahiteBlockRegistryServerV18SafetyTest,
             serverProbeSafetyInterlockTest,
         )
         workingDir(rootProject.projectDir)
@@ -5789,13 +5824,14 @@ val forgeAttrahiteBlockRegistryServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_attrahite_evidence_v18.py",
+            "scripts/e2e/test_forge_server_attrahite_evidence_v19.py",
         )
         inputs.files(
             forgeServerContractV14,
             forgeServerContractV16,
             forgeServerContractV17,
             forgeServerContractV18,
+            forgeServerContractV19,
             forgeServerProfileSnapshotV12,
             forgeServerProfileSnapshotV13,
             forgeServerProfileSnapshotV14,
@@ -5803,10 +5839,13 @@ val forgeAttrahiteBlockRegistryServerSafetyTest =
             forgeServerProfileSnapshotV16,
             forgeServerProfileSnapshotV17,
             forgeServerProfileSnapshotV18,
+            forgeServerProfileSnapshotV19,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
             forgeAttrahiteBlockRegistryServerEvidenceVerifierV18,
             forgeAttrahiteBlockRegistryServerEvidenceTestV18,
+            forgeAttrahiteBlockRegistryServerEvidenceVerifierV19,
+            forgeAttrahiteBlockRegistryServerEvidenceTestV19,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
@@ -6026,15 +6065,15 @@ val validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity =
     tasks.register("validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge Attrahite block-registry server-v18 archive."
+            "Validates the immutable Forge Attrahite block-registry server-v19 archive."
         dependsOn(forgeAttrahiteBlockRegistryServerSafetyTest)
         inputs.files(
-            forgeServerContractV18,
-            forgeServerProfileSnapshotV18,
-            forgeAttrahiteBlockRegistryServerEvidenceVerifierV18,
+            forgeServerContractV19,
+            forgeServerProfileSnapshotV19,
+            forgeAttrahiteBlockRegistryServerEvidenceVerifierV19,
         )
-        if (forgeAttrahiteBlockRegistryServerEvidenceArchiveV18.exists()) {
-            inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchiveV18)
+        if (forgeAttrahiteBlockRegistryServerEvidenceArchiveV19.exists()) {
+            inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchiveV19)
                 .withPropertyName("forgeAttrahiteBlockRegistryServerEvidenceArchive")
         }
         doLast {
@@ -6945,6 +6984,9 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV18,
         forgeServerProfileSnapshotV18,
         forgeAttrahiteBlockRegistryServerEvidenceVerifierV18,
+        forgeServerContractV19,
+        forgeServerProfileSnapshotV19,
+        forgeAttrahiteBlockRegistryServerEvidenceVerifierV19,
         forgeForestLanternEvidenceVerifier,
         forgeForestLanternProfileSnapshotV12,
         forgeForestLanternProfileSnapshotV13,
@@ -6994,6 +7036,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeAttrahiteBlockRegistryServerEvidenceArchiveV18.exists()) {
         inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchiveV18)
             .withPropertyName("forgeAttrahiteBlockRegistryServerEvidenceArchiveV18")
+    }
+    if (forgeAttrahiteBlockRegistryServerEvidenceArchiveV19.exists()) {
+        inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchiveV19)
+            .withPropertyName("forgeAttrahiteBlockRegistryServerEvidenceArchiveV19")
     }
     if (forgeForestLanternClientEvidenceArchive.exists()) {
         inputs.dir(forgeForestLanternClientEvidenceArchive)
@@ -7231,8 +7277,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v18",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v18",
+                "id" to "etherology-e2e-forge-server-1.20.1-v19",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v19",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"

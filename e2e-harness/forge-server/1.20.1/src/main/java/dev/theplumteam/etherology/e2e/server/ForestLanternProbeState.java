@@ -976,10 +976,9 @@ record ForestLanternProbeState(
             boolean supportsRemoved = true;
             int index = 0;
             for (Direction facing : FACINGS) {
-                BlockPos target = new BlockPos(
-                        phase.baseX() + index * 4,
-                        210,
-                        phase.baseZ()
+                BlockPos target = phase.placementPosition(
+                        world.getSpawnPos(),
+                        index
                 );
                 BlockPos support = target.offset(facing.getOpposite());
                 world.setBlockState(target, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL);
@@ -1075,7 +1074,7 @@ record ForestLanternProbeState(
             ServerPlayerEntity player = phase.createPlayer(server, world, PlayerRole.SHEARS);
             player.setStackInHand(Hand.MAIN_HAND, new ItemStack(Items.SHEARS));
             player.setOnGround(true);
-            BlockPos position = new BlockPos(phase.baseX(), 212, phase.baseZ() + 6);
+            BlockPos position = phase.shearsPosition(world.getSpawnPos());
             boolean statesPlaced = true;
             for (Direction facing : FACINGS) {
                 BlockPos support = position.offset(facing.getOpposite());
@@ -1217,11 +1216,7 @@ record ForestLanternProbeState(
                     ? PlayerRole.RETAIN
                     : PlayerRole.BREAK;
             ServerPlayerEntity player = phase.createPlayer(server, world, role);
-            BlockPos floor = new BlockPos(
-                    phase.baseX() + (kind == JumpKind.RETAIN ? 8 : 12),
-                    210,
-                    phase.baseZ() + 8
-            );
+            BlockPos floor = phase.jumpFloorPosition(world.getSpawnPos(), kind);
             world.setBlockState(floor, Blocks.STONE.getDefaultState(), Block.NOTIFY_ALL);
             player.refreshPositionAndAngles(
                     floor.getX() + 0.5,
@@ -1429,8 +1424,8 @@ record ForestLanternProbeState(
                 "LanternBreakB"
         );
 
-        private final int baseX;
-        private final int baseZ;
+        private final int baseXOffset;
+        private final int baseZOffset;
         private final Map<PlayerRole, String> playerNames;
         private final Map<PlayerRole, UUID> playerUuids;
 
@@ -1444,8 +1439,8 @@ record ForestLanternProbeState(
                 String breakUuid,
                 String breakName
         ) {
-            this.baseX = baseX;
-            this.baseZ = baseZ;
+            this.baseXOffset = baseX;
+            this.baseZOffset = baseZ;
             playerUuids = Map.of(
                     PlayerRole.SHEARS, UUID.fromString(shearsUuid),
                     PlayerRole.RETAIN, UUID.fromString(retainUuid),
@@ -1458,12 +1453,41 @@ record ForestLanternProbeState(
             );
         }
 
-        int baseX() {
-            return baseX;
+        BlockPos placementPosition(BlockPos spawnPosition, int index) {
+            return position(spawnPosition, index * 4, 210, 0);
         }
 
-        int baseZ() {
-            return baseZ;
+        BlockPos shearsPosition(BlockPos spawnPosition) {
+            return position(spawnPosition, 0, 212, 6);
+        }
+
+        BlockPos jumpFloorPosition(BlockPos spawnPosition, JumpKind kind) {
+            int xOffset = kind == JumpKind.RETAIN ? 8 : 12;
+            return position(spawnPosition, xOffset, 210, 8);
+        }
+
+        List<BlockPos> fixturePositions(BlockPos spawnPosition) {
+            List<BlockPos> positions = new ArrayList<>();
+            for (int index = 0; index < FACINGS.size(); index++) {
+                positions.add(placementPosition(spawnPosition, index));
+            }
+            positions.add(shearsPosition(spawnPosition));
+            positions.add(jumpFloorPosition(spawnPosition, JumpKind.RETAIN));
+            positions.add(jumpFloorPosition(spawnPosition, JumpKind.BREAK));
+            return List.copyOf(positions);
+        }
+
+        private BlockPos position(
+                BlockPos spawnPosition,
+                int xOffset,
+                int y,
+                int zOffset
+        ) {
+            return new BlockPos(
+                    spawnPosition.getX() + baseXOffset + xOffset,
+                    y,
+                    spawnPosition.getZ() + baseZOffset + zOffset
+            );
         }
 
         ServerPlayerEntity createPlayer(

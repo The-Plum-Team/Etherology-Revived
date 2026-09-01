@@ -1,8 +1,11 @@
 package dev.theplumteam.etherology.e2e.server;
 
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -145,6 +148,40 @@ final class ForestLanternProbeStateTest {
     }
 
     @Test
+    void mechanicsFixturesTranslateFromANonOriginSpawnWithinTwoChunks() {
+        BlockPos spawnPosition = new BlockPos(-272, 70, 32);
+        List<BlockPos> positions = new ArrayList<>();
+        for (ForestLanternProbeState.MechanicsPhase phase
+                : ForestLanternProbeState.MechanicsPhase.values()) {
+            positions.addAll(phase.fixturePositions(spawnPosition));
+        }
+
+        assertEquals(
+                List.of(
+                        new BlockPos(-292, 210, 44),
+                        new BlockPos(-288, 210, 44),
+                        new BlockPos(-284, 210, 44),
+                        new BlockPos(-280, 210, 44),
+                        new BlockPos(-292, 212, 50),
+                        new BlockPos(-284, 210, 52),
+                        new BlockPos(-280, 210, 52),
+                        new BlockPos(-292, 210, 64),
+                        new BlockPos(-288, 210, 64),
+                        new BlockPos(-284, 210, 64),
+                        new BlockPos(-280, 210, 64),
+                        new BlockPos(-292, 212, 70),
+                        new BlockPos(-284, 210, 72),
+                        new BlockPos(-280, 210, 72)
+                ),
+                positions
+        );
+        assertEquals(positions.size(), new HashSet<>(positions).size());
+        assertTrue(positions.stream().allMatch(position ->
+                chebyshevChunkDistance(spawnPosition, position) <= 2
+        ));
+    }
+
+    @Test
     void missingStateFailsEveryExactContract() {
         ForestLanternProbeState missing = ForestLanternProbeState.missing();
         assertFalse(missing.hasExactRegistry());
@@ -155,5 +192,15 @@ final class ForestLanternProbeStateTest {
         assertFalse(ForestLanternProbeState.WorldMechanics.missing(
                 ForestLanternProbeState.MechanicsPhase.SERVER_STARTED
         ).hasExactContract());
+    }
+
+    private static int chebyshevChunkDistance(BlockPos first, BlockPos second) {
+        int xDistance = Math.abs(
+                Math.floorDiv(first.getX(), 16) - Math.floorDiv(second.getX(), 16)
+        );
+        int zDistance = Math.abs(
+                Math.floorDiv(first.getZ(), 16) - Math.floorDiv(second.getZ(), 16)
+        );
+        return Math.max(xDistance, zDistance);
     }
 }

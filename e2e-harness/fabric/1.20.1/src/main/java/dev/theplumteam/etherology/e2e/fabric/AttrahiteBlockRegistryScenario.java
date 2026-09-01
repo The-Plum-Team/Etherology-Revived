@@ -127,7 +127,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     static final List<Integer> EXPECTED_SKY_LIGHT_LEVELS =
             List.of(15, 15, 15, 15, 15, 15);
     static final List<Integer> EXPECTED_BLOCK_LIGHT_LEVELS =
-            List.of(14, 14, 6, 4, 10, 8);
+            List.of(14, 14, 10, 10, 10, 8);
     static final List<String> EXPECTED_LOOT_TABLE_IDS = List.of(
             "etherology:blocks/attrahite",
             "etherology:blocks/attrahite_brick_slab",

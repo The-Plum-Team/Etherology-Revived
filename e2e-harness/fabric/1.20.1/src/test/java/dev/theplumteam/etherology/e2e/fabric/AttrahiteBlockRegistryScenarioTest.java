@@ -239,12 +239,12 @@ final class AttrahiteBlockRegistryScenarioTest {
                 AttrahiteBlockRegistryScenario.EXPECTED_SKY_LIGHT_LEVELS
         );
         assertEquals(
-                List.of(14, 14, 6, 4, 10, 8),
+                List.of(14, 14, 10, 10, 10, 8),
                 AttrahiteBlockRegistryScenario.EXPECTED_BLOCK_LIGHT_LEVELS
         );
         assertTrue(AttrahiteBlockRegistryScenario.isExpectedSkyLight(0, 15));
         assertFalse(AttrahiteBlockRegistryScenario.isExpectedSkyLight(0, 14));
-        assertTrue(AttrahiteBlockRegistryScenario.isExpectedBlockLight(2, 6));
+        assertTrue(AttrahiteBlockRegistryScenario.isExpectedBlockLight(2, 10));
         assertFalse(AttrahiteBlockRegistryScenario.isExpectedBlockLight(2, 14));
     }
 

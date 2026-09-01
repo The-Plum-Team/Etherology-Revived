@@ -5,11 +5,11 @@ directory:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v7/
+  etherology-original-fabric-1.21.1-published-0.1.7-v8/
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v7.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v8.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins a separately built,
 client-only capture harness as a ninth root JAR. The controller recursively
@@ -17,8 +17,8 @@ reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quicks
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v7 manifest is `10,321` bytes with SHA-256
-`d8c798abe4622b786876193d55bd83d91ed7a6f3686c66c2e2d4d03a3eb7c5b1`.
+The v8 manifest is `10,321` bytes with SHA-256
+`bcbb0f6b8edfcba08f4afdadaa61e58bf7bd94808e0cd1de7773e1f5d2f5937a`.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -65,10 +65,10 @@ The separately packaged capture harness is not part of the published reference
 and does not replace it:
 
 - Harness JAR:
-  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.2.jar`
-- Harness size: `210,485` bytes
+  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.3.jar`
+- Harness size: `212,059` bytes
 - Harness SHA-256:
-  `e86df68418ace4b17ff7e1fdd2c8b023dfe2c6d2f82ab6a47498e70d65e42353`
+  `8e273d156f1b6014b5d206fa3bfa2682594d36dae00c7aeaac8eb56928f88c3a`
 - Harness mod id: `etherology_original_baseline_harness`
 - Environment: client only
 - Exact dependency: `etherology=1.21-0.1.7`
@@ -205,9 +205,9 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active `slitherite-block-registry` v7 contract
+## Active `slitherite-block-registry` v8 contract
 
-The fresh v7 profile is dedicated to the published-0.1.7 Slitherite
+The fresh v8 profile is dedicated to the published-0.1.7 Slitherite
 family. It validates 17 ordered block/item registry pairs, exact intermediary
 runtime classes and default states, 1,262 state network IDs, 79 Etherology
 visual assets plus one vanilla sentinel, grouped block/item tags, 17 self-drop
@@ -216,10 +216,21 @@ their 29 advancements, and five related cross-system recipes that are recorded
 but not claimed as Slitherite-owned. All 17 gallery members are placed through
 their real `BlockItem` path.
 
-The native behavior sequence requires a deterministic button pulse and reset,
-an ignored item entity plus an activating living entity on the pressure plate,
-a forced save, a full disconnect/reopen, and exact structural/data equality
-after reopen. Each initial/reopened capture requires 20 fresh paired local
+The native behavior sequence first waits at most 100 world ticks for
+`ServerWorld.shouldTickEntity` at the pressure plate. It then requires both the
+item and living probes to resolve through the server entity lookup and advance
+their native age before their results can count. The item and AI-enabled pig
+start centered at `y + 0.5`, with gravity enabled, `onGround=false`, and a
+downward `-0.3` velocity; only ordinary entity movement/collision may exercise
+the plate. Entity-tick timeouts are reported separately from a bounded,
+fully-ticked living entity that fails to power the plate. Both entities are
+discarded, and the exact behavior still requires the ignored item, activating
+living entity, and native 25-tick reset. The harness never directly invokes a
+collision callback, plate update, scheduled tick, or `POWERED` mutation.
+
+The remaining sequence requires a deterministic button pulse and reset, a
+forced save, a full disconnect/reopen, and exact structural/data equality after
+reopen. Each initial/reopened capture requires 20 fresh paired local
 server/client light samples (sky 15 and block 14), terrain/fixture readiness,
 and 120 consecutive completed renders. Global lighting-provider pending state
 is diagnostic only; timeout reports retain the last local samples and counters.
@@ -231,16 +242,16 @@ Expected evidence, once the one authorized run is eventually performed, is:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v7/
+  etherology-original-fabric-1.21.1-published-0.1.7-v8/
     evidence/slitherite-block-registry/
       reports/{report.json,done.marker}
       screenshots/{slitherite-block-registry-initial.png,
                    slitherite-block-registry-reopened.png}
 ```
 
-At preparation time v7 has no runtime, launch-attempt seal, evidence, or
+At preparation time v8 has no runtime, launch-attempt seal, evidence, or
 archive. Provisioning and launching it are deliberately outside this change.
-The v1-v6 manifests and their historical evidence remain immutable.
+The v1-v7 manifests and their historical evidence remain immutable.
 
 ### Consumed v5 preflight failure
 
@@ -294,11 +305,11 @@ and then passively waited. Although the default non-marker armor stand was
 technically eligible for the living-entity predicate, it never produced the
 required native plate-entry collision during the three-tick observation window.
 
-The v7 harness keeps the exact expected behavior unchanged. It uses a real pig,
-disables AI so it cannot walk away, places its feet at `y + 0.1` above the plate
-surface and inside the 1/4-block detection box, and retains gravity so native
-movement performs the collision. The same three-world-tick activation window
-and 25-world-tick reset window remain mandatory.
+The v7 harness kept the expected behavior unchanged and replaced the armor stand
+with a pig at `y + 0.1`, but it also disabled the pig's AI. The later bytecode
+trace established that an unridden pig delegates logical-side movement to
+`MobEntity.canMoveVoluntarily`; disabling AI made that false. Consequently its
+normal gravity, `Entity.move`, and block-collision path never ran.
 
 The preserved v6 contract files are byte-pinned as follows:
 
@@ -327,6 +338,58 @@ and game log are respectively pinned as:
 
 The v6 runtime retains its saved failure world, but it contains no screenshots,
 and no accepted `slitherite-block-registry-v6` evidence archive exists.
+
+### Consumed v7 AI-disabled entity failure
+
+The one v7 launch was consumed on 2026-09-01. Registry and loaded-tag
+exactness, all server data, all 17 native placements, and button pulse/reset
+behavior again passed. The run reached exactly 160 client ticks and passed 165
+of 183 ordered assertions. Its sole causal mechanic mismatch was
+`slitherite_pressure_plate_entities_exact`: expected
+`item=false;living=true;reset=true`, but observed
+`item=false;living=false;reset=true`. The other 17 failures were the forced
+save, reopen, and two-capture assertions that were downstream of the fail-closed
+behavior result. The integrated world was created but was never reopened, no
+screenshot was written, and no accepted v7 archive exists.
+
+The v7 contract and harness are pinned as follows:
+
+- Manifest: `10,321` bytes,
+  `d8c798abe4622b786876193d55bd83d91ed7a6f3686c66c2e2d4d03a3eb7c5b1`
+- Verifier: `46,366` bytes,
+  `bf9598f1e42df35b1d8cc33af59c3c9494424cb95494f26f505beb7693b9cdf6`
+- Verifier tests: `18,003` bytes,
+  `5f9b00d287064f74c2587990aa5da076b022bbdaa3870f8b6bab1748d1662b75`
+- Harness: `210,485` bytes,
+  `e86df68418ace4b17ff7e1fdd2c8b023dfe2c6d2f82ab6a47498e70d65e42353`
+
+The launch-attempt, evidence metadata, report, marker, controller log, and game
+log are respectively pinned as:
+
+- `871,888` bytes,
+  `d51a036beeadbded708c81d92f11957d287d62f0f5bcbf5b708aeba58e0ab06e`
+- `954` bytes,
+  `35304d80c5337209cf2c80131726b0af3c04488fd9687b3834c6d947596fda86`
+- `98,188` bytes,
+  `3e1798080d252c42068a900d81c9fab12d19a450cc853b40497b9f8d7fdd7d65`
+- `112` bytes,
+  `009a0877300e26d6f40f51f49fd8151a8ed8ffd716242eee1a14558d1ca7a972`
+- `14,821` bytes,
+  `db026d831dc9136f0c53bf7c806e83e6c58369c315f86236c48188fe0f63cc44`
+- `14,387` bytes,
+  `17332d7c780ca49e798f62b4091f3457e03cc1aeab64e5577ef579e6ed2e9676`
+
+After the failed report was durably published, client shutdown made no further
+progress for more than five minutes while the process showed GC thrash. The
+controller was interrupted. Both preserved logs stop at `Saving worlds`; they
+do not contain completed-save/server-stop proof. This history therefore does
+not claim a clean save or clean shutdown.
+
+The v8 harness removes AI disablement, starts both probes above the plate with
+explicit native downward motion, and proves tickable-chunk, server-lookup, and
+age advancement before interpreting the block state. Its bounded living wait
+retains the same `item=false;living=true;reset=true` behavioral expectation and
+the 25-world-tick reset.
 
 ## Historical `phase0-smoke` contract
 

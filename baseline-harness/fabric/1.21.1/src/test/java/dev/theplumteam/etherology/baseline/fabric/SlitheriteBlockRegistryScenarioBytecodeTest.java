@@ -171,12 +171,17 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         ));
 
         assertTrue(invocationNames("placeAllBlockItems").contains("useOnBlock"));
-        assertTrue(invocationNames("initializeBehaviorProbe").containsAll(Set.of(
+        assertTrue(invocationNames("startNativeBehaviorProbe").containsAll(Set.of(
                 "interactBlock",
                 "isQueued",
                 "spawnEntity"
         )));
-        assertTrue(invocationNames("advanceBehaviorProbe").contains("spawnEntity"));
+        assertTrue(invocationNames("advanceBehaviorProbe").containsAll(Set.of(
+                "shouldTickEntity",
+                "serverEntityAdvanced",
+                "deadlineReached",
+                "spawnLivingProbe"
+        )));
         assertTrue(invocationNamesWithPrefix("lambda$submitSave$").contains("saveAll"));
         assertTrue(invocationNames("restartWorld").contains("start"));
         assertTrue(invocationNames("localLightingReady").containsAll(Set.of(
@@ -189,6 +194,10 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         assertTrue(invocationNames("captureCurrentPhase").contains("saveScreenshot"));
         assertTrue(fieldAccessNames("onEndClientTick").contains("serverFailure"));
         assertTrue(invocationNames("onEndClientTick").contains("fail"));
+        assertTrue(fieldAccessNames("tickWaitingForBehavior").containsAll(Set.of(
+                "entityTickFailure",
+                "serverFailure"
+        )));
         assertTrue(fieldAccessNames("isCaptureStateExact").containsAll(Set.of(
                 "serverFailure",
                 "serverLightingInspectionInFlight"
@@ -196,23 +205,128 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
     }
 
     @Test
-    void pressurePlateLivingProbeUsesStationaryNativeMobAbovePlateSurface()
+    void pressurePlateProbeUsesTickableChunkAndBoundedNativeEntityTicks()
             throws IOException {
-        Set<String> calls = invocationNames("advanceBehaviorProbe");
-        assertTrue(calls.containsAll(Set.of(
-                "create",
-                "setAiDisabled",
-                "setInvulnerable",
-                "setPosition",
-                "spawnEntity",
+        assertEquals(100L, staticLong("MAXIMUM_ENTITY_TICK_GATE_TICKS"));
+        assertEquals(20L, staticLong("MAXIMUM_PROBE_ENTITY_TICK_TICKS"));
+        assertEquals(20L, staticLong("MAXIMUM_LIVING_ACTIVATION_TICKS"));
+        assertEquals(25L, staticLong("PRESSURE_PLATE_RESET_TICKS"));
+        assertEquals(
+                List.of(
+                        "WAITING_FOR_ENTITY_TICKING",
+                        "WAITING_FOR_ITEM_TICK",
+                        "WAITING_FOR_LIVING_ACTIVATION",
+                        "WAITING_FOR_RESET"
+                ),
+                behaviorPhaseNames()
+        );
+
+        Set<String> advanceCalls = invocationNames("advanceBehaviorProbe");
+        assertTrue(advanceCalls.containsAll(Set.of(
+                "shouldTickEntity",
+                "serverEntityAdvanced",
+                "deadlineReached",
+                "startNativeBehaviorProbe",
+                "spawnLivingProbe",
+                "beginBehaviorReset",
+                "recordEntityTickFailure",
                 "discard"
         )));
-        assertFalse(calls.contains("setNoGravity"));
-        assertTrue(fieldAccessKeys("advanceBehaviorProbe").contains(
+        List<String> advanceSequence = invocationSequence("advanceBehaviorProbe");
+        assertTrue(
+                advanceSequence.indexOf("shouldTickEntity")
+                        < advanceSequence.indexOf("startNativeBehaviorProbe")
+        );
+        assertTrue(invocationNames("serverEntityAdvanced").containsAll(Set.of(
+                "getEntityById",
+                "getId",
+                "entityTickAdvanced"
+        )));
+        assertTrue(fieldAccessKeys("serverEntityAdvanced").contains(
+                "net/minecraft/entity/Entity.age"
+        ));
+        assertTrue(SlitheriteBlockRegistryScenario.entityTickAdvanced(true, 0, 1));
+        assertFalse(SlitheriteBlockRegistryScenario.entityTickAdvanced(false, 0, 1));
+        assertFalse(SlitheriteBlockRegistryScenario.entityTickAdvanced(true, 1, 1));
+        assertFalse(SlitheriteBlockRegistryScenario.deadlineReached(19L, 20L));
+        assertTrue(SlitheriteBlockRegistryScenario.deadlineReached(20L, 20L));
+    }
+
+    @Test
+    void pressurePlateEntitiesEnterThroughGravityWithPigAiEnabledAndNoDirectTriggers()
+            throws IOException {
+        Set<String> itemCalls = invocationNames("startNativeBehaviorProbe");
+        assertTrue(itemCalls.containsAll(Set.of(
+                "setVelocity",
+                "setOnGround",
+                "setNoGravity",
+                "spawnEntity"
+        )));
+        assertTrue(numericConstants("startNativeBehaviorProbe").contains(0.5D));
+        assertTrue(numericConstants("startNativeBehaviorProbe").contains(-0.3D));
+        List<String> itemSequence = invocationSequence("startNativeBehaviorProbe");
+        assertTrue(itemSequence.indexOf("setVelocity")
+                < itemSequence.indexOf("setOnGround"));
+        assertTrue(itemSequence.indexOf("setOnGround")
+                < itemSequence.indexOf("setNoGravity"));
+        assertTrue(itemSequence.indexOf("setNoGravity")
+                < itemSequence.lastIndexOf("spawnEntity"));
+
+        Set<String> livingCalls = invocationNames("spawnLivingProbe");
+        assertTrue(livingCalls.containsAll(Set.of(
+                "create",
+                "setInvulnerable",
+                "refreshPositionAndAngles",
+                "setVelocity",
+                "setOnGround",
+                "setNoGravity",
+                "spawnEntity",
+                "position"
+        )));
+        assertFalse(livingCalls.contains("setAiDisabled"));
+        assertFalse(livingCalls.contains("setPosition"));
+        assertTrue(fieldAccessKeys("spawnLivingProbe").contains(
                 "net/minecraft/entity/EntityType.PIG"
         ));
-        assertTrue(numericConstants("advanceBehaviorProbe").contains(0.1D));
-        assertTrue(numericConstants("advanceBehaviorProbe").contains(3L));
+        assertTrue(numericConstants("spawnLivingProbe").contains(0.5D));
+        assertTrue(numericConstants("spawnLivingProbe").contains(-0.3D));
+        List<String> livingSequence = invocationSequence("spawnLivingProbe");
+        assertTrue(livingSequence.indexOf("refreshPositionAndAngles")
+                < livingSequence.indexOf("setVelocity"));
+        assertTrue(livingSequence.indexOf("setVelocity")
+                < livingSequence.indexOf("setOnGround"));
+        assertTrue(livingSequence.indexOf("setOnGround")
+                < livingSequence.indexOf("setNoGravity"));
+        assertTrue(livingSequence.indexOf("setNoGravity")
+                < livingSequence.indexOf("spawnEntity"));
+
+        Set<String> behaviorCalls = new HashSet<>();
+        for (String methodName : List.of(
+                "initializeBehaviorProbe",
+                "startNativeBehaviorProbe",
+                "advanceBehaviorProbe",
+                "spawnLivingProbe",
+                "beginBehaviorReset",
+                "serverEntityAdvanced"
+        )) {
+            behaviorCalls.addAll(invocationNames(methodName));
+        }
+        assertTrue(Set.of(
+                "setAiDisabled",
+                "onEntityCollision",
+                "updatePlateState",
+                "scheduledTick",
+                "tickEntity",
+                "setBlockState",
+                "with"
+        ).stream().noneMatch(behaviorCalls::contains));
+        assertTrue(fieldWriteKeys(List.of(
+                "initializeBehaviorProbe",
+                "startNativeBehaviorProbe",
+                "advanceBehaviorProbe",
+                "spawnLivingProbe",
+                "beginBehaviorReset"
+        )).stream().noneMatch(key -> key.endsWith(".POWERED")));
     }
 
     @Test
@@ -318,6 +432,31 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         return List.copyOf(values);
     }
 
+    private static long staticLong(String fieldName) throws IOException {
+        try {
+            Field field = SlitheriteBlockRegistryScenario.class
+                    .getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.getLong(null);
+        } catch (ReflectiveOperationException exception) {
+            throw new IOException("Cannot read scenario constant " + fieldName, exception);
+        }
+    }
+
+    private static List<String> behaviorPhaseNames() throws IOException {
+        try {
+            Class<?> phaseClass = Class.forName(SCENARIO.replace('/', '.')
+                    + "$BehaviorPhase");
+            Object[] constants = phaseClass.getEnumConstants();
+            if (constants == null) throw new IOException("BehaviorPhase is not an enum");
+            return java.util.Arrays.stream(constants)
+                    .map(Object::toString)
+                    .toList();
+        } catch (ClassNotFoundException exception) {
+            throw new IOException("BehaviorPhase is missing", exception);
+        }
+    }
+
     private static Set<String> invocationNames(String methodName) throws IOException {
         return invocationNames(methodName, false);
     }
@@ -359,6 +498,36 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
             }
         }, 0);
         return names;
+    }
+
+    private static List<String> invocationSequence(String methodName)
+            throws IOException {
+        List<String> names = new ArrayList<>();
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor,
+                            boolean isInterface
+                    ) {
+                        names.add(name);
+                    }
+                };
+            }
+        }, 0);
+        return List.copyOf(names);
     }
 
     private static Set<String> invocationKeys(
@@ -442,6 +611,37 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
                             String descriptor
                     ) {
                         keys.add(owner + "." + name);
+                    }
+                };
+            }
+        }, 0);
+        return keys;
+    }
+
+    private static Set<String> fieldWriteKeys(List<String> methodNames)
+            throws IOException {
+        Set<String> keys = new HashSet<>();
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodNames.contains(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitFieldInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor
+                    ) {
+                        if (opcode == Opcodes.PUTFIELD || opcode == Opcodes.PUTSTATIC) {
+                            keys.add(owner + "." + name);
+                        }
                     }
                 };
             }

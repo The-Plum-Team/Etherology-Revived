@@ -19,6 +19,7 @@ import net.minecraft.client.option.Perspective;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.client.util.Window;
 import net.minecraft.command.argument.BlockArgumentParser;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.passive.PigEntity;
@@ -106,6 +107,10 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     private static final int FRAMEBUFFER_WIDTH = 1920;
     private static final int FRAMEBUFFER_HEIGHT = 1080;
     private static final int MAXIMUM_STAGE_CLIENT_TICKS = 6000;
+    private static final long MAXIMUM_ENTITY_TICK_GATE_TICKS = 100L;
+    private static final long MAXIMUM_PROBE_ENTITY_TICK_TICKS = 20L;
+    private static final long MAXIMUM_LIVING_ACTIVATION_TICKS = 20L;
+    private static final long PRESSURE_PLATE_RESET_TICKS = 25L;
     private static final int ARENA_FLOOR_Y = 120;
     private static final double CAMERA_X = 0.5;
     private static final double CAMERA_Y = ARENA_FLOOR_Y + 1.0;
@@ -255,6 +260,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     private final Map<CapturePhase, CaptureEvidence> captureEvidence =
             new LinkedHashMap<>();
     private volatile String serverFailure = "";
+    private volatile String entityTickFailure = "";
     private volatile ServerSetupResult pendingServerSetupResult;
     private volatile BehaviorProbe pendingBehaviorProbe;
     private volatile SaveResult pendingSaveResult;
@@ -502,6 +508,13 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     }
 
     private void tickWaitingForBehavior(MinecraftClient client) {
+        if (!entityTickFailure.isEmpty()) {
+            fail(
+                    client,
+                    "Slitherite entity-tick timeout: " + entityTickFailure
+            );
+            return;
+        }
         if (!serverFailure.isEmpty()) {
             fail(client, "Slitherite behavior probe failed: " + serverFailure);
             return;
@@ -524,7 +537,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         behaviorInspectionInFlight = true;
         server.execute(() -> {
             try {
-                advanceBehaviorProbe(server.getOverworld());
+                advanceBehaviorProbe(server, server.getOverworld());
             } catch (RuntimeException exception) {
                 recordServerFailure(exception);
             } finally {
@@ -715,7 +728,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             RegistryProbe setupRegistry = RegistryProbe.capture();
             DataProbe setupData = DataProbe.capture(server, world, player);
             FixtureSnapshot snapshot = captureSnapshot(world);
-            initializeBehaviorProbe(server, world, player);
+            initializeBehaviorProbe(world, player);
             requestServerLightingChecks(world);
             pendingServerSetupResult = new ServerSetupResult(
                     chunksLoaded,
@@ -789,10 +802,38 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     }
 
     private void initializeBehaviorProbe(
-            IntegratedServer server,
             ServerWorld world,
             ServerPlayerEntity player
     ) {
+        long now = world.getTime();
+        serverBehaviorSequence = new BehaviorSequence(
+                BehaviorPhase.WAITING_FOR_ENTITY_TICKING,
+                player.getUuid(),
+                now + MAXIMUM_ENTITY_TICK_GATE_TICKS,
+                -1L,
+                false,
+                false,
+                null,
+                -1,
+                null,
+                -1,
+                false,
+                false
+        );
+    }
+
+    private void startNativeBehaviorProbe(
+            IntegratedServer server,
+            ServerWorld world,
+            BehaviorSequence sequence
+    ) {
+        ServerPlayerEntity player = server.getPlayerManager()
+                .getPlayer(sequence.playerId());
+        if (player == null) {
+            throw new IllegalStateException(
+                    "The integrated server lost the behavior-probe player"
+            );
+        }
         BlockFixture buttonFixture = fixtureByPath("polished_slitherite_button");
         Block button = requiredBlock(buttonFixture.id());
         BlockState buttonBefore = world.getBlockState(buttonFixture.position());
@@ -825,90 +866,123 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         ItemEntity itemEntity = new ItemEntity(
                 world,
                 pressureFixture.position().getX() + 0.5,
-                pressureFixture.position().getY() + 0.05,
+                pressureFixture.position().getY() + 0.5,
                 pressureFixture.position().getZ() + 0.5,
                 new ItemStack(Items.COBBLESTONE)
         );
-        itemEntity.setNoGravity(true);
+        itemEntity.setVelocity(0.0, -0.3, 0.0);
+        itemEntity.setOnGround(false);
+        itemEntity.setNoGravity(false);
         itemEntity.setPickupDelayInfinite();
         if (!world.spawnEntity(itemEntity)) {
             throw new IllegalStateException("Cannot spawn the pressure-plate item probe");
         }
         long now = world.getTime();
         serverBehaviorSequence = new BehaviorSequence(
-                BehaviorPhase.WAITING_FOR_ITEM,
+                BehaviorPhase.WAITING_FOR_ITEM_TICK,
+                sequence.playerId(),
+                now + MAXIMUM_PROBE_ENTITY_TICK_TICKS,
                 now,
-                now + 3L,
                 buttonActivated,
                 buttonResetScheduled,
                 itemEntity,
+                itemEntity.age,
                 null,
+                -1,
                 false,
                 false
         );
     }
 
-    private void advanceBehaviorProbe(ServerWorld world) {
+    private void advanceBehaviorProbe(
+            IntegratedServer server,
+            ServerWorld world
+    ) {
         BehaviorSequence sequence = serverBehaviorSequence;
         if (sequence == null || pendingBehaviorProbe != null) return;
-        if (world.getTime() < sequence.deadline()) return;
 
         BlockFixture pressureFixture = fixtureByPath(
                 "polished_slitherite_pressure_plate"
         );
         switch (sequence.phase()) {
-            case WAITING_FOR_ITEM -> {
+            case WAITING_FOR_ENTITY_TICKING -> {
+                if (world.shouldTickEntity(pressureFixture.position())) {
+                    startNativeBehaviorProbe(server, world, sequence);
+                    return;
+                }
+                if (deadlineReached(world.getTime(), sequence.deadline())) {
+                    recordEntityTickFailure(
+                            "pressure-plate chunk never became entity-tickable within "
+                                    + MAXIMUM_ENTITY_TICK_GATE_TICKS
+                                    + " world ticks"
+                    );
+                }
+            }
+            case WAITING_FOR_ITEM_TICK -> {
+                boolean itemLookupExact = serverEntityAdvanced(
+                        world,
+                        sequence.itemEntity(),
+                        sequence.itemInitialAge()
+                );
+                if (!itemLookupExact) {
+                    if (deadlineReached(world.getTime(), sequence.deadline())) {
+                        sequence.itemEntity().discard();
+                        recordEntityTickFailure(
+                                "item probe was not found and age-advanced within "
+                                        + MAXIMUM_PROBE_ENTITY_TICK_TICKS
+                                        + " world ticks"
+                        );
+                    }
+                    return;
+                }
                 boolean itemIgnored = !world.getBlockState(pressureFixture.position())
                         .get(Properties.POWERED);
                 sequence.itemEntity().discard();
-                PigEntity pigEntity = EntityType.PIG.create(world);
-                if (pigEntity == null) {
-                    throw new IllegalStateException(
-                            "Cannot create the pressure-plate living probe"
-                    );
-                }
-                pigEntity.setAiDisabled(true);
-                pigEntity.setInvulnerable(true);
-                pigEntity.setPosition(
-                        pressureFixture.position().getX() + 0.5,
-                        pressureFixture.position().getY() + 0.1,
-                        pressureFixture.position().getZ() + 0.5
-                );
-                if (!world.spawnEntity(pigEntity)) {
-                    throw new IllegalStateException(
-                            "Cannot spawn the pressure-plate living probe"
-                    );
-                }
+                PigEntity pigEntity = spawnLivingProbe(world, pressureFixture);
+                long now = world.getTime();
                 serverBehaviorSequence = new BehaviorSequence(
-                        BehaviorPhase.WAITING_FOR_LIVING,
+                        BehaviorPhase.WAITING_FOR_LIVING_ACTIVATION,
+                        sequence.playerId(),
+                        now + MAXIMUM_LIVING_ACTIVATION_TICKS,
                         sequence.buttonActivationTick(),
-                        world.getTime() + 3L,
                         sequence.buttonActivated(),
                         sequence.buttonResetScheduled(),
                         sequence.itemEntity(),
+                        sequence.itemInitialAge(),
                         pigEntity,
+                        pigEntity.age,
                         itemIgnored,
                         false
                 );
             }
-            case WAITING_FOR_LIVING -> {
+            case WAITING_FOR_LIVING_ACTIVATION -> {
+                boolean livingLookupExact = serverEntityAdvanced(
+                        world,
+                        sequence.pigEntity(),
+                        sequence.pigInitialAge()
+                );
                 boolean livingActivated = world.getBlockState(
                         pressureFixture.position()
                 ).get(Properties.POWERED);
-                sequence.pigEntity().discard();
-                serverBehaviorSequence = new BehaviorSequence(
-                        BehaviorPhase.WAITING_FOR_RESET,
-                        sequence.buttonActivationTick(),
-                        world.getTime() + 25L,
-                        sequence.buttonActivated(),
-                        sequence.buttonResetScheduled(),
-                        sequence.itemEntity(),
-                        sequence.pigEntity(),
-                        sequence.itemIgnored(),
-                        livingActivated
-                );
+                if (livingLookupExact && livingActivated) {
+                    beginBehaviorReset(world, sequence, true);
+                    return;
+                }
+                if (!deadlineReached(world.getTime(), sequence.deadline())) return;
+
+                if (!livingLookupExact) {
+                    sequence.pigEntity().discard();
+                    recordEntityTickFailure(
+                            "living probe was not found and age-advanced within "
+                                    + MAXIMUM_LIVING_ACTIVATION_TICKS
+                                    + " world ticks"
+                    );
+                    return;
+                }
+                beginBehaviorReset(world, sequence, false);
             }
             case WAITING_FOR_RESET -> {
+                if (!deadlineReached(world.getTime(), sequence.deadline())) return;
                 BlockFixture buttonFixture = fixtureByPath(
                         "polished_slitherite_button"
                 );
@@ -930,6 +1004,86 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 );
             }
         }
+    }
+
+    private PigEntity spawnLivingProbe(
+            ServerWorld world,
+            BlockFixture pressureFixture
+    ) {
+        PigEntity pigEntity = EntityType.PIG.create(world);
+        if (pigEntity == null) {
+            throw new IllegalStateException(
+                    "Cannot create the pressure-plate living probe"
+            );
+        }
+        pigEntity.setInvulnerable(true);
+        pigEntity.refreshPositionAndAngles(
+                pressureFixture.position().getX() + 0.5,
+                pressureFixture.position().getY() + 0.5,
+                pressureFixture.position().getZ() + 0.5,
+                0.0F,
+                0.0F
+        );
+        pigEntity.setVelocity(0.0, -0.3, 0.0);
+        pigEntity.setOnGround(false);
+        pigEntity.setNoGravity(false);
+        if (!world.spawnEntity(pigEntity)) {
+            throw new IllegalStateException(
+                    "Cannot spawn the pressure-plate living probe"
+            );
+        }
+        return pigEntity;
+    }
+
+    private void beginBehaviorReset(
+            ServerWorld world,
+            BehaviorSequence sequence,
+            boolean livingActivated
+    ) {
+        sequence.pigEntity().discard();
+        long now = world.getTime();
+        serverBehaviorSequence = new BehaviorSequence(
+                BehaviorPhase.WAITING_FOR_RESET,
+                sequence.playerId(),
+                now + PRESSURE_PLATE_RESET_TICKS,
+                sequence.buttonActivationTick(),
+                sequence.buttonActivated(),
+                sequence.buttonResetScheduled(),
+                sequence.itemEntity(),
+                sequence.itemInitialAge(),
+                sequence.pigEntity(),
+                sequence.pigInitialAge(),
+                sequence.itemIgnored(),
+                livingActivated
+        );
+    }
+
+    private static boolean serverEntityAdvanced(
+            ServerWorld world,
+            Entity entity,
+            int initialAge
+    ) {
+        return entityTickAdvanced(
+                world.getEntityById(entity.getId()) == entity,
+                initialAge,
+                entity.age
+        );
+    }
+
+    static boolean entityTickAdvanced(
+            boolean serverLookupExact,
+            int initialAge,
+            int currentAge
+    ) {
+        return serverLookupExact && currentAge > initialAge;
+    }
+
+    static boolean deadlineReached(long currentTick, long deadline) {
+        return currentTick >= deadline;
+    }
+
+    private void recordEntityTickFailure(String failure) {
+        if (entityTickFailure.isEmpty()) entityTickFailure = failure;
     }
 
     private void inspectReopenedWorld(IntegratedServer server, UUID playerId) {
@@ -2549,8 +2703,9 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     }
 
     private enum BehaviorPhase {
-        WAITING_FOR_ITEM,
-        WAITING_FOR_LIVING,
+        WAITING_FOR_ENTITY_TICKING,
+        WAITING_FOR_ITEM_TICK,
+        WAITING_FOR_LIVING_ACTIVATION,
         WAITING_FOR_RESET
     }
 
@@ -3121,12 +3276,15 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
 
     private record BehaviorSequence(
             BehaviorPhase phase,
-            long buttonActivationTick,
+            UUID playerId,
             long deadline,
+            long buttonActivationTick,
             boolean buttonActivated,
             boolean buttonResetScheduled,
             ItemEntity itemEntity,
+            int itemInitialAge,
             PigEntity pigEntity,
+            int pigInitialAge,
             boolean itemIgnored,
             boolean livingActivated
     ) {

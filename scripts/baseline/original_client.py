@@ -99,7 +99,7 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v7.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v8.json"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -630,6 +630,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v5": "v5",
         "etherology-original-fabric-1.21.1-published-0.1.7-v6": "v6",
         "etherology-original-fabric-1.21.1-published-0.1.7-v7": "v7",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v8": "v8",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -926,6 +927,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v5": "1.3.0",
         "v6": "1.3.1",
         "v7": "1.3.2",
+        "v8": "1.3.3",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -1028,6 +1030,17 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_seed": 4995697409260082224,
         },
         "v7": {
+            "id": "slitherite-block-registry",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "slitherite-block-registry-initial.png",
+            "world_directory_name": (
+                "etherology-original-slitherite-block-registry-world"
+            ),
+            "world_display_name": "Etherology Original 0.1.7 Slitherite Blocks",
+            "world_seed": 4995697409260082224,
+        },
+        "v8": {
             "id": "slitherite-block-registry",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -1568,6 +1581,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "1.3.0",
                 "1.3.1",
                 "1.3.2",
+                "1.3.3",
             }
             expected_slitherite_class = (
                 "dev/theplumteam/etherology/baseline/fabric/"
@@ -6065,9 +6079,9 @@ def verify_assertion_semantics(
 
 
 def load_slitherite_evidence_verifier() -> types.ModuleType:
-    verifier_path = SCRIPT_DIRECTORY / "original_slitherite_evidence_v7.py"
+    verifier_path = SCRIPT_DIRECTORY / "original_slitherite_evidence_v8.py"
     specification = importlib.util.spec_from_file_location(
-        "etherology_original_slitherite_evidence_v7",
+        "etherology_original_slitherite_evidence_v8",
         verifier_path,
     )
     if specification is None or specification.loader is None:
@@ -6108,7 +6122,7 @@ def verify_slitherite_evidence_verifier_binding(
         or len(verifier.EXPECTED_ASSERTION_NAMES) != 183
     ):
         raise BaselineError(
-            "The Slitherite verifier is not bound to the exact active v7 contract"
+            "The Slitherite verifier is not bound to the exact active v8 contract"
         )
     return verifier
 

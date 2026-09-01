@@ -32,7 +32,7 @@ class ForgeEvidenceLayoutTest {
                         .resolve(ScenarioSelection.ETHEREAL_STORAGE),
                 layout.scenarioRoot()
         );
-        assertEquals("etherology-e2e-forge-1.20.1-v13", layout.profileId());
+        assertEquals("etherology-e2e-forge-1.20.1-v14", layout.profileId());
         assertEquals(4096L, layout.profileManifestSize());
         assertEquals(PROFILE_MANIFEST_SHA256, layout.profileManifestSha256());
 
@@ -56,6 +56,17 @@ class ForgeEvidenceLayoutTest {
                         .resolve("evidence")
                         .resolve(ScenarioSelection.FOREST_LANTERN),
                 forestLanternLayout.scenarioRoot()
+        );
+
+        ForgeEvidenceLayout attrahiteLayout = ForgeEvidenceLayout.resolve(
+                gameDirectory,
+                ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY
+        );
+        assertEquals(
+                gameDirectory.getParent()
+                        .resolve("evidence")
+                        .resolve(ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY),
+                attrahiteLayout.scenarioRoot()
         );
     }
 
@@ -81,7 +92,7 @@ class ForgeEvidenceLayoutTest {
         Files.writeString(
                 marker,
                 profileMarker("scripts/e2e/forge_client.py")
-                        .replace("etherology-e2e-forge-1.20.1-v13", "other-forge-profile")
+                        .replace("etherology-e2e-forge-1.20.1-v14", "other-forge-profile")
         );
 
         assertThrows(
@@ -155,8 +166,10 @@ class ForgeEvidenceLayoutTest {
         Files.writeString(
                 marker,
                 Files.readString(marker).replace(
-                        "[\"ethereal-storage\", \"ethereal-channel\", \"forest-lantern\"]",
-                        "[\"ethereal-channel\", \"ethereal-storage\", \"forest-lantern\"]"
+                        "[\"ethereal-storage\", \"ethereal-channel\", "
+                                + "\"forest-lantern\", \"attrahite-block-registry\"]",
+                        "[\"ethereal-channel\", \"ethereal-storage\", "
+                                + "\"forest-lantern\", \"attrahite-block-registry\"]"
                 )
         );
 
@@ -170,7 +183,7 @@ class ForgeEvidenceLayoutTest {
     }
 
     private Path createValidLayout() throws IOException {
-        Path runtimeDirectory = temporaryDirectory.resolve("etherology-e2e-forge-1.20.1-v13");
+        Path runtimeDirectory = temporaryDirectory.resolve("etherology-e2e-forge-1.20.1-v14");
         Path gameDirectory = runtimeDirectory.resolve("game");
         Path evidenceDirectory = runtimeDirectory.resolve("evidence");
         Path scenarioDirectory = evidenceDirectory.resolve(ScenarioSelection.ETHEREAL_STORAGE);
@@ -180,6 +193,9 @@ class ForgeEvidenceLayoutTest {
         Path forestLanternScenarioDirectory = evidenceDirectory.resolve(
                 ScenarioSelection.FOREST_LANTERN
         );
+        Path attrahiteScenarioDirectory = evidenceDirectory.resolve(
+                ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY
+        );
         Files.createDirectories(gameDirectory);
         Files.createDirectories(scenarioDirectory.resolve("reports"));
         Files.createDirectories(scenarioDirectory.resolve("screenshots"));
@@ -187,6 +203,8 @@ class ForgeEvidenceLayoutTest {
         Files.createDirectories(channelScenarioDirectory.resolve("screenshots"));
         Files.createDirectories(forestLanternScenarioDirectory.resolve("reports"));
         Files.createDirectories(forestLanternScenarioDirectory.resolve("screenshots"));
+        Files.createDirectories(attrahiteScenarioDirectory.resolve("reports"));
+        Files.createDirectories(attrahiteScenarioDirectory.resolve("screenshots"));
         Files.writeString(
                 runtimeDirectory.resolve(".etherology-forge-e2e-profile.json"),
                 profileMarker("scripts/e2e/forge_client.py")
@@ -196,12 +214,12 @@ class ForgeEvidenceLayoutTest {
                 """
                         {
                           "schema": 1,
-                          "profile_id": "etherology-e2e-forge-1.20.1-v13",
+                          "profile_id": "etherology-e2e-forge-1.20.1-v14",
                           "managed_by": "scripts/e2e/forge_client.py",
                           "artifact_node": "forge-1.20.1",
                           "loader": "forge",
                           "java": 17,
-                          "scenarios": ["ethereal-storage", "ethereal-channel", "forest-lantern"],
+                          "scenarios": ["ethereal-storage", "ethereal-channel", "forest-lantern", "attrahite-block-registry"],
                           "capture": {
                             "kind": "composed-minecraft-framebuffer",
                             "width": 1920,
@@ -217,7 +235,7 @@ class ForgeEvidenceLayoutTest {
         return """
                 {
                   "schema": 1,
-                  "profile_id": "etherology-e2e-forge-1.20.1-v13",
+                  "profile_id": "etherology-e2e-forge-1.20.1-v14",
                   "managed_by": "%s",
                   "profile_manifest": {
                     "path": "scripts/e2e/forge-1.20.1-profile.json",

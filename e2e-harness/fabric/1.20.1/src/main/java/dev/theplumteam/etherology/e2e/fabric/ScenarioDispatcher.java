@@ -20,7 +20,9 @@ final class ScenarioDispatcher {
             MetalBlockRegistryScenario.SCENARIO_ID,
             MetalBlockRegistryScenario::new,
             ForestLanternScenario.SCENARIO_ID,
-            ForestLanternScenario::new
+            ForestLanternScenario::new,
+            AttrahiteBlockRegistryScenario.SCENARIO_ID,
+            AttrahiteBlockRegistryScenario::new
     );
 
     private ScenarioDispatcher() {

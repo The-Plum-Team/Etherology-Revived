@@ -22,6 +22,10 @@ class ScenarioSelectionTest {
                 ScenarioSelection.FOREST_LANTERN,
                 ScenarioSelection.parse(ScenarioSelection.FOREST_LANTERN)
         );
+        assertEquals(
+                ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY,
+                ScenarioSelection.parse(ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY)
+        );
     }
 
     @Test
@@ -42,6 +46,10 @@ class ScenarioSelectionTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> ScenarioSelection.parse("forest-lantern ")
+        );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> ScenarioSelection.parse("attrahite-block-registry ")
         );
         assertThrows(
                 IllegalArgumentException.class,

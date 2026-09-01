@@ -22,7 +22,7 @@ record ForgeEvidenceLayout(
 ) {
 
     private static final String ARTIFACT_NODE = "forge-1.20.1";
-    private static final String PROFILE_ID = "etherology-e2e-forge-1.20.1-v13";
+    private static final String PROFILE_ID = "etherology-e2e-forge-1.20.1-v14";
     private static final String PROFILE_MANIFEST_PATH =
             "scripts/e2e/forge-1.20.1-profile.json";
     private static final Pattern SCENARIO_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9-]*");
@@ -161,10 +161,11 @@ record ForgeEvidenceLayout(
         requireInteger(marker, "java", 17, "evidence marker");
 
         JsonArray scenarios = requireArray(marker, "scenarios", "evidence marker");
-        if (scenarios.size() != 3
+        if (scenarios.size() != 4
                 || !scenarios.get(0).isJsonPrimitive()
                 || !scenarios.get(1).isJsonPrimitive()
                 || !scenarios.get(2).isJsonPrimitive()
+                || !scenarios.get(3).isJsonPrimitive()
                 || !ScenarioSelection.ETHEREAL_STORAGE.equals(
                     scenarios.get(0).getAsString()
                 )
@@ -173,12 +174,16 @@ record ForgeEvidenceLayout(
                 )
                 || !ScenarioSelection.FOREST_LANTERN.equals(
                     scenarios.get(2).getAsString()
+                )
+                || !ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY.equals(
+                    scenarios.get(3).getAsString()
                 )) {
             throw new IOException("The evidence marker scenario order changed");
         }
         if (!ScenarioSelection.ETHEREAL_STORAGE.equals(scenarioId)
                 && !ScenarioSelection.ETHEREAL_CHANNEL.equals(scenarioId)
-                && !ScenarioSelection.FOREST_LANTERN.equals(scenarioId)) {
+                && !ScenarioSelection.FOREST_LANTERN.equals(scenarioId)
+                && !ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY.equals(scenarioId)) {
             throw new IOException("The evidence marker does not declare " + scenarioId);
         }
 

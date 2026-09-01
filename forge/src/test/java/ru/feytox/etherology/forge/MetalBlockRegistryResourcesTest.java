@@ -221,7 +221,11 @@ final class MetalBlockRegistryResourcesTest {
                         "etherology:ebony_block",
                         "etherology:ethereal_channel",
                         "etherology:ethereal_storage",
-                        "etherology:ethril_block"
+                        "etherology:ethril_block",
+                        "etherology:slitherite",
+                        "etherology:slitherite_slab",
+                        "etherology:slitherite_stairs",
+                        "etherology:slitherite_wall"
                 )
         );
         assertTagMembership(
@@ -280,7 +284,11 @@ final class MetalBlockRegistryResourcesTest {
                                 "etherology:ebony_block",
                                 "etherology:ethereal_channel",
                                 "etherology:ethereal_storage",
-                                "etherology:ethril_block"
+                                "etherology:ethril_block",
+                                "etherology:slitherite",
+                                "etherology:slitherite_slab",
+                                "etherology:slitherite_stairs",
+                                "etherology:slitherite_wall"
                         )
                 );
                 assertPackagedTag(

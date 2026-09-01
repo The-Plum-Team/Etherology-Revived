@@ -71,3 +71,37 @@ image is not evidence of natural growth or world generation.
   complete native client log
 - [`archive-manifest.json`](forest-lantern-v2/archive-manifest.json): hashes,
   capture times, controller identity, runtime locks, and artifact provenance
+
+## `attrahite-block-registry-v4`
+
+The fresh repository-owned profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v4` completed its sole native
+run on 2026-09-01 at 01:56 Europe/Madrid. The controller accepted all 49 ordered
+assertions, 120 consecutive ready renders, the unedited 1920x1080 framebuffer,
+the forced world save, clean client shutdown, immutable launcher inputs, and
+report-before-marker publication. The consumed v3 profile was not reused, no
+external game profile was consulted, and the mutable skin cache remained
+absent.
+
+![Original 0.1.7 Attrahite gallery](attrahite-block-registry-v4/screenshots/attrahite-block-registry.png)
+
+The live integrated-world gallery shows the four registered blocks: Attrahite,
+Attrahite Bricks, the brick slab, and the brick stairs. The machine record also
+proves their four block items, runtime classes, exact default states and state
+counts, stable network IDs, block and item tags, nine recipes, four loot tables,
+Silk Touch behavior, deterministic plain-tool and Fortune III outcomes, and
+saved-world persistence. It does not establish natural ore generation.
+
+- Screenshot SHA-256:
+  `61a405e33b09c2d55c117776c8c1f1bae8906be14f8104b676553e85eb97ab09`
+- [`report.json`](attrahite-block-registry-v4/reports/report.json): exact
+  49-assertion record
+- [`done.marker`](attrahite-block-registry-v4/reports/done.marker):
+  report-hash-bound final publication marker
+- [`verification.json`](attrahite-block-registry-v4/controller/verification.json):
+  controller verification record
+- [`original-client.log`](attrahite-block-registry-v4/controller/original-client.log):
+  complete native client log
+- [`archive-manifest.json`](attrahite-block-registry-v4/archive-manifest.json):
+  hashes, capture times, controller identity, runtime locks, and artifact
+  provenance

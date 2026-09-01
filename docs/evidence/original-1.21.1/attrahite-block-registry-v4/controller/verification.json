@@ -1,0 +1,42 @@
+{
+  "completion_marker": {
+    "path": "evidence/attrahite-block-registry/reports/done.marker",
+    "sha256": "9a311babec38c9909f8ae828a067810098e1a0543565ef485b2ab1c34544f85a",
+    "size": 111
+  },
+  "controller_log": {
+    "path": "logs/original-client-20260831T235553Z.log",
+    "sha256": "7eef90e5c4cc9ce4523c58f0f1e0e6f4f571e1a0998d6ef9d39cd73a3aaa252f",
+    "size": 16367
+  },
+  "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea",
+  "launch_attempt": {
+    "path": "launch-attempt.json",
+    "sha256": "a90fb5d35b5cbc52328fe8516bfeb33e7de8258f5bc52658531fb232c5e2964f",
+    "size": 871886
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache": {
+      "file_count": 0,
+      "files": [],
+      "path": "assets/skins",
+      "present": false,
+      "total_size": 0
+    }
+  },
+  "profile_id": "etherology-original-fabric-1.21.1-published-0.1.7-v4",
+  "scenario": "attrahite-block-registry",
+  "scenario_report": {
+    "path": "evidence/attrahite-block-registry/reports/report.json",
+    "sha256": "b538c5faf3ec50afa1f4232d1c57881417760cd212b76e1c2c0a97cc3d2a3103",
+    "size": 18689
+  },
+  "schema": 1,
+  "screenshot": {
+    "path": "evidence/attrahite-block-registry/screenshots/attrahite-block-registry.png",
+    "sha256": "61a405e33b09c2d55c117776c8c1f1bae8906be14f8104b676553e85eb97ab09",
+    "size": 731305
+  },
+  "status": "passed",
+  "verified_at_unix_ns": 1788220616533416000
+}

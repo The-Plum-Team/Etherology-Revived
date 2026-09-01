@@ -1,0 +1,351 @@
+{
+  "schema": 2,
+  "reference_id": "published-0.1.7",
+  "scenario": "attrahite-block-registry",
+  "lane": "fabric-1.21.1-original",
+  "status": "passed",
+  "client_ticks": 817,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "attrahite_canonical_resources_exact",
+      "passed": true,
+      "expected": "[minecraft:texts/splashes.txt, etherology:blockstates/attrahite.json, etherology:blockstates/attrahite_bricks.json, etherology:blockstates/attrahite_brick_slab.json, etherology:blockstates/attrahite_brick_stairs.json, etherology:models/block/attrahite.json, etherology:models/block/attrahite_bricks.json, etherology:models/block/attrahite_brick_slab.json, etherology:models/block/attrahite_brick_slab_top.json, etherology:models/block/attrahite_brick_stairs.json, etherology:models/block/attrahite_brick_stairs_inner.json, etherology:models/block/attrahite_brick_stairs_outer.json, etherology:models/item/attrahite.json, etherology:models/item/attrahite_bricks.json, etherology:models/item/attrahite_brick_slab.json, etherology:models/item/attrahite_brick_stairs.json, etherology:textures/block/attrahite.png, etherology:textures/block/attrahite_bricks.png]",
+      "actual": "[minecraft:texts/splashes.txt, etherology:blockstates/attrahite.json, etherology:blockstates/attrahite_bricks.json, etherology:blockstates/attrahite_brick_slab.json, etherology:blockstates/attrahite_brick_stairs.json, etherology:models/block/attrahite.json, etherology:models/block/attrahite_bricks.json, etherology:models/block/attrahite_brick_slab.json, etherology:models/block/attrahite_brick_slab_top.json, etherology:models/block/attrahite_brick_stairs.json, etherology:models/block/attrahite_brick_stairs_inner.json, etherology:models/block/attrahite_brick_stairs_outer.json, etherology:models/item/attrahite.json, etherology:models/item/attrahite_bricks.json, etherology:models/item/attrahite_brick_slab.json, etherology:models/item/attrahite_brick_stairs.json, etherology:textures/block/attrahite.png, etherology:textures/block/attrahite_bricks.png]"
+    },
+    {
+      "name": "registry:block:etherology:attrahite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:attrahite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:attrahite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:attrahite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:attrahite_brick_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:attrahite_brick_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block:etherology:attrahite_brick_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:attrahite_brick_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "attrahite_block_classes_exact",
+      "passed": true,
+      "expected": "[Block, Block, SlabBlock, StairsBlock]",
+      "actual": "[etherology:attrahite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_brick_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,raw_ids:6, etherology:attrahite_brick_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom},states:80,raw_ids:80]"
+    },
+    {
+      "name": "attrahite_block_items_exact",
+      "passed": true,
+      "expected": "four exact BlockItem instances bound to their registered blocks",
+      "actual": "[etherology:attrahite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_brick_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,raw_ids:6, etherology:attrahite_brick_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom},states:80,raw_ids:80]"
+    },
+    {
+      "name": "attrahite_default_states_exact",
+      "passed": true,
+      "expected": "raw/bricks\u003d{}, slab\u003d{type\u003dbottom,waterlogged\u003dfalse}, stairs\u003d{facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse}",
+      "actual": "[etherology:attrahite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_brick_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,raw_ids:6, etherology:attrahite_brick_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom},states:80,raw_ids:80]"
+    },
+    {
+      "name": "attrahite_state_counts_exact",
+      "passed": true,
+      "expected": "[1, 1, 6, 80]",
+      "actual": "[etherology:attrahite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_brick_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,raw_ids:6, etherology:attrahite_brick_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom},states:80,raw_ids:80]"
+    },
+    {
+      "name": "attrahite_state_network_ids_exact",
+      "passed": true,
+      "expected": "88 unique non-negative raw ids",
+      "actual": "[etherology:attrahite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,raw_ids:1, etherology:attrahite_brick_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,raw_ids:6, etherology:attrahite_brick_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom},states:80,raw_ids:80]"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_original_baseline_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "native_framebuffer_dimensions",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "completed_world_renders_before_capture",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_render_ready",
+      "passed": true,
+      "expected": "terrain complete and all four Attrahite positions rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_camera_exact",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d128.0;z\u003d-15.5;yaw\u003d0.0;pitch\u003d23.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d0.5;y\u003d128.0;z\u003d-15.5;yaw\u003d0.0;pitch\u003d23.0;on_ground\u003dtrue"
+    },
+    {
+      "name": "native_screenshot_written",
+      "passed": true,
+      "expected": "one non-empty unedited 1920x1080 framebuffer PNG",
+      "actual": "731305 bytes, sha256\u003d61a405e33b09c2d55c117776c8c1f1bae8906be14f8104b676553e85eb97ab09"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "server_arena_chunk_loaded",
+      "passed": true,
+      "expected": "full chunk",
+      "actual": "true"
+    },
+    {
+      "name": "server_player_creative",
+      "passed": true,
+      "expected": "creative",
+      "actual": "true"
+    },
+    {
+      "name": "server_attrahite_default_states_exact",
+      "passed": true,
+      "expected": "[etherology:attrahite\u003d{}, etherology:attrahite_bricks\u003d{}, etherology:attrahite_brick_slab\u003d{type\u003dbottom, waterlogged\u003dfalse}, etherology:attrahite_brick_stairs\u003d{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom}]",
+      "actual": "[etherology:attrahite\u003d{}, etherology:attrahite_bricks\u003d{}, etherology:attrahite_brick_slab\u003d{type\u003dbottom, waterlogged\u003dfalse}, etherology:attrahite_brick_stairs\u003d{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom}]"
+    },
+    {
+      "name": "client_attrahite_default_states_exact",
+      "passed": true,
+      "expected": "all four exact default states mirrored",
+      "actual": "mirrored"
+    },
+    {
+      "name": "server_attrahite_state_network_ids_exact",
+      "passed": true,
+      "expected": "four placed states with non-negative raw ids",
+      "actual": "[etherology:attrahite\u003d{}#28551, etherology:attrahite_bricks\u003d{}#28552, etherology:attrahite_brick_slab\u003d{type\u003dbottom, waterlogged\u003dfalse}#28556, etherology:attrahite_brick_stairs\u003d{facing\u003dnorth, shape\u003dstraight, waterlogged\u003dfalse, half\u003dbottom}#28570]"
+    },
+    {
+      "name": "attrahite_block_tags_exact",
+      "passed": true,
+      "expected": "pickaxe\u003dall four; needs_stone\u003draw; slabs\u003dslab; stairs\u003dstairs",
+      "actual": "[etherology:attrahite\u003dpickaxe:true,needs_stone:true,block_slab:false,block_stairs:false,item_slab:false,item_stairs:false, etherology:attrahite_bricks\u003dpickaxe:true,needs_stone:false,block_slab:false,block_stairs:false,item_slab:false,item_stairs:false, etherology:attrahite_brick_slab\u003dpickaxe:true,needs_stone:false,block_slab:true,block_stairs:false,item_slab:true,item_stairs:false, etherology:attrahite_brick_stairs\u003dpickaxe:true,needs_stone:false,block_slab:false,block_stairs:true,item_slab:false,item_stairs:true]"
+    },
+    {
+      "name": "attrahite_item_tags_exact",
+      "passed": true,
+      "expected": "slabs\u003dslab item; stairs\u003dstairs item",
+      "actual": "[etherology:attrahite\u003dpickaxe:true,needs_stone:true,block_slab:false,block_stairs:false,item_slab:false,item_stairs:false, etherology:attrahite_bricks\u003dpickaxe:true,needs_stone:false,block_slab:false,block_stairs:false,item_slab:false,item_stairs:false, etherology:attrahite_brick_slab\u003dpickaxe:true,needs_stone:false,block_slab:true,block_stairs:false,item_slab:true,item_stairs:false, etherology:attrahite_brick_stairs\u003dpickaxe:true,needs_stone:false,block_slab:false,block_stairs:true,item_slab:false,item_stairs:true]"
+    },
+    {
+      "name": "recipe:etherology:attrahite_brick",
+      "passed": true,
+      "expected": "etherology:attrahite_brick\u003dminecraft:smelting-\u003eetherology:attrahite_brickx1",
+      "actual": "etherology:attrahite_brick\u003dminecraft:smelting-\u003eetherology:attrahite_brickx1"
+    },
+    {
+      "name": "recipe:etherology:attrahite_bricks",
+      "passed": true,
+      "expected": "etherology:attrahite_bricks\u003dminecraft:crafting-\u003eetherology:attrahite_bricksx1",
+      "actual": "etherology:attrahite_bricks\u003dminecraft:crafting-\u003eetherology:attrahite_bricksx1"
+    },
+    {
+      "name": "recipe:etherology:attrahite_brick_slab",
+      "passed": true,
+      "expected": "etherology:attrahite_brick_slab\u003dminecraft:crafting-\u003eetherology:attrahite_brick_slabx6",
+      "actual": "etherology:attrahite_brick_slab\u003dminecraft:crafting-\u003eetherology:attrahite_brick_slabx6"
+    },
+    {
+      "name": "recipe:etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting",
+      "passed": true,
+      "expected": "etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:attrahite_brick_slabx2",
+      "actual": "etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:attrahite_brick_slabx2"
+    },
+    {
+      "name": "recipe:etherology:attrahite_brick_stairs",
+      "passed": true,
+      "expected": "etherology:attrahite_brick_stairs\u003dminecraft:crafting-\u003eetherology:attrahite_brick_stairsx4",
+      "actual": "etherology:attrahite_brick_stairs\u003dminecraft:crafting-\u003eetherology:attrahite_brick_stairsx4"
+    },
+    {
+      "name": "recipe:etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting",
+      "passed": true,
+      "expected": "etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:attrahite_brick_stairsx1",
+      "actual": "etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:attrahite_brick_stairsx1"
+    },
+    {
+      "name": "recipe:etherology:raw_azel",
+      "passed": true,
+      "expected": "etherology:raw_azel\u003dminecraft:crafting-\u003eetherology:raw_azelx1",
+      "actual": "etherology:raw_azel\u003dminecraft:crafting-\u003eetherology:raw_azelx1"
+    },
+    {
+      "name": "recipe:etherology:azel_ingot",
+      "passed": true,
+      "expected": "etherology:azel_ingot\u003dminecraft:smelting-\u003eetherology:azel_ingotx1",
+      "actual": "etherology:azel_ingot\u003dminecraft:smelting-\u003eetherology:azel_ingotx1"
+    },
+    {
+      "name": "recipe:etherology:azel_ingot_from_blasting",
+      "passed": true,
+      "expected": "etherology:azel_ingot_from_blasting\u003dminecraft:blasting-\u003eetherology:azel_ingotx1",
+      "actual": "etherology:azel_ingot_from_blasting\u003dminecraft:blasting-\u003eetherology:azel_ingotx1"
+    },
+    {
+      "name": "attrahite_loot_shared_seed_roll_exact",
+      "passed": true,
+      "expected": "0.05 \u003c\u003d first roll \u003c 0.20",
+      "actual": "seed\u003d4096,roll\u003d0.09789288"
+    },
+    {
+      "name": "loot:etherology:attrahite:silk_touch",
+      "passed": true,
+      "expected": "[etherology:attrahitex1]",
+      "actual": "[etherology:attrahitex1]"
+    },
+    {
+      "name": "loot:etherology:attrahite:no_silk_no_fortune",
+      "passed": true,
+      "expected": "[]",
+      "actual": "[]"
+    },
+    {
+      "name": "loot:etherology:attrahite:fortune_iii",
+      "passed": true,
+      "expected": "[etherology:enriched_attrahitex1]",
+      "actual": "[etherology:enriched_attrahitex1]"
+    },
+    {
+      "name": "loot:etherology:attrahite_bricks",
+      "passed": true,
+      "expected": "[etherology:attrahite_bricksx1]",
+      "actual": "[etherology:attrahite_bricksx1]"
+    },
+    {
+      "name": "loot:etherology:attrahite_brick_slab",
+      "passed": true,
+      "expected": "[etherology:attrahite_brick_slabx1]",
+      "actual": "[etherology:attrahite_brick_slabx1]"
+    },
+    {
+      "name": "loot:etherology:attrahite_brick_stairs",
+      "passed": true,
+      "expected": "[etherology:attrahite_brick_stairsx1]",
+      "actual": "[etherology:attrahite_brick_stairsx1]"
+    },
+    {
+      "name": "live_world_identity",
+      "passed": true,
+      "expected": "Etherology Original 0.1.7 Attrahite Blocks;4995697332085600305;minecraft:overworld",
+      "actual": "Etherology Original 0.1.7 Attrahite Blocks;4995697332085600305;minecraft:overworld"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-original-attrahite-block-registry-world",
+      "actual": "etherology-original-attrahite-block-registry-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-original-attrahite-block-registry-world",
+    "display_name": "Etherology Original 0.1.7 Attrahite Blocks",
+    "seed": 4995697332085600305,
+    "dimension": "minecraft:overworld",
+    "integrated": true
+  },
+  "mechanics": {
+    "gallery_block_count": 4,
+    "recipe_count": 9,
+    "loot_table_count": 4,
+    "fortune_level": 3,
+    "base_drop_chance": 0.05,
+    "fortune_multiplier": 0.05,
+    "loot_probe": "same seeded first roll for plain and Fortune III diamond pickaxes",
+    "limitations": []
+  },
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    {
+      "mod_id": "etherology_original_baseline_harness",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.2.0.jar",
+      "size": 125738,
+      "sha256": "3d7380b7de06cbbf479535cb30371e5878a6f6602292c038882f9a852d31488a"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "attrahite-four-block-gallery",
+      "file": "screenshots/attrahite-block-registry.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 731305,
+      "sha256": "61a405e33b09c2d55c117776c8c1f1bae8906be14f8104b676553e85eb97ab09",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    }
+  ]
+}

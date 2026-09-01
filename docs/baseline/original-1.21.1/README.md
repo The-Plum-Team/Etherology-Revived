@@ -158,6 +158,15 @@ contract; it does not establish interaction behavior for the four fixtures.
 The full archived report and controller verification are documented in
 [`docs/evidence/original-1.21.1`](../../evidence/original-1.21.1/README.md).
 
+The later fresh v4 capture accepts the original Attrahite block family with 49
+ordered assertions and one unedited 1920x1080 framebuffer. It covers all four
+blocks and block items, exact states and tags, nine recipes, four loot tables,
+Silk Touch and seeded Fortune behavior, rendering, and saved-world persistence.
+Its immutable evidence is under
+[`attrahite-block-registry-v4`](../../evidence/original-1.21.1/attrahite-block-registry-v4),
+and the mechanic-level visual record is under
+[`materials-and-building-blocks`](mechanics/materials-and-building-blocks/README.md).
+
 ## Historical static gallery overview
 
 ![Reference gallery overview](gallery-overview.png)

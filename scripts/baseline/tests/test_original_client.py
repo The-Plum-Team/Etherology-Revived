@@ -55,6 +55,13 @@ TRACKED_FOREST_LANTERN_EVIDENCE_ARCHIVE = (
     / "original-1.21.1"
     / "forest-lantern-v2"
 )
+TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE = (
+    BASELINE_DIRECTORY.parents[1]
+    / "docs"
+    / "evidence"
+    / "original-1.21.1"
+    / "attrahite-block-registry-v4"
+)
 ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME = "attrahite-block-registry-v4"
 
 
@@ -1182,6 +1189,102 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertEqual(
             verification["screenshot"]["sha256"],
             archived_files["screenshots/forest-lantern.png"]["sha256"],
+        )
+        self.assertFalse(
+            archive_manifest["mutable_launcher_outputs"]["skin_cache_present"]
+        )
+
+    def test_tracked_original_attrahite_archive_is_exact(self) -> None:
+        archive_manifest = client.load_json_object(
+            TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE / "archive-manifest.json",
+            "Tracked original Attrahite evidence archive manifest",
+        )
+        self.assertEqual(
+            archive_manifest["kind"],
+            "etherology-original-fabric-baseline-evidence",
+        )
+        self.assertEqual(
+            archive_manifest["scenario"],
+            "attrahite-block-registry",
+        )
+        self.assertEqual(archive_manifest["assertion_count"], 49)
+        self.assertEqual(archive_manifest["screenshot_count"], 1)
+        self.assertEqual(
+            archive_manifest["profile"]["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v4",
+        )
+        client.verify_exact_file(
+            TRACKED_MANIFEST_PATH,
+            archive_manifest["profile"]["manifest_sha256"],
+            archive_manifest["profile"]["manifest_size"],
+            "Tracked original Attrahite profile manifest",
+        )
+        archived_files = archive_manifest["files"]
+        self.assertEqual(
+            set(archived_files),
+            {
+                "reports/report.json",
+                "reports/done.marker",
+                "screenshots/attrahite-block-registry.png",
+                "controller/original-client.log",
+                "controller/verification.json",
+            },
+        )
+        for relative_name, pinned in archived_files.items():
+            relative_path = PurePosixPath(relative_name)
+            self.assertFalse(relative_path.is_absolute())
+            self.assertNotIn("..", relative_path.parts)
+            client.verify_exact_file(
+                TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE
+                / Path(*relative_path.parts),
+                pinned["sha256"],
+                pinned["size"],
+                f"Tracked original Attrahite archive file {relative_name}",
+            )
+        report = client.load_json_object(
+            TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE
+            / "reports"
+            / "report.json",
+            "Tracked original Attrahite scenario report",
+        )
+        self.assertEqual(report["status"], "passed")
+        self.assertEqual(report["reference_id"], "published-0.1.7")
+        self.assertEqual(report["scenario"], "attrahite-block-registry")
+        self.assertEqual(len(report["assertions"]), 49)
+        self.assertTrue(all(value["passed"] is True for value in report["assertions"]))
+        self.assertEqual(report["mechanics"]["gallery_block_count"], 4)
+        self.assertEqual(report["mechanics"]["recipe_count"], 9)
+        self.assertEqual(report["mechanics"]["loot_table_count"], 4)
+        self.assertEqual(report["mechanics"]["fortune_level"], 3)
+        self.assertEqual(
+            client.png_dimensions(
+                TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE
+                / "screenshots"
+                / "attrahite-block-registry.png"
+            ),
+            (1920, 1080),
+        )
+        marker = (
+            TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE
+            / "reports"
+            / "done.marker"
+        ).read_text(encoding="ascii")
+        self.assertEqual(
+            marker,
+            "attrahite-block-registry:passed\n"
+            f"report_sha256:{archived_files['reports/report.json']['sha256']}\n",
+        )
+        verification = client.load_json_object(
+            TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE
+            / "controller"
+            / "verification.json",
+            "Tracked original Attrahite controller verification",
+        )
+        self.assertEqual(verification["status"], "passed")
+        self.assertEqual(verification["scenario"], "attrahite-block-registry")
+        self.assertEqual(
+            verification["screenshot"]["sha256"],
+            archived_files["screenshots/attrahite-block-registry.png"]["sha256"],
         )
         self.assertFalse(
             archive_manifest["mutable_launcher_outputs"]["skin_cache_present"]

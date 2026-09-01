@@ -48,6 +48,7 @@ import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -58,6 +59,7 @@ import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.light.LightingProvider;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.minecraft.world.level.LevelInfo;
@@ -91,6 +93,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             "attrahite-block-registry-reopened.png";
     static final long WORLD_SEED = 0x4154545241484954L;
     static final int REQUIRED_COMPLETED_RENDERS = 120;
+    static final int REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS = 20;
     static final int REQUIRED_LIGHTING_READY_SERVER_TICKS = 20;
     static final int REQUIRED_LIGHTING_READY_CLIENT_TICKS = 20;
     static final float PLACEMENT_YAW = 180.0F;
@@ -101,6 +104,8 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private static final int FRAMEBUFFER_HEIGHT = 1080;
     private static final int MAXIMUM_STAGE_CLIENT_TICKS = 6000;
     private static final int ARENA_FLOOR_Y = 120;
+    private static final int ARENA_LIGHT_SECTION_Y =
+            ChunkSectionPos.getSectionCoord(ARENA_FLOOR_Y + 1);
     private static final double CAMERA_X = 0.5;
     private static final double CAMERA_Y = 121.0;
     private static final double CAMERA_Z = -7.5;
@@ -133,6 +138,8 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     );
     static final List<Integer> EXPECTED_SKY_LIGHT_LEVELS =
             List.of(15, 15, 15, 15, 15, 15);
+    static final List<Integer> EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS =
+            EXPECTED_SKY_LIGHT_LEVELS;
     static final List<Integer> EXPECTED_BLOCK_LIGHT_LEVELS =
             List.of(14, 14, 10, 10, 10, 8);
     static final List<String> EXPECTED_LOOT_TABLE_IDS = List.of(
@@ -184,9 +191,11 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private int clientTicks;
     private int stageClientTicks;
     private int completedRenders;
+    private int preSetupLightReadyClientTicks;
     private int lightingReadyClientTicks;
     private boolean worldSetupSubmitted;
     private boolean clientArenaChunksLoadedBeforeSetup;
+    private boolean clientArenaLightPayloadsAppliedBeforeSetup;
     private boolean saveSubmitted;
     private boolean restartSubmitted;
     private boolean restartInspectionSubmitted;
@@ -210,6 +219,8 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             new LinkedHashMap<>();
     private final Map<CapturePhase, LightingEvidence> lightingDiagnostics =
             new LinkedHashMap<>();
+    private PreSetupLightingEvidence latestPreSetupLightingEvidence =
+            PreSetupLightingEvidence.missing();
     private volatile String serverFailure = "";
     private volatile ServerSetupResult pendingServerSetupResult;
     private volatile SaveResult pendingSaveResult;
@@ -341,6 +352,15 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
                 : 0;
     }
 
+    static int nextPreSetupLightReadyClientTickCount(int readyClientTicks, boolean ready) {
+        return ready
+                ? Math.min(
+                        readyClientTicks + 1,
+                        REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+                )
+                : 0;
+    }
+
     static int nextLightingReadyServerTickCount(int readyServerTicks, boolean ready) {
         return ready
                 ? Math.min(readyServerTicks + 1, REQUIRED_LIGHTING_READY_SERVER_TICKS)
@@ -440,9 +460,20 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             fail(client, "Minecraft rejected Etherology's Attrahite server data");
             return;
         }
-        if (!isWorldLifecycleReady(client)) return;
-        boolean clientArenaChunksLoaded = areClientArenaChunksLoaded(client);
-        if (!clientArenaChunksLoaded) return;
+        if (!isWorldLifecycleReady(client)) {
+            preSetupLightReadyClientTicks = 0;
+            return;
+        }
+        PreSetupLightingEvidence preSetupLighting = capturePreSetupLightingEvidence(client);
+        preSetupLightReadyClientTicks = nextPreSetupLightReadyClientTickCount(
+                preSetupLightReadyClientTicks,
+                preSetupLighting.currentTickReady()
+        );
+        latestPreSetupLightingEvidence = preSetupLighting.withStableClientTicks(
+                preSetupLightReadyClientTicks
+        );
+        if (preSetupLightReadyClientTicks
+                < REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS) return;
 
         IntegratedServer server = client.getServer();
         ServerPlayerEntity serverPlayer = server.getPlayerManager()
@@ -451,7 +482,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
 
         client.options.setPerspective(Perspective.FIRST_PERSON);
         client.setCameraEntity(client.player);
-        clientArenaChunksLoadedBeforeSetup = clientArenaChunksLoaded;
+        clientArenaChunksLoadedBeforeSetup = preSetupLighting.arenaChunksLoaded();
+        clientArenaLightPayloadsAppliedBeforeSetup =
+                latestPreSetupLightingEvidence.exact();
+        if (!clientArenaLightPayloadsAppliedBeforeSetup) return;
         worldSetupSubmitted = true;
         UUID playerId = client.player.getUuid();
         server.execute(() -> setupFixture(server, playerId));
@@ -888,6 +922,30 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         return true;
     }
 
+    private PreSetupLightingEvidence capturePreSetupLightingEvidence(
+            MinecraftClient client
+    ) {
+        LightingProvider lightingProvider = client.world.getChunkManager()
+                .getLightingProvider();
+        List<Boolean> enabledColumns = new ArrayList<>();
+        for (ChunkPos chunk : ARENA_CHUNKS) {
+            ChunkSectionPos section = ChunkSectionPos.from(chunk, ARENA_LIGHT_SECTION_Y);
+            enabledColumns.add(lightingProvider.isLightingEnabled(section));
+        }
+        List<Integer> skyLevels = new ArrayList<>();
+        for (BlockPos position : LIGHT_SAMPLE_POSITIONS) {
+            skyLevels.add(client.world.getLightLevel(LightType.SKY, position));
+        }
+        return new PreSetupLightingEvidence(
+                0,
+                areClientArenaChunksLoaded(client),
+                client.world.hasNoChunkUpdaters(),
+                lightingProvider.hasUpdates(),
+                enabledColumns,
+                skyLevels
+        );
+    }
+
     private FixtureSnapshot captureLatestClientFixtureSnapshot(MinecraftClient client) {
         if (!isWorldLifecycleReady(client) || !areClientArenaChunksLoaded(client)) return null;
 
@@ -1168,6 +1226,13 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         );
         passed &= addAssertion(
                 assertions,
+                "client_arena_light_payloads_applied_before_setup",
+                clientArenaLightPayloadsAppliedBeforeSetup,
+                PreSetupLightingEvidence.expectedDescription(),
+                latestPreSetupLightingEvidence.assertionActual()
+        );
+        passed &= addAssertion(
+                assertions,
                 "server_arena_chunks_loaded",
                 serverSetupResult != null && serverSetupResult.chunksLoaded(),
                 "four full chunks",
@@ -1395,6 +1460,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         attrahite.addProperty("persistence_exact", persistenceExact);
         attrahite.addProperty("reopened_data_exact", reopenedDataExact);
         attrahite.addProperty("required_stable_renders", REQUIRED_COMPLETED_RENDERS);
+        attrahite.add(
+                "pre_setup_lighting",
+                preSetupLightingReport(latestPreSetupLightingEvidence)
+        );
         JsonObject lighting = new JsonObject();
         for (CapturePhase phase : CapturePhase.values()) {
             lighting.add(phase.id(), lightingReport(lightingDiagnosticFor(phase)));
@@ -1409,6 +1478,31 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         }
         attrahite.add("latest_client_fixtures", latestClientFixtures);
         return attrahite;
+    }
+
+    private static JsonObject preSetupLightingReport(PreSetupLightingEvidence evidence) {
+        JsonObject report = new JsonObject();
+        report.addProperty("stable_client_ticks", evidence.stableClientTicks());
+        report.addProperty("arena_chunks_loaded", evidence.arenaChunksLoaded());
+        report.addProperty("chunk_updaters_empty", evidence.chunkUpdatersEmpty());
+        report.addProperty("pending", evidence.pendingUpdates());
+        report.add(
+                "enabled_columns",
+                arenaChunkBooleanReport(evidence.enabledColumns())
+        );
+        report.add("sky", lightLevelsReport(evidence.skyLevels()));
+        return report;
+    }
+
+    private static JsonObject arenaChunkBooleanReport(List<Boolean> values) {
+        JsonObject report = new JsonObject();
+        for (int index = 0; index < Math.min(values.size(), ARENA_CHUNKS.size()); index++) {
+            report.addProperty(
+                    chunkDescription(ARENA_CHUNKS.get(index)),
+                    values.get(index)
+            );
+        }
+        return report;
     }
 
     private String latestClientFixtureDescription(CapturePhase phase) {
@@ -1543,6 +1637,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         return position.getX() + "," + position.getY() + "," + position.getZ();
     }
 
+    private static String chunkDescription(ChunkPos chunk) {
+        return chunk.x + "," + chunk.z;
+    }
+
     private static String framebufferDescription(int width, int height) {
         return width + "x" + height;
     }
@@ -1646,6 +1744,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         names.add("packaged_root_jar:" + HARNESS_MOD_ID);
         names.add("integrated_world_joined");
         names.add("client_arena_chunks_loaded_before_setup");
+        names.add("client_arena_light_payloads_applied_before_setup");
         names.add("server_arena_chunks_loaded");
         names.add("loot_tables_exact");
         names.add("standard_block_drops_exact");
@@ -2378,6 +2477,77 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
                     cameraPose,
                     snapshot,
                     result
+            );
+        }
+    }
+
+    record PreSetupLightingEvidence(
+            int stableClientTicks,
+            boolean arenaChunksLoaded,
+            boolean chunkUpdatersEmpty,
+            boolean pendingUpdates,
+            List<Boolean> enabledColumns,
+            List<Integer> skyLevels
+    ) {
+
+        PreSetupLightingEvidence {
+            enabledColumns = List.copyOf(enabledColumns);
+            skyLevels = List.copyOf(skyLevels);
+        }
+
+        boolean currentTickReady() {
+            return arenaChunksLoaded
+                    && chunkUpdatersEmpty
+                    && !pendingUpdates
+                    && enabledColumns.size() == ARENA_CHUNKS.size()
+                    && enabledColumns.stream().allMatch(Boolean.TRUE::equals)
+                    && skyLevels.equals(EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS);
+        }
+
+        boolean exact() {
+            return stableClientTicks == REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+                    && currentTickReady();
+        }
+
+        PreSetupLightingEvidence withStableClientTicks(int stableTicks) {
+            return new PreSetupLightingEvidence(
+                    stableTicks,
+                    arenaChunksLoaded,
+                    chunkUpdatersEmpty,
+                    pendingUpdates,
+                    enabledColumns,
+                    skyLevels
+            );
+        }
+
+        String assertionActual() {
+            return exact() ? expectedDescription() : diagnosticDescription();
+        }
+
+        String diagnosticDescription() {
+            return "stableClientTicks=" + stableClientTicks
+                    + ";arenaChunksLoaded=" + arenaChunksLoaded
+                    + ";chunkUpdatersEmpty=" + chunkUpdatersEmpty
+                    + ";pending=" + pendingUpdates
+                    + ";enabledColumns=" + enabledColumns
+                    + ";sky=" + skyLevels;
+        }
+
+        static String expectedDescription() {
+            return REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+                    + " consecutive ticks: four chunks loaded; chunk update queue empty; "
+                    + "lighting provider idle; four enabled columns; sky="
+                    + EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS;
+        }
+
+        static PreSetupLightingEvidence missing() {
+            return new PreSetupLightingEvidence(
+                    0,
+                    false,
+                    false,
+                    true,
+                    Collections.nCopies(ARENA_CHUNKS.size(), false),
+                    Collections.nCopies(LIGHT_SAMPLE_POSITIONS.size(), 0)
             );
         }
     }

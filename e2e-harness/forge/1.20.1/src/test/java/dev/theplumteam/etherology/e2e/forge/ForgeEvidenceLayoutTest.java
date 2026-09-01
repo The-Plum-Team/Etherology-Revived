@@ -35,7 +35,7 @@ class ForgeEvidenceLayoutTest {
                         .resolve(ScenarioSelection.ETHEREAL_STORAGE),
                 layout.scenarioRoot()
         );
-        assertEquals("etherology-e2e-forge-1.20.1-v16", layout.profileId());
+        assertEquals("etherology-e2e-forge-1.20.1-v17", layout.profileId());
         assertEquals(4096L, layout.profileManifestSize());
         assertEquals(PROFILE_MANIFEST_SHA256, layout.profileManifestSha256());
 
@@ -109,7 +109,7 @@ class ForgeEvidenceLayoutTest {
         Files.writeString(
                 marker,
                 profileMarker("scripts/e2e/forge_client.py")
-                        .replace("etherology-e2e-forge-1.20.1-v16", "other-forge-profile")
+                        .replace("etherology-e2e-forge-1.20.1-v17", "other-forge-profile")
         );
 
         assertThrows(
@@ -200,7 +200,7 @@ class ForgeEvidenceLayoutTest {
     }
 
     private Path createValidLayout() throws IOException {
-        Path runtimeDirectory = temporaryDirectory.resolve("etherology-e2e-forge-1.20.1-v16");
+        Path runtimeDirectory = temporaryDirectory.resolve("etherology-e2e-forge-1.20.1-v17");
         Path gameDirectory = runtimeDirectory.resolve("game");
         Path evidenceDirectory = runtimeDirectory.resolve("evidence");
         Path scenarioDirectory = evidenceDirectory.resolve(ScenarioSelection.ETHEREAL_STORAGE);
@@ -231,7 +231,7 @@ class ForgeEvidenceLayoutTest {
                 """
                         {
                           "schema": 1,
-                          "profile_id": "etherology-e2e-forge-1.20.1-v16",
+                          "profile_id": "etherology-e2e-forge-1.20.1-v17",
                           "managed_by": "scripts/e2e/forge_client.py",
                           "artifact_node": "forge-1.20.1",
                           "loader": "forge",
@@ -252,7 +252,7 @@ class ForgeEvidenceLayoutTest {
         return """
                 {
                   "schema": 1,
-                  "profile_id": "etherology-e2e-forge-1.20.1-v16",
+                  "profile_id": "etherology-e2e-forge-1.20.1-v17",
                   "managed_by": "%s",
                   "profile_manifest": {
                     "path": "scripts/e2e/forge-1.20.1-profile.json",

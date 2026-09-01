@@ -136,7 +136,7 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         assertEquals(29, staticList("OWNED_RECIPES").size());
         assertEquals(29, staticList("OWNED_ADVANCEMENTS").size());
         assertEquals(5, staticList("RELATED_RECIPES").size());
-        assertEquals(183, SlitheriteBlockRegistryScenario.ASSERTION_NAMES.size());
+        assertEquals(185, SlitheriteBlockRegistryScenario.ASSERTION_NAMES.size());
         assertEquals(
                 List.of(
                         "slitherite-block-registry-initial.png",
@@ -152,6 +152,8 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
                 "slitherite_related_recipes_recorded_not_owned",
                 "slitherite_button_pulse_reset_exact",
                 "slitherite_pressure_plate_entities_exact",
+                "client_arena_chunks_loaded_before_setup",
+                "client_arena_light_payloads_applied_before_setup",
                 "capture_lighting_ready:initial",
                 "capture_lighting_ready:reopened",
                 "restart_fixture_persistence_exact"
@@ -191,6 +193,7 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         assertFalse(invocationNames("localLightingReady").contains("hasUpdates"));
         assertTrue(invocationNames("captureLightingEvidence").contains("hasUpdates"));
         assertTrue(invocationNames("requestServerLightingSample").contains("execute"));
+        assertFalse(invocationNames("requestServerLightingSample").contains("checkBlock"));
         assertTrue(invocationNames("captureCurrentPhase").contains("saveScreenshot"));
         assertTrue(fieldAccessNames("onEndClientTick").contains("serverFailure"));
         assertTrue(invocationNames("onEndClientTick").contains("fail"));
@@ -410,6 +413,156 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         ));
     }
 
+    @Test
+    void preSetupLightGateRequiresExactClientPayloadReadinessBeforeFixtureSetup()
+            throws IOException {
+        assertEquals(20, staticInt("REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS"));
+        assertEquals(
+                List.of(
+                        "-2,-2",
+                        "-2,-1",
+                        "-2,0",
+                        "-1,-2",
+                        "-1,-1",
+                        "-1,0",
+                        "0,-2",
+                        "0,-1",
+                        "0,0",
+                        "1,-2",
+                        "1,-1",
+                        "1,0"
+                ),
+                SlitheriteBlockRegistryScenario.ARENA_CHUNK_DESCRIPTIONS
+        );
+        assertEquals(
+                java.util.Collections.nCopies(18, 15),
+                SlitheriteBlockRegistryScenario.EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS
+        );
+        assertEquals(
+                0,
+                SlitheriteBlockRegistryScenario.nextPreSetupLightReadyClientTickCount(
+                        19,
+                        false
+                )
+        );
+        assertEquals(
+                20,
+                SlitheriteBlockRegistryScenario.nextPreSetupLightReadyClientTickCount(
+                        19,
+                        true
+                )
+        );
+        assertEquals(
+                20,
+                SlitheriteBlockRegistryScenario.nextPreSetupLightReadyClientTickCount(
+                        20,
+                        true
+                )
+        );
+
+        SlitheriteBlockRegistryScenario.PreSetupLightingEvidence ready =
+                preSetupLightingEvidence(true, true, false, true, 15)
+                        .withStableClientTicks(20);
+        assertTrue(ready.currentTickReady());
+        assertTrue(ready.exact());
+        assertFalse(preSetupLightingEvidence(
+                false,
+                true,
+                false,
+                true,
+                15
+        ).currentTickReady());
+        assertFalse(preSetupLightingEvidence(
+                true,
+                false,
+                false,
+                true,
+                15
+        ).currentTickReady());
+        assertFalse(preSetupLightingEvidence(
+                true,
+                true,
+                true,
+                true,
+                15
+        ).currentTickReady());
+        assertFalse(preSetupLightingEvidence(
+                true,
+                true,
+                false,
+                false,
+                15
+        ).currentTickReady());
+        assertFalse(preSetupLightingEvidence(
+                true,
+                true,
+                false,
+                true,
+                0
+        ).currentTickReady());
+
+        assertTrue(invocationNames("tickWaitingForWorld").containsAll(Set.of(
+                "execute",
+                "transition"
+        )));
+        assertTrue(invocationNamesWithPrefix(
+                "lambda$tickWaitingForWorld$"
+        ).contains("prepareArenaView"));
+        assertTrue(invocationNames("prepareArenaView").containsAll(Set.of(
+                "loadArenaChunks",
+                "setInvulnerable",
+                "teleport"
+        )));
+        assertTrue(Set.of(
+                "clearArena",
+                "buildArena",
+                "placeAllBlockItems",
+                "setupFixture",
+                "setBlockState"
+        ).stream().noneMatch(invocationNames("prepareArenaView")::contains));
+        assertTrue(invocationNames("tickWaitingForClientLightPayload").containsAll(
+                Set.of(
+                        "capturePreSetupLightingEvidence",
+                        "nextPreSetupLightReadyClientTickCount",
+                        "currentTickReady",
+                        "exact",
+                        "execute",
+                        "transition"
+                )
+        ));
+        assertEquals(
+                2,
+                fieldWriteCount(
+                        "tickWaitingForClientLightPayload",
+                        "preSetupLightReadyClientTicks"
+                )
+        );
+        assertTrue(invocationNamesWithPrefix(
+                "lambda$tickWaitingForClientLightPayload$"
+        ).contains("setupFixture"));
+        assertTrue(invocationNames("capturePreSetupLightingEvidence").containsAll(
+                Set.of(
+                        "getLightingProvider",
+                        "hasNoChunkUpdaters",
+                        "hasUpdates",
+                        "isLightingEnabled"
+                )
+        ));
+        assertFalse(invocationNames(
+                "capturePreSetupLightingEvidence"
+        ).contains("getStatus"));
+        assertTrue(invocationNamesWithPrefix(
+                "lambda$capturePreSetupLightingEvidence$"
+        ).contains("getLightLevel"));
+
+        Set<String> scenarioCalls = invocationNamesWithPrefix("");
+        assertFalse(scenarioCalls.contains("checkBlock"));
+        assertFalse(scenarioCalls.contains("doLightUpdates"));
+        String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
+        assertFalse(constants.contains("ChunkDataS2CPacket"));
+        assertFalse(constants.contains("LightUpdateS2CPacket"));
+    }
+
     @SuppressWarnings("unchecked")
     private static List<?> staticList(String fieldName) throws Exception {
         Field field = SlitheriteBlockRegistryScenario.class
@@ -441,6 +594,36 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         } catch (ReflectiveOperationException exception) {
             throw new IOException("Cannot read scenario constant " + fieldName, exception);
         }
+    }
+
+    private static int staticInt(String fieldName) throws IOException {
+        try {
+            Field field = SlitheriteBlockRegistryScenario.class
+                    .getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.getInt(null);
+        } catch (ReflectiveOperationException exception) {
+            throw new IOException("Cannot read scenario constant " + fieldName, exception);
+        }
+    }
+
+    private static SlitheriteBlockRegistryScenario.PreSetupLightingEvidence
+            preSetupLightingEvidence(
+                    boolean chunksLoaded,
+                    boolean chunkUpdatersEmpty,
+                    boolean pendingUpdates,
+                    boolean columnsEnabled,
+                    int skyLevel
+            ) {
+        int chunkCount = SlitheriteBlockRegistryScenario.ARENA_CHUNKS.size();
+        return new SlitheriteBlockRegistryScenario.PreSetupLightingEvidence(
+                0,
+                chunksLoaded,
+                chunkUpdatersEmpty,
+                pendingUpdates,
+                java.util.Collections.nCopies(chunkCount, columnsEnabled),
+                java.util.Collections.nCopies(18, skyLevel)
+        );
     }
 
     private static List<String> behaviorPhaseNames() throws IOException {
@@ -647,6 +830,37 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
             }
         }, 0);
         return keys;
+    }
+
+    private static int fieldWriteCount(String methodName, String fieldName)
+            throws IOException {
+        int[] count = {0};
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitFieldInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor
+                    ) {
+                        if (opcode == Opcodes.PUTFIELD
+                                && SCENARIO.equals(owner)
+                                && fieldName.equals(name)) count[0]++;
+                    }
+                };
+            }
+        }, 0);
+        return count[0];
     }
 
     private static Set<Number> numericConstants(String methodName)

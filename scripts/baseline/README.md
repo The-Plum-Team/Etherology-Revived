@@ -5,11 +5,11 @@ directory:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v8/
+  etherology-original-fabric-1.21.1-published-0.1.7-v9/
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v8.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v9.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins a separately built,
 client-only capture harness as a ninth root JAR. The controller recursively
@@ -17,8 +17,8 @@ reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quicks
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v8 manifest is `10,321` bytes with SHA-256
-`bcbb0f6b8edfcba08f4afdadaa61e58bf7bd94808e0cd1de7773e1f5d2f5937a`.
+The v9 manifest is `10,321` bytes with SHA-256
+`4655f6e0322555b57da2666333d2f846d4ebd137e37dcf6217970b709330e7dd`.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -65,10 +65,10 @@ The separately packaged capture harness is not part of the published reference
 and does not replace it:
 
 - Harness JAR:
-  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.3.jar`
-- Harness size: `212,059` bytes
+  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.4.jar`
+- Harness size: `218,402` bytes
 - Harness SHA-256:
-  `8e273d156f1b6014b5d206fa3bfa2682594d36dae00c7aeaac8eb56928f88c3a`
+  `65835ee5a44dc0461c2de701992a69ed3d6465cd37c39bc87c91cef5625953f6`
 - Harness mod id: `etherology_original_baseline_harness`
 - Environment: client only
 - Exact dependency: `etherology=1.21-0.1.7`
@@ -205,9 +205,9 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active `slitherite-block-registry` v8 contract
+## Active `slitherite-block-registry` v9 contract
 
-The fresh v8 profile is dedicated to the published-0.1.7 Slitherite
+The fresh v9 profile is dedicated to the published-0.1.7 Slitherite
 family. It validates 17 ordered block/item registry pairs, exact intermediary
 runtime classes and default states, 1,262 state network IDs, 79 Etherology
 visual assets plus one vanilla sentinel, grouped block/item tags, 17 self-drop
@@ -228,6 +228,17 @@ discarded, and the exact behavior still requires the ignored item, activating
 living entity, and native 25-tick reset. The harness never directly invokes a
 collision callback, plate update, scheduled tick, or `POWERED` mutation.
 
+Before the first fixture mutation, a server preparation operation loads the
+exact 12 arena chunks, makes the temporary survival player invulnerable, and
+moves the player into chunk-watch range. The client must then prove 20
+consecutive ticks with all 12 chunks loaded, `hasNoChunkUpdaters()` true, the
+lighting provider idle, `isLightingEnabled(ChunkSectionPos)` true for all 12
+relevant light columns, and all 18 future capture SKY samples exactly 15.
+The named `client_arena_light_payloads_applied_before_setup` assertion and the
+structured `pre_setup_lighting` report retain that proof. The harness does not
+force a client light check, drain light work, construct a chunk/light packet,
+or resend light data.
+
 The remaining sequence requires a deterministic button pulse and reset, a
 forced save, a full disconnect/reopen, and exact structural/data equality after
 reopen. Each initial/reopened capture requires 20 fresh paired local
@@ -242,16 +253,16 @@ Expected evidence, once the one authorized run is eventually performed, is:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v8/
+  etherology-original-fabric-1.21.1-published-0.1.7-v9/
     evidence/slitherite-block-registry/
       reports/{report.json,done.marker}
       screenshots/{slitherite-block-registry-initial.png,
                    slitherite-block-registry-reopened.png}
 ```
 
-At preparation time v8 has no runtime, launch-attempt seal, evidence, or
+At preparation time v9 has no runtime, launch-attempt seal, evidence, or
 archive. Provisioning and launching it are deliberately outside this change.
-The v1-v7 manifests and their historical evidence remain immutable.
+The v1-v8 manifests and their historical evidence remain immutable.
 
 ### Consumed v5 preflight failure
 
@@ -390,6 +401,60 @@ explicit native downward motion, and proves tickable-chunk, server-lookup, and
 age advancement before interpreting the block state. Its bounded living wait
 retains the same `item=false;living=true;reset=true` behavioral expectation and
 the 25-world-tick reset.
+
+### Consumed v8 client-light payload race
+
+The one v8 launch was consumed on 2026-09-01. All registry, data, placement,
+button, and pressure-plate mechanics passed: the button powered, scheduled its
+native reset, and returned unpowered; the item was ignored; the AI-enabled pig
+powered the plate; and the plate reset. The run reached 6,188 client ticks and
+passed 166 of 183 assertions. It then timed out after 6,000 ticks in
+`WAITING_FOR_CLIENT_MIRROR`. The server retained SKY 15 at all 18 samples and
+BLOCK 14 at both samples, while the client retained SKY 0 across the negative-x
+fixture samples in both fixture rows. No screenshot, forced-save assertion, or
+reopen proof was produced, so no accepted v8 archive exists.
+
+The exact signature was not ordinary pending light work: the client reported
+the lighting provider idle while retaining the stale zero SKY columns. The v8
+gate submitted fixture mutation as soon as the client chunk existed, even
+though the initial client chunk/light update queue had not yet been applied.
+This allowed block deltas to race ahead of the queued initial light payload.
+The v9 pre-setup gate therefore proves the initial light payload state before
+the first fixture block mutation; all final mirror, paired lighting, rendering,
+save, reopen, and screenshot checks remain unchanged and fail closed.
+
+The v8 contract and harness are pinned as follows:
+
+- Manifest: `10,321` bytes,
+  `bcbb0f6b8edfcba08f4afdadaa61e58bf7bd94808e0cd1de7773e1f5d2f5937a`
+- Verifier: `46,366` bytes,
+  `f0e0ad0540920d7f4a81c3ae2604f0569e9fbf1b69d7d238a675431f447ea701`
+- Verifier tests: `18,003` bytes,
+  `a905d8476383dd07fb39cfbd4137c251a963766059ef8ee273404242e6473911`
+- Harness: `212,059` bytes,
+  `8e273d156f1b6014b5d206fa3bfa2682594d36dae00c7aeaac8eb56928f88c3a`
+
+The repo-owned profile manifest, launch attempt, evidence metadata, report,
+marker, controller log, and game log are respectively pinned as:
+
+- `3,082` bytes,
+  `904884d938d254b7f3c7003482da5af3cb991e0388a3213ce562875e6b981640`
+- `871,888` bytes,
+  `8a7b5b6f5410c40ad99218083944121ecd4ed8ee25df8511b568cbff15cd164b`
+- `954` bytes,
+  `a75d2779da699d9aa3feede07bba035fcfe4ef45cd551f41332af29bd649db9d`
+- `99,016` bytes,
+  `8f226e38825b66b8a657913e24e1875195fc0a09645d1e3e47dcda8c9d54a5e4`
+- `112` bytes,
+  `587b1f278aad7578a869cce3dc5f5fbac9becef60b21d112a1dfc75223f43cb1`
+- `16,293` bytes,
+  `f34104c6c41f8fe4ab8445ace542a23bd8684811cce3436b89f1ceaac56273df`
+- `15,859` bytes,
+  `16cdad10750a86c28d2bcc4f7e909c39a2d784aaee65b625db2747f971de766f`
+
+Both preserved logs reach `All dimensions are saved`; v8 therefore has normal
+all-dimension shutdown proof even though the controller correctly rejected the
+missing screenshots and failed report.
 
 ## Historical `phase0-smoke` contract
 

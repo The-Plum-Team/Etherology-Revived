@@ -53,6 +53,7 @@ final class AttrahiteBlockRegistryScenarioTest {
                 "packaged_root_jar:etherology_e2e_harness",
                 "integrated_world_joined",
                 "client_arena_chunks_loaded_before_setup",
+                "client_arena_light_payloads_applied_before_setup",
                 "server_arena_chunks_loaded",
                 "loot_tables_exact",
                 "standard_block_drops_exact",
@@ -79,7 +80,7 @@ final class AttrahiteBlockRegistryScenarioTest {
         expected.add("isolated_save_directory_present");
 
         assertEquals(expected, AttrahiteBlockRegistryScenario.ASSERTION_NAMES);
-        assertEquals(90, AttrahiteBlockRegistryScenario.ASSERTION_NAMES.size());
+        assertEquals(91, AttrahiteBlockRegistryScenario.ASSERTION_NAMES.size());
     }
 
     @Test
@@ -135,6 +136,10 @@ final class AttrahiteBlockRegistryScenarioTest {
                 AttrahiteBlockRegistryScenario.SCREENSHOT_FILE_NAMES
         );
         assertEquals(120, AttrahiteBlockRegistryScenario.REQUIRED_COMPLETED_RENDERS);
+        assertEquals(
+                20,
+                AttrahiteBlockRegistryScenario.REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+        );
         assertEquals(
                 "etherology-e2e-attrahite-block-registry-world",
                 AttrahiteBlockRegistryScenario.WORLD_DIRECTORY_NAME
@@ -285,6 +290,74 @@ final class AttrahiteBlockRegistryScenarioTest {
     }
 
     @Test
+    void preSetupLightReadinessRequiresConsecutiveClientTicks() {
+        int readyClientTicks = 0;
+        for (int index = 0;
+                index
+                        < AttrahiteBlockRegistryScenario
+                                .REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS;
+                index++) {
+            readyClientTicks = AttrahiteBlockRegistryScenario
+                    .nextPreSetupLightReadyClientTickCount(readyClientTicks, true);
+        }
+        assertEquals(
+                AttrahiteBlockRegistryScenario.REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS,
+                readyClientTicks
+        );
+        assertEquals(
+                readyClientTicks,
+                AttrahiteBlockRegistryScenario.nextPreSetupLightReadyClientTickCount(
+                        readyClientTicks,
+                        true
+                )
+        );
+        assertEquals(
+                0,
+                AttrahiteBlockRegistryScenario.nextPreSetupLightReadyClientTickCount(
+                        readyClientTicks,
+                        false
+                )
+        );
+    }
+
+    @Test
+    void preSetupLightEvidenceRequiresAppliedPayloadsAndOpenSky() {
+        AttrahiteBlockRegistryScenario.PreSetupLightingEvidence evidence =
+                readyPreSetupLightingEvidence();
+
+        assertTrue(evidence.currentTickReady());
+        assertTrue(evidence.exact());
+        assertEquals(
+                AttrahiteBlockRegistryScenario.PreSetupLightingEvidence
+                        .expectedDescription(),
+                evidence.assertionActual()
+        );
+    }
+
+    @Test
+    void preSetupLightEvidenceRejectsEveryRaceSignal() {
+        AttrahiteBlockRegistryScenario.PreSetupLightingEvidence ready =
+                readyPreSetupLightingEvidence();
+        assertFalse(ready.withStableClientTicks(19).exact());
+        assertFalse(preSetupEvidence(ready, false, true, false,
+                ready.enabledColumns(), ready.skyLevels()).exact());
+        assertFalse(preSetupEvidence(ready, true, false, false,
+                ready.enabledColumns(), ready.skyLevels()).exact());
+        assertFalse(preSetupEvidence(ready, true, true, true,
+                ready.enabledColumns(), ready.skyLevels()).exact());
+
+        List<Boolean> disabledColumn = new ArrayList<>(ready.enabledColumns());
+        disabledColumn.set(2, false);
+        assertFalse(preSetupEvidence(ready, true, true, false,
+                disabledColumn, ready.skyLevels()).exact());
+
+        List<Integer> lowSky = new ArrayList<>(ready.skyLevels());
+        lowSky.set(5, 14);
+        assertFalse(preSetupEvidence(ready, true, true, false,
+                ready.enabledColumns(), lowSky).exact());
+    }
+
+    @Test
     void lightingReadinessRequiresConsecutiveServerTicks() {
         int readyServerTicks = 0;
         for (int index = 0;
@@ -393,6 +466,9 @@ final class AttrahiteBlockRegistryScenarioTest {
         );
         List<String> serverTickCalls = methodCallsContaining("onEndServerTick");
         List<String> waitingForWorldCalls = methodCallsContaining("tickWaitingForWorld");
+        List<String> preSetupLightingCalls = methodCallsContaining(
+                "capturePreSetupLightingEvidence"
+        );
         List<String> waitingForClientMirrorCalls = methodCallsContaining(
                 "tickWaitingForClientMirror"
         );
@@ -404,6 +480,9 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertFalse(constants.contains("executeCommand"));
         assertFalse(constants.contains("ChunkDataS2CPacket"));
         assertFalse(constants.contains("LightUpdateS2CPacket"));
+        assertFalse(constants.contains("doLightUpdates"));
+        assertFalse(constants.contains("enqueueSectionData"));
+        assertFalse(constants.contains("setColumnEnabled"));
         assertTrue(constants.contains("attrahite_brick_slab"));
         assertTrue(constants.contains("azel_ingot_from_blasting"));
         assertTrue(constants.contains("enriched_attrahite"));
@@ -412,10 +491,21 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertFalse(placementCalls.contains("setBlockState"));
         assertTrue(placementConstants.contains("CONSUME"));
         assertTrue(setupCalls.contains("requestServerLightingChecks"));
-        assertTrue(waitingForWorldCalls.contains("areClientArenaChunksLoaded"));
+        assertTrue(waitingForWorldCalls.contains("capturePreSetupLightingEvidence"));
         assertTrue(waitingForWorldCalls.contains("execute"));
-        assertTrue(waitingForWorldCalls.indexOf("areClientArenaChunksLoaded")
+        assertTrue(waitingForWorldCalls.indexOf("capturePreSetupLightingEvidence")
                 < waitingForWorldCalls.indexOf("execute"));
+        assertEquals(
+                2,
+                fieldWriteCount("tickWaitingForWorld", "preSetupLightReadyClientTicks")
+        );
+        assertTrue(preSetupLightingCalls.contains("areClientArenaChunksLoaded"));
+        assertTrue(preSetupLightingCalls.contains("hasNoChunkUpdaters"));
+        assertTrue(preSetupLightingCalls.contains("getLightingProvider"));
+        assertTrue(preSetupLightingCalls.contains("hasUpdates"));
+        assertTrue(preSetupLightingCalls.contains("isLightingEnabled"));
+        assertFalse(preSetupLightingCalls.contains("getStatus"));
+        assertTrue(preSetupLightingCalls.contains("getLightLevel"));
         assertTrue(saveCalls.contains("saveAll"));
         assertTrue(disconnectCalls.contains("disconnect"));
         assertTrue(restartCalls.contains("start"));
@@ -432,9 +522,13 @@ final class AttrahiteBlockRegistryScenarioTest {
                 "checkBlock",
                 "doLightUpdates",
                 "enqueueSectionData",
-                "setColumnEnabled"
+                "setColumnEnabled",
+                "sendPacket",
+                "onChunkData",
+                "onLightUpdate"
         )) {
             assertFalse(waitingForWorldCalls.contains(relightCall));
+            assertFalse(preSetupLightingCalls.contains(relightCall));
             assertFalse(waitingForClientMirrorCalls.contains(relightCall));
             assertFalse(latestClientFixtureCalls.contains(relightCall));
             assertFalse(clientLightingCalls.contains(relightCall));
@@ -448,6 +542,36 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertTrue(constants.contains("scheduleStop"));
         assertTrue(dataConstants.contains("generateLoot"));
         assertTrue(dataConstants.contains("getAdvancements"));
+    }
+
+    private AttrahiteBlockRegistryScenario.PreSetupLightingEvidence
+            readyPreSetupLightingEvidence() {
+        return new AttrahiteBlockRegistryScenario.PreSetupLightingEvidence(
+                AttrahiteBlockRegistryScenario.REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS,
+                true,
+                true,
+                false,
+                List.of(true, true, true, true),
+                AttrahiteBlockRegistryScenario.EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS
+        );
+    }
+
+    private AttrahiteBlockRegistryScenario.PreSetupLightingEvidence preSetupEvidence(
+            AttrahiteBlockRegistryScenario.PreSetupLightingEvidence ready,
+            boolean chunksLoaded,
+            boolean chunkUpdatersEmpty,
+            boolean pending,
+            List<Boolean> enabledColumns,
+            List<Integer> skyLevels
+    ) {
+        return new AttrahiteBlockRegistryScenario.PreSetupLightingEvidence(
+                ready.stableClientTicks(),
+                chunksLoaded,
+                chunkUpdatersEmpty,
+                pending,
+                enabledColumns,
+                skyLevels
+        );
     }
 
     private byte[] classBytes() throws IOException {
@@ -498,5 +622,36 @@ final class AttrahiteBlockRegistryScenarioTest {
             }
         }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         return calls;
+    }
+
+    private int fieldWriteCount(String methodName, String fieldName) throws IOException {
+        int[] count = {0};
+        ClassReader reader = new ClassReader(classBytes());
+        reader.accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitFieldInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor
+                    ) {
+                        if (opcode == Opcodes.PUTFIELD
+                                && fieldName.equals(name)) count[0]++;
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        return count[0];
     }
 }

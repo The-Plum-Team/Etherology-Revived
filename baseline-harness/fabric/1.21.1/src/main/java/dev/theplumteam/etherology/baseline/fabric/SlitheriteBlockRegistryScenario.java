@@ -43,6 +43,8 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -53,6 +55,7 @@ import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.light.LightingProvider;
 import net.minecraft.world.gen.GeneratorOptions;
 import net.minecraft.world.gen.WorldPresets;
 import net.minecraft.world.level.LevelInfo;
@@ -90,6 +93,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             "Etherology Original 0.1.7 Slitherite Blocks";
     static final long WORLD_SEED = 0x455448534c495430L;
     static final int REQUIRED_COMPLETED_RENDERS = 120;
+    static final int REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS = 20;
     static final int REQUIRED_LIGHTING_READY_CLIENT_TICKS = 20;
     static final int EXPECTED_SKY_LIGHT_LEVEL = 15;
     static final int EXPECTED_BLOCK_LIGHT_LEVEL = 14;
@@ -112,6 +116,8 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     private static final long MAXIMUM_LIVING_ACTIVATION_TICKS = 20L;
     private static final long PRESSURE_PLATE_RESET_TICKS = 25L;
     private static final int ARENA_FLOOR_Y = 120;
+    private static final int ARENA_LIGHT_SECTION_Y =
+            ChunkSectionPos.getSectionCoord(ARENA_FLOOR_Y + 1);
     private static final double CAMERA_X = 0.5;
     private static final double CAMERA_Y = ARENA_FLOOR_Y + 1.0;
     private static final double CAMERA_Z = -14.5;
@@ -123,6 +129,10 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             new BlockPos(0, ARENA_FLOOR_Y + 1, -15);
     private static final BlockPos LOOT_PROBE_POS =
             new BlockPos(14, ARENA_FLOOR_Y + 2, -8);
+    static final List<ChunkPos> ARENA_CHUNKS = createArenaChunks();
+    static final List<String> ARENA_CHUNK_DESCRIPTIONS = ARENA_CHUNKS.stream()
+            .map(chunk -> chunk.x + "," + chunk.z)
+            .toList();
     private static final List<BlockFixture> FIXTURES = List.of(
             fixture("slitherite", Block.class, 0, Map.of(), 1),
             fixture("slitherite_stairs", StairsBlock.class, 1, stairsState(), 80),
@@ -206,6 +216,11 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             CAMERA_BLOCK_POS,
             new BlockPos(0, ARENA_FLOOR_Y + 1, -8)
     );
+    static final List<Integer> EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS =
+            Collections.nCopies(
+                    SKY_LIGHT_SAMPLE_POSITIONS.size(),
+                    EXPECTED_SKY_LIGHT_LEVEL
+            );
     static final List<Identifier> REQUIRED_RESOURCES = createRequiredResources();
     static final List<RecipeExpectation> OWNED_RECIPES = createOwnedRecipes();
     static final List<Identifier> OWNED_ADVANCEMENTS = createOwnedAdvancements();
@@ -233,12 +248,16 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             new StableRenderCounter(REQUIRED_COMPLETED_RENDERS);
     private int clientTicks;
     private int stageClientTicks;
+    private int preSetupLightReadyClientTicks;
     private int lightingReadyClientTicks;
     private int observedServerLightingGeneration = -1;
     private int requestedWindowWidth = -1;
     private int requestedWindowHeight = -1;
     private boolean resourcesReady;
+    private boolean arenaPreparationSubmitted;
     private boolean setupSubmitted;
+    private boolean clientArenaChunksLoadedBeforeSetup;
+    private boolean clientArenaLightPayloadsAppliedBeforeSetup;
     private boolean behaviorInspectionInFlight;
     private boolean saveSubmitted;
     private boolean restartSubmitted;
@@ -257,10 +276,13 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     private FixtureSnapshot reopenedSnapshot;
     private BehaviorSequence serverBehaviorSequence;
     private BehaviorProbe behaviorProbe;
+    private PreSetupLightingEvidence latestPreSetupLightingEvidence =
+            PreSetupLightingEvidence.missing();
     private final Map<CapturePhase, CaptureEvidence> captureEvidence =
             new LinkedHashMap<>();
     private volatile String serverFailure = "";
     private volatile String entityTickFailure = "";
+    private volatile ArenaPreparationResult pendingArenaPreparationResult;
     private volatile ServerSetupResult pendingServerSetupResult;
     private volatile BehaviorProbe pendingBehaviorProbe;
     private volatile SaveResult pendingSaveResult;
@@ -290,6 +312,10 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 case WAITING_FOR_TITLE -> tickWaitingForTitle(client);
                 case STARTING_WORLD -> startWorld(client);
                 case WAITING_FOR_WORLD -> tickWaitingForWorld(client);
+                case WAITING_FOR_ARENA_PREPARATION ->
+                        tickWaitingForArenaPreparation(client);
+                case WAITING_FOR_CLIENT_LIGHT_PAYLOAD ->
+                        tickWaitingForClientLightPayload(client);
                 case WAITING_FOR_SERVER_SETUP -> tickWaitingForServerSetup(client);
                 case WAITING_FOR_BEHAVIOR -> tickWaitingForBehavior(client);
                 case WAITING_FOR_CLIENT_MIRROR -> tickWaitingForClientMirror(client);
@@ -320,8 +346,8 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             fail(
                     client,
                     "Timed out in " + stage + " after " + stageClientTicks
-                            + " client ticks; last lighting="
-                            + lightingDiagnostic(client)
+                            + " client ticks; last readiness="
+                            + lifecycleReadinessDiagnostic(client)
             );
         }
     }
@@ -348,6 +374,18 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     static int nextLightingReadyClientTickCount(int readyClientTicks, boolean ready) {
         return ready
                 ? Math.min(readyClientTicks + 1, REQUIRED_LIGHTING_READY_CLIENT_TICKS)
+                : 0;
+    }
+
+    static int nextPreSetupLightReadyClientTickCount(
+            int readyClientTicks,
+            boolean ready
+    ) {
+        return ready
+                ? Math.min(
+                        readyClientTicks + 1,
+                        REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+                )
                 : 0;
     }
 
@@ -474,10 +512,58 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         IntegratedServer server = client.getServer();
         ServerPlayerEntity serverPlayer = server.getPlayerManager()
                 .getPlayer(client.player.getUuid());
-        if (serverPlayer == null || setupSubmitted) return;
+        if (serverPlayer == null || arenaPreparationSubmitted) return;
 
         client.options.setPerspective(Perspective.FIRST_PERSON);
         client.setCameraEntity(client.player);
+        arenaPreparationSubmitted = true;
+        UUID playerId = client.player.getUuid();
+        server.execute(() -> prepareArenaView(server, playerId));
+        transition(Stage.WAITING_FOR_ARENA_PREPARATION);
+    }
+
+    private void tickWaitingForArenaPreparation(MinecraftClient client) {
+        if (!serverFailure.isEmpty()) {
+            fail(client, "Slitherite arena preparation failed: " + serverFailure);
+            return;
+        }
+        ArenaPreparationResult result = pendingArenaPreparationResult;
+        if (result == null) return;
+        if (!result.chunksLoaded()) {
+            fail(client, "The Slitherite arena chunks were not loaded before setup");
+            return;
+        }
+        transition(Stage.WAITING_FOR_CLIENT_LIGHT_PAYLOAD);
+    }
+
+    private void tickWaitingForClientLightPayload(MinecraftClient client) {
+        if (!isWorldLifecycleReady(client)) {
+            preSetupLightReadyClientTicks = 0;
+            return;
+        }
+
+        PreSetupLightingEvidence preSetupLighting =
+                capturePreSetupLightingEvidence(client);
+        preSetupLightReadyClientTicks = nextPreSetupLightReadyClientTickCount(
+                preSetupLightReadyClientTicks,
+                preSetupLighting.currentTickReady()
+        );
+        latestPreSetupLightingEvidence = preSetupLighting.withStableClientTicks(
+                preSetupLightReadyClientTicks
+        );
+        if (preSetupLightReadyClientTicks
+                < REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS) return;
+
+        IntegratedServer server = client.getServer();
+        ServerPlayerEntity serverPlayer = server.getPlayerManager()
+                .getPlayer(client.player.getUuid());
+        if (serverPlayer == null || setupSubmitted) return;
+
+        clientArenaChunksLoadedBeforeSetup = preSetupLighting.arenaChunksLoaded();
+        clientArenaLightPayloadsAppliedBeforeSetup =
+                latestPreSetupLightingEvidence.exact();
+        if (!clientArenaLightPayloadsAppliedBeforeSetup) return;
+
         setupSubmitted = true;
         UUID playerId = client.player.getUuid();
         server.execute(() -> setupFixture(server, playerId));
@@ -729,7 +815,6 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             DataProbe setupData = DataProbe.capture(server, world, player);
             FixtureSnapshot snapshot = captureSnapshot(world);
             initializeBehaviorProbe(world, player);
-            requestServerLightingChecks(world);
             pendingServerSetupResult = new ServerSetupResult(
                     chunksLoaded,
                     setupRegistry,
@@ -740,6 +825,36 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                     world.getSeed(),
                     world.getRegistryKey().getValue().toString()
             );
+        } catch (RuntimeException exception) {
+            recordServerFailure(exception);
+        }
+    }
+
+    private void prepareArenaView(IntegratedServer server, UUID playerId) {
+        try {
+            ServerWorld world = server.getOverworld();
+            ServerPlayerEntity player = server.getPlayerManager().getPlayer(playerId);
+            if (player == null) {
+                throw new IllegalStateException("The integrated server has no player");
+            }
+
+            boolean chunksLoaded = loadArenaChunks(world);
+            world.setTimeOfDay(6000L);
+            world.setWeather(6000, 0, false, false);
+            world.getGameRules().get(GameRules.DO_DAYLIGHT_CYCLE).set(false, server);
+            world.getGameRules().get(GameRules.DO_WEATHER_CYCLE).set(false, server);
+            world.getGameRules().get(GameRules.DO_MOB_SPAWNING).set(false, server);
+            world.getGameRules().get(GameRules.RANDOM_TICK_SPEED).set(0, server);
+            player.setInvulnerable(true);
+            player.teleport(
+                    world,
+                    CAMERA_X,
+                    CAMERA_Y,
+                    CAMERA_Z,
+                    CAMERA_YAW,
+                    CAMERA_PITCH
+            );
+            pendingArenaPreparationResult = new ArenaPreparationResult(chunksLoaded);
         } catch (RuntimeException exception) {
             recordServerFailure(exception);
         }
@@ -1160,11 +1275,9 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
 
     private boolean loadArenaChunks(ServerWorld world) {
         boolean loaded = true;
-        for (int chunkX = -2; chunkX <= 1; chunkX++) {
-            for (int chunkZ = -2; chunkZ <= 0; chunkZ++) {
-                loaded &= world.getChunkManager()
-                        .getChunk(chunkX, chunkZ, ChunkStatus.FULL, true) != null;
-            }
+        for (ChunkPos chunk : ARENA_CHUNKS) {
+            loaded &= world.getChunkManager()
+                    .getChunk(chunk.x, chunk.z, ChunkStatus.FULL, true) != null;
         }
         return loaded;
     }
@@ -1287,6 +1400,41 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 && window.getFramebufferHeight() == FRAMEBUFFER_HEIGHT;
     }
 
+    private boolean areClientArenaChunksLoaded(MinecraftClient client) {
+        for (ChunkPos chunk : ARENA_CHUNKS) {
+            if (!client.world.getChunkManager().isChunkLoaded(chunk.x, chunk.z)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private PreSetupLightingEvidence capturePreSetupLightingEvidence(
+            MinecraftClient client
+    ) {
+        LightingProvider lightingProvider = client.world.getChunkManager()
+                .getLightingProvider();
+        List<Boolean> enabledColumns = new ArrayList<>();
+        for (ChunkPos chunk : ARENA_CHUNKS) {
+            ChunkSectionPos section = ChunkSectionPos.from(
+                    chunk,
+                    ARENA_LIGHT_SECTION_Y
+            );
+            enabledColumns.add(lightingProvider.isLightingEnabled(section));
+        }
+        List<Integer> skyLevels = SKY_LIGHT_SAMPLE_POSITIONS.stream()
+                .map(position -> client.world.getLightLevel(LightType.SKY, position))
+                .toList();
+        return new PreSetupLightingEvidence(
+                0,
+                areClientArenaChunksLoaded(client),
+                client.world.hasNoChunkUpdaters(),
+                lightingProvider.hasUpdates(),
+                enabledColumns,
+                skyLevels
+        );
+    }
+
     private boolean isFixtureRenderReady(MinecraftClient client) {
         if (!localLightingReady(client)) return false;
         if (!client.worldRenderer.isTerrainRenderComplete()) return false;
@@ -1334,7 +1482,6 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         server.execute(() -> {
             try {
                 ServerWorld world = server.getOverworld();
-                requestServerLightingChecks(world);
                 latestServerLighting = new ServerLightingEvidence(
                         ++serverLightingGeneration,
                         LocalLightingSamples.capture(world)
@@ -1351,6 +1498,14 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         lightingReadyClientTicks = 0;
         observedServerLightingGeneration = -1;
         latestServerLighting = null;
+    }
+
+    private String lifecycleReadinessDiagnostic(MinecraftClient client) {
+        if (stage == Stage.WAITING_FOR_ARENA_PREPARATION
+                || stage == Stage.WAITING_FOR_CLIENT_LIGHT_PAYLOAD) {
+            return latestPreSetupLightingEvidence.diagnosticDescription();
+        }
+        return lightingDiagnostic(client);
     }
 
     private String lightingDiagnostic(MinecraftClient client) {
@@ -1376,16 +1531,6 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                         ? LocalLightingSamples.missing()
                         : serverLighting.samples()
         );
-    }
-
-    private void requestServerLightingChecks(ServerWorld world) {
-        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
-            world.getChunkManager().getLightingProvider().checkBlock(position);
-        }
-        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
-            world.getChunkManager().getLightingProvider().checkBlock(position.down());
-            world.getChunkManager().getLightingProvider().checkBlock(position);
-        }
     }
 
     private boolean hasExpectedCameraPose(MinecraftClient client) {
@@ -1585,6 +1730,20 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 isWorldLifecycleReady(client),
                 "running server and connected client",
                 isWorldLifecycleReady(client) ? "joined" : "not joined"
+        );
+        passed &= addAssertion(
+                assertions,
+                "client_arena_chunks_loaded_before_setup",
+                clientArenaChunksLoadedBeforeSetup,
+                "true",
+                Boolean.toString(clientArenaChunksLoadedBeforeSetup)
+        );
+        passed &= addAssertion(
+                assertions,
+                "client_arena_light_payloads_applied_before_setup",
+                clientArenaLightPayloadsAppliedBeforeSetup,
+                PreSetupLightingEvidence.expectedDescription(),
+                latestPreSetupLightingEvidence.assertionActual()
         );
         passed &= addAssertion(
                 assertions,
@@ -1961,11 +2120,29 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 "required_stable_renders",
                 REQUIRED_COMPLETED_RENDERS
         );
+        slitherite.add(
+                "pre_setup_lighting",
+                preSetupLightingReport(latestPreSetupLightingEvidence)
+        );
         slitherite.addProperty(
                 "required_lighting_ready_client_ticks",
                 REQUIRED_LIGHTING_READY_CLIENT_TICKS
         );
         return slitherite;
+    }
+
+    private static JsonObject preSetupLightingReport(
+            PreSetupLightingEvidence evidence
+    ) {
+        JsonObject report = new JsonObject();
+        report.addProperty("stable_client_ticks", evidence.stableClientTicks());
+        report.add("arena_chunks", stringArray(ARENA_CHUNK_DESCRIPTIONS));
+        report.addProperty("arena_chunks_loaded", evidence.arenaChunksLoaded());
+        report.addProperty("chunk_updaters_empty", evidence.chunkUpdatersEmpty());
+        report.addProperty("pending", evidence.pendingUpdates());
+        report.add("enabled_columns", booleanArray(evidence.enabledColumns()));
+        report.add("sky", integerArray(evidence.skyLevels()));
+        return report;
     }
 
     private static JsonArray identifierArray(List<Identifier> values) {
@@ -1975,6 +2152,18 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
     }
 
     private static JsonArray stringArray(List<String> values) {
+        JsonArray array = new JsonArray();
+        values.forEach(array::add);
+        return array;
+    }
+
+    private static JsonArray booleanArray(List<Boolean> values) {
+        JsonArray array = new JsonArray();
+        values.forEach(array::add);
+        return array;
+    }
+
+    private static JsonArray integerArray(List<Integer> values) {
         JsonArray array = new JsonArray();
         values.forEach(array::add);
         return array;
@@ -2236,6 +2425,16 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             positions.add(fixture.position().up());
         }
         return List.copyOf(positions);
+    }
+
+    private static List<ChunkPos> createArenaChunks() {
+        List<ChunkPos> chunks = new ArrayList<>();
+        for (int chunkX = -2; chunkX <= 1; chunkX++) {
+            for (int chunkZ = -2; chunkZ <= 0; chunkZ++) {
+                chunks.add(new ChunkPos(chunkX, chunkZ));
+            }
+        }
+        return List.copyOf(chunks);
     }
 
     private static List<Identifier> createRequiredResources() {
@@ -2593,6 +2792,8 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         names.add("packaged_root_jar:etherology");
         names.add("packaged_root_jar:" + HARNESS_MOD_ID);
         names.add("integrated_world_joined");
+        names.add("client_arena_chunks_loaded_before_setup");
+        names.add("client_arena_light_payloads_applied_before_setup");
         names.add("server_arena_chunks_loaded");
         names.add("tag:mineable/pickaxe");
         names.add("tag:needs_stone_tool");
@@ -2667,6 +2868,8 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
         WAITING_FOR_TITLE,
         STARTING_WORLD,
         WAITING_FOR_WORLD,
+        WAITING_FOR_ARENA_PREPARATION,
+        WAITING_FOR_CLIENT_LIGHT_PAYLOAD,
         WAITING_FOR_SERVER_SETUP,
         WAITING_FOR_BEHAVIOR,
         WAITING_FOR_CLIENT_MIRROR,
@@ -3340,6 +3543,83 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             return "item=" + !itemIgnored
                     + ";living=" + livingActivated
                     + ";reset=" + pressurePlateReset;
+        }
+    }
+
+    private record ArenaPreparationResult(boolean chunksLoaded) {
+    }
+
+    record PreSetupLightingEvidence(
+            int stableClientTicks,
+            boolean arenaChunksLoaded,
+            boolean chunkUpdatersEmpty,
+            boolean pendingUpdates,
+            List<Boolean> enabledColumns,
+            List<Integer> skyLevels
+    ) {
+
+        PreSetupLightingEvidence {
+            enabledColumns = List.copyOf(enabledColumns);
+            skyLevels = List.copyOf(skyLevels);
+        }
+
+        boolean currentTickReady() {
+            return arenaChunksLoaded
+                    && chunkUpdatersEmpty
+                    && !pendingUpdates
+                    && enabledColumns.size() == ARENA_CHUNKS.size()
+                    && enabledColumns.stream().allMatch(Boolean.TRUE::equals)
+                    && skyLevels.equals(EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS);
+        }
+
+        boolean exact() {
+            return stableClientTicks == REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+                    && currentTickReady();
+        }
+
+        PreSetupLightingEvidence withStableClientTicks(int stableTicks) {
+            return new PreSetupLightingEvidence(
+                    stableTicks,
+                    arenaChunksLoaded,
+                    chunkUpdatersEmpty,
+                    pendingUpdates,
+                    enabledColumns,
+                    skyLevels
+            );
+        }
+
+        String assertionActual() {
+            return exact() ? expectedDescription() : diagnosticDescription();
+        }
+
+        String diagnosticDescription() {
+            return "stableClientTicks=" + stableClientTicks
+                    + ";arenaChunksLoaded=" + arenaChunksLoaded
+                    + ";chunkUpdatersEmpty=" + chunkUpdatersEmpty
+                    + ";pending=" + pendingUpdates
+                    + ";enabledColumns=" + enabledColumns
+                    + ";sky=" + skyLevels;
+        }
+
+        static String expectedDescription() {
+            return REQUIRED_PRE_SETUP_LIGHT_READY_CLIENT_TICKS
+                    + " consecutive ticks: twelve chunks loaded; chunk update queue "
+                    + "empty; lighting provider idle; twelve enabled columns; "
+                    + "sky=" + EXPECTED_PRE_SETUP_SKY_LIGHT_LEVELS;
+        }
+
+        static PreSetupLightingEvidence missing() {
+            return new PreSetupLightingEvidence(
+                    0,
+                    false,
+                    false,
+                    true,
+                    Collections.nCopies(ARENA_CHUNKS.size(), false),
+                    Collections.nCopies(
+                            SKY_LIGHT_SAMPLE_POSITIONS.size(),
+                            0
+                    )
+            );
         }
     }
 

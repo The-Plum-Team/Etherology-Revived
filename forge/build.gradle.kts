@@ -542,17 +542,23 @@ val forgeAttrahiteEvidenceTestV15 =
     rootProject.file("scripts/e2e/test_forge_attrahite_evidence_v15.py")
 val forgeAttrahiteProfileSnapshotV15 =
     rootProject.file("scripts/e2e/forge-1.20.1-profile-v15.json")
-val forgeAttrahiteEvidenceVerifier =
+val forgeAttrahiteEvidenceVerifierV16 =
     rootProject.file("scripts/e2e/forge_attrahite_evidence_v16.py")
-val forgeAttrahiteEvidenceTest =
+val forgeAttrahiteEvidenceTestV16 =
     rootProject.file("scripts/e2e/test_forge_attrahite_evidence_v16.py")
 val forgeAttrahiteProfileSnapshotV16 =
     rootProject.file("scripts/e2e/forge-1.20.1-profile-v16.json")
+val forgeAttrahiteEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_attrahite_evidence_v17.py")
+val forgeAttrahiteEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_attrahite_evidence_v17.py")
+val forgeAttrahiteProfileSnapshotV17 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v17.json")
 val forgeAttrahiteClientEvidenceArchive =
-    forgeChannelEvidenceRoot.resolve("attrahite-block-registry-v16")
-val forgeAttrahiteHarnessSize = 239915L
+    forgeChannelEvidenceRoot.resolve("attrahite-block-registry-v17")
+val forgeAttrahiteHarnessSize = 244324L
 val forgeAttrahiteHarnessSha256 =
-    "ffb21364959114d247dfe04cd90c47ba0e7c24572ec0245d02b3a196536dea15"
+    "9921ec314c9aa411ca1c2f9632faa1a9e05a60b62589d12a416c228bc85170b8"
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
 apply(plugin = "dev.architectury.loom")
@@ -3770,7 +3776,7 @@ fun missingForgeAttrahiteBlockRegistryClientEvidenceMilestone(): List<String> {
         .orEmpty()
     if (archiveDirectories != listOf(forgeAttrahiteClientEvidenceArchive)) {
         missingConditions.add(
-            "the exact frozen Forge Attrahite block-registry client-v16 evidence archive " +
+            "the exact frozen Forge Attrahite block-registry client-v17 evidence archive " +
                 "is required",
         )
         return missingConditions
@@ -6117,19 +6123,22 @@ val validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity =
     tasks.register("validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge Attrahite block-registry packaged-client v16 archive."
+            "Validates the immutable Forge Attrahite block-registry packaged-client v17 archive."
         inputs.files(
             forgeAttrahiteEvidenceVerifier,
             forgeAttrahiteEvidenceVerifierV14,
             forgeAttrahiteEvidenceTestV14,
             forgeAttrahiteEvidenceVerifierV15,
             forgeAttrahiteEvidenceTestV15,
+            forgeAttrahiteEvidenceVerifierV16,
+            forgeAttrahiteEvidenceTestV16,
             forgeChannelProfileSnapshotV11,
             forgeForestLanternProfileSnapshotV12,
             forgeForestLanternProfileSnapshotV13,
             forgeAttrahiteProfileSnapshotV14,
             forgeAttrahiteProfileSnapshotV15,
             forgeAttrahiteProfileSnapshotV16,
+            forgeAttrahiteProfileSnapshotV17,
             forgeE2eProfileManifest,
         )
         if (forgeAttrahiteClientEvidenceArchive.exists()) {
@@ -6994,11 +7003,14 @@ tasks.register("verifyForgePortGateClosed") {
         forgeAttrahiteEvidenceTestV14,
         forgeAttrahiteEvidenceVerifierV15,
         forgeAttrahiteEvidenceTestV15,
+        forgeAttrahiteEvidenceVerifierV16,
+        forgeAttrahiteEvidenceTestV16,
         forgeAttrahiteEvidenceVerifier,
         forgeAttrahiteEvidenceTest,
         forgeAttrahiteProfileSnapshotV14,
         forgeAttrahiteProfileSnapshotV15,
         forgeAttrahiteProfileSnapshotV16,
+        forgeAttrahiteProfileSnapshotV17,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -8649,13 +8661,15 @@ if (minecraftVersion == "1.20.1") {
                 "-B",
                 "-m",
                 "unittest",
-                "scripts/e2e/test_forge_attrahite_evidence_v16.py",
+                "scripts/e2e/test_forge_attrahite_evidence_v17.py",
             )
             inputs.files(
                 forgeAttrahiteEvidenceVerifierV14,
                 forgeAttrahiteEvidenceTestV14,
                 forgeAttrahiteEvidenceVerifierV15,
                 forgeAttrahiteEvidenceTestV15,
+                forgeAttrahiteEvidenceVerifierV16,
+                forgeAttrahiteEvidenceTestV16,
                 forgeAttrahiteEvidenceVerifier,
                 forgeAttrahiteEvidenceTest,
                 forgeE2eProfileManifest,
@@ -8665,6 +8679,7 @@ if (minecraftVersion == "1.20.1") {
                 forgeAttrahiteProfileSnapshotV14,
                 forgeAttrahiteProfileSnapshotV15,
                 forgeAttrahiteProfileSnapshotV16,
+                forgeAttrahiteProfileSnapshotV17,
                 rootProject.file("scripts/e2e/forge_client.py"),
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
@@ -8686,6 +8701,34 @@ if (minecraftVersion == "1.20.1") {
                         "etherology-e2e-forge-1.20.1-v15/game/logs/latest.log",
                 ),
             ).withPropertyName("forgeAttrahiteClientV15FailureHistory").optional()
+            inputs.files(
+                rootProject.file(
+                    "scripts/e2e/.state/" +
+                        "etherology-e2e-forge-1.20.1-v16-start.attempted",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/logs/forge-1.20.1-20260901T021931Z.log",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v16/evidence/" +
+                        "attrahite-block-registry/reports/report.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v16/evidence/" +
+                        "attrahite-block-registry/reports/done.marker",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v16/game/logs/latest.log",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v16/game/mods/" +
+                        "etherology-forge-e2e-harness.jar",
+                ),
+            ).withPropertyName("forgeAttrahiteClientV16FailureHistory").optional()
             inputs.files(
                 rootProject.fileTree("src/main/generated/assets/etherology") {
                     include("blockstates/attrahite*.json")
@@ -8839,7 +8882,7 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyAttrahiteE2eHarnessArtifact") {
             group = "verification"
             description =
-                "Binds the Forge Attrahite v16 run to its exact packaged harness bytes."
+                "Binds the Forge Attrahite v17 run to its exact packaged harness bytes."
             dependsOn(verifyE2eHarnessArtifact)
             inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
 

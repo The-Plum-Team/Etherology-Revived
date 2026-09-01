@@ -10,6 +10,7 @@ import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.jvm.tasks.Jar
 import groovy.json.JsonSlurper
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.zip.ZipFile
 
 plugins {
@@ -393,6 +394,18 @@ if (minecraftVersion == "1.20.1") {
         rootProject.file("scripts/e2e/test_fabric_forest_lantern_evidence.py")
     val fabricProfileSnapshotV24 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v24.json")
+    val fabricAttrahiteEvidenceArchive = rootProject.file(
+        "docs/evidence/fabric-1.20.1/attrahite-block-registry-v25",
+    )
+    val fabricAttrahiteEvidenceVerifier =
+        rootProject.file("scripts/e2e/fabric_attrahite_evidence_v25.py")
+    val fabricAttrahiteEvidenceTest =
+        rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v25.py")
+    val fabricProfileSnapshotV25 =
+        rootProject.file("scripts/e2e/fabric-1.20.1-profile-v25.json")
+    val fabricAttrahiteHarnessSize = 286969L
+    val fabricAttrahiteHarnessSha256 =
+        "98c7afa7652ed736f0e600bc68327a3644444dd339cfff8c2b4fe59ff60071e8"
 
     val fabricMetalBlockRegistryEvidenceSafetyTest =
         tasks.register<Exec>("fabricMetalBlockRegistryEvidenceSafetyTest") {
@@ -500,6 +513,76 @@ if (minecraftVersion == "1.20.1") {
             )
             inputs.dir(fabricForestLanternEvidenceArchive)
                 .withPropertyName("fabricForestLanternEvidenceArchive")
+                .optional()
+        }
+
+    val fabricAttrahiteEvidenceSafetyTest =
+        tasks.register<Exec>("fabricAttrahiteEvidenceSafetyTest") {
+            group = "verification"
+            description =
+                "Runs the Fabric Attrahite block-registry v25 verifier safety tests."
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_fabric_attrahite_evidence_v25.py",
+                "scripts/e2e/test_client.py",
+            )
+            inputs.files(
+                fabricAttrahiteEvidenceVerifier,
+                fabricAttrahiteEvidenceTest,
+                fabricClientRunner,
+                rootProject.file("scripts/e2e/test_client.py"),
+                rootProject.file("scripts/e2e/fabric-1.20.1-profile-v20.json"),
+                rootProject.file("scripts/e2e/fabric-1.20.1-profile-v21.json"),
+                rootProject.file("scripts/e2e/fabric-1.20.1-profile-v22.json"),
+                fabricProfileSnapshotV23,
+                fabricProfileSnapshotV24,
+                fabricProfileSnapshotV25,
+                fabricEvidenceLibrary,
+                fabricEvidenceTestLibrary,
+                fabricActiveProfile,
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
+                rootProject.file("src/main/resources/fabric.mod.json"),
+                rootProject.file("fabric/build.gradle.kts"),
+                rootProject.file("docs/testing/E2E-CONTRACT.md"),
+            )
+            inputs.files(
+                rootProject.fileTree("src/main/generated/assets/etherology") {
+                    include("blockstates/attrahite*.json")
+                    include("models/block/attrahite*.json")
+                    include("models/item/attrahite*.json")
+                },
+                rootProject.fileTree("src/client/resources/assets/etherology") {
+                    include("textures/block/attrahite*.png")
+                },
+            )
+        }
+
+    val validateFabricAttrahiteEvidenceArchiveIntegrity =
+        tasks.register<Exec>("validateFabricAttrahiteEvidenceArchiveIntegrity") {
+            group = "verification"
+            description =
+                "Validates the immutable Fabric Attrahite block-registry v25 archive."
+            dependsOn(fabricAttrahiteEvidenceSafetyTest)
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                fabricAttrahiteEvidenceVerifier.absolutePath,
+                "--archive",
+                fabricAttrahiteEvidenceArchive.absolutePath,
+            )
+            inputs.files(
+                fabricAttrahiteEvidenceVerifier,
+                fabricClientRunner,
+                fabricEvidenceLibrary,
+            )
+            inputs.dir(fabricAttrahiteEvidenceArchive)
+                .withPropertyName("fabricAttrahiteEvidenceArchive")
                 .optional()
         }
 
@@ -673,6 +756,33 @@ if (minecraftVersion == "1.20.1") {
         }
     }
 
+    val verifyAttrahiteE2eHarnessArtifact =
+        tasks.register("verifyAttrahiteE2eHarnessArtifact") {
+            group = "verification"
+            description =
+                "Binds the Fabric Attrahite v25 run to its exact packaged harness bytes."
+            dependsOn(verifyE2eHarnessArtifact)
+            inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+
+            doLast {
+                val harnessFile = remapE2eHarnessJar.get().archiveFile.get().asFile
+                val harnessDigest = MessageDigest.getInstance("SHA-256")
+                    .digest(harnessFile.readBytes())
+                    .joinToString("") { byte ->
+                        "%02x".format(byte.toInt() and 0xff)
+                    }
+                check(harnessFile.length() == fabricAttrahiteHarnessSize) {
+                    "Fabric Attrahite harness size changed: ${harnessFile.length()}"
+                }
+                check(harnessDigest == fabricAttrahiteHarnessSha256) {
+                    "Fabric Attrahite harness SHA-256 changed: $harnessDigest"
+                }
+            }
+        }
+    fabricAttrahiteEvidenceSafetyTest.configure {
+        dependsOn(verifyAttrahiteE2eHarnessArtifact)
+    }
+
     val productionJar = tasks.named<RemapJarTask>("remapJar")
     val verifyE2eHarnessIsolation = tasks.register("verifyE2eHarnessIsolation") {
         group = "verification"
@@ -731,6 +841,17 @@ if (minecraftVersion == "1.20.1") {
             e2eHarnessTestTask,
             verifyE2eHarnessArtifact,
             validateFabricForestLanternEvidenceArchiveIntegrity,
+        )
+    }
+
+    tasks.register("validateFabricAttrahiteV25Milestone") {
+        group = "verification"
+        description =
+            "Validates the pinned harness and frozen Fabric Attrahite v25 evidence."
+        dependsOn(
+            e2eHarnessTestTask,
+            verifyAttrahiteE2eHarnessArtifact,
+            validateFabricAttrahiteEvidenceArchiveIntegrity,
         )
     }
 }

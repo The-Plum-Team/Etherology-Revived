@@ -181,7 +181,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = client.load_configuration()
         profile = client.profile_spec(configuration)
 
-        self.assertEqual("etherology-e2e-fabric-1.20.1-v24", profile["id"])
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v25", profile["id"])
         self.assertEqual(profile["id"], profile["runtime_directory"])
         self.assertEqual("fabric-1.20.1", configuration.artifact_lane["artifact_node"])
         self.assertEqual("1.20.1", configuration.runtime_lane["runtime_version"])
@@ -192,7 +192,7 @@ class ConfigurationTests(unittest.TestCase):
         resolution = client.require_object(launch, "resolution")
         self.assertEqual({"width": 960, "height": 540}, resolution)
 
-    def test_active_profile_matches_v24_and_preserves_v20_through_v23_snapshots(
+    def test_active_profile_matches_v25_and_preserves_v20_through_v24_snapshots(
         self,
     ) -> None:
         active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
@@ -201,9 +201,11 @@ class ConfigurationTests(unittest.TestCase):
         v22_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v22.json"
         v23_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v23.json"
         v24_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v24.json"
+        v25_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v25.json"
 
-        self.assertEqual(active_profile.read_bytes(), v24_profile.read_bytes())
-        self.assertNotEqual(active_profile.read_bytes(), v23_profile.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v25_profile.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v24_profile.read_bytes())
+        self.assertNotEqual(v24_profile.read_bytes(), v23_profile.read_bytes())
         self.assertNotEqual(v23_profile.read_bytes(), v22_profile.read_bytes())
         self.assertNotEqual(v22_profile.read_bytes(), v21_profile.read_bytes())
         self.assertNotEqual(v21_profile.read_bytes(), v20_profile.read_bytes())
@@ -227,6 +229,11 @@ class ConfigurationTests(unittest.TestCase):
                 v23_profile,
                 "etherology-e2e-fabric-1.20.1-v23",
                 "36e7ccb7556aaaf0edb01b066de6d5263f3dde3545ac016e84cf07f795403f84",
+            ),
+            (
+                v24_profile,
+                "etherology-e2e-fabric-1.20.1-v24",
+                "77b9d33689d76e7b46d849f519337821744a81e3dd287bd4a1339a7c6a801a77",
             ),
         )
         for snapshot, expected_id, expected_sha256 in snapshots:
@@ -336,6 +343,7 @@ class ConfigurationTests(unittest.TestCase):
             "multiplayer-sync",
             "metal-block-registry",
             "forest-lantern",
+            "attrahite-block-registry",
         ]
         contract = (
             configuration.repository_root / "docs/testing/E2E-CONTRACT.md"
@@ -374,6 +382,10 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(
             "forest-lantern",
             client.resolve_scenario_id(configuration, "forest-lantern"),
+        )
+        self.assertEqual(
+            "attrahite-block-registry",
+            client.resolve_scenario_id(configuration, "attrahite-block-registry"),
         )
         with self.assertRaisesRegex(client.E2EError, "Unsupported E2E scenario"):
             client.resolve_scenario_id(configuration, "phase0-smoke ")
@@ -610,13 +622,13 @@ class StartAttemptTests(unittest.TestCase):
                 state_root,
             )
             expected_attempt_path = (
-                state_root / "etherology-e2e-fabric-1.20.1-v24-start.attempted"
+                state_root / "etherology-e2e-fabric-1.20.1-v25-start.attempted"
             )
 
             self.assertEqual(expected_attempt_path, attempt_path)
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-fabric-1.20.1-v24\n"
+                    "profile_id=etherology-e2e-fabric-1.20.1-v25\n"
                     "scenario=forest-lantern\n"
                     f"pid={os.getpid()}\n"
                 ).encode("utf-8"),

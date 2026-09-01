@@ -307,11 +307,17 @@ def build_archive_manifest(
 
 
 class ActiveProfileTests(unittest.TestCase):
-    def test_active_profile_is_the_exact_v24_snapshot(self) -> None:
-        configuration = client.load_configuration(
-            SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
+    def test_consumed_v24_snapshot_remains_byte_exact(self) -> None:
+        snapshot = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v24.json"
+
+        self.assertTrue(snapshot.is_file())
+        self.assertFalse(snapshot.is_symlink())
+        self.assertEqual(forest_evidence.PROFILE_SIZE, snapshot.stat().st_size)
+        self.assertEqual(forest_evidence.PROFILE_SHA256, evidence.sha256_file(snapshot))
+        self.assertNotEqual(
+            snapshot.read_bytes(),
+            (SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json").read_bytes(),
         )
-        forest_evidence.validate_active_profile(configuration)
 
     def test_canonical_asset_bytes_match_the_runtime_digest_contract(self) -> None:
         for identifier, expected_sha256 in forest_evidence.EXPECTED_ASSET_SHA256.items():

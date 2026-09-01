@@ -51,6 +51,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.GameRules;
+import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.ChunkStatus;
@@ -91,6 +92,11 @@ final class AttrahiteBlockRegistryScenario {
             "attrahite-block-registry-reopened.png";
     static final long WORLD_SEED = 0x4154545241484954L;
     static final int REQUIRED_COMPLETED_RENDERS = 120;
+    static final int REQUIRED_CONSECUTIVE_LIGHTING_TICKS = 20;
+    static final int EXPECTED_SKY_LIGHT_LEVEL = 15;
+    static final int EXPECTED_CAMERA_BLOCK_LIGHT_LEVEL = 14;
+    static final List<Integer> EXPECTED_FIXTURE_BLOCK_LIGHT_LEVELS =
+            List.of(6, 4, 10, 8);
     static final float PLACEMENT_YAW = 180.0F;
 
     private static final Logger LOGGER = LoggerFactory.getLogger("EtherologyE2EHarness");
@@ -115,6 +121,8 @@ final class AttrahiteBlockRegistryScenario {
             fixture("attrahite_brick_slab", 1),
             fixture("attrahite_brick_stairs", 3)
     );
+    private static final List<BlockPos> LIGHTING_SAMPLE_POSITIONS =
+            createLightingSamplePositions();
     static final List<String> EXPECTED_LOOT_TABLE_IDS = List.of(
             "etherology:blocks/attrahite",
             "etherology:blocks/attrahite_brick_slab",
@@ -164,6 +172,7 @@ final class AttrahiteBlockRegistryScenario {
     private int clientTicks;
     private int stageClientTicks;
     private int completedRenders;
+    private int clientLightingStableTicks;
     private boolean worldSetupSubmitted;
     private boolean saveSubmitted;
     private boolean restartSubmitted;
@@ -181,8 +190,17 @@ final class AttrahiteBlockRegistryScenario {
     private FixtureSnapshot savedSnapshot;
     private FixtureSnapshot reopenedSnapshot;
     private FixtureSnapshot currentServerSnapshot;
+    private LightingSnapshot currentServerLighting;
     private final Map<CapturePhase, CaptureEvidence> captureEvidence =
             new LinkedHashMap<>();
+    private final Map<CapturePhase, LightingEvidence> latestLightingEvidence =
+            new LinkedHashMap<>();
+    private ServerSetupCandidate serverSetupCandidate;
+    private ReopenedCandidate reopenedCandidate;
+    private LightingSnapshot previousServerLighting;
+    private int serverLightingStableTicks;
+    private volatile ServerLightingProgress latestServerLightingProgress =
+            ServerLightingProgress.missing();
     private volatile String serverFailure = "";
     private volatile ServerSetupResult pendingServerSetupResult;
     private volatile SaveResult pendingSaveResult;
@@ -233,6 +251,23 @@ final class AttrahiteBlockRegistryScenario {
     }
 
     @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END
+                || (serverSetupCandidate == null && reopenedCandidate == null)) {
+            return;
+        }
+
+        try {
+            advanceServerLightingBarrier();
+        } catch (RuntimeException exception) {
+            serverSetupCandidate = null;
+            reopenedCandidate = null;
+            beginServerLightingBarrier();
+            recordServerFailure(exception);
+        }
+    }
+
+    @SubscribeEvent
     public void onWorldRendered(RenderGuiEvent.Post event) {
         if (stage != Stage.WAITING_FOR_RENDERS) return;
 
@@ -260,9 +295,37 @@ final class AttrahiteBlockRegistryScenario {
         return exactState ? completedRenders + 1 : 0;
     }
 
+    static int nextStableLightingTickCount(
+            int stableTicks,
+            boolean ready,
+            boolean sameAsPrevious
+    ) {
+        if (!ready) return 0;
+        if (stableTicks == 0 || sameAsPrevious) return stableTicks + 1;
+        return 1;
+    }
+
+    static boolean isExpectedCameraLighting(int skyLightLevel, int blockLightLevel) {
+        return skyLightLevel == EXPECTED_SKY_LIGHT_LEVEL
+                && blockLightLevel == EXPECTED_CAMERA_BLOCK_LIGHT_LEVEL;
+    }
+
+    static boolean areLightingSamplesReady(
+            boolean expectedSentinels,
+            boolean serverClientExact
+    ) {
+        return expectedSentinels && serverClientExact;
+    }
+
     static List<String> fixtureDescriptions() {
         return FIXTURES.stream()
                 .map(fixture -> fixture.id() + "@" + positionDescription(fixture.position()))
+                .toList();
+    }
+
+    static List<String> lightingSampleDescriptions() {
+        return LIGHTING_SAMPLE_POSITIONS.stream()
+                .map(AttrahiteBlockRegistryScenario::positionDescription)
                 .toList();
     }
 
@@ -360,13 +423,17 @@ final class AttrahiteBlockRegistryScenario {
         registryProbe = result.registryProbe();
         dataProbe = result.dataProbe();
         currentServerSnapshot = result.snapshot();
+        currentServerLighting = result.lighting();
         if (!registryProbe.exact()
                 || !dataProbe.exact()
                 || !result.placements().exact()
-                || !currentServerSnapshot.exact()) {
+                || !currentServerSnapshot.exact()
+                || !currentServerLighting.hasExpectedSentinels()
+                || result.stableLightingTicks() < REQUIRED_CONSECUTIVE_LIGHTING_TICKS) {
             fail(client, "The initial Attrahite native probe was not exact");
             return;
         }
+        resetClientLightingBarrier();
         transition(Stage.WAITING_FOR_CLIENT_MIRROR);
     }
 
@@ -374,7 +441,13 @@ final class AttrahiteBlockRegistryScenario {
         if (!isWorldViewReady(client)) return;
 
         FixtureSnapshot clientSnapshot = captureSnapshot(client.world);
-        if (!clientSnapshot.equals(currentServerSnapshot)) return;
+        if (!clientSnapshot.equals(currentServerSnapshot)) {
+            resetClientLightingBarrier();
+            return;
+        }
+
+        updateClientLightingBarrier(client);
+        if (clientLightingStableTicks < REQUIRED_CONSECUTIVE_LIGHTING_TICKS) return;
 
         transition(Stage.WAITING_FOR_RENDERS);
     }
@@ -382,7 +455,9 @@ final class AttrahiteBlockRegistryScenario {
     private void tickWaitingForRenders(MinecraftClient client) {
         if (!isWorldLifecycleReady(client)) {
             fail(client, "The integrated world vanished before the Attrahite capture");
+            return;
         }
+        updateClientLightingBarrier(client);
     }
 
     private void tickCapturing(MinecraftClient client) {
@@ -469,17 +544,7 @@ final class AttrahiteBlockRegistryScenario {
 
         if (!restartInspectionSubmitted) {
             restartInspectionSubmitted = true;
-            server.execute(() -> {
-                try {
-                    pendingReopenedResult = new ReopenedResult(
-                            RegistryProbe.capture(),
-                            DataProbe.capture(server),
-                            captureSnapshot(server.getOverworld())
-                    );
-                } catch (RuntimeException exception) {
-                    recordServerFailure(exception);
-                }
-            });
+            server.execute(() -> inspectReopenedWorld(server));
         }
         ReopenedResult result = pendingReopenedResult;
         if (result == null) return;
@@ -489,7 +554,9 @@ final class AttrahiteBlockRegistryScenario {
         persistenceExact = savedSnapshot != null
                 && savedSnapshot.equals(reopenedSnapshot)
                 && reopenedSnapshot.exact()
-                && result.registryProbe().equals(registryProbe);
+                && result.registryProbe().equals(registryProbe)
+                && serverSetupResult != null
+                && result.lighting().equals(serverSetupResult.lighting());
         reopenedDataExact = dataProbe != null
                 && reopenedDataProbe.exact()
                 && dataProbe.sameOutcome(reopenedDataProbe);
@@ -500,7 +567,14 @@ final class AttrahiteBlockRegistryScenario {
 
         capturePhase = CapturePhase.REOPENED;
         currentServerSnapshot = reopenedSnapshot;
+        currentServerLighting = result.lighting();
+        if (!currentServerLighting.hasExpectedSentinels()
+                || result.stableLightingTicks() < REQUIRED_CONSECUTIVE_LIGHTING_TICKS) {
+            fail(client, "The reopened Attrahite lighting did not settle");
+            return;
+        }
         completedRenders = 0;
+        resetClientLightingBarrier();
         transition(Stage.WAITING_FOR_CLIENT_MIRROR);
     }
 
@@ -530,7 +604,9 @@ final class AttrahiteBlockRegistryScenario {
             player.teleport(world, CAMERA_X, CAMERA_Y, CAMERA_Z, CAMERA_YAW, CAMERA_PITCH);
             player.setSpawnPoint(World.OVERWORLD, CAMERA_BLOCK_POS, CAMERA_YAW, true, false);
             FixtureSnapshot snapshot = captureSnapshot(world);
-            pendingServerSetupResult = new ServerSetupResult(
+            requestArenaRelight(world);
+            serverSetupCandidate = new ServerSetupCandidate(
+                    world,
                     chunksLoaded,
                     RegistryProbe.capture(),
                     DataProbe.capture(server),
@@ -540,9 +616,77 @@ final class AttrahiteBlockRegistryScenario {
                     world.getSeed(),
                     world.getRegistryKey().getValue().toString()
             );
+            beginServerLightingBarrier();
         } catch (RuntimeException exception) {
             recordServerFailure(exception);
         }
+    }
+
+    private void inspectReopenedWorld(IntegratedServer server) {
+        try {
+            ServerWorld world = server.getOverworld();
+            requestArenaRelight(world);
+            reopenedCandidate = new ReopenedCandidate(
+                    world,
+                    RegistryProbe.capture(),
+                    DataProbe.capture(server),
+                    captureSnapshot(world)
+            );
+            resetServerLightingBarrier();
+        } catch (RuntimeException exception) {
+            recordServerFailure(exception);
+        }
+    }
+
+    private void advanceServerLightingBarrier() {
+        ServerWorld world = serverSetupCandidate != null
+                ? serverSetupCandidate.world()
+                : reopenedCandidate.world();
+        boolean pendingUpdates = world.getChunkManager()
+                .getLightingProvider()
+                .hasUpdates();
+        LightingSnapshot lighting = captureLightingSnapshot(world);
+        boolean ready = lighting.hasExpectedSentinels();
+        boolean sameAsPrevious = lighting.equals(previousServerLighting);
+        serverLightingStableTicks = nextStableLightingTickCount(
+                serverLightingStableTicks,
+                ready,
+                sameAsPrevious
+        );
+        previousServerLighting = ready ? lighting : null;
+        latestServerLightingProgress = new ServerLightingProgress(
+                serverLightingStableTicks,
+                pendingUpdates,
+                lighting
+        );
+        if (serverLightingStableTicks < REQUIRED_CONSECUTIVE_LIGHTING_TICKS) return;
+
+        if (serverSetupCandidate != null) {
+            pendingServerSetupResult = serverSetupCandidate.complete(
+                    lighting,
+                    serverLightingStableTicks,
+                    pendingUpdates
+            );
+            serverSetupCandidate = null;
+        } else {
+            pendingReopenedResult = reopenedCandidate.complete(
+                    lighting,
+                    serverLightingStableTicks,
+                    pendingUpdates
+            );
+            reopenedCandidate = null;
+        }
+        resetServerLightingBarrier();
+    }
+
+    private void resetServerLightingBarrier() {
+        serverLightingStableTicks = 0;
+        previousServerLighting = null;
+    }
+
+    private void beginServerLightingBarrier() {
+        resetServerLightingBarrier();
+        latestServerLightingProgress = ServerLightingProgress.missing();
     }
 
     private PlacementInventory placeAllBlockItems(
@@ -622,6 +766,16 @@ final class AttrahiteBlockRegistryScenario {
         }
     }
 
+    private void requestArenaRelight(ServerWorld world) {
+        BlockPos start = new BlockPos(-9, ARENA_FLOOR_Y, -9);
+        BlockPos end = new BlockPos(9, ARENA_FLOOR_Y + 7, 9);
+        for (BlockPos position : BlockPos.iterate(start, end)) {
+            world.getChunkManager()
+                    .getLightingProvider()
+                    .checkBlock(position.toImmutable());
+        }
+    }
+
     private boolean loadArenaChunks(ServerWorld world) {
         boolean loaded = true;
         for (int chunkX = -1; chunkX <= 0; chunkX++) {
@@ -663,9 +817,15 @@ final class AttrahiteBlockRegistryScenario {
         }
 
         FixtureSnapshot clientSnapshot = captureSnapshot(client.world);
+        LightingEvidence lighting = captureLightingEvidence(client);
+        if (!lighting.exact()) {
+            completedRenders = 0;
+            return;
+        }
         CaptureEvidence capture = new CaptureEvidence(
                 clientSnapshot.equals(currentServerSnapshot),
                 isFixtureRenderReady(client),
+                lighting,
                 hasExpectedCameraPose(client),
                 completedRenders,
                 client.getFramebuffer().textureWidth,
@@ -718,6 +878,7 @@ final class AttrahiteBlockRegistryScenario {
                 && currentServerSnapshot != null
                 && currentServerSnapshot.exact()
                 && currentServerSnapshot.equals(captureSnapshot(client.world))
+                && captureLightingEvidence(client).exact()
                 && isFixtureRenderReady(client)
                 && hasExpectedCameraPose(client);
     }
@@ -759,6 +920,7 @@ final class AttrahiteBlockRegistryScenario {
     }
 
     private boolean isFixtureRenderReady(MinecraftClient client) {
+        if (!isClientLightingReady(client)) return false;
         if (!client.worldRenderer.isTerrainRenderComplete()) return false;
 
         for (BlockFixture fixture : FIXTURES) {
@@ -768,6 +930,74 @@ final class AttrahiteBlockRegistryScenario {
             }
         }
         return true;
+    }
+
+    private void updateClientLightingBarrier(MinecraftClient client) {
+        LightingEvidence evidence = captureLightingEvidence(client);
+        clientLightingStableTicks = nextStableLightingTickCount(
+                clientLightingStableTicks,
+                evidence.readyWithoutStableTicks(),
+                evidence.client().equals(currentServerLighting)
+        );
+    }
+
+    private void resetClientLightingBarrier() {
+        clientLightingStableTicks = 0;
+    }
+
+    private boolean isClientLightingReady(MinecraftClient client) {
+        return captureLightingEvidence(client).exact();
+    }
+
+    private LightingEvidence captureLightingEvidence(MinecraftClient client) {
+        boolean pendingUpdates = client.world.getChunkManager()
+                .getLightingProvider()
+                .hasUpdates();
+        LightingEvidence evidence = new LightingEvidence(
+                serverLightingStableTicksForCurrentPhase(),
+                clientLightingStableTicks,
+                serverLightingPendingForCurrentPhase(),
+                pendingUpdates,
+                currentServerLighting,
+                captureLightingSnapshot(client.world)
+        );
+        latestLightingEvidence.put(capturePhase, evidence);
+        return evidence;
+    }
+
+    private int serverLightingStableTicksForCurrentPhase() {
+        if (capturePhase == CapturePhase.INITIAL) {
+            return serverSetupResult == null ? 0 : serverSetupResult.stableLightingTicks();
+        }
+        ReopenedResult result = pendingReopenedResult;
+        return result == null ? 0 : result.stableLightingTicks();
+    }
+
+    private boolean serverLightingPendingForCurrentPhase() {
+        if (capturePhase == CapturePhase.INITIAL) {
+            return serverSetupResult != null && serverSetupResult.pendingLightingUpdates();
+        }
+        ReopenedResult result = pendingReopenedResult;
+        return result != null && result.pendingLightingUpdates();
+    }
+
+    private LightingEvidence lightingDiagnostic(CapturePhase phase) {
+        CaptureEvidence capture = captureEvidence.get(phase);
+        if (capture != null) return capture.lighting();
+
+        LightingEvidence evidence = latestLightingEvidence.get(phase);
+        if (evidence != null) return evidence;
+        if (phase != capturePhase) return null;
+
+        ServerLightingProgress progress = latestServerLightingProgress;
+        return new LightingEvidence(
+                progress.stableTicks(),
+                0,
+                progress.pendingUpdates(),
+                false,
+                progress.snapshot(),
+                null
+        );
     }
 
     private boolean hasExpectedCameraPose(MinecraftClient client) {
@@ -1044,6 +1274,9 @@ final class AttrahiteBlockRegistryScenario {
             CaptureEvidence capture
     ) {
         boolean passed = true;
+        LightingEvidence lighting = capture == null
+                ? lightingDiagnostic(phase)
+                : capture.lighting();
         passed &= addAssertion(assertions, "capture_mirror_exact:" + phase.id(),
                 capture != null && capture.mirrorExact(),
                 FixtureSnapshot.expectedDescription(),
@@ -1051,6 +1284,10 @@ final class AttrahiteBlockRegistryScenario {
         passed &= addAssertion(assertions, "capture_render_ready:" + phase.id(),
                 capture != null && capture.renderReady(), "true",
                 capture == null ? "missing" : Boolean.toString(capture.renderReady()));
+        passed &= addAssertion(assertions, "capture_lighting_ready:" + phase.id(),
+                capture != null && lighting.exact(),
+                LightingEvidence.expectedDescription(),
+                lighting == null ? "missing" : lighting.description());
         passed &= addAssertion(assertions, "capture_camera_exact:" + phase.id(),
                 capture != null && capture.cameraExact(), expectedCameraPoseDescription(),
                 capture == null ? "missing" : capture.cameraPose());
@@ -1199,6 +1436,18 @@ final class AttrahiteBlockRegistryScenario {
         return new FixtureSnapshot(List.copyOf(observations));
     }
 
+    private static LightingSnapshot captureLightingSnapshot(World world) {
+        List<LightSample> samples = new ArrayList<>();
+        for (BlockPos position : LIGHTING_SAMPLE_POSITIONS) {
+            samples.add(new LightSample(
+                    position,
+                    world.getLightLevel(LightType.SKY, position),
+                    world.getLightLevel(LightType.BLOCK, position)
+            ));
+        }
+        return new LightingSnapshot(List.copyOf(samples));
+    }
+
     private static String stateDescription(BlockState state) {
         return BlockArgumentParser.stringifyBlockState(state);
     }
@@ -1256,6 +1505,15 @@ final class AttrahiteBlockRegistryScenario {
                 + ";pitch=" + client.player.getPitch()
                 + ";on_ground=" + client.player.isOnGround()
                 + ";tolerance=" + CAMERA_POSE_TOLERANCE;
+    }
+
+    private static List<BlockPos> createLightingSamplePositions() {
+        List<BlockPos> positions = new ArrayList<>();
+        positions.add(CAMERA_BLOCK_POS);
+        for (BlockFixture fixture : FIXTURES) {
+            positions.add(fixture.position().up());
+        }
+        return List.copyOf(positions);
     }
 
     private static BlockFixture fixture(String path, int x) {
@@ -1350,6 +1608,7 @@ final class AttrahiteBlockRegistryScenario {
         for (CapturePhase phase : CapturePhase.values()) {
             names.add("capture_mirror_exact:" + phase.id());
             names.add("capture_render_ready:" + phase.id());
+            names.add("capture_lighting_ready:" + phase.id());
             names.add("capture_camera_exact:" + phase.id());
             names.add("capture_consecutive_stable_renders:" + phase.id());
             names.add("capture_framebuffer_dimensions:" + phase.id());
@@ -2040,9 +2299,99 @@ final class AttrahiteBlockRegistryScenario {
         }
     }
 
+    private record LightSample(BlockPos position, int skyLightLevel, int blockLightLevel) {
+
+        private String description() {
+            return positionDescription(position)
+                    + "=" + skyLightLevel
+                    + "/" + blockLightLevel;
+        }
+    }
+
+    private record LightingSnapshot(List<LightSample> samples) {
+
+        private boolean hasExpectedSentinels() {
+            if (samples.size() != LIGHTING_SAMPLE_POSITIONS.size()) return false;
+            for (int index = 0; index < samples.size(); index++) {
+                LightSample sample = samples.get(index);
+                if (!sample.position().equals(LIGHTING_SAMPLE_POSITIONS.get(index))
+                        || sample.skyLightLevel() != EXPECTED_SKY_LIGHT_LEVEL) {
+                    return false;
+                }
+            }
+            LightSample camera = samples.get(0);
+            if (!isExpectedCameraLighting(
+                    camera.skyLightLevel(),
+                    camera.blockLightLevel()
+            )) {
+                return false;
+            }
+            for (int index = 0; index < FIXTURES.size(); index++) {
+                if (samples.get(index + 1).blockLightLevel()
+                        != EXPECTED_FIXTURE_BLOCK_LIGHT_LEVELS.get(index)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private String description() {
+            return samples.stream()
+                    .map(LightSample::description)
+                    .collect(Collectors.joining(",", "[", "]"));
+        }
+    }
+
+    private record LightingEvidence(
+            int stableServerTicks,
+            int stableClientTicks,
+            boolean pendingServerUpdates,
+            boolean pendingClientUpdates,
+            LightingSnapshot server,
+            LightingSnapshot client
+    ) {
+
+        private boolean readyWithoutStableTicks() {
+            return areLightingSamplesReady(
+                    server != null && server.hasExpectedSentinels(),
+                    server != null && server.equals(client)
+            );
+        }
+
+        private boolean exact() {
+            return stableServerTicks >= REQUIRED_CONSECUTIVE_LIGHTING_TICKS
+                    && stableClientTicks >= REQUIRED_CONSECUTIVE_LIGHTING_TICKS
+                    && readyWithoutStableTicks();
+        }
+
+        private String description() {
+            return "stableServerTicks=" + Math.min(
+                    stableServerTicks,
+                    REQUIRED_CONSECUTIVE_LIGHTING_TICKS
+            )
+                    + ";stableClientTicks=" + Math.min(
+                    stableClientTicks,
+                    REQUIRED_CONSECUTIVE_LIGHTING_TICKS
+            )
+                    + ";serverPending=" + pendingServerUpdates
+                    + ";clientPending=" + pendingClientUpdates
+                    + ";serverClientExact=" + (server != null && server.equals(client))
+                    + ";server=" + (server == null ? "missing" : server.description())
+                    + ";client=" + (client == null ? "missing" : client.description());
+        }
+
+        private static String expectedDescription() {
+            return "stableServerTicks=" + REQUIRED_CONSECUTIVE_LIGHTING_TICKS
+                    + ";stableClientTicks=" + REQUIRED_CONSECUTIVE_LIGHTING_TICKS
+                    + ";serverPending=diagnostic;clientPending=diagnostic"
+                    + ";serverClientExact=true;server=expected;client=server";
+        }
+    }
+
     private record CaptureEvidence(
             boolean mirrorExact,
             boolean renderReady,
+            LightingEvidence lighting,
             boolean cameraExact,
             int completedRenders,
             int width,
@@ -2056,6 +2405,7 @@ final class AttrahiteBlockRegistryScenario {
             return new CaptureEvidence(
                     mirrorExact,
                     renderReady,
+                    lighting,
                     cameraExact,
                     completedRenders,
                     width,
@@ -2087,8 +2437,44 @@ final class AttrahiteBlockRegistryScenario {
             FixtureSnapshot snapshot,
             String worldDisplayName,
             long worldSeed,
+            String dimensionId,
+            LightingSnapshot lighting,
+            int stableLightingTicks,
+            boolean pendingLightingUpdates
+    ) {
+    }
+
+    private record ServerSetupCandidate(
+            ServerWorld world,
+            boolean chunksLoaded,
+            RegistryProbe registryProbe,
+            DataProbe dataProbe,
+            PlacementInventory placements,
+            FixtureSnapshot snapshot,
+            String worldDisplayName,
+            long worldSeed,
             String dimensionId
     ) {
+
+        private ServerSetupResult complete(
+                LightingSnapshot lighting,
+                int stableLightingTicks,
+                boolean pendingLightingUpdates
+        ) {
+            return new ServerSetupResult(
+                    chunksLoaded,
+                    registryProbe,
+                    dataProbe,
+                    placements,
+                    snapshot,
+                    worldDisplayName,
+                    worldSeed,
+                    dimensionId,
+                    lighting,
+                    stableLightingTicks,
+                    pendingLightingUpdates
+            );
+        }
     }
 
     private record SaveResult(boolean saved, FixtureSnapshot snapshot) {
@@ -2097,7 +2483,44 @@ final class AttrahiteBlockRegistryScenario {
     private record ReopenedResult(
             RegistryProbe registryProbe,
             DataProbe dataProbe,
+            FixtureSnapshot snapshot,
+            LightingSnapshot lighting,
+            int stableLightingTicks,
+            boolean pendingLightingUpdates
+    ) {
+    }
+
+    private record ReopenedCandidate(
+            ServerWorld world,
+            RegistryProbe registryProbe,
+            DataProbe dataProbe,
             FixtureSnapshot snapshot
     ) {
+
+        private ReopenedResult complete(
+                LightingSnapshot lighting,
+                int stableLightingTicks,
+                boolean pendingLightingUpdates
+        ) {
+            return new ReopenedResult(
+                    registryProbe,
+                    dataProbe,
+                    snapshot,
+                    lighting,
+                    stableLightingTicks,
+                    pendingLightingUpdates
+            );
+        }
+    }
+
+    private record ServerLightingProgress(
+            int stableTicks,
+            boolean pendingUpdates,
+            LightingSnapshot snapshot
+    ) {
+
+        private static ServerLightingProgress missing() {
+            return new ServerLightingProgress(0, false, null);
+        }
     }
 }

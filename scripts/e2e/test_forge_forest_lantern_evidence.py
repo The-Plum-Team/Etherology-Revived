@@ -323,9 +323,17 @@ def build_archive_manifest(
 
 
 class ActiveProfileTests(unittest.TestCase):
-    def test_active_profile_is_the_exact_v13_snapshot(self) -> None:
+    def test_v13_snapshot_remains_exact_and_rejects_the_v15_active_profile(self) -> None:
         configuration = forge_client.load_configuration()
-        forest_evidence.validate_active_profile(configuration)
+        snapshot = SCRIPT_DIRECTORY / "forge-1.20.1-profile-v13.json"
+
+        self.assertEqual(forest_evidence.PROFILE_SIZE, snapshot.stat().st_size)
+        self.assertEqual(
+            forest_evidence.PROFILE_SHA256,
+            forge_evidence.sha256_file(snapshot),
+        )
+        with self.assertRaises(forge_client.E2EError):
+            forest_evidence.validate_active_profile(configuration)
 
     def test_rejects_a_linked_v13_snapshot(self) -> None:
         configuration = forge_client.load_configuration()
@@ -338,7 +346,9 @@ class ActiveProfileTests(unittest.TestCase):
                 repository_root / forest_evidence.SNAPSHOT_PROFILE_RELATIVE_PATH
             )
             active.parent.mkdir(parents=True)
-            active.write_bytes(configuration.profile_manifest_path.read_bytes())
+            active.write_bytes(
+                (SCRIPT_DIRECTORY / "forge-1.20.1-profile-v13.json").read_bytes()
+            )
             snapshot.symlink_to(active.name)
             linked_configuration = replace(
                 configuration,

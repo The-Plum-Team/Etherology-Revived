@@ -46,18 +46,39 @@ EXPECTED_ARTIFACT_TASKS = {
 }
 EXPECTED_DEPENDENCY_MOD_IDS = {"architectury", "geckolib"}
 EXPECTED_PRODUCTION_DATA_ENTRIES = {
+    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_slab.json",
+    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
+    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_stairs.json",
+    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
+    "data/etherology/advancements/recipes/building_blocks/attrahite_bricks.json",
     "data/etherology/advancements/recipes/food/forest_lantern_crumb.json",
     "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
     "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_smoking.json",
+    "data/etherology/advancements/recipes/misc/attrahite_brick.json",
+    "data/etherology/advancements/recipes/misc/azel_ingot.json",
+    "data/etherology/advancements/recipes/misc/azel_ingot_from_blasting.json",
     "data/etherology/advancements/recipes/misc/leather.json",
+    "data/etherology/advancements/recipes/misc/raw_azel.json",
     "data/etherology/ether_sources/default.json",
+    "data/etherology/loot_tables/blocks/attrahite.json",
+    "data/etherology/loot_tables/blocks/attrahite_brick_slab.json",
+    "data/etherology/loot_tables/blocks/attrahite_brick_stairs.json",
+    "data/etherology/loot_tables/blocks/attrahite_bricks.json",
     "data/etherology/loot_tables/blocks/azel_block.json",
     "data/etherology/loot_tables/blocks/ebony_block.json",
     "data/etherology/loot_tables/blocks/ethereal_storage.json",
     "data/etherology/loot_tables/blocks/ethril_block.json",
     "data/etherology/loot_tables/blocks/forest_lantern.json",
+    "data/etherology/recipes/attrahite_brick.json",
+    "data/etherology/recipes/attrahite_brick_slab.json",
+    "data/etherology/recipes/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
+    "data/etherology/recipes/attrahite_brick_stairs.json",
+    "data/etherology/recipes/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
+    "data/etherology/recipes/attrahite_bricks.json",
     "data/etherology/recipes/azel_block.json",
+    "data/etherology/recipes/azel_ingot.json",
     "data/etherology/recipes/azel_ingot_from_azel_block.json",
+    "data/etherology/recipes/azel_ingot_from_blasting.json",
     "data/etherology/recipes/ebony_block.json",
     "data/etherology/recipes/ebony_ingot_from_ebony_block.json",
     "data/etherology/recipes/ethril_block.json",
@@ -66,14 +87,20 @@ EXPECTED_PRODUCTION_DATA_ENTRIES = {
     "data/etherology/recipes/forest_lantern_crumb_from_campfire.json",
     "data/etherology/recipes/forest_lantern_crumb_from_smoking.json",
     "data/etherology/recipes/leather.json",
+    "data/etherology/recipes/raw_azel.json",
     "data/etherology/tags/blocks/peach_logs.json",
     "data/minecraft/tags/blocks/beacon_base_blocks.json",
     "data/minecraft/tags/blocks/mineable/hoe.json",
     "data/minecraft/tags/blocks/mineable/pickaxe.json",
     "data/minecraft/tags/blocks/needs_iron_tool.json",
+    "data/minecraft/tags/blocks/needs_stone_tool.json",
+    "data/minecraft/tags/blocks/slabs.json",
+    "data/minecraft/tags/blocks/stairs.json",
     "data/minecraft/tags/enchantment/non_treasure.json",
     "data/minecraft/tags/game_events/vibrations.json",
     "data/minecraft/tags/game_events/warden_can_listen.json",
+    "data/minecraft/tags/items/slabs.json",
+    "data/minecraft/tags/items/stairs.json",
 }
 STOP_TIMEOUT_SECONDS = 20
 START_STABILITY_SECONDS = 2.0
@@ -261,7 +288,7 @@ def validate_manifest_shape(
     profile_id = safe_leaf_name(profile.get("id"), "profile.id")
     if re.fullmatch(r"[a-z0-9][a-z0-9.-]+", profile_id) is None:
         raise E2EError("The Forge profile id is not stable lowercase text")
-    if profile_id != "etherology-e2e-forge-1.20.1-v13":
+    if profile_id != "etherology-e2e-forge-1.20.1-v15":
         raise E2EError("The Forge profile id differs from the isolated profile contract")
     if profile.get("runtime_directory") != profile_id:
         raise E2EError("The Forge runtime directory must equal its unique profile id")
@@ -313,9 +340,15 @@ def validate_manifest_shape(
     }:
         raise E2EError("The Forge evidence capture contract is invalid")
     scenarios = require_list(evidence, "scenarios")
-    if scenarios != ["ethereal-storage", "ethereal-channel", "forest-lantern"]:
+    if scenarios != [
+        "ethereal-storage",
+        "ethereal-channel",
+        "forest-lantern",
+        "attrahite-block-registry",
+    ]:
         raise E2EError(
-            "The Forge harness must expose storage, channel, then Forest Lantern"
+            "The Forge harness must expose storage, channel, Forest Lantern, "
+            "then Attrahite block registry"
         )
 
     directories = require_list(manifest, "profile_directories")

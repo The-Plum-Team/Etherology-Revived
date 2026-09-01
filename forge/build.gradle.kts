@@ -519,6 +519,23 @@ val forgeForestLanternProfileSnapshotV13 =
     rootProject.file("scripts/e2e/forge-1.20.1-profile-v13.json")
 val forgeForestLanternClientEvidenceArchive =
     forgeChannelEvidenceRoot.resolve("forest-lantern-v13")
+val forgeAttrahiteEvidenceVerifierV14 =
+    rootProject.file("scripts/e2e/forge_attrahite_evidence_v14.py")
+val forgeAttrahiteEvidenceTestV14 =
+    rootProject.file("scripts/e2e/test_forge_attrahite_evidence_v14.py")
+val forgeAttrahiteProfileSnapshotV14 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v14.json")
+val forgeAttrahiteEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_attrahite_evidence_v15.py")
+val forgeAttrahiteEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_attrahite_evidence_v15.py")
+val forgeAttrahiteProfileSnapshotV15 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v15.json")
+val forgeAttrahiteClientEvidenceArchive =
+    forgeChannelEvidenceRoot.resolve("attrahite-block-registry-v15")
+val forgeAttrahiteHarnessSize = 239889L
+val forgeAttrahiteHarnessSha256 =
+    "00de9d56d423edcb265ea61a35c1bbf5e2e966bdf448c15de01c363ecd778f75"
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
 apply(plugin = "dev.architectury.loom")
@@ -3715,6 +3732,68 @@ fun missingForgeForestLanternClientEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeAttrahiteBlockRegistryClientEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeAttrahiteEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeAttrahiteEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge Attrahite block-registry client evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeChannelEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("attrahite-block-registry-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeAttrahiteClientEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge Attrahite block-registry client-v15 evidence archive " +
+                "is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeAttrahiteEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeAttrahiteClientEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Attrahite block-registry client evidence verification " +
+                    "failed: ${detail.take(4_000)}",
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Attrahite block-registry client evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, recipe, screen, effect, loot, tree, and " +
@@ -3726,10 +3805,8 @@ fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
 )
 
 fun missingForgeAttrahiteNativeEvidenceMilestone(): List<String> =
-    missingForgeAttrahiteBlockRegistryServerEvidenceMilestone() + listOf(
-        "packaged-client inventory, model, placement, rendering, and persistence evidence " +
-            "is not accepted for the four Attrahite block IDs",
-    )
+    missingForgeAttrahiteBlockRegistryServerEvidenceMilestone() +
+        missingForgeAttrahiteBlockRegistryClientEvidenceMilestone()
 
 fun missingForgeReleaseReadinessMilestone(): List<String> = listOf(
     "the complete authoritative Forge gameplay registry and lifecycle graph is not accepted",
@@ -5991,6 +6068,37 @@ val validateForgeForestLanternClientEvidenceArchiveIntegrity =
         }
     }
 
+val validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity =
+    tasks.register("validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Attrahite block-registry packaged-client v15 archive."
+        inputs.files(
+            forgeAttrahiteEvidenceVerifier,
+            forgeAttrahiteEvidenceVerifierV14,
+            forgeAttrahiteEvidenceTestV14,
+            forgeChannelProfileSnapshotV11,
+            forgeForestLanternProfileSnapshotV12,
+            forgeForestLanternProfileSnapshotV13,
+            forgeAttrahiteProfileSnapshotV14,
+            forgeAttrahiteProfileSnapshotV15,
+            forgeE2eProfileManifest,
+        )
+        if (forgeAttrahiteClientEvidenceArchive.exists()) {
+            inputs.dir(forgeAttrahiteClientEvidenceArchive)
+                .withPropertyName("forgeAttrahiteClientEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeAttrahiteBlockRegistryClientEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Attrahite block-registry client evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
 val validateForgeGameEventMilestone = tasks.register("validateForgeGameEventMilestone") {
     group = "verification"
     description = "Accepts the shared game event and exact cross-loader tags."
@@ -6684,6 +6792,7 @@ val validateForgeAttrahiteMilestone =
         dependsOn(
             validateForgeAttrahiteStaticMilestone,
             validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity,
+            validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity,
         )
         doLast {
             val missingConditions = missingForgeAttrahiteNativeEvidenceMilestone()
@@ -6830,6 +6939,12 @@ tasks.register("verifyForgePortGateClosed") {
         forgeForestLanternEvidenceVerifier,
         forgeForestLanternProfileSnapshotV12,
         forgeForestLanternProfileSnapshotV13,
+        forgeAttrahiteEvidenceVerifierV14,
+        forgeAttrahiteEvidenceTestV14,
+        forgeAttrahiteEvidenceVerifier,
+        forgeAttrahiteEvidenceTest,
+        forgeAttrahiteProfileSnapshotV14,
+        forgeAttrahiteProfileSnapshotV15,
     )
     inputs.dir(forgeRegistryFoundationServerEvidenceArchive)
         .withPropertyName("forgeRegistryFoundationServerEvidenceArchive")
@@ -6871,6 +6986,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeForestLanternClientEvidenceArchive.exists()) {
         inputs.dir(forgeForestLanternClientEvidenceArchive)
             .withPropertyName("forgeForestLanternClientEvidenceArchive")
+    }
+    if (forgeAttrahiteClientEvidenceArchive.exists()) {
+        inputs.dir(forgeAttrahiteClientEvidenceArchive)
+            .withPropertyName("forgeAttrahiteClientEvidenceArchive")
     }
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
@@ -8370,6 +8489,8 @@ if (minecraftVersion == "1.20.1") {
                 forgeChannelProfileSnapshotV11,
                 forgeForestLanternProfileSnapshotV12,
                 forgeForestLanternProfileSnapshotV13,
+                forgeAttrahiteProfileSnapshotV14,
+                forgeAttrahiteProfileSnapshotV15,
                 rootProject.file("scripts/e2e/forge_client.py"),
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
@@ -8378,6 +8499,123 @@ if (minecraftVersion == "1.20.1") {
                 rootProject.file("forge/build.gradle.kts"),
                 rootProject.file("docs/testing/E2E-CONTRACT.md"),
             )
+        }
+
+    val forgeAttrahiteBlockRegistryV14HistorySafetyTest =
+        tasks.register<Exec>("forgeAttrahiteBlockRegistryV14HistorySafetyTest") {
+            group = "verification"
+            description =
+                "Runs immutable prepared-history Forge Attrahite client-v14 verifier tests."
+            dependsOn(forgeForestLanternEvidenceVerifierTest)
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_forge_attrahite_evidence_v14.py",
+            )
+            inputs.files(
+                forgeAttrahiteEvidenceVerifierV14,
+                forgeAttrahiteEvidenceTestV14,
+                forgeE2eProfileManifest,
+                forgeChannelProfileSnapshotV11,
+                forgeForestLanternProfileSnapshotV12,
+                forgeForestLanternProfileSnapshotV13,
+                forgeAttrahiteProfileSnapshotV14,
+                rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/forge_evidence.py"),
+                rootProject.file("scripts/e2e/test_forge_evidence.py"),
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
+            )
+            inputs.files(
+                rootProject.fileTree("src/main/generated/assets/etherology") {
+                    include("blockstates/attrahite*.json")
+                    include("models/block/attrahite*.json")
+                    include("models/item/attrahite*.json")
+                },
+                rootProject.fileTree("src/client/resources/assets/etherology") {
+                    include("textures/block/attrahite*.png")
+                },
+            ).withPropertyName("forgeAttrahiteClientV14HistoryResources")
+            doFirst {
+                val historyPins = listOf(
+                    Triple(
+                        forgeAttrahiteProfileSnapshotV14,
+                        3702L,
+                        "d880c523c6987836cfad5dfe9d640b1d4ee807664f3fc335ae5b31b6fbfe1e44",
+                    ),
+                    Triple(
+                        forgeAttrahiteEvidenceVerifierV14,
+                        62748L,
+                        "17a09e70b3044bfd1db4602bc82eb30cb96bac46713f6646dc234e8ea97da073",
+                    ),
+                    Triple(
+                        forgeAttrahiteEvidenceTestV14,
+                        24655L,
+                        "96cbf93a079267802c93d5e7c3e92676a10d070d63f7e9a2cf16776a7945bc09",
+                    ),
+                )
+                historyPins.forEach { (file, expectedSize, expectedSha256) ->
+                    check(file.isFile && !Files.isSymbolicLink(file.toPath())) {
+                        "Forge Attrahite client-v14 history file is missing or linked: $file"
+                    }
+                    val digest = MessageDigest.getInstance("SHA-256")
+                        .digest(file.readBytes())
+                        .joinToString("") { byte ->
+                            "%02x".format(byte.toInt() and 0xff)
+                        }
+                    check(file.length() == expectedSize && digest == expectedSha256) {
+                        "Forge Attrahite client-v14 history bytes changed: $file"
+                    }
+                }
+            }
+        }
+
+    val forgeAttrahiteBlockRegistryEvidenceVerifierTest =
+        tasks.register<Exec>("forgeAttrahiteBlockRegistryEvidenceVerifierTest") {
+            group = "verification"
+            description =
+                "Runs adversarial tests for the Forge Attrahite block-registry client verifier."
+            dependsOn(forgeAttrahiteBlockRegistryV14HistorySafetyTest)
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_forge_attrahite_evidence_v15.py",
+            )
+            inputs.files(
+                forgeAttrahiteEvidenceVerifierV14,
+                forgeAttrahiteEvidenceTestV14,
+                forgeAttrahiteEvidenceVerifier,
+                forgeAttrahiteEvidenceTest,
+                forgeE2eProfileManifest,
+                forgeChannelProfileSnapshotV11,
+                forgeForestLanternProfileSnapshotV12,
+                forgeForestLanternProfileSnapshotV13,
+                forgeAttrahiteProfileSnapshotV14,
+                forgeAttrahiteProfileSnapshotV15,
+                rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/test_forge_client.py"),
+                rootProject.file("scripts/e2e/forge_evidence.py"),
+                rootProject.file("scripts/e2e/test_forge_evidence.py"),
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
+                rootProject.file("forge/build.gradle.kts"),
+            )
+            inputs.files(
+                rootProject.fileTree("src/main/generated/assets/etherology") {
+                    include("blockstates/attrahite*.json")
+                    include("models/block/attrahite*.json")
+                    include("models/item/attrahite*.json")
+                },
+                rootProject.fileTree("src/client/resources/assets/etherology") {
+                    include("textures/block/attrahite*.png")
+                },
+            ).withPropertyName("forgeAttrahiteClientEvidenceResources")
         }
 
     validateForgeChannelImplementationMilestone.configure {
@@ -8390,6 +8628,14 @@ if (minecraftVersion == "1.20.1") {
 
     validateForgeForestLanternClientEvidenceArchiveIntegrity.configure {
         dependsOn(forgeForestLanternEvidenceVerifierTest)
+    }
+
+    validateForgeAttrahiteStaticMilestone.configure {
+        dependsOn(e2eHarnessTestTask, forgeAttrahiteBlockRegistryEvidenceVerifierTest)
+    }
+
+    validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity.configure {
+        dependsOn(forgeAttrahiteBlockRegistryEvidenceVerifierTest)
     }
 
     val expandedE2eHarnessMetadata = mapOf(
@@ -8509,6 +8755,33 @@ if (minecraftVersion == "1.20.1") {
         }
     }
 
+    val verifyAttrahiteE2eHarnessArtifact =
+        tasks.register("verifyAttrahiteE2eHarnessArtifact") {
+            group = "verification"
+            description =
+                "Binds the Forge Attrahite v15 run to its exact packaged harness bytes."
+            dependsOn(verifyE2eHarnessArtifact)
+            inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+
+            doLast {
+                val harnessFile = remapE2eHarnessJar.get().archiveFile.get().asFile
+                val harnessDigest = MessageDigest.getInstance("SHA-256")
+                    .digest(harnessFile.readBytes())
+                    .joinToString("") { byte ->
+                        "%02x".format(byte.toInt() and 0xff)
+                    }
+                check(harnessFile.length() == forgeAttrahiteHarnessSize) {
+                    "Forge Attrahite harness size changed: ${harnessFile.length()}"
+                }
+                check(harnessDigest == forgeAttrahiteHarnessSha256) {
+                    "Forge Attrahite harness SHA-256 changed: $harnessDigest"
+                }
+            }
+        }
+    forgeAttrahiteBlockRegistryEvidenceVerifierTest.configure {
+        dependsOn(verifyAttrahiteE2eHarnessArtifact)
+    }
+
     val verifyE2eUnderTestIsolation = tasks.register("verifyE2eUnderTestIsolation") {
         group = "verification"
         description = "Proves that Forge E2E artifacts are marked and isolated from publication."
@@ -8587,7 +8860,7 @@ if (minecraftVersion == "1.20.1") {
         description = "Builds and validates the separate Forge 1.20.1 packaged E2E harness."
         dependsOn(
             e2eHarnessTestTask,
-            forgeForestLanternEvidenceVerifierTest,
+            forgeAttrahiteBlockRegistryEvidenceVerifierTest,
             verifyE2eHarnessArtifact,
             verifyE2eUnderTestIsolation,
         )

@@ -189,7 +189,7 @@ class ConfigurationTests(unittest.TestCase):
         descriptor = forge_client.profile_descriptor(configuration)
         manifest_provenance = descriptor["profile_manifest"]
 
-        self.assertEqual("etherology-e2e-forge-1.20.1-v13", profile["id"])
+        self.assertEqual("etherology-e2e-forge-1.20.1-v15", profile["id"])
         self.assertNotEqual(
             "etherology-e2e-fabric-1.20.1-v23", profile["runtime_directory"]
         )
@@ -211,10 +211,18 @@ class ConfigurationTests(unittest.TestCase):
             manifest_provenance["sha256"],
         )
 
-    def test_active_profile_exactly_matches_v13_snapshot_and_preserves_prior_versions(
+    def test_active_profile_exactly_matches_v15_snapshot_and_preserves_prior_versions(
         self,
     ) -> None:
         active_profile = forge_client.REPOSITORY_ROOT / "scripts/e2e/forge-1.20.1-profile.json"
+        v15_snapshot = (
+            forge_client.REPOSITORY_ROOT
+            / "scripts/e2e/forge-1.20.1-profile-v15.json"
+        )
+        v14_snapshot = (
+            forge_client.REPOSITORY_ROOT
+            / "scripts/e2e/forge-1.20.1-profile-v14.json"
+        )
         v13_snapshot = (
             forge_client.REPOSITORY_ROOT
             / "scripts/e2e/forge-1.20.1-profile-v13.json"
@@ -228,9 +236,21 @@ class ConfigurationTests(unittest.TestCase):
             / "scripts/e2e/forge-1.20.1-profile-v11.json"
         )
 
-        self.assertEqual(active_profile.read_bytes(), v13_snapshot.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v15_snapshot.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v14_snapshot.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v13_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v12_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v11_snapshot.read_bytes())
+        self.assertEqual(3702, v15_snapshot.stat().st_size)
+        self.assertEqual(
+            "7744609bfdc40ca69e86fb4e2d6bb4e2755d9072097acde54b7d5dd9c0537e71",
+            forge_client.sha256_file(v15_snapshot),
+        )
+        self.assertEqual(3702, v14_snapshot.stat().st_size)
+        self.assertEqual(
+            "d880c523c6987836cfad5dfe9d640b1d4ee807664f3fc335ae5b31b6fbfe1e44",
+            forge_client.sha256_file(v14_snapshot),
+        )
         self.assertEqual(3668, v13_snapshot.stat().st_size)
         self.assertEqual(
             "0e00a169d9e9387747b9cdf1d2d682b4646b731e2244775d676794f6cc2405c6",
@@ -245,6 +265,16 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(
             "af21ba7cbf1ba71f06a1dc2594daa5aa4a790ee89df3ed560760ceb1b6aa8e6f",
             forge_client.sha256_file(v11_snapshot),
+        )
+        v13 = json.loads(v13_snapshot.read_text(encoding="utf-8"))
+        self.assertEqual("etherology-e2e-forge-1.20.1-v13", v13["profile"]["id"])
+        self.assertEqual(
+            "etherology-e2e-forge-1.20.1-v13",
+            v13["profile"]["runtime_directory"],
+        )
+        self.assertEqual(
+            ["ethereal-storage", "ethereal-channel", "forest-lantern"],
+            v13["evidence"]["scenarios"],
         )
         v12 = json.loads(v12_snapshot.read_text(encoding="utf-8"))
         self.assertEqual("etherology-e2e-forge-1.20.1-v12", v12["profile"]["id"])
@@ -275,23 +305,15 @@ class ConfigurationTests(unittest.TestCase):
             with self.assertRaisesRegex(forge_client.E2EError, "tracked repository path"):
                 forge_client.load_configuration(untracked_path, root)
 
-    def test_evidence_scenarios_match_bounded_contract(self) -> None:
+    def test_evidence_scenarios_match_bounded_profile_contract(self) -> None:
         configuration = forge_client.load_configuration()
-        contract = (
-            configuration.repository_root / "docs/testing/E2E-CONTRACT.md"
-        ).read_text(encoding="utf-8")
-        scenario_table = contract.split(
-            "## Loader-specific bounded scenarios",
-            1,
-        )[1].split("### Headless dedicated-server bounded scenarios", 1)[0]
-        contract_scenarios = [
-            line.split("`", 2)[1]
-            for line in scenario_table.splitlines()
-            if line.startswith("| `")
-        ]
-
         self.assertEqual(
-            contract_scenarios,
+            [
+                "ethereal-storage",
+                "ethereal-channel",
+                "forest-lantern",
+                "attrahite-block-registry",
+            ],
             forge_client.scenario_ids(configuration),
         )
 
@@ -299,7 +321,12 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_client.load_configuration()
 
         self.assertEqual(
-            ["ethereal-storage", "ethereal-channel", "forest-lantern"],
+            [
+                "ethereal-storage",
+                "ethereal-channel",
+                "forest-lantern",
+                "attrahite-block-registry",
+            ],
             forge_client.scenario_ids(configuration),
         )
         self.assertEqual(
@@ -313,6 +340,13 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(
             "forest-lantern",
             forge_client.resolve_scenario_id(configuration, "forest-lantern"),
+        )
+        self.assertEqual(
+            "attrahite-block-registry",
+            forge_client.resolve_scenario_id(
+                configuration,
+                "attrahite-block-registry",
+            ),
         )
         with self.assertRaisesRegex(forge_client.E2EError, "Unsupported"):
             forge_client.resolve_scenario_id(configuration, " ethereal-channel")
@@ -500,14 +534,14 @@ class RuntimeIsolationTests(unittest.TestCase):
             ) as sync:
                 attempt = forge_client.reserve_launch_attempt(
                     configuration,
-                    "forest-lantern",
+                    "attrahite-block-registry",
                     state_root,
                 )
 
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-forge-1.20.1-v13\n"
-                    "scenario=forest-lantern\n"
+                    "profile_id=etherology-e2e-forge-1.20.1-v15\n"
+                    "scenario=attrahite-block-registry\n"
                     f"controller_pid={os.getpid()}\n"
                 ),
                 attempt.read_text(encoding="utf-8"),
@@ -516,7 +550,7 @@ class RuntimeIsolationTests(unittest.TestCase):
             with self.assertRaisesRegex(forge_client.E2EError, "consumed"):
                 forge_client.reserve_launch_attempt(
                     configuration,
-                    "forest-lantern",
+                    "attrahite-block-registry",
                     state_root,
                 )
             with self.assertRaisesRegex(forge_client.E2EError, "consumed"):
@@ -580,7 +614,7 @@ class RuntimeIsolationTests(unittest.TestCase):
     def test_process_state_with_wrong_manager_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             state_root = Path(temporary_directory).resolve()
-            profile_id = "etherology-e2e-forge-1.20.1-v13"
+            profile_id = "etherology-e2e-forge-1.20.1-v15"
             runtime = state_root / "runtimes" / profile_id
             game = runtime / "game"
             game.mkdir(parents=True)
@@ -740,7 +774,11 @@ class RuntimeIsolationTests(unittest.TestCase):
             library = launcher / "libraries/example.jar"
             library.parent.mkdir(parents=True)
             library.write_bytes(b"jar")
-            for scenario_id in ("ethereal-channel", "forest-lantern"):
+            for scenario_id in (
+                "ethereal-channel",
+                "forest-lantern",
+                "attrahite-block-registry",
+            ):
                 command = [
                     "/java17",
                     "-cp",

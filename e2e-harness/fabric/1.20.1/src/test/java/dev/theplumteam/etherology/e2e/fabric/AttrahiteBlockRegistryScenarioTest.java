@@ -215,6 +215,7 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertEquals(
                 List.of(
                         "0,121,-8",
+                        "0,121,0",
                         "-3,123,1",
                         "-1,123,1",
                         "1,123,1",
@@ -223,17 +224,28 @@ final class AttrahiteBlockRegistryScenarioTest {
                 AttrahiteBlockRegistryScenario.lightingSampleDescriptions()
         );
         assertEquals(
-                List.of("0,121,-8", "0,121,0"),
+                List.of(
+                        "0,121,-8",
+                        "0,121,0",
+                        "-3,123,1",
+                        "-1,123,1",
+                        "1,123,1",
+                        "3,123,1"
+                ),
                 AttrahiteBlockRegistryScenario.blockLightingSampleDescriptions()
         );
-        assertEquals(15, AttrahiteBlockRegistryScenario.EXPECTED_SKY_LIGHT_LEVEL);
-        assertEquals(14, AttrahiteBlockRegistryScenario.EXPECTED_BLOCK_LIGHT_LEVEL);
-        assertTrue(AttrahiteBlockRegistryScenario.isExpectedSkyLight(15));
-        assertFalse(AttrahiteBlockRegistryScenario.isExpectedSkyLight(14));
-        assertFalse(AttrahiteBlockRegistryScenario.isExpectedSkyLight(0));
-        assertTrue(AttrahiteBlockRegistryScenario.isExpectedBlockLight(14));
-        assertFalse(AttrahiteBlockRegistryScenario.isExpectedBlockLight(15));
-        assertFalse(AttrahiteBlockRegistryScenario.isExpectedBlockLight(0));
+        assertEquals(
+                List.of(15, 15, 15, 15, 15, 15),
+                AttrahiteBlockRegistryScenario.EXPECTED_SKY_LIGHT_LEVELS
+        );
+        assertEquals(
+                List.of(14, 14, 6, 4, 10, 8),
+                AttrahiteBlockRegistryScenario.EXPECTED_BLOCK_LIGHT_LEVELS
+        );
+        assertTrue(AttrahiteBlockRegistryScenario.isExpectedSkyLight(0, 15));
+        assertFalse(AttrahiteBlockRegistryScenario.isExpectedSkyLight(0, 14));
+        assertTrue(AttrahiteBlockRegistryScenario.isExpectedBlockLight(2, 6));
+        assertFalse(AttrahiteBlockRegistryScenario.isExpectedBlockLight(2, 14));
     }
 
     @Test
@@ -266,6 +278,90 @@ final class AttrahiteBlockRegistryScenarioTest {
     }
 
     @Test
+    void lightingReadinessRequiresConsecutiveServerTicks() {
+        int readyServerTicks = 0;
+        for (int index = 0;
+                index < AttrahiteBlockRegistryScenario.REQUIRED_LIGHTING_READY_SERVER_TICKS;
+                index++) {
+            readyServerTicks = AttrahiteBlockRegistryScenario
+                    .nextLightingReadyServerTickCount(readyServerTicks, true);
+        }
+        assertEquals(
+                AttrahiteBlockRegistryScenario.REQUIRED_LIGHTING_READY_SERVER_TICKS,
+                readyServerTicks
+        );
+        assertEquals(
+                0,
+                AttrahiteBlockRegistryScenario.nextLightingReadyServerTickCount(
+                        readyServerTicks,
+                        false
+                )
+        );
+    }
+
+    @Test
+    void pendingGlobalLightingWorkDoesNotRejectExactStableSamples() {
+        AttrahiteBlockRegistryScenario.LightSnapshot server =
+                AttrahiteBlockRegistryScenario.LightSnapshot.expected(true);
+        AttrahiteBlockRegistryScenario.LightSnapshot client =
+                AttrahiteBlockRegistryScenario.LightSnapshot.expected(true);
+        AttrahiteBlockRegistryScenario.LightingEvidence evidence =
+                new AttrahiteBlockRegistryScenario.LightingEvidence(
+                        AttrahiteBlockRegistryScenario.REQUIRED_LIGHTING_READY_SERVER_TICKS,
+                        AttrahiteBlockRegistryScenario.REQUIRED_LIGHTING_READY_CLIENT_TICKS,
+                        server,
+                        client
+                );
+
+        assertTrue(evidence.exact());
+        assertEquals(
+                AttrahiteBlockRegistryScenario.LightingEvidence.expectedDescription(),
+                evidence.assertionActual()
+        );
+    }
+
+    @Test
+    void clientSampleMismatchResetsTheConsecutiveCounter() {
+        AttrahiteBlockRegistryScenario.LightSnapshot server =
+                AttrahiteBlockRegistryScenario.LightSnapshot.expected(false);
+        List<Integer> mismatchedBlock = new ArrayList<>(
+                AttrahiteBlockRegistryScenario.EXPECTED_BLOCK_LIGHT_LEVELS
+        );
+        mismatchedBlock.set(5, 7);
+        AttrahiteBlockRegistryScenario.LightSnapshot client =
+                new AttrahiteBlockRegistryScenario.LightSnapshot(
+                        true,
+                        false,
+                        AttrahiteBlockRegistryScenario.EXPECTED_SKY_LIGHT_LEVELS,
+                        mismatchedBlock
+                );
+
+        assertFalse(client.sameSamples(server));
+        assertEquals(
+                0,
+                AttrahiteBlockRegistryScenario.nextLightingReadyClientTickCount(19, false)
+        );
+    }
+
+    @Test
+    void timeoutDiagnosticIncludesCountersPendingFlagsAndLatestSamples() {
+        AttrahiteBlockRegistryScenario.LightingEvidence evidence =
+                new AttrahiteBlockRegistryScenario.LightingEvidence(
+                        7,
+                        3,
+                        AttrahiteBlockRegistryScenario.LightSnapshot.expected(true),
+                        AttrahiteBlockRegistryScenario.LightSnapshot.missing()
+                );
+
+        assertFalse(evidence.exact());
+        assertTrue(evidence.assertionActual().contains("stableServerTicks=7"));
+        assertTrue(evidence.assertionActual().contains("stableClientTicks=3"));
+        assertTrue(evidence.assertionActual().contains("server=observed=true;pending=true"));
+        assertTrue(evidence.assertionActual().contains("client=observed=false;pending=false"));
+        assertTrue(evidence.assertionActual().contains("3,123,1=8"));
+    }
+
+    @Test
     void packagedScenarioUsesNativeApisAndFullRestartPath() throws IOException {
         String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
         String dataConstants = new String(
@@ -281,10 +377,14 @@ final class AttrahiteBlockRegistryScenarioTest {
         List<String> saveCalls = methodCallsContaining("submitSave");
         List<String> disconnectCalls = methodCallsContaining("tickDisconnecting");
         List<String> restartCalls = methodCallsContaining("restartWorld");
-        List<String> lightingCalls = methodCallsContaining("isClientLightingReady");
+        List<String> lightingCalls = methodCallsContaining("captureLightSnapshot");
+        List<String> clientLightingCalls = methodCallsContaining(
+                "captureClientLightSnapshot"
+        );
         List<String> serverLightingCalls = methodCallsContaining(
                 "requestServerLightingChecks"
         );
+        List<String> serverTickCalls = methodCallsContaining("onEndServerTick");
 
         assertFalse(constants.contains("ru/feytox/etherology/"));
         assertFalse(constants.contains("executeCommand"));
@@ -299,11 +399,17 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertTrue(saveCalls.contains("saveAll"));
         assertTrue(disconnectCalls.contains("disconnect"));
         assertTrue(restartCalls.contains("start"));
-        assertTrue(lightingCalls.contains("hasUpdates"));
         assertTrue(lightingCalls.contains("getLightLevel"));
         assertFalse(lightingCalls.contains("doLightUpdates"));
+        assertTrue(clientLightingCalls.contains("hasUpdates"));
+        assertTrue(clientLightingCalls.contains("captureLightSnapshot"));
+        assertFalse(clientLightingCalls.contains("doLightUpdates"));
         assertTrue(serverLightingCalls.contains("checkBlock"));
         assertFalse(serverLightingCalls.contains("doLightUpdates"));
+        assertTrue(serverTickCalls.contains("getOverworld"));
+        assertTrue(serverTickCalls.contains("hasUpdates"));
+        assertTrue(serverTickCalls.contains("captureLightSnapshot"));
+        assertFalse(serverTickCalls.contains("doLightUpdates"));
         assertTrue(constants.contains("scheduleStop"));
         assertTrue(dataConstants.contains("generateLoot"));
         assertTrue(dataConstants.contains("getAdvancements"));

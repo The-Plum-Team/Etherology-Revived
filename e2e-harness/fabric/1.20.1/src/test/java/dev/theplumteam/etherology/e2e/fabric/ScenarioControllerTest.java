@@ -2,6 +2,7 @@ package dev.theplumteam.etherology.e2e.fabric;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.server.MinecraftServer;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -17,10 +18,12 @@ final class ScenarioControllerTest {
         controller.onEndClientTick(null);
         controller.onScreenInitialized(null, null, 960, 540);
         controller.onGameRenderCompleted();
+        controller.onEndServerTick(null);
 
         assertEquals(1, scenario.endClientTicks);
         assertEquals(1, scenario.initializedScreens);
         assertEquals(1, scenario.completedGameRenders);
+        assertEquals(1, scenario.endServerTicks);
         assertEquals(960, scenario.scaledWidth);
         assertEquals(540, scenario.scaledHeight);
         assertNull(scenario.client);
@@ -34,6 +37,7 @@ final class ScenarioControllerTest {
         private int endClientTicks;
         private int initializedScreens;
         private int completedGameRenders;
+        private int endServerTicks;
         private int scaledWidth;
         private int scaledHeight;
 
@@ -60,6 +64,11 @@ final class ScenarioControllerTest {
         @Override
         public void onGameRenderCompleted() {
             completedGameRenders++;
+        }
+
+        @Override
+        public void onEndServerTick(MinecraftServer server) {
+            endServerTicks++;
         }
     }
 }

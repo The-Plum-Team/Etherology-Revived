@@ -2,6 +2,7 @@ package dev.theplumteam.etherology.e2e.fabric;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.server.MinecraftServer;
 
 /**
  * Receives the client lifecycle observations needed by one packaged E2E scenario.
@@ -18,4 +19,7 @@ interface ClientScenario {
     );
 
     void onGameRenderCompleted();
+
+    default void onEndServerTick(MinecraftServer server) {
+    }
 }

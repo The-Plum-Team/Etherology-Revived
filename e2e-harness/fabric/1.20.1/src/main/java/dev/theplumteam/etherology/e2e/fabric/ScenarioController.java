@@ -2,8 +2,10 @@ package dev.theplumteam.etherology.e2e.fabric;
 
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.server.MinecraftServer;
 
 import java.util.Objects;
 
@@ -26,6 +28,7 @@ final class ScenarioController {
 
         registered = true;
         ClientTickEvents.END_CLIENT_TICK.register(this::onEndClientTick);
+        ServerTickEvents.END_SERVER_TICK.register(this::onEndServerTick);
         ScreenEvents.AFTER_INIT.register(this::onScreenInitialized);
     }
 
@@ -44,5 +47,9 @@ final class ScenarioController {
 
     void onGameRenderCompleted() {
         scenario.onGameRenderCompleted();
+    }
+
+    void onEndServerTick(MinecraftServer server) {
+        scenario.onEndServerTick(server);
     }
 }

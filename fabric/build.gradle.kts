@@ -395,19 +395,21 @@ if (minecraftVersion == "1.20.1") {
     val fabricProfileSnapshotV24 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v24.json")
     val fabricAttrahiteEvidenceArchive = rootProject.file(
-        "docs/evidence/fabric-1.20.1/attrahite-block-registry-v26",
+        "docs/evidence/fabric-1.20.1/attrahite-block-registry-v27",
     )
     val fabricAttrahiteEvidenceVerifier =
-        rootProject.file("scripts/e2e/fabric_attrahite_evidence_v26.py")
+        rootProject.file("scripts/e2e/fabric_attrahite_evidence_v27.py")
     val fabricAttrahiteEvidenceTest =
-        rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v26.py")
+        rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v27.py")
     val fabricProfileSnapshotV25 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v25.json")
     val fabricProfileSnapshotV26 =
         rootProject.file("scripts/e2e/fabric-1.20.1-profile-v26.json")
-    val fabricAttrahiteHarnessSize = 292255L
+    val fabricProfileSnapshotV27 =
+        rootProject.file("scripts/e2e/fabric-1.20.1-profile-v27.json")
+    val fabricAttrahiteHarnessSize = 296303L
     val fabricAttrahiteHarnessSha256 =
-        "6ba6379b35e00d7a1b27f0c328fa652bcda9af4cc79a763cca609a17e604df4b"
+        "710eb1846e50ace19aabe53b7494f100758a5db23fff9ff81e0722ff148e589c"
 
     val fabricMetalBlockRegistryEvidenceSafetyTest =
         tasks.register<Exec>("fabricMetalBlockRegistryEvidenceSafetyTest") {
@@ -522,14 +524,14 @@ if (minecraftVersion == "1.20.1") {
         tasks.register<Exec>("fabricAttrahiteEvidenceSafetyTest") {
             group = "verification"
             description =
-                "Runs the Fabric Attrahite block-registry v26 verifier safety tests."
+                "Runs the Fabric Attrahite block-registry v27 verifier safety tests."
             workingDir(rootProject.projectDir)
             commandLine(
                 "python3",
                 "-B",
                 "-m",
                 "unittest",
-                "scripts/e2e/test_fabric_attrahite_evidence_v26.py",
+                "scripts/e2e/test_fabric_attrahite_evidence_v27.py",
                 "scripts/e2e/test_client.py",
             )
             inputs.files(
@@ -544,7 +546,11 @@ if (minecraftVersion == "1.20.1") {
                 fabricProfileSnapshotV24,
                 fabricProfileSnapshotV25,
                 fabricProfileSnapshotV26,
+                fabricProfileSnapshotV27,
                 rootProject.file("scripts/e2e/fabric_attrahite_evidence_v25.py"),
+                rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v25.py"),
+                rootProject.file("scripts/e2e/fabric_attrahite_evidence_v26.py"),
+                rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v26.py"),
                 fabricEvidenceLibrary,
                 fabricEvidenceTestLibrary,
                 fabricActiveProfile,
@@ -570,7 +576,7 @@ if (minecraftVersion == "1.20.1") {
         tasks.register<Exec>("validateFabricAttrahiteEvidenceArchiveIntegrity") {
             group = "verification"
             description =
-                "Validates the immutable Fabric Attrahite block-registry v26 archive."
+                "Validates the immutable Fabric Attrahite block-registry v27 archive."
             dependsOn(fabricAttrahiteEvidenceSafetyTest)
             workingDir(rootProject.projectDir)
             commandLine(
@@ -764,7 +770,7 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyAttrahiteE2eHarnessArtifact") {
             group = "verification"
             description =
-                "Binds the Fabric Attrahite v26 run to its exact packaged harness bytes."
+                "Binds the Fabric Attrahite v27 run to its exact packaged harness bytes."
             dependsOn(verifyE2eHarnessArtifact)
             inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
 
@@ -848,10 +854,10 @@ if (minecraftVersion == "1.20.1") {
         )
     }
 
-    tasks.register("validateFabricAttrahiteV26Milestone") {
+    tasks.register("validateFabricAttrahiteV27Milestone") {
         group = "verification"
         description =
-            "Validates the pinned harness and frozen Fabric Attrahite v26 evidence."
+            "Validates the pinned harness and frozen Fabric Attrahite v27 evidence."
         dependsOn(
             e2eHarnessTestTask,
             verifyAttrahiteE2eHarnessArtifact,

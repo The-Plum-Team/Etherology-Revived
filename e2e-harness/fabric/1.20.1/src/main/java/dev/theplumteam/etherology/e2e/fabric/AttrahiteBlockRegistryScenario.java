@@ -90,9 +90,8 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             "attrahite-block-registry-reopened.png";
     static final long WORLD_SEED = 0x4154545241484954L;
     static final int REQUIRED_COMPLETED_RENDERS = 120;
+    static final int REQUIRED_LIGHTING_READY_SERVER_TICKS = 20;
     static final int REQUIRED_LIGHTING_READY_CLIENT_TICKS = 20;
-    static final int EXPECTED_SKY_LIGHT_LEVEL = 15;
-    static final int EXPECTED_BLOCK_LIGHT_LEVEL = 14;
     static final float PLACEMENT_YAW = 180.0F;
 
     private static final Logger LOGGER = LoggerFactory.getLogger("EtherologyE2EHarness");
@@ -117,12 +116,18 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             fixture("attrahite_brick_slab", 1),
             fixture("attrahite_brick_stairs", 3)
     );
-    private static final List<BlockPos> SKY_LIGHT_SAMPLE_POSITIONS =
-            createSkyLightSamplePositions();
-    private static final List<BlockPos> BLOCK_LIGHT_SAMPLE_POSITIONS = List.of(
+    private static final List<BlockPos> LIGHT_SAMPLE_POSITIONS = List.of(
             CAMERA_BLOCK_POS,
-            new BlockPos(0, ARENA_FLOOR_Y + 1, 0)
+            new BlockPos(0, ARENA_FLOOR_Y + 1, 0),
+            new BlockPos(-3, ARENA_FLOOR_Y + 3, 1),
+            new BlockPos(-1, ARENA_FLOOR_Y + 3, 1),
+            new BlockPos(1, ARENA_FLOOR_Y + 3, 1),
+            new BlockPos(3, ARENA_FLOOR_Y + 3, 1)
     );
+    static final List<Integer> EXPECTED_SKY_LIGHT_LEVELS =
+            List.of(15, 15, 15, 15, 15, 15);
+    static final List<Integer> EXPECTED_BLOCK_LIGHT_LEVELS =
+            List.of(14, 14, 6, 4, 10, 8);
     static final List<String> EXPECTED_LOOT_TABLE_IDS = List.of(
             "etherology:blocks/attrahite",
             "etherology:blocks/attrahite_brick_slab",
@@ -187,16 +192,25 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private DataProbe dataProbe;
     private DataProbe reopenedDataProbe;
     private ServerSetupResult serverSetupResult;
+    private ServerLightingResult currentServerLighting;
     private FixtureSnapshot savedSnapshot;
     private FixtureSnapshot reopenedSnapshot;
     private FixtureSnapshot currentServerSnapshot;
     private final Map<CapturePhase, CaptureEvidence> captureEvidence =
+            new LinkedHashMap<>();
+    private final Map<CapturePhase, LightingEvidence> lightingDiagnostics =
             new LinkedHashMap<>();
     private volatile String serverFailure = "";
     private volatile ServerSetupResult pendingServerSetupResult;
     private volatile SaveResult pendingSaveResult;
     private volatile ReopenedResult pendingReopenedResult;
     private volatile ScreenshotResult pendingScreenshotResult;
+    private volatile CapturePhase serverLightingBarrierPhase;
+    private volatile CapturePhase latestServerLightingPhase;
+    private volatile int lightingReadyServerTicks;
+    private volatile LightSnapshot latestServerLightSnapshot = LightSnapshot.missing();
+    private volatile ServerLightingResult initialServerLightingResult;
+    private volatile ServerLightingResult reopenedServerLightingResult;
 
     @Override
     public void onEndClientTick(MinecraftClient client) {
@@ -250,6 +264,40 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     @Override
+    public void onEndServerTick(MinecraftServer server) {
+        CapturePhase phase = serverLightingBarrierPhase;
+        if (phase == null || !server.isRunning() || server.isStopping()) return;
+
+        try {
+            ServerWorld world = server.getOverworld();
+            LightSnapshot snapshot = captureLightSnapshot(
+                    world,
+                    world.getChunkManager().getLightingProvider().hasUpdates()
+            );
+            latestServerLightSnapshot = snapshot;
+            lightingReadyServerTicks = nextLightingReadyServerTickCount(
+                    lightingReadyServerTicks,
+                    snapshot.hasExpectedSamples()
+            );
+            if (lightingReadyServerTicks < REQUIRED_LIGHTING_READY_SERVER_TICKS) return;
+
+            ServerLightingResult result = new ServerLightingResult(
+                    lightingReadyServerTicks,
+                    snapshot
+            );
+            if (phase == CapturePhase.INITIAL) {
+                initialServerLightingResult = result;
+            } else {
+                reopenedServerLightingResult = result;
+            }
+            serverLightingBarrierPhase = null;
+        } catch (RuntimeException exception) {
+            recordServerFailure(exception);
+            serverLightingBarrierPhase = null;
+        }
+    }
+
+    @Override
     public void onGameRenderCompleted() {
         if (stage != Stage.WAITING_FOR_RENDERS) return;
 
@@ -283,6 +331,12 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
                 : 0;
     }
 
+    static int nextLightingReadyServerTickCount(int readyServerTicks, boolean ready) {
+        return ready
+                ? Math.min(readyServerTicks + 1, REQUIRED_LIGHTING_READY_SERVER_TICKS)
+                : 0;
+    }
+
     static List<String> fixtureDescriptions() {
         return FIXTURES.stream()
                 .map(fixture -> fixture.id() + "@" + positionDescription(fixture.position()))
@@ -290,23 +344,23 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     static List<String> lightingSampleDescriptions() {
-        return SKY_LIGHT_SAMPLE_POSITIONS.stream()
+        return LIGHT_SAMPLE_POSITIONS.stream()
                 .map(AttrahiteBlockRegistryScenario::positionDescription)
                 .toList();
     }
 
     static List<String> blockLightingSampleDescriptions() {
-        return BLOCK_LIGHT_SAMPLE_POSITIONS.stream()
+        return LIGHT_SAMPLE_POSITIONS.stream()
                 .map(AttrahiteBlockRegistryScenario::positionDescription)
                 .toList();
     }
 
-    static boolean isExpectedSkyLight(int skyLightLevel) {
-        return skyLightLevel == EXPECTED_SKY_LIGHT_LEVEL;
+    static boolean isExpectedSkyLight(int sampleIndex, int skyLightLevel) {
+        return skyLightLevel == EXPECTED_SKY_LIGHT_LEVELS.get(sampleIndex);
     }
 
-    static boolean isExpectedBlockLight(int blockLightLevel) {
-        return blockLightLevel == EXPECTED_BLOCK_LIGHT_LEVEL;
+    static boolean isExpectedBlockLight(int sampleIndex, int blockLightLevel) {
+        return blockLightLevel == EXPECTED_BLOCK_LIGHT_LEVELS.get(sampleIndex);
     }
 
     private void tickWaitingForTitle(MinecraftClient client) {
@@ -397,9 +451,11 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             return;
         }
         ServerSetupResult result = pendingServerSetupResult;
-        if (result == null) return;
+        ServerLightingResult lighting = initialServerLightingResult;
+        if (result == null || lighting == null) return;
 
         serverSetupResult = result;
+        currentServerLighting = lighting;
         registryProbe = result.registryProbe();
         dataProbe = result.dataProbe();
         currentServerSnapshot = result.snapshot();
@@ -415,13 +471,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     private void tickWaitingForClientMirror(MinecraftClient client) {
-        boolean ready = isWorldViewReady(client)
+        boolean mirrorReady = isWorldViewReady(client)
                 && captureSnapshot(client.world).equals(currentServerSnapshot)
-                && isClientLightingReady(client);
-        lightingReadyClientTicks = nextLightingReadyClientTickCount(
-                lightingReadyClientTicks,
-                ready
-        );
+                && currentServerLighting != null;
+        updateClientLightingReadiness(client, mirrorReady);
         if (lightingReadyClientTicks < REQUIRED_LIGHTING_READY_CLIENT_TICKS) return;
 
         transition(Stage.WAITING_FOR_RENDERS);
@@ -432,10 +485,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             fail(client, "The integrated world vanished before the Attrahite capture");
             return;
         }
-        lightingReadyClientTicks = nextLightingReadyClientTickCount(
-                lightingReadyClientTicks,
-                isClientLightingReady(client)
-        );
+        boolean mirrorReady = isWorldViewReady(client)
+                && currentServerSnapshot != null
+                && currentServerSnapshot.equals(captureSnapshot(client.world));
+        updateClientLightingReadiness(client, mirrorReady);
         if (lightingReadyClientTicks < REQUIRED_LIGHTING_READY_CLIENT_TICKS) {
             completedRenders = 0;
         }
@@ -527,18 +580,22 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             restartInspectionSubmitted = true;
             server.execute(() -> {
                 try {
+                    ServerWorld world = server.getOverworld();
+                    requestServerLightingChecks(world);
                     pendingReopenedResult = new ReopenedResult(
                             RegistryProbe.capture(),
                             DataProbe.capture(server),
-                            captureSnapshot(server.getOverworld())
+                            captureSnapshot(world)
                     );
+                    beginServerLightingBarrier(CapturePhase.REOPENED);
                 } catch (RuntimeException exception) {
                     recordServerFailure(exception);
                 }
             });
         }
         ReopenedResult result = pendingReopenedResult;
-        if (result == null) return;
+        ServerLightingResult lighting = reopenedServerLightingResult;
+        if (result == null || lighting == null) return;
 
         reopenedSnapshot = result.snapshot();
         reopenedDataProbe = result.dataProbe();
@@ -556,6 +613,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
 
         capturePhase = CapturePhase.REOPENED;
         currentServerSnapshot = reopenedSnapshot;
+        currentServerLighting = lighting;
         completedRenders = 0;
         lightingReadyClientTicks = 0;
         transition(Stage.WAITING_FOR_CLIENT_MIRROR);
@@ -598,6 +656,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
                     world.getSeed(),
                     world.getRegistryKey().getValue().toString()
             );
+            beginServerLightingBarrier(CapturePhase.INITIAL);
         } catch (RuntimeException exception) {
             recordServerFailure(exception);
         }
@@ -837,55 +896,101 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     private boolean isClientLightingReady(MinecraftClient client) {
-        if (client.world.getChunkManager().getLightingProvider().hasUpdates()) return false;
+        ServerLightingResult serverLighting = currentServerLighting;
+        if (serverLighting == null || client.world == null) return false;
 
-        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
-            if (!isExpectedSkyLight(client.world.getLightLevel(LightType.SKY, position))) {
-                return false;
-            }
-        }
-        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
-            if (!isExpectedBlockLight(client.world.getLightLevel(LightType.BLOCK, position))) {
-                return false;
-            }
-        }
-        return true;
+        LightSnapshot clientLighting = captureClientLightSnapshot(client);
+        return serverLighting.snapshot().hasExpectedSamples()
+                && clientLighting.sameSamples(serverLighting.snapshot());
     }
 
     private LightingEvidence captureLightingEvidence(MinecraftClient client) {
-        boolean pendingUpdates = client.world.getChunkManager()
-                .getLightingProvider()
-                .hasUpdates();
-        List<LightSample> skySamples = new ArrayList<>();
-        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
-            skySamples.add(new LightSample(
-                    position,
-                    client.world.getLightLevel(LightType.SKY, position)
-            ));
-        }
-        List<LightSample> blockSamples = new ArrayList<>();
-        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
-            blockSamples.add(new LightSample(
-                    position,
-                    client.world.getLightLevel(LightType.BLOCK, position)
-            ));
-        }
-        return new LightingEvidence(
+        ServerLightingResult serverLighting = currentServerLighting;
+        LightSnapshot serverSnapshot = serverLighting == null
+                ? LightSnapshot.missing()
+                : serverLighting.snapshot();
+        int stableServerTicks = serverLighting == null
+                ? 0
+                : serverLighting.stableTicks();
+        LightSnapshot clientSnapshot = client.world == null
+                ? LightSnapshot.missing()
+                : captureClientLightSnapshot(client);
+        LightingEvidence evidence = new LightingEvidence(
+                stableServerTicks,
                 lightingReadyClientTicks,
-                pendingUpdates,
-                List.copyOf(skySamples),
-                List.copyOf(blockSamples)
+                serverSnapshot,
+                clientSnapshot
         );
+        lightingDiagnostics.put(capturePhase, evidence);
+        return evidence;
     }
 
     private void requestServerLightingChecks(ServerWorld world) {
-        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
-            world.getChunkManager().getLightingProvider().checkBlock(position);
-        }
-        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
+        for (BlockPos position : LIGHT_SAMPLE_POSITIONS) {
             world.getChunkManager().getLightingProvider().checkBlock(position.down());
             world.getChunkManager().getLightingProvider().checkBlock(position);
         }
+    }
+
+    private void beginServerLightingBarrier(CapturePhase phase) {
+        lightingReadyServerTicks = 0;
+        latestServerLightSnapshot = LightSnapshot.missing();
+        latestServerLightingPhase = phase;
+        serverLightingBarrierPhase = phase;
+    }
+
+    private void updateClientLightingReadiness(
+            MinecraftClient client,
+            boolean baseReady
+    ) {
+        ServerLightingResult serverLighting = currentServerLighting;
+        LightSnapshot serverSnapshot = serverLighting == null
+                ? LightSnapshot.missing()
+                : serverLighting.snapshot();
+        LightSnapshot clientSnapshot = client.world == null
+                ? LightSnapshot.missing()
+                : captureClientLightSnapshot(client);
+        boolean samplesMatch = baseReady
+                && serverSnapshot.hasExpectedSamples()
+                && clientSnapshot.sameSamples(serverSnapshot);
+        lightingReadyClientTicks = nextLightingReadyClientTickCount(
+                lightingReadyClientTicks,
+                samplesMatch
+        );
+        lightingDiagnostics.put(
+                capturePhase,
+                new LightingEvidence(
+                        serverLighting == null ? 0 : serverLighting.stableTicks(),
+                        lightingReadyClientTicks,
+                        serverSnapshot,
+                        clientSnapshot
+                )
+        );
+    }
+
+    private LightSnapshot captureClientLightSnapshot(MinecraftClient client) {
+        return captureLightSnapshot(
+                client.world,
+                client.world.getChunkManager().getLightingProvider().hasUpdates()
+        );
+    }
+
+    private static LightSnapshot captureLightSnapshot(
+            WorldView world,
+            boolean pendingUpdates
+    ) {
+        List<Integer> skyLevels = new ArrayList<>();
+        List<Integer> blockLevels = new ArrayList<>();
+        for (BlockPos position : LIGHT_SAMPLE_POSITIONS) {
+            skyLevels.add(world.getLightLevel(LightType.SKY, position));
+            blockLevels.add(world.getLightLevel(LightType.BLOCK, position));
+        }
+        return new LightSnapshot(
+                true,
+                pendingUpdates,
+                List.copyOf(skyLevels),
+                List.copyOf(blockLevels)
+        );
     }
 
     private boolean hasExpectedCameraPose(MinecraftClient client) {
@@ -1162,7 +1267,9 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         passed &= addAssertion(assertions, "capture_lighting_ready:" + phase.id(),
                 capture != null && capture.lighting().exact(),
                 LightingEvidence.expectedDescription(),
-                capture == null ? "missing" : capture.lighting().description());
+                capture == null
+                        ? lightingDiagnosticFor(phase).assertionActual()
+                        : capture.lighting().assertionActual());
         passed &= addAssertion(assertions, "capture_camera_exact:" + phase.id(),
                 capture != null && capture.cameraExact(), expectedCameraPoseDescription(),
                 capture == null ? "missing" : capture.cameraPose());
@@ -1258,7 +1365,57 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         attrahite.addProperty("persistence_exact", persistenceExact);
         attrahite.addProperty("reopened_data_exact", reopenedDataExact);
         attrahite.addProperty("required_stable_renders", REQUIRED_COMPLETED_RENDERS);
+        JsonObject lighting = new JsonObject();
+        for (CapturePhase phase : CapturePhase.values()) {
+            lighting.add(phase.id(), lightingReport(lightingDiagnosticFor(phase)));
+        }
+        attrahite.add("lighting", lighting);
         return attrahite;
+    }
+
+    private LightingEvidence lightingDiagnosticFor(CapturePhase phase) {
+        LightingEvidence evidence = lightingDiagnostics.get(phase);
+        if (evidence != null) return evidence;
+
+        CaptureEvidence capture = captureEvidence.get(phase);
+        if (capture != null) return capture.lighting();
+
+        if (latestServerLightingPhase == phase) {
+            return new LightingEvidence(
+                    lightingReadyServerTicks,
+                    0,
+                    latestServerLightSnapshot,
+                    LightSnapshot.missing()
+            );
+        }
+        return LightingEvidence.missing();
+    }
+
+    private static JsonObject lightingReport(LightingEvidence evidence) {
+        JsonObject report = new JsonObject();
+        report.addProperty("server_stable_ticks", evidence.stableServerTicks());
+        report.addProperty("client_stable_ticks", evidence.stableClientTicks());
+        report.addProperty("server_observed", evidence.server().observed());
+        report.addProperty("client_observed", evidence.client().observed());
+        report.addProperty("server_pending", evidence.server().pendingUpdates());
+        report.addProperty("client_pending", evidence.client().pendingUpdates());
+        report.add("server_sky", lightLevelsReport(evidence.server().skyLevels()));
+        report.add("server_block", lightLevelsReport(evidence.server().blockLevels()));
+        report.add("client_sky", lightLevelsReport(evidence.client().skyLevels()));
+        report.add("client_block", lightLevelsReport(evidence.client().blockLevels()));
+        return report;
+    }
+
+    private static JsonObject lightLevelsReport(List<Integer> levels) {
+        JsonObject report = new JsonObject();
+        for (int index = 0; index < Math.min(levels.size(), LIGHT_SAMPLE_POSITIONS.size());
+                index++) {
+            report.addProperty(
+                    positionDescription(LIGHT_SAMPLE_POSITIONS.get(index)),
+                    levels.get(index)
+            );
+        }
+        return report;
     }
 
     private void transition(Stage nextStage) {
@@ -1483,15 +1640,6 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
 
     private static String expectedRawPlainLoot() {
         return "1=none,4096=none,4224=none,4640=etherology:enriched_attrahitex1,7168=none";
-    }
-
-    private static List<BlockPos> createSkyLightSamplePositions() {
-        List<BlockPos> positions = new ArrayList<>();
-        positions.add(CAMERA_BLOCK_POS);
-        for (BlockFixture fixture : FIXTURES) {
-            positions.add(fixture.position().up());
-        }
-        return List.copyOf(positions);
     }
 
     private static Map<String, String> expectedRawFortuneLoot() {
@@ -2190,57 +2338,114 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         }
     }
 
-    private record LightSample(BlockPos position, int lightLevel) {
-
-        private String description() {
-            return positionDescription(position) + "=" + lightLevel;
-        }
-    }
-
-    private record LightingEvidence(
-            int stableClientTicks,
+    record LightSnapshot(
+            boolean observed,
             boolean pendingUpdates,
-            List<LightSample> skySamples,
-            List<LightSample> blockSamples
+            List<Integer> skyLevels,
+            List<Integer> blockLevels
     ) {
 
-        private boolean exact() {
-            if (stableClientTicks != REQUIRED_LIGHTING_READY_CLIENT_TICKS
-                    || pendingUpdates
-                    || skySamples.size() != SKY_LIGHT_SAMPLE_POSITIONS.size()
-                    || blockSamples.size() != BLOCK_LIGHT_SAMPLE_POSITIONS.size()) {
+        LightSnapshot {
+            skyLevels = List.copyOf(skyLevels);
+            blockLevels = List.copyOf(blockLevels);
+        }
+
+        boolean hasExpectedSamples() {
+            if (!observed
+                    || skyLevels.size() != LIGHT_SAMPLE_POSITIONS.size()
+                    || blockLevels.size() != LIGHT_SAMPLE_POSITIONS.size()) {
                 return false;
             }
-            for (LightSample sample : skySamples) {
-                if (!isExpectedSkyLight(sample.lightLevel())) return false;
-            }
-            for (LightSample sample : blockSamples) {
-                if (!isExpectedBlockLight(sample.lightLevel())) return false;
+            for (int index = 0; index < LIGHT_SAMPLE_POSITIONS.size(); index++) {
+                if (!isExpectedSkyLight(index, skyLevels.get(index))
+                        || !isExpectedBlockLight(index, blockLevels.get(index))) {
+                    return false;
+                }
             }
             return true;
         }
 
-        private String description() {
-            return "stableClientTicks=" + stableClientTicks
-                    + ";pending=" + pendingUpdates
-                    + ";sky=" + skySamples.stream()
-                    .map(LightSample::description)
-                    .collect(Collectors.joining(",", "[", "]"))
-                    + ";block=" + blockSamples.stream()
-                    .map(LightSample::description)
-                    .collect(Collectors.joining(",", "[", "]"));
+        boolean sameSamples(LightSnapshot other) {
+            return observed
+                    && other.observed
+                    && skyLevels.equals(other.skyLevels)
+                    && blockLevels.equals(other.blockLevels);
         }
 
-        private static String expectedDescription() {
-            return "stableClientTicks=" + REQUIRED_LIGHTING_READY_CLIENT_TICKS
-                    + ";pending=false;sky=" + SKY_LIGHT_SAMPLE_POSITIONS.stream()
-                    .map(position -> positionDescription(position)
-                            + "=" + EXPECTED_SKY_LIGHT_LEVEL)
-                    .collect(Collectors.joining(",", "[", "]"))
-                    + ";block=" + BLOCK_LIGHT_SAMPLE_POSITIONS.stream()
-                    .map(position -> positionDescription(position)
-                            + "=" + EXPECTED_BLOCK_LIGHT_LEVEL)
-                    .collect(Collectors.joining(",", "[", "]"));
+        String description() {
+            return "observed=" + observed
+                    + ";pending=" + pendingUpdates
+                    + ";sky=" + sampleDescription(skyLevels)
+                    + ";block=" + sampleDescription(blockLevels);
+        }
+
+        static LightSnapshot missing() {
+            return new LightSnapshot(false, false, List.of(), List.of());
+        }
+
+        static LightSnapshot expected(boolean pendingUpdates) {
+            return new LightSnapshot(
+                    true,
+                    pendingUpdates,
+                    EXPECTED_SKY_LIGHT_LEVELS,
+                    EXPECTED_BLOCK_LIGHT_LEVELS
+            );
+        }
+
+        private static String sampleDescription(List<Integer> levels) {
+            List<String> entries = new ArrayList<>();
+            for (int index = 0;
+                    index < Math.min(levels.size(), LIGHT_SAMPLE_POSITIONS.size());
+                    index++) {
+                entries.add(positionDescription(LIGHT_SAMPLE_POSITIONS.get(index))
+                        + "=" + levels.get(index));
+            }
+            return "[" + String.join(",", entries) + "]";
+        }
+    }
+
+    record LightingEvidence(
+            int stableServerTicks,
+            int stableClientTicks,
+            LightSnapshot server,
+            LightSnapshot client
+    ) {
+
+        boolean exact() {
+            return stableServerTicks == REQUIRED_LIGHTING_READY_SERVER_TICKS
+                    && stableClientTicks == REQUIRED_LIGHTING_READY_CLIENT_TICKS
+                    && server.hasExpectedSamples()
+                    && client.sameSamples(server);
+        }
+
+        String assertionActual() {
+            return exact() ? expectedDescription() : diagnosticDescription();
+        }
+
+        String diagnosticDescription() {
+            return "stableServerTicks=" + stableServerTicks
+                    + ";stableClientTicks=" + stableClientTicks
+                    + ";server=" + server.description()
+                    + ";client=" + client.description();
+        }
+
+        static String expectedDescription() {
+            LightSnapshot expected = LightSnapshot.expected(false);
+            return "stableServerTicks=" + REQUIRED_LIGHTING_READY_SERVER_TICKS
+                    + ";stableClientTicks=" + REQUIRED_LIGHTING_READY_CLIENT_TICKS
+                    + ";serverSky=" + LightSnapshot.sampleDescription(expected.skyLevels())
+                    + ";serverBlock=" + LightSnapshot.sampleDescription(expected.blockLevels())
+                    + ";clientSky=" + LightSnapshot.sampleDescription(expected.skyLevels())
+                    + ";clientBlock=" + LightSnapshot.sampleDescription(expected.blockLevels());
+        }
+
+        static LightingEvidence missing() {
+            return new LightingEvidence(
+                    0,
+                    0,
+                    LightSnapshot.missing(),
+                    LightSnapshot.missing()
+            );
         }
     }
 
@@ -2266,6 +2471,9 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             long worldSeed,
             String dimensionId
     ) {
+    }
+
+    private record ServerLightingResult(int stableTicks, LightSnapshot snapshot) {
     }
 
     private record SaveResult(boolean saved, FixtureSnapshot snapshot) {

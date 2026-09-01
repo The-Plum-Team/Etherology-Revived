@@ -51,10 +51,17 @@ public class DecoBlocks {
     public static final Block PEACH_LEAVES = register("peach_leaves", createLeavesBlock(BlockSoundGroup.AZALEA_LEAVES)).withItem(false);
 
     // slitherite
-    public static final Block SLITHERITE = registerSimple("slitherite", copy(STONE)).withItem();
-    public static final Block SLITHERITE_STAIRS = registerStairs("slitherite_stairs", SLITHERITE).withItem();
-    public static final Block SLITHERITE_SLAB = register("slitherite_slab", new SlabBlock(copy(STONE_STAIRS))).withItem();
-    public static final Block SLITHERITE_WALL = register("slitherite_wall", new WallBlock(copy(STONE_BRICK_WALL))).withItem();
+    public static final Block SLITHERITE = SharedSlitheriteBlocks.SLITHERITE.get();
+    public static final Block SLITHERITE_STAIRS = SharedSlitheriteBlocks.SLITHERITE_STAIRS.get();
+    public static final Block SLITHERITE_SLAB = SharedSlitheriteBlocks.SLITHERITE_SLAB.get();
+    public static final Block SLITHERITE_WALL = SharedSlitheriteBlocks.SLITHERITE_WALL.get();
+
+    static {
+        AutoBlockLootTable.markAsAuto(SLITHERITE, null);
+        AutoBlockLootTable.markAsAuto(SLITHERITE_STAIRS, null);
+        AutoBlockLootTable.markAsAuto(SLITHERITE_SLAB, null);
+        AutoBlockLootTable.markAsAuto(SLITHERITE_WALL, null);
+    }
 
     // polished slitherite
     public static final Block POLISHED_SLITHERITE = registerSimple("polished_slitherite", copy(SMOOTH_STONE)).withItem();

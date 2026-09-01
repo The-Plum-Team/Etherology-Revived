@@ -18,6 +18,7 @@ import ru.feytox.etherology.registry.block.SharedMetalBlocks;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.feytox.etherology.registry.block.EBlockFamilies.PEACH;
@@ -36,10 +37,38 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
         addBlocks(BlockTags.STONE_BRICKS, DecoBlocks.POLISHED_SLITHERITE_BRICKS, DecoBlocks.CHISELED_POLISHED_SLITHERITE_BRICKS, DecoBlocks.CRACKED_POLISHED_SLITHERITE_BRICKS);
 
         // stone families
-        addAllOptionalBlocks(BlockTags.PICKAXE_MINEABLE, STONE_FAMILIES);
-        addVariant(BlockTags.SLABS, BlockFamily.Variant.SLAB, STONE_FAMILIES);
-        addVariant(BlockTags.STAIRS, BlockFamily.Variant.STAIRS, STONE_FAMILIES);
-        addVariant(BlockTags.WALLS, BlockFamily.Variant.WALL, STONE_FAMILIES);
+        Set<Block> sharedStoneFamilyBlocks = Set.of(
+                DecoBlocks.ATTRAHITE_BRICKS,
+                DecoBlocks.ATTRAHITE_BRICK_SLAB,
+                DecoBlocks.ATTRAHITE_BRICK_STAIRS,
+                DecoBlocks.SLITHERITE,
+                DecoBlocks.SLITHERITE_SLAB,
+                DecoBlocks.SLITHERITE_STAIRS,
+                DecoBlocks.SLITHERITE_WALL
+        );
+        addAllBlocks(
+                BlockTags.PICKAXE_MINEABLE,
+                sharedStoneFamilyBlocks,
+                STONE_FAMILIES
+        );
+        addVariant(
+                BlockTags.SLABS,
+                BlockFamily.Variant.SLAB,
+                Set.of(DecoBlocks.ATTRAHITE_BRICK_SLAB, DecoBlocks.SLITHERITE_SLAB),
+                STONE_FAMILIES
+        );
+        addVariant(
+                BlockTags.STAIRS,
+                BlockFamily.Variant.STAIRS,
+                Set.of(DecoBlocks.ATTRAHITE_BRICK_STAIRS, DecoBlocks.SLITHERITE_STAIRS),
+                STONE_FAMILIES
+        );
+        addVariant(
+                BlockTags.WALLS,
+                BlockFamily.Variant.WALL,
+                Set.of(DecoBlocks.SLITHERITE_WALL),
+                STONE_FAMILIES
+        );
         addVariant(BlockTags.STONE_PRESSURE_PLATES, BlockFamily.Variant.PRESSURE_PLATE, STONE_FAMILIES);
 
         addBlocks(EBlockTags.PEACH_LOGS, DecoBlocks.PEACH_LOG, DecoBlocks.PEACH_WOOD, DecoBlocks.STRIPPED_PEACH_LOG, DecoBlocks.STRIPPED_PEACH_WOOD);
@@ -127,13 +156,21 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
         addBlocks(tagKey, blocksArray);
     }
 
-    private void addAllOptionalBlocks(TagKey<Block> tagKey, BlockFamily... blockFamilies) {
-        List<Block> allBlocks = new ArrayList<>();
+    private void addAllBlocks(
+            TagKey<Block> tagKey,
+            Set<Block> requiredBlocks,
+            BlockFamily... blockFamilies
+    ) {
+        val builder = getOrCreateTagBuilder(tagKey);
         for (BlockFamily blockFamily : blockFamilies) {
-            allBlocks.addAll(EBlockFamilies.getBlocks(blockFamily));
+            for (Block block : EBlockFamilies.getBlocks(blockFamily)) {
+                if (requiredBlocks.contains(block)) {
+                    builder.add(block);
+                } else {
+                    Registries.BLOCK.getKey(block).ifPresent(builder::addOptional);
+                }
+            }
         }
-        Block[] blocksArray = allBlocks.toArray(new Block[0]);
-        addOptionalBlocks(tagKey, blocksArray);
     }
 
     private void addVariant(TagKey<Block> tagKey, BlockFamily.Variant variant, BlockFamily... blockFamilies) {
@@ -145,5 +182,26 @@ public class BlockTagGeneration extends FabricTagProvider.BlockTagProvider {
         }
         Block[] blocksArray = blocks.toArray(new Block[0]);
         addBlocks(tagKey, blocksArray);
+    }
+
+    private void addVariant(
+            TagKey<Block> tagKey,
+            BlockFamily.Variant variant,
+            Set<Block> requiredBlocks,
+            BlockFamily... blockFamilies
+    ) {
+        val builder = getOrCreateTagBuilder(tagKey);
+        for (BlockFamily blockFamily : blockFamilies) {
+            if (!blockFamily.getVariants().containsKey(variant)) {
+                continue;
+            }
+
+            Block block = blockFamily.getVariant(variant);
+            if (requiredBlocks.contains(block)) {
+                builder.add(block);
+            } else {
+                Registries.BLOCK.getKey(block).ifPresent(builder::addOptional);
+            }
+        }
     }
 }

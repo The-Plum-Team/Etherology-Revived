@@ -2,10 +2,7 @@
   "replace": false,
   "values": [
     "etherology:attrahite_brick_stairs",
-    {
-      "id": "etherology:slitherite_stairs",
-      "required": false
-    },
+    "etherology:slitherite_stairs",
     {
       "id": "etherology:polished_slitherite_stairs",
       "required": false

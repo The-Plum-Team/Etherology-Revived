@@ -2,10 +2,7 @@
   "replace": false,
   "values": [
     "etherology:attrahite_brick_slab",
-    {
-      "id": "etherology:slitherite_slab",
-      "required": false
-    },
+    "etherology:slitherite_slab",
     {
       "id": "etherology:polished_slitherite_slab",
       "required": false

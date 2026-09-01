@@ -8,22 +8,10 @@
       "id": "etherology:polished_slitherite",
       "required": false
     },
-    {
-      "id": "etherology:slitherite",
-      "required": false
-    },
-    {
-      "id": "etherology:slitherite_slab",
-      "required": false
-    },
-    {
-      "id": "etherology:slitherite_stairs",
-      "required": false
-    },
-    {
-      "id": "etherology:slitherite_wall",
-      "required": false
-    },
+    "etherology:slitherite",
+    "etherology:slitherite_slab",
+    "etherology:slitherite_stairs",
+    "etherology:slitherite_wall",
     {
       "id": "etherology:chiseled_polished_slitherite",
       "required": false

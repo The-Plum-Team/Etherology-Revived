@@ -244,10 +244,14 @@ final class SharedSoundsBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/block/SharedAttrahiteBlocks"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/block/SharedSlitheriteBlocks"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedMetalBlockItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedForestLanternBlockItems"
                                 + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedAttrahiteBlockItems"
+                                + "#register()V",
+                        "ru/feytox/etherology/registry/item/SharedSlitheriteBlockItems"
                                 + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V",

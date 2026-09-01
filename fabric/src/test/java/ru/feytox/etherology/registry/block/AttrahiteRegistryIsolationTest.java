@@ -66,6 +66,12 @@ final class AttrahiteRegistryIsolationTest {
             "attrahite_brick_slab",
             "attrahite_brick_stairs"
     );
+    private static final List<String> SLITHERITE_AUTO_LOOT_FIELDS = List.of(
+            "SLITHERITE",
+            "SLITHERITE_STAIRS",
+            "SLITHERITE_SLAB",
+            "SLITHERITE_WALL"
+    );
 
     @Test
     void decorativeFieldsAliasSharedBlocksBeforeMarkingOnlyGenericDrops()
@@ -106,6 +112,7 @@ final class AttrahiteRegistryIsolationTest {
                 trace.autoLootFields()
         );
         assertFalse(trace.autoLootFields().contains("ATTRAHITE"));
+        assertEquals(SLITHERITE_AUTO_LOOT_FIELDS, trace.slitheriteAutoLootFields());
         assertEquals(Set.of(), trace.legacyIds());
         for (String autoLootField : trace.autoLootFields()) {
             assertTrue(
@@ -200,6 +207,7 @@ final class AttrahiteRegistryIsolationTest {
         Map<String, FieldDefinition> fields = new LinkedHashMap<>();
         List<String> aliasEvents = new ArrayList<>();
         List<String> autoLootFields = new ArrayList<>();
+        List<String> slitheriteAutoLootFields = new ArrayList<>();
         Set<String> legacyIds = new LinkedHashSet<>();
         Map<String, Integer> aliasWriteIndexes = new LinkedHashMap<>();
         Map<String, Integer> autoLootIndexes = new LinkedHashMap<>();
@@ -233,6 +241,7 @@ final class AttrahiteRegistryIsolationTest {
                     private int instructionIndex;
                     private String pendingAlias;
                     private String pendingAutoLootField;
+                    private String pendingSlitheriteAutoLootField;
 
                     @Override
                     public void visitLdcInsn(Object value) {
@@ -264,9 +273,17 @@ final class AttrahiteRegistryIsolationTest {
                             pendingAlias = null;
                         }
                         if (opcode == Opcodes.GETSTATIC
-                                && owner.equals(DECO_BLOCKS_OWNER)
-                                && FIELDS.contains(name)) {
-                            pendingAutoLootField = name;
+                                && owner.equals(DECO_BLOCKS_OWNER)) {
+                            if (FIELDS.contains(name)) {
+                                pendingAutoLootField = name;
+                                pendingSlitheriteAutoLootField = null;
+                            } else if (SLITHERITE_AUTO_LOOT_FIELDS.contains(name)) {
+                                pendingAutoLootField = null;
+                                pendingSlitheriteAutoLootField = name;
+                            } else {
+                                pendingAutoLootField = null;
+                                pendingSlitheriteAutoLootField = null;
+                            }
                         }
                     }
 
@@ -286,10 +303,17 @@ final class AttrahiteRegistryIsolationTest {
                         }
                         if (owner.equals(AUTO_BLOCK_LOOT_TABLE)
                                 && name.equals("markAsAuto")) {
-                            assertNotNull(pendingAutoLootField);
-                            autoLootFields.add(pendingAutoLootField);
-                            autoLootIndexes.put(pendingAutoLootField, instructionIndex);
+                            if (pendingAutoLootField != null) {
+                                autoLootFields.add(pendingAutoLootField);
+                                autoLootIndexes.put(pendingAutoLootField, instructionIndex);
+                            } else {
+                                assertNotNull(pendingSlitheriteAutoLootField);
+                                slitheriteAutoLootFields.add(
+                                        pendingSlitheriteAutoLootField
+                                );
+                            }
                             pendingAutoLootField = null;
+                            pendingSlitheriteAutoLootField = null;
                         }
                     }
 
@@ -309,6 +333,7 @@ final class AttrahiteRegistryIsolationTest {
                 fields,
                 aliasEvents,
                 autoLootFields,
+                slitheriteAutoLootFields,
                 legacyIds,
                 aliasWriteIndexes,
                 autoLootIndexes
@@ -579,6 +604,7 @@ final class AttrahiteRegistryIsolationTest {
             Map<String, FieldDefinition> fields,
             List<String> aliasEvents,
             List<String> autoLootFields,
+            List<String> slitheriteAutoLootFields,
             Set<String> legacyIds,
             Map<String, Integer> aliasWriteIndexes,
             Map<String, Integer> autoLootIndexes

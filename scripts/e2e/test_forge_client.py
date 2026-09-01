@@ -189,7 +189,7 @@ class ConfigurationTests(unittest.TestCase):
         descriptor = forge_client.profile_descriptor(configuration)
         manifest_provenance = descriptor["profile_manifest"]
 
-        self.assertEqual("etherology-e2e-forge-1.20.1-v15", profile["id"])
+        self.assertEqual("etherology-e2e-forge-1.20.1-v16", profile["id"])
         self.assertNotEqual(
             "etherology-e2e-fabric-1.20.1-v23", profile["runtime_directory"]
         )
@@ -211,10 +211,14 @@ class ConfigurationTests(unittest.TestCase):
             manifest_provenance["sha256"],
         )
 
-    def test_active_profile_exactly_matches_v15_snapshot_and_preserves_prior_versions(
+    def test_active_profile_exactly_matches_v16_snapshot_and_preserves_prior_versions(
         self,
     ) -> None:
         active_profile = forge_client.REPOSITORY_ROOT / "scripts/e2e/forge-1.20.1-profile.json"
+        v16_snapshot = (
+            forge_client.REPOSITORY_ROOT
+            / "scripts/e2e/forge-1.20.1-profile-v16.json"
+        )
         v15_snapshot = (
             forge_client.REPOSITORY_ROOT
             / "scripts/e2e/forge-1.20.1-profile-v15.json"
@@ -236,11 +240,17 @@ class ConfigurationTests(unittest.TestCase):
             / "scripts/e2e/forge-1.20.1-profile-v11.json"
         )
 
-        self.assertEqual(active_profile.read_bytes(), v15_snapshot.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v16_snapshot.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v15_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v14_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v13_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v12_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v11_snapshot.read_bytes())
+        self.assertEqual(3702, v16_snapshot.stat().st_size)
+        self.assertEqual(
+            "05162c31a5effae1efc3b1191a4dadb7f0ba5333fa993508bb1ee3ffecde7535",
+            forge_client.sha256_file(v16_snapshot),
+        )
         self.assertEqual(3702, v15_snapshot.stat().st_size)
         self.assertEqual(
             "7744609bfdc40ca69e86fb4e2d6bb4e2755d9072097acde54b7d5dd9c0537e71",
@@ -540,7 +550,7 @@ class RuntimeIsolationTests(unittest.TestCase):
 
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-forge-1.20.1-v15\n"
+                    "profile_id=etherology-e2e-forge-1.20.1-v16\n"
                     "scenario=attrahite-block-registry\n"
                     f"controller_pid={os.getpid()}\n"
                 ),
@@ -614,7 +624,7 @@ class RuntimeIsolationTests(unittest.TestCase):
     def test_process_state_with_wrong_manager_is_refused(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             state_root = Path(temporary_directory).resolve()
-            profile_id = "etherology-e2e-forge-1.20.1-v15"
+            profile_id = "etherology-e2e-forge-1.20.1-v16"
             runtime = state_root / "runtimes" / profile_id
             game = runtime / "game"
             game.mkdir(parents=True)

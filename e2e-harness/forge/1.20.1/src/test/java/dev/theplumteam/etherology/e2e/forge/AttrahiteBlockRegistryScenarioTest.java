@@ -135,6 +135,7 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertEquals(
                 List.of(
                         "0,121,-8",
+                        "0,121,0",
                         "-3,123,1",
                         "-1,123,1",
                         "1,123,1",
@@ -143,8 +144,8 @@ final class AttrahiteBlockRegistryScenarioTest {
                 AttrahiteBlockRegistryScenario.lightingSampleDescriptions()
         );
         assertEquals(
-                List.of(6, 4, 10, 8),
-                AttrahiteBlockRegistryScenario.EXPECTED_FIXTURE_BLOCK_LIGHT_LEVELS
+                List.of(14, 14, 10, 10, 10, 8),
+                AttrahiteBlockRegistryScenario.EXPECTED_BLOCK_LIGHT_LEVELS
         );
         assertEquals(
                 "etherology-e2e-attrahite-block-registry-world",

@@ -1,9 +1,12 @@
 package dev.theplumteam.etherology.e2e.forge;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -32,7 +35,7 @@ class ForgeEvidenceLayoutTest {
                         .resolve(ScenarioSelection.ETHEREAL_STORAGE),
                 layout.scenarioRoot()
         );
-        assertEquals("etherology-e2e-forge-1.20.1-v14", layout.profileId());
+        assertEquals("etherology-e2e-forge-1.20.1-v16", layout.profileId());
         assertEquals(4096L, layout.profileManifestSize());
         assertEquals(PROFILE_MANIFEST_SHA256, layout.profileManifestSha256());
 
@@ -71,6 +74,20 @@ class ForgeEvidenceLayoutTest {
     }
 
     @Test
+    void packagedProfileIdMatchesActiveProfileManifest() throws IOException {
+        Path manifestPath = Path.of(
+                System.getProperty("etherology.e2e.forge.activeProfile")
+        );
+        try (Reader reader = Files.newBufferedReader(manifestPath)) {
+            JsonObject manifest = JsonParser.parseReader(reader).getAsJsonObject();
+            assertEquals(
+                    manifest.getAsJsonObject("profile").get("id").getAsString(),
+                    ForgeEvidenceLayout.PROFILE_ID
+            );
+        }
+    }
+
+    @Test
     void rejectsAProfileManagedByTheFabricLauncher() throws IOException {
         Path gameDirectory = createValidLayout();
         Path marker = gameDirectory.getParent().resolve(".etherology-forge-e2e-profile.json");
@@ -92,7 +109,7 @@ class ForgeEvidenceLayoutTest {
         Files.writeString(
                 marker,
                 profileMarker("scripts/e2e/forge_client.py")
-                        .replace("etherology-e2e-forge-1.20.1-v14", "other-forge-profile")
+                        .replace("etherology-e2e-forge-1.20.1-v16", "other-forge-profile")
         );
 
         assertThrows(
@@ -183,7 +200,7 @@ class ForgeEvidenceLayoutTest {
     }
 
     private Path createValidLayout() throws IOException {
-        Path runtimeDirectory = temporaryDirectory.resolve("etherology-e2e-forge-1.20.1-v14");
+        Path runtimeDirectory = temporaryDirectory.resolve("etherology-e2e-forge-1.20.1-v16");
         Path gameDirectory = runtimeDirectory.resolve("game");
         Path evidenceDirectory = runtimeDirectory.resolve("evidence");
         Path scenarioDirectory = evidenceDirectory.resolve(ScenarioSelection.ETHEREAL_STORAGE);
@@ -214,7 +231,7 @@ class ForgeEvidenceLayoutTest {
                 """
                         {
                           "schema": 1,
-                          "profile_id": "etherology-e2e-forge-1.20.1-v14",
+                          "profile_id": "etherology-e2e-forge-1.20.1-v16",
                           "managed_by": "scripts/e2e/forge_client.py",
                           "artifact_node": "forge-1.20.1",
                           "loader": "forge",
@@ -235,7 +252,7 @@ class ForgeEvidenceLayoutTest {
         return """
                 {
                   "schema": 1,
-                  "profile_id": "etherology-e2e-forge-1.20.1-v14",
+                  "profile_id": "etherology-e2e-forge-1.20.1-v16",
                   "managed_by": "%s",
                   "profile_manifest": {
                     "path": "scripts/e2e/forge-1.20.1-profile.json",

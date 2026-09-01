@@ -323,7 +323,7 @@ def build_archive_manifest(
 
 
 class ActiveProfileTests(unittest.TestCase):
-    def test_v13_snapshot_remains_exact_and_rejects_the_v15_active_profile(self) -> None:
+    def test_v13_snapshot_remains_exact_and_rejects_the_v16_active_profile(self) -> None:
         configuration = forge_client.load_configuration()
         snapshot = SCRIPT_DIRECTORY / "forge-1.20.1-profile-v13.json"
 

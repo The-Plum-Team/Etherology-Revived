@@ -94,9 +94,8 @@ final class AttrahiteBlockRegistryScenario {
     static final int REQUIRED_COMPLETED_RENDERS = 120;
     static final int REQUIRED_CONSECUTIVE_LIGHTING_TICKS = 20;
     static final int EXPECTED_SKY_LIGHT_LEVEL = 15;
-    static final int EXPECTED_CAMERA_BLOCK_LIGHT_LEVEL = 14;
-    static final List<Integer> EXPECTED_FIXTURE_BLOCK_LIGHT_LEVELS =
-            List.of(6, 4, 10, 8);
+    static final List<Integer> EXPECTED_BLOCK_LIGHT_LEVELS =
+            List.of(14, 14, 10, 10, 10, 8);
     static final float PLACEMENT_YAW = 180.0F;
 
     private static final Logger LOGGER = LoggerFactory.getLogger("EtherologyE2EHarness");
@@ -113,6 +112,8 @@ final class AttrahiteBlockRegistryScenario {
     private static final double CAMERA_POSE_TOLERANCE = 0.0001;
     private static final BlockPos CAMERA_BLOCK_POS =
             new BlockPos(0, ARENA_FLOOR_Y + 1, -8);
+    private static final BlockPos GALLERY_BLOCK_POS =
+            new BlockPos(0, ARENA_FLOOR_Y + 1, 0);
     private static final Identifier PEDESTAL_ID =
             Identifier.of("minecraft", "polished_andesite");
     private static final List<BlockFixture> FIXTURES = List.of(
@@ -307,7 +308,7 @@ final class AttrahiteBlockRegistryScenario {
 
     static boolean isExpectedCameraLighting(int skyLightLevel, int blockLightLevel) {
         return skyLightLevel == EXPECTED_SKY_LIGHT_LEVEL
-                && blockLightLevel == EXPECTED_CAMERA_BLOCK_LIGHT_LEVEL;
+                && blockLightLevel == EXPECTED_BLOCK_LIGHT_LEVELS.get(0);
     }
 
     static boolean areLightingSamplesReady(
@@ -1510,6 +1511,7 @@ final class AttrahiteBlockRegistryScenario {
     private static List<BlockPos> createLightingSamplePositions() {
         List<BlockPos> positions = new ArrayList<>();
         positions.add(CAMERA_BLOCK_POS);
+        positions.add(GALLERY_BLOCK_POS);
         for (BlockFixture fixture : FIXTURES) {
             positions.add(fixture.position().up());
         }
@@ -2315,7 +2317,9 @@ final class AttrahiteBlockRegistryScenario {
             for (int index = 0; index < samples.size(); index++) {
                 LightSample sample = samples.get(index);
                 if (!sample.position().equals(LIGHTING_SAMPLE_POSITIONS.get(index))
-                        || sample.skyLightLevel() != EXPECTED_SKY_LIGHT_LEVEL) {
+                        || sample.skyLightLevel() != EXPECTED_SKY_LIGHT_LEVEL
+                        || sample.blockLightLevel()
+                        != EXPECTED_BLOCK_LIGHT_LEVELS.get(index)) {
                     return false;
                 }
             }
@@ -2325,12 +2329,6 @@ final class AttrahiteBlockRegistryScenario {
                     camera.blockLightLevel()
             )) {
                 return false;
-            }
-            for (int index = 0; index < FIXTURES.size(); index++) {
-                if (samples.get(index + 1).blockLightLevel()
-                        != EXPECTED_FIXTURE_BLOCK_LIGHT_LEVELS.get(index)) {
-                    return false;
-                }
             }
             return true;
         }

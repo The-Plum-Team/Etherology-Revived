@@ -77,7 +77,7 @@ def valid_report() -> dict[str, object]:
         + [forge_server.RELOAD_PACK_ENABLED_NAME]
     )
     return {
-        "schema": 10,
+        "schema": forge_server.REPORT_SCHEMA,
         "profile_id": forge_server.PROFILE_ID,
         "scenario": forge_server.SCENARIO_ID,
         "status": "passed",
@@ -188,6 +188,7 @@ def valid_report() -> dict[str, object]:
             "tags_stable_after_reload": True,
             "stack_nbt_stable_after_reload": True,
         },
+        "attrahite_blocks": copy.deepcopy(forge_server.ATTRAHITE_BLOCKS),
         "food_items": {
             "registry_id": forge_server.FOOD_ITEM_REGISTRY_ID,
             "capture_error": "",
@@ -281,6 +282,13 @@ def valid_report() -> dict[str, object]:
             "metal_block_tags_stable": True,
             "metal_block_stack_nbt_stable": True,
             "metal_block_placement_stable": True,
+            "attrahite_block_registry_stable": True,
+            "attrahite_block_properties_stable": True,
+            "attrahite_block_tags_stable": True,
+            "attrahite_block_stack_nbt_stable": True,
+            "attrahite_block_loaded_data_stable": True,
+            "attrahite_block_loaded_data_fresh": True,
+            "attrahite_block_placement_stable": True,
             "food_item_registry_stable": True,
             "food_item_properties_stable": True,
             "food_item_stack_nbt_stable": True,
@@ -348,7 +356,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v16",
+            "etherology-e2e-forge-server-1.20.1-v17",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -374,8 +382,13 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v16_snapshot_and_preserves_prior_versions(self) -> None:
+    def test_active_profile_matches_v17_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
+        v17_snapshot_path = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v17.json"
+        )
+        v17_snapshot = v17_snapshot_path.read_bytes()
         v16_snapshot = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v16.json"
@@ -399,11 +412,24 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v16_snapshot, active)
+        self.assertEqual(v17_snapshot, active)
+        self.assertNotEqual(v16_snapshot, active)
         self.assertNotEqual(v15_snapshot, active)
         self.assertNotEqual(v14_snapshot, active)
         self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
+        self.assertEqual(
+            forge_server.contract_v17.PROFILE_MANIFEST_SIZE,
+            len(v17_snapshot),
+        )
+        self.assertEqual(
+            forge_server.contract_v17.PROFILE_MANIFEST_SHA256,
+            forge_server.sha256_file(v17_snapshot_path),
+        )
+        self.assertEqual(
+            "etherology-e2e-forge-server-1.20.1-v16",
+            json.loads(v16_snapshot)["profile"]["id"],
+        )
         self.assertEqual(
             "etherology-e2e-forge-server-1.20.1-v15",
             json.loads(v15_snapshot)["profile"]["id"],
@@ -775,7 +801,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(266, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(310, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -908,11 +934,97 @@ class ProbeReportTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            f"registry:item:{forge_server.FOOD_ITEM_ID}",
+            f"registry:block:{forge_server.ATTRAHITE_BLOCK_IDS[0]}",
             forge_server.EXPECTED_ASSERTION_NAMES[
                 insertion_index + len(expected_names)
             ],
         )
+
+    def test_attrahite_assertions_are_exact_and_probe_ordered(self) -> None:
+        insertion_index = (
+            forge_server.EXPECTED_ASSERTION_NAMES.index(
+                "metal_block_placement_stable_after_reload"
+            )
+            + 1
+        )
+
+        self.assertEqual(44, len(forge_server.ATTRAHITE_ASSERTION_NAMES))
+        self.assertEqual(44, len(forge_server.ATTRAHITE_ASSERTION_VALUES))
+        self.assertEqual(
+            forge_server.ATTRAHITE_ASSERTION_NAMES,
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index:
+                insertion_index + len(forge_server.ATTRAHITE_ASSERTION_NAMES)
+            ],
+        )
+        self.assertEqual(
+            forge_server.ATTRAHITE_ASSERTION_VALUES,
+            forge_server.EXPECTED_ASSERTION_VALUES[
+                insertion_index:
+                insertion_index + len(forge_server.ATTRAHITE_ASSERTION_VALUES)
+            ],
+        )
+        self.assertEqual(
+            f"registry:item:{forge_server.FOOD_ITEM_ID}",
+            forge_server.EXPECTED_ASSERTION_NAMES[
+                insertion_index + len(forge_server.ATTRAHITE_ASSERTION_NAMES)
+            ],
+        )
+
+    def test_attrahite_report_rejects_every_contract_surface_drift(self) -> None:
+        mutations = {
+            "block registry": lambda report: report["attrahite_blocks"].__setitem__(
+                "block_registry_id", "minecraft:item"
+            ),
+            "block ids": lambda report: report["attrahite_blocks"][
+                "block_ids"
+            ].pop(),
+            "properties": lambda report: report["attrahite_blocks"].__setitem__(
+                "properties", "wrong"
+            ),
+            "tags": lambda report: report["attrahite_blocks"].__setitem__(
+                "tags", "wrong"
+            ),
+            "NBT": lambda report: report["attrahite_blocks"]["entries"][
+                "etherology:attrahite"
+            ].__setitem__("serialized_keys", ["id"]),
+            "placement": lambda report: report["attrahite_blocks"][
+                "placement"
+            ]["positions"].__setitem__("etherology:attrahite", "0,0,0"),
+            "world save": lambda report: report["attrahite_blocks"][
+                "placement"
+            ].__setitem__("world_saved_after_placement", False),
+            "loot ids": lambda report: report["attrahite_blocks"][
+                "loaded_data"
+            ]["loot_table_ids"].pop(),
+            "Silk Touch": lambda report: report["attrahite_blocks"][
+                "loaded_data"
+            ].__setitem__("raw_silk_touch_loot", "none"),
+            "Fortune": lambda report: report["attrahite_blocks"][
+                "loaded_data"
+            ]["raw_fortune_loot"].__setitem__("3", "wrong"),
+            "recipes": lambda report: report["attrahite_blocks"][
+                "loaded_data"
+            ]["recipes"].pop("etherology:raw_azel"),
+            "advancements": lambda report: report["attrahite_blocks"][
+                "loaded_data"
+            ]["advancements"].pop(
+                "etherology:recipes/misc/raw_azel"
+            ),
+            "loaded-data freshness": lambda report: report["attrahite_blocks"][
+                "loaded_data"
+            ].__setitem__("fresh_instances_after_reload", False),
+            "reload projection": lambda report: report["reload"].__setitem__(
+                "attrahite_block_placement_stable", False
+            ),
+        }
+
+        for label, mutate in mutations.items():
+            with self.subTest(label=label):
+                report = valid_report()
+                mutate(report)
+                with self.assertRaises(forge_server.E2EError):
+                    forge_server.validate_probe_report(report, self.configuration)
 
     def test_food_assertions_are_exact_and_probe_ordered(self) -> None:
         server_started = forge_server.SERVER_STARTED_FOOD_CONSUMPTION
@@ -979,7 +1091,7 @@ class ProbeReportTests(unittest.TestCase):
         )
         insertion_index = (
             forge_server.EXPECTED_ASSERTION_NAMES.index(
-                "metal_block_placement_stable_after_reload"
+                "attrahite_block_placement_stable_after_reload"
             )
             + 1
         )

@@ -475,6 +475,17 @@ val forgeForestLanternServerEvidenceTest =
 val forgeServerContractV16 = rootProject.file("scripts/e2e/forge_server_contract_v16.py")
 val forgeServerProfileSnapshotV16 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v16.json")
+val forgeAttrahiteBlockRegistryServerEvidenceArchive =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "attrahite-block-registry-server-v17",
+    )
+val forgeAttrahiteBlockRegistryServerEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_server_attrahite_evidence_v17.py")
+val forgeAttrahiteBlockRegistryServerEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_server_attrahite_evidence_v17.py")
+val forgeServerContractV17 = rootProject.file("scripts/e2e/forge_server_contract_v17.py")
+val forgeServerProfileSnapshotV17 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v17.json")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -3569,6 +3580,70 @@ fun missingForgeForestLanternServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeAttrahiteBlockRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeAttrahiteBlockRegistryServerEvidenceVerifier.isFile
+        || Files.isSymbolicLink(
+            forgeAttrahiteBlockRegistryServerEvidenceVerifier.toPath(),
+        )
+    ) {
+        missingConditions.add(
+            "strict Forge Attrahite block-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("attrahite-block-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeAttrahiteBlockRegistryServerEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge Attrahite block-registry server-v17 evidence archive " +
+                "is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeAttrahiteBlockRegistryServerEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeAttrahiteBlockRegistryServerEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Attrahite block-registry server evidence verification " +
+                    "failed: ${detail.take(4_000)}",
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Attrahite block-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeForestLanternClientEvidenceMilestone(): List<String> {
     val missingConditions = mutableListOf<String>()
     if (!forgeForestLanternEvidenceVerifier.isFile
@@ -3639,12 +3714,11 @@ fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
         "not accepted",
 )
 
-fun missingForgeAttrahiteNativeEvidenceMilestone(): List<String> = listOf(
-    "dedicated-server registration, placement, loot, recipe, tag, and persistence " +
-        "evidence is not accepted for the four Attrahite block IDs",
-    "packaged-client inventory, model, placement, rendering, and persistence evidence " +
-        "is not accepted for the four Attrahite block IDs",
-)
+fun missingForgeAttrahiteNativeEvidenceMilestone(): List<String> =
+    missingForgeAttrahiteBlockRegistryServerEvidenceMilestone() + listOf(
+        "packaged-client inventory, model, placement, rendering, and persistence evidence " +
+            "is not accepted for the four Attrahite block IDs",
+    )
 
 fun missingForgeReleaseReadinessMilestone(): List<String> = listOf(
     "the complete authoritative Forge gameplay registry and lifecycle graph is not accepted",
@@ -5561,10 +5635,35 @@ val forgeForestLanternServerSafetyTest =
     tasks.register<Exec>("forgeForestLanternServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the active Forge Forest Lantern runner and v16 verifier safety tests."
+            "Runs the historical Forge Forest Lantern v16 verifier safety tests."
         dependsOn(
             forgeFoodItemRegistryServerSafetyTest,
             forgeForestLanternServerV15SafetyTest,
+        )
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            "-m",
+            "unittest",
+            "scripts/e2e/test_forge_server_forest_lantern_evidence_v16.py",
+        )
+        inputs.files(
+            forgeServerContractV14,
+            forgeServerContractV16,
+            forgeServerProfileSnapshotV16,
+            forgeForestLanternServerEvidenceVerifier,
+            forgeForestLanternServerEvidenceTest,
+        )
+    }
+
+val forgeAttrahiteBlockRegistryServerSafetyTest =
+    tasks.register<Exec>("forgeAttrahiteBlockRegistryServerSafetyTest") {
+        group = "verification"
+        description =
+            "Runs the active Forge Attrahite block-registry runner and v17 verifier tests."
+        dependsOn(
+            forgeForestLanternServerSafetyTest,
             serverProbeSafetyInterlockTest,
         )
         workingDir(rootProject.projectDir)
@@ -5574,20 +5673,22 @@ val forgeForestLanternServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_forest_lantern_evidence_v16.py",
+            "scripts/e2e/test_forge_server_attrahite_evidence_v17.py",
         )
         inputs.files(
             forgeServerContractV14,
             forgeServerContractV16,
+            forgeServerContractV17,
             forgeServerProfileSnapshotV12,
             forgeServerProfileSnapshotV13,
             forgeServerProfileSnapshotV14,
             forgeServerProfileSnapshotV15,
             forgeServerProfileSnapshotV16,
+            forgeServerProfileSnapshotV17,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
-            forgeForestLanternServerEvidenceVerifier,
-            forgeForestLanternServerEvidenceTest,
+            forgeAttrahiteBlockRegistryServerEvidenceVerifier,
+            forgeAttrahiteBlockRegistryServerEvidenceTest,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             rootProject.file("release/release-matrix.json"),
@@ -5597,10 +5698,10 @@ val forgeForestLanternServerSafetyTest =
         )
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/main/java"),
-        ).withPropertyName("forgeForestLanternServerProbeSources")
+        ).withPropertyName("forgeAttrahiteBlockRegistryServerProbeSources")
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
-        ).withPropertyName("forgeForestLanternServerProbeTests")
+        ).withPropertyName("forgeAttrahiteBlockRegistryServerProbeTests")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -5797,6 +5898,32 @@ val validateForgeForestLanternServerEvidenceArchiveIntegrity =
                 missingForgeForestLanternServerEvidenceMilestone()
             check(missingConditions.isEmpty()) {
                 "Forge $minecraftVersion Forest Lantern server evidence is invalid:\n${
+                    missingConditions.joinToString("\n") { condition -> " - $condition" }
+                }"
+            }
+        }
+    }
+
+val validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Attrahite block-registry server-v17 archive."
+        dependsOn(forgeAttrahiteBlockRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV17,
+            forgeServerProfileSnapshotV17,
+            forgeAttrahiteBlockRegistryServerEvidenceVerifier,
+        )
+        if (forgeAttrahiteBlockRegistryServerEvidenceArchive.exists()) {
+            inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchive)
+                .withPropertyName("forgeAttrahiteBlockRegistryServerEvidenceArchive")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeAttrahiteBlockRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Attrahite block-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
             }
@@ -6519,7 +6646,10 @@ val validateForgeAttrahiteMilestone =
         group = "verification"
         description =
             "Blocks the Attrahite slice until static checks and native Forge proof are accepted."
-        dependsOn(validateForgeAttrahiteStaticMilestone)
+        dependsOn(
+            validateForgeAttrahiteStaticMilestone,
+            validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity,
+        )
         doLast {
             val missingConditions = missingForgeAttrahiteNativeEvidenceMilestone()
             check(missingConditions.isEmpty()) {
@@ -6656,6 +6786,9 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerContractV16,
         forgeServerProfileSnapshotV16,
         forgeForestLanternServerEvidenceVerifier,
+        forgeServerContractV17,
+        forgeServerProfileSnapshotV17,
+        forgeAttrahiteBlockRegistryServerEvidenceVerifier,
         forgeForestLanternEvidenceVerifier,
         forgeForestLanternProfileSnapshotV12,
         forgeForestLanternProfileSnapshotV13,
@@ -6688,6 +6821,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeForestLanternServerEvidenceArchive.exists()) {
         inputs.dir(forgeForestLanternServerEvidenceArchive)
             .withPropertyName("forgeForestLanternServerEvidenceArchive")
+    }
+    if (forgeAttrahiteBlockRegistryServerEvidenceArchive.exists()) {
+        inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchive)
+            .withPropertyName("forgeAttrahiteBlockRegistryServerEvidenceArchive")
     }
     if (forgeForestLanternClientEvidenceArchive.exists()) {
         inputs.dir(forgeForestLanternClientEvidenceArchive)
@@ -6840,7 +6977,7 @@ if (minecraftVersion == "1.20.1") {
         val inheritedServerRun = runConfigs.named("server")
         runConfigs.create("registryFoundationServerProbe") {
             inherit(inheritedServerRun.get())
-            displayName.set("Etherology Forge 1.20.1 Forest Lantern server probe")
+            displayName.set("Etherology Forge 1.20.1 Attrahite block-registry server probe")
             sourceSet.set(sourceSets.main.get().name)
             runDirectory.set(serverProbeGameDirectory)
             generateRunConfig.set(false)
@@ -6921,8 +7058,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v16",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v16",
+                "id" to "etherology-e2e-forge-server-1.20.1-v17",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v17",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -6942,14 +7079,14 @@ if (minecraftVersion == "1.20.1") {
             check(serverProbeLaunch == mapOf(
                 "kind" to "loom-userdev",
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
-                "scenario" to "forest-lantern",
+                "scenario" to "attrahite-block-registry",
                 "maximum_memory_mb" to 2048,
             )) {
                 "The dedicated-server probe launch contract changed"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
-                "scenario_directory" to "forest-lantern",
+                "scenario_directory" to "attrahite-block-registry",
                 "report" to "reports/report.json",
                 "launcher_result" to "reports/launcher-result.json",
                 "completion_marker" to "reports/done.marker",
@@ -7116,6 +7253,17 @@ if (minecraftVersion == "1.20.1") {
                 val probeEntries = probeZip.entries().asSequence().map { it.name }.toSet()
                 val probeClassEntries = probeEntries.filter { it.endsWith(".class") }.toSet()
                 check(probeClassEntries == setOf(
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$AttrahiteBlockEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$AttrahiteBlockSpec.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$LoadedData.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$PlacementState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$RecipeCapture.class",
+                    "dev/theplumteam/etherology/e2e/server/AttrahiteBlockProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/EnchantmentProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/EtherSourceProbeState.class",
                     "dev/theplumteam/etherology/e2e/server/" +
@@ -7558,6 +7706,107 @@ if (minecraftVersion == "1.20.1") {
                             forestLanternStateConstants).sorted()
                 }
 
+                val attrahiteBlockStateClassEntries = setOf(
+                    "dev/theplumteam/etherology/e2e/server/AttrahiteBlockProbeState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$AttrahiteBlockEntry.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$AttrahiteBlockSpec.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$LoadedData.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$PlacementState.class",
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "AttrahiteBlockProbeState\$RecipeCapture.class",
+                )
+                val attrahiteBlockStateConstants =
+                    attrahiteBlockStateClassEntries.flatMap { entryName ->
+                        val entry = requireNotNull(probeZip.getEntry(entryName))
+                        readClassUtf8Constants(
+                            probeZip.getInputStream(entry).use { input ->
+                                input.readAllBytes()
+                            },
+                        )
+                    }.toSet()
+                val requiredAttrahiteBlockStateConstants = setOf(
+                    "minecraft:block",
+                    "minecraft:item",
+                    "etherology:attrahite",
+                    "etherology:attrahite_brick_slab",
+                    "etherology:attrahite_brick_stairs",
+                    "etherology:attrahite_bricks",
+                    "net/minecraft/block/Block",
+                    "net/minecraft/block/SlabBlock",
+                    "net/minecraft/block/StairsBlock",
+                    "net/minecraft/item/BlockItem",
+                    "net/minecraft/item/ItemStack",
+                    "net/minecraft/nbt/NbtCompound",
+                    "net/minecraft/command/argument/BlockArgumentParser",
+                    "setBlockState",
+                    "getBlockState",
+                    "getBlockFromItem",
+                    "asItem",
+                    "getHardness",
+                    "getBlastResistance",
+                    "getMapColor",
+                    "getSoundGroup",
+                    "isToolRequired",
+                    "getLuminance",
+                    "isOpaque",
+                    "isFullCube",
+                    "isIn",
+                    "PICKAXE_MINEABLE",
+                    "NEEDS_STONE_TOOL",
+                    "SLABS",
+                    "STAIRS",
+                    "GILDED_BLACKSTONE",
+                    "STONE",
+                    "writeNbt",
+                    "fromNbt",
+                    "Count",
+                    "id",
+                    "etherology:blocks/attrahite",
+                    "etherology:blocks/attrahite_brick_slab",
+                    "etherology:blocks/attrahite_brick_stairs",
+                    "etherology:blocks/attrahite_bricks",
+                    "LOOT_TABLES",
+                    "SILK_TOUCH",
+                    "FORTUNE",
+                    "generateLoot",
+                    "etherology:attrahite_brick",
+                    "etherology:attrahite_brick_slab_from_attrahite_bricks_stonecutting",
+                    "etherology:attrahite_brick_stairs_from_attrahite_bricks_stonecutting",
+                    "etherology:azel_ingot",
+                    "etherology:azel_ingot_from_blasting",
+                    "etherology:raw_azel",
+                    "etherology:recipes/building_blocks/attrahite_brick_slab",
+                    "etherology:recipes/building_blocks/" +
+                        "attrahite_brick_slab_from_attrahite_bricks_stonecutting",
+                    "etherology:recipes/building_blocks/attrahite_brick_stairs",
+                    "etherology:recipes/building_blocks/" +
+                        "attrahite_brick_stairs_from_attrahite_bricks_stonecutting",
+                    "etherology:recipes/building_blocks/attrahite_bricks",
+                    "etherology:recipes/misc/attrahite_brick",
+                    "etherology:recipes/misc/azel_ingot",
+                    "etherology:recipes/misc/azel_ingot_from_blasting",
+                    "etherology:recipes/misc/raw_azel",
+                    "net/minecraft/recipe/AbstractCookingRecipe",
+                    "net/minecraft/recipe/ShapedRecipe",
+                    "net/minecraft/recipe/StonecuttingRecipe",
+                    "matches",
+                    "craft",
+                    "getAdvancements",
+                )
+                check(
+                    requiredAttrahiteBlockStateConstants.all(
+                        attrahiteBlockStateConstants::contains,
+                    ),
+                ) {
+                    "The server probe lost its Attrahite block-registry contract: " +
+                        (requiredAttrahiteBlockStateConstants -
+                            attrahiteBlockStateConstants).sorted()
+                }
+
                 val metalBlockStateEntry = requireNotNull(
                     probeZip.getEntry(
                         "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState.class",
@@ -7740,6 +7989,43 @@ if (minecraftVersion == "1.20.1") {
                     "metal_block_tags_stable_after_reload",
                     "metal_block_stack_nbt_stable_after_reload",
                     "metal_block_placement_stable_after_reload",
+                    "attrahite_blocks",
+                    "registry:attrahite_block_ids_exact",
+                    "registry:attrahite_block_item_ids_exact",
+                    "attrahite_block_capture_error",
+                    "attrahite_block_runtime_classes_exact",
+                    "attrahite_block_item_mappings_exact",
+                    "attrahite_block_properties_exact",
+                    "attrahite_block_tags_exact",
+                    "attrahite_block_stack_nbt_round_trips_exact",
+                    "attrahite_block_save_representations_exact",
+                    "attrahite_blocks_captured_at_initial_tag_load",
+                    "attrahite_blocks_captured_after_server_data_load",
+                    "server_started_attrahite_blocks_rechecked",
+                    "attrahite_block_placement_positions_exact",
+                    "attrahite_block_placed_ids_exact",
+                    "attrahite_block_placed_states_exact",
+                    "attrahite_block_placement_exact",
+                    "attrahite_world_save_failure",
+                    "attrahite_world_saved_after_placement",
+                    "attrahite_loaded_data_capture_error",
+                    "attrahite_loot_table_ids_exact",
+                    "attrahite_standard_loot_exact",
+                    "attrahite_raw_silk_touch_loot_exact",
+                    "attrahite_raw_fortune_scaled_loot_exact",
+                    "attrahite_recipe_ids_exact",
+                    "attrahite_recipes_exact",
+                    "attrahite_recipes_match_and_craft_exact",
+                    "attrahite_advancement_ids_exact",
+                    "attrahite_advancements_exact",
+                    "attrahite_loaded_data_contract_exact",
+                    "attrahite_block_registry_stable_after_reload",
+                    "attrahite_block_properties_stable_after_reload",
+                    "attrahite_block_tags_stable_after_reload",
+                    "attrahite_block_stack_nbt_stable_after_reload",
+                    "attrahite_loaded_data_stable_after_reload",
+                    "attrahite_loaded_data_fresh_after_reload",
+                    "attrahite_block_placement_stable_after_reload",
                     "food_items",
                     "food_consumption",
                     "registry:food_item_ids_exact",
@@ -7818,6 +8104,7 @@ if (minecraftVersion == "1.20.1") {
                     "dev/theplumteam/etherology/e2e/server/MetalBlockProbeState",
                     "dev/theplumteam/etherology/e2e/server/FoodItemProbeState",
                     "dev/theplumteam/etherology/e2e/server/ForestLanternProbeState",
+                    "dev/theplumteam/etherology/e2e/server/AttrahiteBlockProbeState",
                     "registry:block:etherology:forest_lantern",
                     "registry:block_item:etherology:forest_lantern",
                     "forest_lantern_loaded_data_fresh_after_reload",
@@ -7922,10 +8209,10 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyRegistryFoundationServerProbe") {
             group = "verification"
             description =
-                "Builds and validates the Forge 1.20.1 Forest Lantern server probe."
+                "Builds and validates the Forge 1.20.1 Attrahite block-registry server probe."
             dependsOn(
-                validateForgeForestLanternStaticMilestone,
-                forgeForestLanternServerSafetyTest,
+                validateForgeAttrahiteStaticMilestone,
+                forgeAttrahiteBlockRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
                 validateServerProbeRunConfiguration,

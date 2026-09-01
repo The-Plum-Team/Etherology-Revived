@@ -5,11 +5,11 @@ directory:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v6/
+  etherology-original-fabric-1.21.1-published-0.1.7-v7/
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v6.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v7.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins a separately built,
 client-only capture harness as a ninth root JAR. The controller recursively
@@ -17,8 +17,8 @@ reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quicks
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v6 manifest is `10,321` bytes with SHA-256
-`a8a6521e2402433cc1ccf56319eb6e26142f1dc2bc42a1f6be56ce07a9d7a399`.
+The v7 manifest is `10,321` bytes with SHA-256
+`d8c798abe4622b786876193d55bd83d91ed7a6f3686c66c2e2d4d03a3eb7c5b1`.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -65,10 +65,10 @@ The separately packaged capture harness is not part of the published reference
 and does not replace it:
 
 - Harness JAR:
-  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.1.jar`
-- Harness size: `210,372` bytes
+  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.2.jar`
+- Harness size: `210,485` bytes
 - Harness SHA-256:
-  `aee0c1e515b602d45e47e1201a3b79bcdebbb2517803e775107de6de7a18e9b8`
+  `e86df68418ace4b17ff7e1fdd2c8b023dfe2c6d2f82ab6a47498e70d65e42353`
 - Harness mod id: `etherology_original_baseline_harness`
 - Environment: client only
 - Exact dependency: `etherology=1.21-0.1.7`
@@ -205,9 +205,9 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active `slitherite-block-registry` v6 contract
+## Active `slitherite-block-registry` v7 contract
 
-The fresh v6 profile is dedicated to the published-0.1.7 Slitherite
+The fresh v7 profile is dedicated to the published-0.1.7 Slitherite
 family. It validates 17 ordered block/item registry pairs, exact intermediary
 runtime classes and default states, 1,262 state network IDs, 79 Etherology
 visual assets plus one vanilla sentinel, grouped block/item tags, 17 self-drop
@@ -231,16 +231,16 @@ Expected evidence, once the one authorized run is eventually performed, is:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v6/
+  etherology-original-fabric-1.21.1-published-0.1.7-v7/
     evidence/slitherite-block-registry/
       reports/{report.json,done.marker}
       screenshots/{slitherite-block-registry-initial.png,
                    slitherite-block-registry-reopened.png}
 ```
 
-At preparation time v6 has no runtime, launch-attempt seal, evidence, or
+At preparation time v7 has no runtime, launch-attempt seal, evidence, or
 archive. Provisioning and launching it are deliberately outside this change.
-The v1-v5 manifests and their historical evidence remain immutable.
+The v1-v6 manifests and their historical evidence remain immutable.
 
 ### Consumed v5 preflight failure
 
@@ -272,6 +272,61 @@ respectively pinned as:
 The v6 harness uses registry-only preflight at the title screen. Full registry
 and loaded-tag exactness remains mandatory after initial server setup and after
 the saved world is reopened.
+
+### Consumed v6 pressure-plate probe failure
+
+The one v6 launch was consumed on 2026-09-01. Registry and loaded-tag
+exactness, all server data, all 17 native placements, and button pulse/reset
+behavior passed. The run reached 154 client ticks and passed 165 of 183 ordered
+assertions. Its sole mechanic mismatch was
+`slitherite_pressure_plate_entities_exact`: expected
+`item=false;living=true;reset=true`, but observed
+`item=false;living=false;reset=true`. The remaining failures were downstream
+lifecycle/capture consequences of that fail-closed result.
+
+The published pressure plate copies vanilla's stone block-set type and therefore
+uses the `MOBS` activation rule. Vanilla selects non-spectating living entities
+that cannot avoid traps, but an unpowered plate starts that selection from an
+entity-collision callback; it does not poll on a scheduled tick until it has
+first become powered. The v6 probe used a decorative armor stand, placed its
+feet at the plate block's base inside the unpowered 1/16-high physical shape,
+and then passively waited. Although the default non-marker armor stand was
+technically eligible for the living-entity predicate, it never produced the
+required native plate-entry collision during the three-tick observation window.
+
+The v7 harness keeps the exact expected behavior unchanged. It uses a real pig,
+disables AI so it cannot walk away, places its feet at `y + 0.1` above the plate
+surface and inside the 1/4-block detection box, and retains gravity so native
+movement performs the collision. The same three-world-tick activation window
+and 25-world-tick reset window remain mandatory.
+
+The preserved v6 contract files are byte-pinned as follows:
+
+- Manifest: `10,321` bytes,
+  `a8a6521e2402433cc1ccf56319eb6e26142f1dc2bc42a1f6be56ce07a9d7a399`
+- Verifier: `46,366` bytes,
+  `dc8da7ed6f54e366066c69792ea4b09d148c472430f76068c3a6ebbe3e05d675`
+- Verifier tests: `18,003` bytes,
+  `da2545d8a33351fc95414dced48781fc9c00aa4287a194a9ce6c3d3d57d5c654`
+
+The consumed launch-attempt, evidence metadata, report, marker, controller log,
+and game log are respectively pinned as:
+
+- `871,888` bytes,
+  `7f7e35af37688ab9ac487ada4fd8030c22b87ad42b63656a34c3c20dfd4679f0`
+- `954` bytes,
+  `ccc3bbef121811ba3dd102f9a9ce41af17569ff27e71aeb30719ab42f45b99de`
+- `98,188` bytes,
+  `c00ff0a700564d327872a2ef700bcea870f719d0a049246947fc8141f4e93ac6`
+- `112` bytes,
+  `8fa9139d0c06d9bcb0b8ce24b1e22786a6aa1b79e68b19896a28292c2c6e4875`
+- `15,707` bytes,
+  `6085fb55fd4ddbe7567f40f3af9eddaeb21e74d182cb9a6dc340f9fd0b5a9a93`
+- `15,273` bytes,
+  `1a03e60e918acf482099b15e6dcc07bcc0761ca17cefff819091a9c99ddbd27c`
+
+The v6 runtime retains its saved failure world, but it contains no screenshots,
+and no accepted `slitherite-block-registry-v6` evidence archive exists.
 
 ## Historical `phase0-smoke` contract
 

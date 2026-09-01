@@ -31,10 +31,10 @@ sys.modules[SPECIFICATION.name] = client
 SPECIFICATION.loader.exec_module(client)
 
 SLITHERITE_EVIDENCE_TEST_PATH = (
-    BASELINE_DIRECTORY / "tests" / "test_original_slitherite_evidence_v6.py"
+    BASELINE_DIRECTORY / "tests" / "test_original_slitherite_evidence_v7.py"
 )
 SLITHERITE_EVIDENCE_TEST_SPECIFICATION = importlib.util.spec_from_file_location(
-    "etherology_original_slitherite_evidence_v6_fixture",
+    "etherology_original_slitherite_evidence_v7_fixture",
     SLITHERITE_EVIDENCE_TEST_PATH,
 )
 if (
@@ -56,10 +56,13 @@ TRACKED_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v4.json"
 )
 ACTIVE_MANIFEST_PATH = (
-    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v6.json"
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v7.json"
 )
 LEGACY_SLITHERITE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
+)
+LEGACY_SLITHERITE_V6_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v6.json"
 )
 LEGACY_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v1.json"
@@ -121,6 +124,7 @@ def harness_jar_bytes(
         "1.2.0",
         "1.3.0",
         "1.3.1",
+        "1.3.2",
     }
     metadata = {
         "schemaVersion": 1,
@@ -1193,15 +1197,133 @@ class TrackedManifestTests(unittest.TestCase):
                 self.assertEqual(size, path.stat().st_size)
                 self.assertEqual(sha256, client.sha256_file(path))
 
-    def test_active_v6_profile_is_fresh_and_has_no_runtime_or_archive(self) -> None:
+    def test_consumed_v6_contract_remains_byte_exact(self) -> None:
+        expected = {
+            LEGACY_SLITHERITE_V6_MANIFEST_PATH: (
+                10_321,
+                "a8a6521e2402433cc1ccf56319eb6e26142f1dc2bc42a1f6be56ce07a9d7a399",
+            ),
+            BASELINE_DIRECTORY / "original_slitherite_evidence_v6.py": (
+                46_366,
+                "dc8da7ed6f54e366066c69792ea4b09d148c472430f76068c3a6ebbe3e05d675",
+            ),
+            (
+                BASELINE_DIRECTORY
+                / "tests"
+                / "test_original_slitherite_evidence_v6.py"
+            ): (
+                18_003,
+                "da2545d8a33351fc95414dced48781fc9c00aa4287a194a9ce6c3d3d57d5c654",
+            ),
+        }
+        for path, (size, sha256) in expected.items():
+            with self.subTest(path=path):
+                self.assertTrue(path.is_file())
+                self.assertFalse(path.is_symlink())
+                self.assertEqual(size, path.stat().st_size)
+                self.assertEqual(sha256, client.sha256_file(path))
+        archive = (
+            BASELINE_DIRECTORY.parents[1]
+            / "docs"
+            / "evidence"
+            / "original-1.21.1"
+            / "slitherite-block-registry-v6"
+        )
+        self.assertFalse(archive.exists())
+        self.assertFalse(archive.is_symlink())
+
+    def test_consumed_v6_failure_history_remains_byte_exact_when_present(
+        self,
+    ) -> None:
+        runtime = (
+            BASELINE_DIRECTORY
+            / ".state"
+            / "runtimes"
+            / "etherology-original-fabric-1.21.1-published-0.1.7-v6"
+        )
+        expected = {
+            runtime / "launch-attempt.json": (
+                871_888,
+                "7f7e35af37688ab9ac487ada4fd8030c22b87ad42b63656a34c3c20dfd4679f0",
+            ),
+            runtime / "evidence" / ".etherology-original-evidence.json": (
+                954,
+                "ccc3bbef121811ba3dd102f9a9ce41af17569ff27e71aeb30719ab42f45b99de",
+            ),
+            (
+                runtime
+                / "evidence"
+                / "slitherite-block-registry"
+                / "reports"
+                / "report.json"
+            ): (
+                98_188,
+                "c00ff0a700564d327872a2ef700bcea870f719d0a049246947fc8141f4e93ac6",
+            ),
+            (
+                runtime
+                / "evidence"
+                / "slitherite-block-registry"
+                / "reports"
+                / "done.marker"
+            ): (
+                112,
+                "8fa9139d0c06d9bcb0b8ce24b1e22786a6aa1b79e68b19896a28292c2c6e4875",
+            ),
+            runtime / "logs" / "original-client-20260901T022923Z.log": (
+                15_707,
+                "6085fb55fd4ddbe7567f40f3af9eddaeb21e74d182cb9a6dc340f9fd0b5a9a93",
+            ),
+            runtime / "game" / "logs" / "latest.log": (
+                15_273,
+                "1a03e60e918acf482099b15e6dcc07bcc0761ca17cefff819091a9c99ddbd27c",
+            ),
+        }
+        if not runtime.exists() and not runtime.is_symlink():
+            return
+        intermediate_directories = {
+            runtime.parents[1],
+            runtime.parent,
+            runtime,
+        }
+        for artifact in expected:
+            directory = artifact.parent
+            while directory != runtime:
+                intermediate_directories.add(directory)
+                directory = directory.parent
+        for directory in sorted(
+            intermediate_directories,
+            key=lambda candidate: (len(candidate.parts), str(candidate)),
+        ):
+            self.assertTrue(directory.is_dir())
+            self.assertFalse(directory.is_symlink())
+        present = tuple(path.exists() or path.is_symlink() for path in expected)
+        self.assertTrue(all(present), "The consumed v6 failure history is partial")
+        for path, (size, sha256) in expected.items():
+            with self.subTest(path=path):
+                self.assertTrue(path.is_file())
+                self.assertFalse(path.is_symlink())
+                self.assertEqual(size, path.stat().st_size)
+                self.assertEqual(sha256, client.sha256_file(path))
+        screenshots = (
+            runtime
+            / "evidence"
+            / "slitherite-block-registry"
+            / "screenshots"
+        )
+        self.assertTrue(screenshots.is_dir())
+        self.assertFalse(screenshots.is_symlink())
+        self.assertEqual(list(screenshots.iterdir()), [])
+
+    def test_active_v7_profile_is_fresh_and_has_no_runtime_or_archive(self) -> None:
         self.assertEqual(client.MANIFEST_PATH, ACTIVE_MANIFEST_PATH)
         self.assertEqual(len(ACTIVE_MANIFEST_PATH.read_bytes()), 10321)
         self.assertEqual(
             hashlib.sha256(ACTIVE_MANIFEST_PATH.read_bytes()).hexdigest(),
-            "a8a6521e2402433cc1ccf56319eb6e26142f1dc2bc42a1f6be56ce07a9d7a399",
+            "d8c798abe4622b786876193d55bd83d91ed7a6f3686c66c2e2d4d03a3eb7c5b1",
         )
         manifest = json.loads(ACTIVE_MANIFEST_PATH.read_text(encoding="utf-8"))
-        profile_id = "etherology-original-fabric-1.21.1-published-0.1.7-v6"
+        profile_id = "etherology-original-fabric-1.21.1-published-0.1.7-v7"
         self.assertEqual(manifest["profile"]["id"], profile_id)
         self.assertEqual(manifest["profile"]["runtime_directory"], profile_id)
         self.assertEqual(
@@ -1232,7 +1354,7 @@ class TrackedManifestTests(unittest.TestCase):
             / "docs"
             / "evidence"
             / "original-1.21.1"
-            / "slitherite-block-registry-v6"
+            / "slitherite-block-registry-v7"
         )
         self.assertFalse(archive.exists())
         self.assertFalse(archive.is_symlink())
@@ -1485,7 +1607,7 @@ class TrackedManifestTests(unittest.TestCase):
         client.verify_harness_artifact(configuration)
         self.assertEqual(
             client.profile_spec(configuration)["id"],
-            "etherology-original-fabric-1.21.1-published-0.1.7-v6",
+            "etherology-original-fabric-1.21.1-published-0.1.7-v7",
         )
         self.assertEqual(
             client.scenario_spec(configuration)["id"],
@@ -1498,7 +1620,7 @@ class TrackedManifestTests(unittest.TestCase):
         )
         self.assertEqual(
             bound_verifier.PROFILE_ID,
-            "etherology-original-fabric-1.21.1-published-0.1.7-v6",
+            "etherology-original-fabric-1.21.1-published-0.1.7-v7",
         )
         self.assertEqual(
             ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME,
@@ -1938,7 +2060,7 @@ class CaptureContractTests(unittest.TestCase):
                 },
             )
 
-    def test_machine_verifier_accepts_ordered_slitherite_v6_evidence(self) -> None:
+    def test_machine_verifier_accepts_ordered_slitherite_v7_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
             configuration, _, _ = reference_fixture(
@@ -2786,11 +2908,11 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
     def test_capture_harness_is_exactly_pinned(self) -> None:
         configuration = client.load_configuration()
         client.require_capture_harness(configuration)
-        self.assertEqual(client.harness_spec(configuration)["version"], "1.3.1")
-        self.assertEqual(client.harness_spec(configuration)["size"], 210_372)
+        self.assertEqual(client.harness_spec(configuration)["version"], "1.3.2")
+        self.assertEqual(client.harness_spec(configuration)["size"], 210_485)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "aee0c1e515b602d45e47e1201a3b79bcdebbb2517803e775107de6de7a18e9b8",
+            "e86df68418ace4b17ff7e1fdd2c8b023dfe2c6d2f82ab6a47498e70d65e42353",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:

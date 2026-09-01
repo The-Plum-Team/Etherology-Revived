@@ -165,7 +165,10 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
         assertFalse(constants.contains("ru/feytox/etherology/"));
         assertTrue(constants.contains("related_recipes_recorded_not_owned"));
         assertTrue(constants.contains("net/minecraft/entity/ItemEntity"));
-        assertTrue(constants.contains("net/minecraft/entity/decoration/ArmorStandEntity"));
+        assertTrue(constants.contains("net/minecraft/entity/passive/PigEntity"));
+        assertFalse(constants.contains(
+                "net/minecraft/entity/decoration/ArmorStandEntity"
+        ));
 
         assertTrue(invocationNames("placeAllBlockItems").contains("useOnBlock"));
         assertTrue(invocationNames("initializeBehaviorProbe").containsAll(Set.of(
@@ -190,6 +193,26 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
                 "serverFailure",
                 "serverLightingInspectionInFlight"
         )));
+    }
+
+    @Test
+    void pressurePlateLivingProbeUsesStationaryNativeMobAbovePlateSurface()
+            throws IOException {
+        Set<String> calls = invocationNames("advanceBehaviorProbe");
+        assertTrue(calls.containsAll(Set.of(
+                "create",
+                "setAiDisabled",
+                "setInvulnerable",
+                "setPosition",
+                "spawnEntity",
+                "discard"
+        )));
+        assertFalse(calls.contains("setNoGravity"));
+        assertTrue(fieldAccessKeys("advanceBehaviorProbe").contains(
+                "net/minecraft/entity/EntityType.PIG"
+        ));
+        assertTrue(numericConstants("advanceBehaviorProbe").contains(0.1D));
+        assertTrue(numericConstants("advanceBehaviorProbe").contains(3L));
     }
 
     @Test
@@ -396,6 +419,58 @@ final class SlitheriteBlockRegistryScenarioBytecodeTest {
             }
         }, 0);
         return names;
+    }
+
+    private static Set<String> fieldAccessKeys(String methodName) throws IOException {
+        Set<String> keys = new HashSet<>();
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitFieldInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor
+                    ) {
+                        keys.add(owner + "." + name);
+                    }
+                };
+            }
+        }, 0);
+        return keys;
+    }
+
+    private static Set<Number> numericConstants(String methodName)
+            throws IOException {
+        Set<Number> constants = new HashSet<>();
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitLdcInsn(Object value) {
+                        if (value instanceof Number number) constants.add(number);
+                    }
+                };
+            }
+        }, 0);
+        return constants;
     }
 
     private static byte[] classBytes() throws IOException {

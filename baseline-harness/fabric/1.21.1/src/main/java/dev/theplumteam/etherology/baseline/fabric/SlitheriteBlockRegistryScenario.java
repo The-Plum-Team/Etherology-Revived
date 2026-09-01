@@ -19,8 +19,9 @@ import net.minecraft.client.option.Perspective;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.client.util.Window;
 import net.minecraft.command.argument.BlockArgumentParser;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -860,14 +861,20 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 boolean itemIgnored = !world.getBlockState(pressureFixture.position())
                         .get(Properties.POWERED);
                 sequence.itemEntity().discard();
-                ArmorStandEntity armorStand = new ArmorStandEntity(
-                        world,
+                PigEntity pigEntity = EntityType.PIG.create(world);
+                if (pigEntity == null) {
+                    throw new IllegalStateException(
+                            "Cannot create the pressure-plate living probe"
+                    );
+                }
+                pigEntity.setAiDisabled(true);
+                pigEntity.setInvulnerable(true);
+                pigEntity.setPosition(
                         pressureFixture.position().getX() + 0.5,
-                        pressureFixture.position().getY(),
+                        pressureFixture.position().getY() + 0.1,
                         pressureFixture.position().getZ() + 0.5
                 );
-                armorStand.setInvulnerable(true);
-                if (!world.spawnEntity(armorStand)) {
+                if (!world.spawnEntity(pigEntity)) {
                     throw new IllegalStateException(
                             "Cannot spawn the pressure-plate living probe"
                     );
@@ -879,7 +886,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                         sequence.buttonActivated(),
                         sequence.buttonResetScheduled(),
                         sequence.itemEntity(),
-                        armorStand,
+                        pigEntity,
                         itemIgnored,
                         false
                 );
@@ -888,7 +895,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                 boolean livingActivated = world.getBlockState(
                         pressureFixture.position()
                 ).get(Properties.POWERED);
-                sequence.armorStand().discard();
+                sequence.pigEntity().discard();
                 serverBehaviorSequence = new BehaviorSequence(
                         BehaviorPhase.WAITING_FOR_RESET,
                         sequence.buttonActivationTick(),
@@ -896,7 +903,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
                         sequence.buttonActivated(),
                         sequence.buttonResetScheduled(),
                         sequence.itemEntity(),
-                        sequence.armorStand(),
+                        sequence.pigEntity(),
                         sequence.itemIgnored(),
                         livingActivated
                 );
@@ -3119,7 +3126,7 @@ final class SlitheriteBlockRegistryScenario implements ClientScenario {
             boolean buttonActivated,
             boolean buttonResetScheduled,
             ItemEntity itemEntity,
-            ArmorStandEntity armorStand,
+            PigEntity pigEntity,
             boolean itemIgnored,
             boolean livingActivated
     ) {

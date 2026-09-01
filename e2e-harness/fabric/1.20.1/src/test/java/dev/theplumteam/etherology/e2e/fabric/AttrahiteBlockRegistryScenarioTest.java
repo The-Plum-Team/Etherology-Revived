@@ -69,6 +69,7 @@ final class AttrahiteBlockRegistryScenarioTest {
         for (String phase : List.of("initial", "reopened")) {
             expected.add("capture_mirror_exact:" + phase);
             expected.add("capture_render_ready:" + phase);
+            expected.add("capture_lighting_ready:" + phase);
             expected.add("capture_camera_exact:" + phase);
             expected.add("capture_consecutive_stable_renders:" + phase);
             expected.add("capture_framebuffer_dimensions:" + phase);
@@ -77,7 +78,7 @@ final class AttrahiteBlockRegistryScenarioTest {
         expected.add("isolated_save_directory_present");
 
         assertEquals(expected, AttrahiteBlockRegistryScenario.ASSERTION_NAMES);
-        assertEquals(87, AttrahiteBlockRegistryScenario.ASSERTION_NAMES.size());
+        assertEquals(89, AttrahiteBlockRegistryScenario.ASSERTION_NAMES.size());
     }
 
     @Test
@@ -210,6 +211,61 @@ final class AttrahiteBlockRegistryScenarioTest {
     }
 
     @Test
+    void lightingReadinessCoversOpenSkyAndRequiresMaximumSkylight() {
+        assertEquals(
+                List.of(
+                        "0,121,-8",
+                        "-3,123,1",
+                        "-1,123,1",
+                        "1,123,1",
+                        "3,123,1"
+                ),
+                AttrahiteBlockRegistryScenario.lightingSampleDescriptions()
+        );
+        assertEquals(
+                List.of("0,121,-8", "0,121,0"),
+                AttrahiteBlockRegistryScenario.blockLightingSampleDescriptions()
+        );
+        assertEquals(15, AttrahiteBlockRegistryScenario.EXPECTED_SKY_LIGHT_LEVEL);
+        assertEquals(14, AttrahiteBlockRegistryScenario.EXPECTED_BLOCK_LIGHT_LEVEL);
+        assertTrue(AttrahiteBlockRegistryScenario.isExpectedSkyLight(15));
+        assertFalse(AttrahiteBlockRegistryScenario.isExpectedSkyLight(14));
+        assertFalse(AttrahiteBlockRegistryScenario.isExpectedSkyLight(0));
+        assertTrue(AttrahiteBlockRegistryScenario.isExpectedBlockLight(14));
+        assertFalse(AttrahiteBlockRegistryScenario.isExpectedBlockLight(15));
+        assertFalse(AttrahiteBlockRegistryScenario.isExpectedBlockLight(0));
+    }
+
+    @Test
+    void lightingReadinessRequiresConsecutiveClientTicks() {
+        int readyClientTicks = 0;
+        for (int index = 0;
+                index < AttrahiteBlockRegistryScenario.REQUIRED_LIGHTING_READY_CLIENT_TICKS;
+                index++) {
+            readyClientTicks = AttrahiteBlockRegistryScenario
+                    .nextLightingReadyClientTickCount(readyClientTicks, true);
+        }
+        assertEquals(
+                AttrahiteBlockRegistryScenario.REQUIRED_LIGHTING_READY_CLIENT_TICKS,
+                readyClientTicks
+        );
+        assertEquals(
+                readyClientTicks,
+                AttrahiteBlockRegistryScenario.nextLightingReadyClientTickCount(
+                        readyClientTicks,
+                        true
+                )
+        );
+        assertEquals(
+                0,
+                AttrahiteBlockRegistryScenario.nextLightingReadyClientTickCount(
+                        readyClientTicks,
+                        false
+                )
+        );
+    }
+
+    @Test
     void packagedScenarioUsesNativeApisAndFullRestartPath() throws IOException {
         String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
         String dataConstants = new String(
@@ -221,9 +277,14 @@ final class AttrahiteBlockRegistryScenarioTest {
                 StandardCharsets.ISO_8859_1
         );
         List<String> placementCalls = methodCallsContaining("placeAllBlockItems");
+        List<String> setupCalls = methodCallsContaining("setupFixture");
         List<String> saveCalls = methodCallsContaining("submitSave");
         List<String> disconnectCalls = methodCallsContaining("tickDisconnecting");
         List<String> restartCalls = methodCallsContaining("restartWorld");
+        List<String> lightingCalls = methodCallsContaining("isClientLightingReady");
+        List<String> serverLightingCalls = methodCallsContaining(
+                "requestServerLightingChecks"
+        );
 
         assertFalse(constants.contains("ru/feytox/etherology/"));
         assertFalse(constants.contains("executeCommand"));
@@ -234,9 +295,15 @@ final class AttrahiteBlockRegistryScenarioTest {
         assertTrue(placementCalls.contains("isAccepted"));
         assertFalse(placementCalls.contains("setBlockState"));
         assertTrue(placementConstants.contains("CONSUME"));
+        assertTrue(setupCalls.contains("requestServerLightingChecks"));
         assertTrue(saveCalls.contains("saveAll"));
         assertTrue(disconnectCalls.contains("disconnect"));
         assertTrue(restartCalls.contains("start"));
+        assertTrue(lightingCalls.contains("hasUpdates"));
+        assertTrue(lightingCalls.contains("getLightLevel"));
+        assertFalse(lightingCalls.contains("doLightUpdates"));
+        assertTrue(serverLightingCalls.contains("checkBlock"));
+        assertFalse(serverLightingCalls.contains("doLightUpdates"));
         assertTrue(constants.contains("scheduleStop"));
         assertTrue(dataConstants.contains("generateLoot"));
         assertTrue(dataConstants.contains("getAdvancements"));

@@ -53,6 +53,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.GameRules;
+import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.ChunkStatus;
@@ -89,6 +90,9 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             "attrahite-block-registry-reopened.png";
     static final long WORLD_SEED = 0x4154545241484954L;
     static final int REQUIRED_COMPLETED_RENDERS = 120;
+    static final int REQUIRED_LIGHTING_READY_CLIENT_TICKS = 20;
+    static final int EXPECTED_SKY_LIGHT_LEVEL = 15;
+    static final int EXPECTED_BLOCK_LIGHT_LEVEL = 14;
     static final float PLACEMENT_YAW = 180.0F;
 
     private static final Logger LOGGER = LoggerFactory.getLogger("EtherologyE2EHarness");
@@ -112,6 +116,12 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             fixture("attrahite_bricks", -1),
             fixture("attrahite_brick_slab", 1),
             fixture("attrahite_brick_stairs", 3)
+    );
+    private static final List<BlockPos> SKY_LIGHT_SAMPLE_POSITIONS =
+            createSkyLightSamplePositions();
+    private static final List<BlockPos> BLOCK_LIGHT_SAMPLE_POSITIONS = List.of(
+            CAMERA_BLOCK_POS,
+            new BlockPos(0, ARENA_FLOOR_Y + 1, 0)
     );
     static final List<String> EXPECTED_LOOT_TABLE_IDS = List.of(
             "etherology:blocks/attrahite",
@@ -162,6 +172,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private int clientTicks;
     private int stageClientTicks;
     private int completedRenders;
+    private int lightingReadyClientTicks;
     private boolean worldSetupSubmitted;
     private boolean saveSubmitted;
     private boolean restartSubmitted;
@@ -266,10 +277,36 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         return exactState ? completedRenders + 1 : 0;
     }
 
+    static int nextLightingReadyClientTickCount(int readyClientTicks, boolean ready) {
+        return ready
+                ? Math.min(readyClientTicks + 1, REQUIRED_LIGHTING_READY_CLIENT_TICKS)
+                : 0;
+    }
+
     static List<String> fixtureDescriptions() {
         return FIXTURES.stream()
                 .map(fixture -> fixture.id() + "@" + positionDescription(fixture.position()))
                 .toList();
+    }
+
+    static List<String> lightingSampleDescriptions() {
+        return SKY_LIGHT_SAMPLE_POSITIONS.stream()
+                .map(AttrahiteBlockRegistryScenario::positionDescription)
+                .toList();
+    }
+
+    static List<String> blockLightingSampleDescriptions() {
+        return BLOCK_LIGHT_SAMPLE_POSITIONS.stream()
+                .map(AttrahiteBlockRegistryScenario::positionDescription)
+                .toList();
+    }
+
+    static boolean isExpectedSkyLight(int skyLightLevel) {
+        return skyLightLevel == EXPECTED_SKY_LIGHT_LEVEL;
+    }
+
+    static boolean isExpectedBlockLight(int blockLightLevel) {
+        return blockLightLevel == EXPECTED_BLOCK_LIGHT_LEVEL;
     }
 
     private void tickWaitingForTitle(MinecraftClient client) {
@@ -373,14 +410,19 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             fail(client, "The initial Attrahite native probe was not exact");
             return;
         }
+        lightingReadyClientTicks = 0;
         transition(Stage.WAITING_FOR_CLIENT_MIRROR);
     }
 
     private void tickWaitingForClientMirror(MinecraftClient client) {
-        if (!isWorldViewReady(client)) return;
-
-        FixtureSnapshot clientSnapshot = captureSnapshot(client.world);
-        if (!clientSnapshot.equals(currentServerSnapshot)) return;
+        boolean ready = isWorldViewReady(client)
+                && captureSnapshot(client.world).equals(currentServerSnapshot)
+                && isClientLightingReady(client);
+        lightingReadyClientTicks = nextLightingReadyClientTickCount(
+                lightingReadyClientTicks,
+                ready
+        );
+        if (lightingReadyClientTicks < REQUIRED_LIGHTING_READY_CLIENT_TICKS) return;
 
         transition(Stage.WAITING_FOR_RENDERS);
     }
@@ -388,6 +430,14 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private void tickWaitingForRenders(MinecraftClient client) {
         if (!isWorldLifecycleReady(client)) {
             fail(client, "The integrated world vanished before the Attrahite capture");
+            return;
+        }
+        lightingReadyClientTicks = nextLightingReadyClientTickCount(
+                lightingReadyClientTicks,
+                isClientLightingReady(client)
+        );
+        if (lightingReadyClientTicks < REQUIRED_LIGHTING_READY_CLIENT_TICKS) {
+            completedRenders = 0;
         }
     }
 
@@ -507,6 +557,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         capturePhase = CapturePhase.REOPENED;
         currentServerSnapshot = reopenedSnapshot;
         completedRenders = 0;
+        lightingReadyClientTicks = 0;
         transition(Stage.WAITING_FOR_CLIENT_MIRROR);
     }
 
@@ -535,6 +586,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             PlacementInventory placements = placeAllBlockItems(world, player);
             player.teleport(world, CAMERA_X, CAMERA_Y, CAMERA_Z, CAMERA_YAW, CAMERA_PITCH);
             player.setSpawnPoint(World.OVERWORLD, CAMERA_BLOCK_POS, CAMERA_YAW, true, false);
+            requestServerLightingChecks(world);
             FixtureSnapshot snapshot = captureSnapshot(world);
             pendingServerSetupResult = new ServerSetupResult(
                     chunksLoaded,
@@ -669,9 +721,15 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         }
 
         FixtureSnapshot clientSnapshot = captureSnapshot(client.world);
+        LightingEvidence lighting = captureLightingEvidence(client);
+        if (!lighting.exact()) {
+            completedRenders = 0;
+            return;
+        }
         CaptureEvidence capture = new CaptureEvidence(
                 clientSnapshot.equals(currentServerSnapshot),
                 isFixtureRenderReady(client),
+                lighting,
                 hasExpectedCameraPose(client),
                 completedRenders,
                 client.getFramebuffer().textureWidth,
@@ -724,6 +782,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
                 && currentServerSnapshot != null
                 && currentServerSnapshot.exact()
                 && currentServerSnapshot.equals(captureSnapshot(client.world))
+                && lightingReadyClientTicks >= REQUIRED_LIGHTING_READY_CLIENT_TICKS
                 && isFixtureRenderReady(client)
                 && hasExpectedCameraPose(client);
     }
@@ -765,6 +824,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     }
 
     private boolean isFixtureRenderReady(MinecraftClient client) {
+        if (!isClientLightingReady(client)) return false;
         if (!client.worldRenderer.isTerrainRenderComplete()) return false;
 
         for (BlockFixture fixture : FIXTURES) {
@@ -774,6 +834,58 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             }
         }
         return true;
+    }
+
+    private boolean isClientLightingReady(MinecraftClient client) {
+        if (client.world.getChunkManager().getLightingProvider().hasUpdates()) return false;
+
+        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
+            if (!isExpectedSkyLight(client.world.getLightLevel(LightType.SKY, position))) {
+                return false;
+            }
+        }
+        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
+            if (!isExpectedBlockLight(client.world.getLightLevel(LightType.BLOCK, position))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private LightingEvidence captureLightingEvidence(MinecraftClient client) {
+        boolean pendingUpdates = client.world.getChunkManager()
+                .getLightingProvider()
+                .hasUpdates();
+        List<LightSample> skySamples = new ArrayList<>();
+        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
+            skySamples.add(new LightSample(
+                    position,
+                    client.world.getLightLevel(LightType.SKY, position)
+            ));
+        }
+        List<LightSample> blockSamples = new ArrayList<>();
+        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
+            blockSamples.add(new LightSample(
+                    position,
+                    client.world.getLightLevel(LightType.BLOCK, position)
+            ));
+        }
+        return new LightingEvidence(
+                lightingReadyClientTicks,
+                pendingUpdates,
+                List.copyOf(skySamples),
+                List.copyOf(blockSamples)
+        );
+    }
+
+    private void requestServerLightingChecks(ServerWorld world) {
+        for (BlockPos position : SKY_LIGHT_SAMPLE_POSITIONS) {
+            world.getChunkManager().getLightingProvider().checkBlock(position);
+        }
+        for (BlockPos position : BLOCK_LIGHT_SAMPLE_POSITIONS) {
+            world.getChunkManager().getLightingProvider().checkBlock(position.down());
+            world.getChunkManager().getLightingProvider().checkBlock(position);
+        }
     }
 
     private boolean hasExpectedCameraPose(MinecraftClient client) {
@@ -1047,6 +1159,10 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         passed &= addAssertion(assertions, "capture_render_ready:" + phase.id(),
                 capture != null && capture.renderReady(), "true",
                 capture == null ? "missing" : Boolean.toString(capture.renderReady()));
+        passed &= addAssertion(assertions, "capture_lighting_ready:" + phase.id(),
+                capture != null && capture.lighting().exact(),
+                LightingEvidence.expectedDescription(),
+                capture == null ? "missing" : capture.lighting().description());
         passed &= addAssertion(assertions, "capture_camera_exact:" + phase.id(),
                 capture != null && capture.cameraExact(), expectedCameraPoseDescription(),
                 capture == null ? "missing" : capture.cameraPose());
@@ -1345,6 +1461,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
         for (CapturePhase phase : CapturePhase.values()) {
             names.add("capture_mirror_exact:" + phase.id());
             names.add("capture_render_ready:" + phase.id());
+            names.add("capture_lighting_ready:" + phase.id());
             names.add("capture_camera_exact:" + phase.id());
             names.add("capture_consecutive_stable_renders:" + phase.id());
             names.add("capture_framebuffer_dimensions:" + phase.id());
@@ -1366,6 +1483,15 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
 
     private static String expectedRawPlainLoot() {
         return "1=none,4096=none,4224=none,4640=etherology:enriched_attrahitex1,7168=none";
+    }
+
+    private static List<BlockPos> createSkyLightSamplePositions() {
+        List<BlockPos> positions = new ArrayList<>();
+        positions.add(CAMERA_BLOCK_POS);
+        for (BlockFixture fixture : FIXTURES) {
+            positions.add(fixture.position().up());
+        }
+        return List.copyOf(positions);
     }
 
     private static Map<String, String> expectedRawFortuneLoot() {
@@ -2038,6 +2164,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
     private record CaptureEvidence(
             boolean mirrorExact,
             boolean renderReady,
+            LightingEvidence lighting,
             boolean cameraExact,
             int completedRenders,
             int width,
@@ -2051,6 +2178,7 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
             return new CaptureEvidence(
                     mirrorExact,
                     renderReady,
+                    lighting,
                     cameraExact,
                     completedRenders,
                     width,
@@ -2059,6 +2187,60 @@ final class AttrahiteBlockRegistryScenario implements ClientScenario {
                     snapshot,
                     result
             );
+        }
+    }
+
+    private record LightSample(BlockPos position, int lightLevel) {
+
+        private String description() {
+            return positionDescription(position) + "=" + lightLevel;
+        }
+    }
+
+    private record LightingEvidence(
+            int stableClientTicks,
+            boolean pendingUpdates,
+            List<LightSample> skySamples,
+            List<LightSample> blockSamples
+    ) {
+
+        private boolean exact() {
+            if (stableClientTicks != REQUIRED_LIGHTING_READY_CLIENT_TICKS
+                    || pendingUpdates
+                    || skySamples.size() != SKY_LIGHT_SAMPLE_POSITIONS.size()
+                    || blockSamples.size() != BLOCK_LIGHT_SAMPLE_POSITIONS.size()) {
+                return false;
+            }
+            for (LightSample sample : skySamples) {
+                if (!isExpectedSkyLight(sample.lightLevel())) return false;
+            }
+            for (LightSample sample : blockSamples) {
+                if (!isExpectedBlockLight(sample.lightLevel())) return false;
+            }
+            return true;
+        }
+
+        private String description() {
+            return "stableClientTicks=" + stableClientTicks
+                    + ";pending=" + pendingUpdates
+                    + ";sky=" + skySamples.stream()
+                    .map(LightSample::description)
+                    .collect(Collectors.joining(",", "[", "]"))
+                    + ";block=" + blockSamples.stream()
+                    .map(LightSample::description)
+                    .collect(Collectors.joining(",", "[", "]"));
+        }
+
+        private static String expectedDescription() {
+            return "stableClientTicks=" + REQUIRED_LIGHTING_READY_CLIENT_TICKS
+                    + ";pending=false;sky=" + SKY_LIGHT_SAMPLE_POSITIONS.stream()
+                    .map(position -> positionDescription(position)
+                            + "=" + EXPECTED_SKY_LIGHT_LEVEL)
+                    .collect(Collectors.joining(",", "[", "]"))
+                    + ";block=" + BLOCK_LIGHT_SAMPLE_POSITIONS.stream()
+                    .map(position -> positionDescription(position)
+                            + "=" + EXPECTED_BLOCK_LIGHT_LEVEL)
+                    .collect(Collectors.joining(",", "[", "]"));
         }
     }
 

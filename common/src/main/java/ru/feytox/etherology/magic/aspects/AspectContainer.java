@@ -2,18 +2,18 @@ package ru.feytox.etherology.magic.aspects;
 
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
-import com.mojang.serialization.*;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DynamicOps;
+import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.RecordBuilder;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.StringIdentifiable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.helpers.CheckReturnValue;
-import ru.feytox.etherology.Etherology;
 
 import java.util.Comparator;
 import java.util.List;
@@ -24,21 +24,28 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Getter
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class AspectContainer {
 
     public static final Codec<AspectContainer> CODEC;
     public static final MapCodec<AspectContainer> MAP_CODEC;
 
-    @NonNull
     private final ImmutableMap<Aspect, Integer> aspects;
+
+    private AspectContainer(ImmutableMap<Aspect, Integer> aspects) {
+        if (aspects == null) {
+            throw new NullPointerException("aspects is marked non-null but is null");
+        }
+        this.aspects = aspects;
+    }
 
     public AspectContainer(Map<Aspect, Integer> mutableAspects) {
         this(ImmutableMap.copyOf(mutableAspects));
     }
 
-    public AspectContainer(Map<Aspect, Integer> mutableAspects, boolean clearZeros) {
+    public AspectContainer(
+            Map<Aspect, Integer> mutableAspects,
+            boolean clearZeros
+    ) {
         this(clearZeros ? clearZeros(mutableAspects) : mutableAspects);
     }
 
@@ -65,14 +72,18 @@ public class AspectContainer {
     }
 
     @CheckReturnValue
-    private AspectContainer merge(AspectContainer otherContainer, BiFunction<Integer, Integer, Integer> mergeFunction) {
+    private AspectContainer merge(
+            AspectContainer otherContainer,
+            BiFunction<Integer, Integer, Integer> mergeFunction
+    ) {
         Map<Aspect, Integer> mutableAspects = getMutableAspects();
-        otherContainer.aspects.forEach((otherAspect, otherValue) -> mutableAspects.merge(otherAspect, otherValue, mergeFunction));
+        otherContainer.aspects.forEach((otherAspect, otherValue) ->
+                mutableAspects.merge(otherAspect, otherValue, mergeFunction));
         return new AspectContainer(mutableAspects);
     }
 
     public Object2IntOpenHashMap<Aspect> getMutableAspects() {
-        return new Object2IntOpenHashMap<>(this.aspects);
+        return new Object2IntOpenHashMap<>(aspects);
     }
 
     @CheckReturnValue
@@ -89,7 +100,7 @@ public class AspectContainer {
 
     public void writeNbt(NbtCompound nbt) {
         NbtCompound container = new NbtCompound();
-        aspects.forEach(((aspect, value) -> container.putInt(aspect.name(), value)));
+        aspects.forEach((aspect, value) -> container.putInt(aspect.name(), value));
 
         nbt.put("aspects", container);
     }
@@ -105,12 +116,13 @@ public class AspectContainer {
             result.put(aspect, value);
         });
 
-        // this.parents should not be written to nbt
         return new AspectContainer(result);
     }
 
     public Optional<Integer> max() {
-        return aspects.values().stream().max(Comparator.comparingInt(Integer::intValue));
+        return aspects.values().stream().max(
+                Comparator.comparingInt(Integer::intValue)
+        );
     }
 
     public Optional<Integer> sum() {
@@ -118,11 +130,13 @@ public class AspectContainer {
     }
 
     public List<Pair<Aspect, Integer>> sorted(boolean reverse, int limit) {
-        Comparator<Map.Entry<Aspect, Integer>> comparator = Map.Entry.comparingByValue();
+        Comparator<Map.Entry<Aspect, Integer>> comparator =
+                Map.Entry.comparingByValue();
         comparator = comparator.thenComparing(Map.Entry.comparingByKey());
         if (reverse) comparator = comparator.reversed();
 
-        ObjectArrayList<Pair<Aspect, Integer>> sortedAspects = aspects.entrySet().stream()
+        ObjectArrayList<Pair<Aspect, Integer>> sortedAspects = aspects.entrySet()
+                .stream()
                 .sorted(comparator)
                 .map(entry -> Pair.of(entry.getKey(), entry.getValue()))
                 .collect(Collectors.toCollection(ObjectArrayList::new));
@@ -132,20 +146,54 @@ public class AspectContainer {
         return sortedAspects.subList(0, limit);
     }
 
-    public static <T> AspectContainer parse(DynamicOps<T> ops, Stream<Pair<T, T>> input) {
-        return new AspectContainer(input.map(pair -> pair.mapFirst(first -> Aspect.CODEC.parse(ops, first)).mapSecond(second -> Codec.INT.parse(ops, second)))
+    public static <T> AspectContainer parse(
+            DynamicOps<T> ops,
+            Stream<Pair<T, T>> input
+    ) {
+        Logger logger = LoggerFactory.getLogger("ru.feytox.etherology.Etherology");
+        return new AspectContainer(input
                 .map(pair -> pair
-                        .mapFirst(result -> result.getOrThrow(false, Etherology.ELOGGER::error))
-                        .mapSecond(result -> result.getOrThrow(false, Etherology.ELOGGER::error)))
-                .collect(Collectors.toMap(Pair::getFirst, Pair::getSecond, Integer::min)));
+                        .mapFirst(first -> Aspect.CODEC.parse(ops, first))
+                        .mapSecond(second -> Codec.INT.parse(ops, second)))
+                .map(pair -> pair
+                        .mapFirst(result -> result.getOrThrow(
+                                false,
+                                logger::error
+                        ))
+                        .mapSecond(result -> result.getOrThrow(
+                                false,
+                                logger::error
+                        )))
+                .collect(Collectors.toMap(
+                        Pair::getFirst,
+                        Pair::getSecond,
+                        Integer::min
+                )));
     }
 
-    public static <T> void encodeStart(RecordBuilder<T> builder, DynamicOps<T> ops, AspectContainer container) {
-        container.getAspects().forEach((aspect, value) -> builder.add(Aspect.CODEC.encodeStart(ops, aspect), Codec.INT.encodeStart(ops, value)));
+    public static <T> void encodeStart(
+            RecordBuilder<T> builder,
+            DynamicOps<T> ops,
+            AspectContainer container
+    ) {
+        container.getAspects().forEach((aspect, value) -> builder.add(
+                Aspect.CODEC.encodeStart(ops, aspect),
+                Codec.INT.encodeStart(ops, value)
+        ));
+    }
+
+    public ImmutableMap<Aspect, Integer> getAspects() {
+        return aspects;
     }
 
     static {
-        CODEC = Codec.unboundedMap(Aspect.CODEC, Codec.INT).xmap(AspectContainer::new, AspectContainer::getAspects).stable();
-        MAP_CODEC = Codec.simpleMap(Aspect.CODEC, Codec.INT, StringIdentifiable.toKeyable(Aspect.values())).xmap(AspectContainer::new, AspectContainer::getAspects);
+        CODEC = Codec.unboundedMap(Aspect.CODEC, Codec.INT)
+                .xmap(AspectContainer::new, AspectContainer::getAspects)
+                .stable();
+        MAP_CODEC = Codec.simpleMap(
+                Aspect.CODEC,
+                Codec.INT,
+                StringIdentifiable.toKeyable(Aspect.values())
+        ).xmap(AspectContainer::new, AspectContainer::getAspects);
     }
 }

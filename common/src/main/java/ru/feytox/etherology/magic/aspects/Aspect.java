@@ -1,15 +1,10 @@
 package ru.feytox.etherology.magic.aspects;
 
 import com.mojang.serialization.Codec;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.StringIdentifiable;
 import org.apache.commons.lang3.EnumUtils;
-import ru.feytox.etherology.util.misc.EIdentifier;
 
-@Getter
-@RequiredArgsConstructor
 public enum Aspect implements EtherologyAspect, StringIdentifiable {
     RELLA(0, 0, 0),
     ETHA(0, 1, 4),
@@ -52,20 +47,28 @@ public enum Aspect implements EtherologyAspect, StringIdentifiable {
     LUMOS(4, 6, 38),
     NOX(4, 7, 39);
 
-    public static final Codec<Aspect> CODEC = StringIdentifiable.createCodec(Aspect::values);
-    public static final Identifier TEXTURE = EIdentifier.of("textures/gui/aspects.png");
+    public static final Codec<Aspect> CODEC =
+            StringIdentifiable.createCodec(Aspect::values);
+    public static final Identifier TEXTURE =
+            new Identifier("etherology", "textures/gui/aspects.png");
 
     private final int textureRow;
     private final int textureColumn;
     private final int runeId;
 
+    Aspect(int textureRow, int textureColumn, int runeId) {
+        this.textureRow = textureRow;
+        this.textureColumn = textureColumn;
+        this.runeId = runeId;
+    }
+
     @Override
     public String getAspectName() {
-        return this.name().toLowerCase();
+        return name().toLowerCase();
     }
 
     public Identifier getId() {
-        return EIdentifier.of(getAspectName());
+        return new Identifier("etherology", getAspectName());
     }
 
     public static Aspect get(Identifier id) {
@@ -75,5 +78,19 @@ public enum Aspect implements EtherologyAspect, StringIdentifiable {
     @Override
     public String asString() {
         return getAspectName();
+    }
+
+    @Override
+    public int getTextureRow() {
+        return textureRow;
+    }
+
+    @Override
+    public int getTextureColumn() {
+        return textureColumn;
+    }
+
+    public int getRuneId() {
+        return runeId;
     }
 }

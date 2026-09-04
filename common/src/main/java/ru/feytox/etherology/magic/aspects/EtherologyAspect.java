@@ -8,7 +8,9 @@ public interface EtherologyAspect {
     int TEXTURE_HEIGHT = 192;
 
     String getAspectName();
+
     int getTextureRow();
+
     int getTextureColumn();
 
     default String getDisplayName() {

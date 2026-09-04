@@ -4399,6 +4399,7 @@ tasks.named<Test>("test").configure {
     exclude("**/WarpCounterRegistryResourcesTest.class")
     exclude("**/LensFoundationCrossArtifactTest.class")
     exclude("**/UnadjustedLensRegistryResourcesTest.class")
+    exclude("**/AspectFoundationCrossArtifactTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -5534,6 +5535,87 @@ val unadjustedLensRegistryTest =
             )
             systemProperty(
                 "etherology.unadjustedLens.repositoryRoot",
+                rootProject.projectDir.absolutePath,
+            )
+        }
+    }
+
+val aspectFoundationCrossArtifactTest =
+    tasks.register<Test>("aspectFoundationCrossArtifactTest") {
+        group = "verification"
+        description =
+            "Runs exact cross-loader aspect-foundation ownership and isolation tests."
+        dependsOn(
+            tasks.named("testClasses"),
+            commonJar,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            fabricShadowJar,
+            fabricRemapJar,
+            forgeShadowJar,
+        )
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform()
+        filter {
+            includeTestsMatching(
+                "ru.feytox.etherology.forge.AspectFoundationCrossArtifactTest",
+            )
+        }
+        inputs.file(commonJar.flatMap { it.archiveFile })
+            .withPropertyName("aspectFoundationCommonJar")
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("aspectFoundationFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("aspectFoundationForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("aspectFoundationFabricDevelopmentJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+            .withPropertyName("aspectFoundationFabricProductionJar")
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("aspectFoundationForgeShadowJar")
+        inputs.files(
+            rootProject.fileTree(
+                "common/src/main/java/ru/feytox/etherology/magic/aspects",
+            ) {
+                include("Aspect.java")
+                include("EtherologyAspect.java")
+                include("AspectContainer.java")
+            },
+        ).withPropertyName("canonicalAspectFoundationSources")
+        doFirst {
+            systemProperty(
+                "etherology.aspectFoundation.commonJar",
+                commonJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.aspectFoundation.fabricTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.aspectFoundation.forgeTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.aspectFoundation.fabricDevelopmentJar",
+                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.aspectFoundation.fabricProductionJar",
+                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.aspectFoundation.forgeShadowJar",
+                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.aspectFoundation.repositoryRoot",
                 rootProject.projectDir.absolutePath,
             )
         }
@@ -7621,12 +7703,49 @@ val validateForgeUnadjustedLensStaticMilestone =
         ).withPropertyName("canonicalUnadjustedLensSourcesAndResources")
     }
 
+val validateForgeAspectFoundationStaticMilestone =
+    tasks.register("validateForgeAspectFoundationStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates canonical shared aspect types and exact serialization/order contracts."
+        dependsOn(
+            validateForgeUnadjustedLensStaticMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            aspectFoundationCrossArtifactTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("aspectFoundationFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("aspectFoundationForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree(
+                "common/src/main/java/ru/feytox/etherology/magic/aspects",
+            ) {
+                include("Aspect.java")
+                include("EtherologyAspect.java")
+                include("AspectContainer.java")
+            },
+        ).withPropertyName("canonicalAspectFoundationSources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeUnadjustedLensStaticMilestone)
+        dependsOn(validateForgeAspectFoundationStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -7679,6 +7798,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeWarpCounterStaticMilestone,
         validateForgeLensFoundationStaticMilestone,
         validateForgeUnadjustedLensStaticMilestone,
+        validateForgeAspectFoundationStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -7687,7 +7807,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeUnadjustedLensStaticMilestone)
+    dependsOn(validateForgeAspectFoundationStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

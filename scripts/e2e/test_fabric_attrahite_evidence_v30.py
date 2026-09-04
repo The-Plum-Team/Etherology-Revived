@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -29,6 +30,66 @@ HISTORICAL_V29_HARNESS_SIZE = 296_850
 HISTORICAL_V29_HARNESS_SHA256 = (
     "1082487f1a29935b70524d47d6c5e3ac28d78070ea499eb7062e42f2c1fc77da"
 )
+ACCEPTED_V30_RUNTIME_RELATIVE_PATH = Path(
+    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30"
+)
+ACCEPTED_V30_ARCHIVE_RELATIVE_PATH = Path(
+    "docs/evidence/fabric-1.20.1/attrahite-block-registry-v30"
+)
+ACCEPTED_V30_RUNTIME_HISTORY = {
+    Path("scripts/e2e/.state/etherology-e2e-fabric-1.20.1-v30-start.attempted"): (
+        88,
+        "afc8235bd46db99a13941cd8c78d03ccb65f1718e9150c041f67e67fb04914ae",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH / ".etherology-e2e-profile.json": (
+        4_370,
+        "ac6857d126f4c56252b34b6c76feb16dc3d88a5363ee3eeb8a871a8d4f83f2d7",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH / "artifact-lock.json": (
+        1_119,
+        "2b913ff0f065313bec3484d40bcb7a888d1d43a2de0c3ef2db036c3ce82520a9",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH / "evidence/.etherology-e2e-evidence.json": (
+        590,
+        "358a4bafd79bdedab4177fc2359132fb45c533d17a7284dc2e12685133e0ffb9",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/report.json": (
+        36_736,
+        "db5f6d7af11f1406c304b8ec64aa3022a25f774f8704fde4a70cc9fc31faebb5",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/done.marker": (
+        9,
+        "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/screenshots/attrahite-block-registry-initial.png": (
+        304_959,
+        "3b0e9c87f794886835879db2f54091e74632f316d9905bd1418116074055adca",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/screenshots/attrahite-block-registry-reopened.png": (
+        289_664,
+        "7041da05fe40d27ffedcc21e848c477b8b173e61561f4bceeb53ad284a2f4e2f",
+    ),
+    Path("scripts/e2e/.state/logs/fabric-1.20.1-20260904T064355Z.log"): (
+        18_402,
+        "574a5cc505f03efeb15ddb42b2a53ad290107f4b084c672231a56b09f0319ff8",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH / "game/logs/latest.log": (
+        17_965,
+        "3a3637ad33dcf68c57224203d89a4f8d920c564eb6829b084767d7fe31f8e5bd",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH / "game/mods/etherology-e2e-harness.jar": (
+        300_673,
+        "1c978b594d0f6d92355b1d588993cc979e47f4fb39548213c7ac17ed813d267a",
+    ),
+    ACCEPTED_V30_RUNTIME_RELATIVE_PATH / "game/mods/etherology-under-test.jar": (
+        2_894_988,
+        "f370e0c91de3ef7439fe18c673ccf336708c99231e252bdec289f768840f18b1",
+    ),
+}
 HISTORICAL_V29_FAILURE_HISTORY = {
     (
         HISTORICAL_V29_STATE_RELATIVE_PATH
@@ -69,30 +130,37 @@ HISTORICAL_V29_FAILURE_HISTORY = {
 }
 
 
-def validate_consumed_v29_failure_history(repository_root: Path) -> None:
-    state_root = repository_root / HISTORICAL_V29_STATE_RELATIVE_PATH
-    runtime = repository_root / HISTORICAL_V29_RUNTIME_RELATIVE_PATH
+def validate_consumed_history_files(
+    repository_root: Path,
+    *,
+    label: str,
+    state_relative_path: Path,
+    runtime_relative_path: Path,
+    history: dict[Path, tuple[int, str]],
+) -> tuple[Path, Path] | None:
+    state_root = repository_root / state_relative_path
+    runtime = repository_root / runtime_relative_path
     controller_logs = state_root / "logs"
     runtime_parent = state_root / "runtimes"
     resolved = {
         repository_root / relative_path: contract
-        for relative_path, contract in HISTORICAL_V29_FAILURE_HISTORY.items()
+        for relative_path, contract in history.items()
     }
 
     for directory in (state_root, runtime_parent, controller_logs):
         if directory.is_symlink():
             raise AssertionError(
-                f"The consumed v29 failure-history parent is linked: {directory}"
+                f"The consumed {label} parent is linked: {directory}"
             )
         if directory.exists() and not directory.is_dir():
             raise AssertionError(
-                f"The consumed v29 failure-history parent is not a directory: {directory}"
+                f"The consumed {label} parent is not a directory: {directory}"
             )
 
     present = tuple(path.exists() or path.is_symlink() for path in resolved)
     runtime_present = runtime.exists() or runtime.is_symlink()
     if not runtime_present and not any(present):
-        return
+        return None
 
     intermediate_directories = {state_root, runtime_parent, runtime, controller_logs}
     history_boundary = state_root.parent
@@ -107,28 +175,86 @@ def validate_consumed_v29_failure_history(repository_root: Path) -> None:
     ):
         if not directory.is_dir():
             raise AssertionError(
-                f"The consumed v29 failure-history parent is missing: {directory}"
+                f"The consumed {label} parent is missing: {directory}"
             )
         if directory.is_symlink():
             raise AssertionError(
-                f"The consumed v29 failure-history parent is linked: {directory}"
+                f"The consumed {label} parent is linked: {directory}"
             )
 
     if not all(present):
-        raise AssertionError("The consumed v29 failure history is partial")
+        raise AssertionError(f"The consumed {label} is partial")
     for path, (expected_size, expected_sha256) in resolved.items():
         if not path.is_file() or path.is_symlink():
             raise AssertionError(
-                f"The consumed v29 failure-history artifact is missing or linked: {path}"
+                f"The consumed {label} artifact is missing or linked: {path}"
             )
         if path.stat().st_size != expected_size:
             raise AssertionError(
-                f"The consumed v29 failure-history artifact size changed: {path}"
+                f"The consumed {label} artifact size changed: {path}"
             )
         if evidence.sha256_file(path) != expected_sha256:
             raise AssertionError(
-                f"The consumed v29 failure-history artifact bytes changed: {path}"
+                f"The consumed {label} artifact bytes changed: {path}"
             )
+    return state_root, runtime
+
+
+def validate_consumed_v29_failure_history(repository_root: Path) -> None:
+    validate_consumed_history_files(
+        repository_root,
+        label="v29 failure-history",
+        state_relative_path=HISTORICAL_V29_STATE_RELATIVE_PATH,
+        runtime_relative_path=HISTORICAL_V29_RUNTIME_RELATIVE_PATH,
+        history=HISTORICAL_V29_FAILURE_HISTORY,
+    )
+
+
+def validate_consumed_v30_runtime_history(repository_root: Path) -> None:
+    validated_paths = validate_consumed_history_files(
+        repository_root,
+        label="v30 runtime-history",
+        state_relative_path=Path("scripts/e2e/.state"),
+        runtime_relative_path=ACCEPTED_V30_RUNTIME_RELATIVE_PATH,
+        history=ACCEPTED_V30_RUNTIME_HISTORY,
+    )
+    if validated_paths is None:
+        return
+    state_root, runtime = validated_paths
+
+    report = evidence.require_json_object(
+        runtime / "evidence/attrahite-block-registry/reports/report.json",
+        "Consumed Fabric v30 Attrahite report",
+    )
+    if report.get("status") != "passed" or report.get("passed") is not True:
+        raise AssertionError("The consumed v30 report is not a passing report")
+    if report.get("client_ticks") != 586:
+        raise AssertionError("The consumed v30 report client-tick count changed")
+    assertions = report.get("assertions")
+    if (
+        not isinstance(assertions, list)
+        or len(assertions) != 91
+        or any(
+            not isinstance(item, dict) or item.get("passed") is not True
+            for item in assertions
+        )
+    ):
+        raise AssertionError("The consumed v30 assertion inventory changed")
+    attrahite = report.get("attrahite")
+    if (
+        not isinstance(attrahite, dict)
+        or attrahite.get("persistence_exact") is not True
+        or attrahite.get("reopened_data_exact") is not True
+    ):
+        raise AssertionError("The consumed v30 persistence result changed")
+    for path in (
+        state_root / "logs/fabric-1.20.1-20260904T064355Z.log",
+        runtime / "game/logs/latest.log",
+    ):
+        if not path.read_text(encoding="utf-8").rstrip().endswith(
+            "All dimensions are saved"
+        ):
+            raise AssertionError(f"The consumed v30 log did not shut down cleanly: {path}")
 
 
 def patterned_pixels(variant: int = 0) -> bytes:
@@ -425,6 +551,63 @@ class ActiveProfileTests(unittest.TestCase):
             (SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v30.json").read_bytes(),
         )
 
+    def test_accepted_v30_archive_is_byte_exact_and_self_contained(self) -> None:
+        archive = REPOSITORY_ROOT / ACCEPTED_V30_ARCHIVE_RELATIVE_PATH
+        manifest = archive / attrahite_evidence.ARCHIVE_MANIFEST_NAME
+        self.assertEqual(manifest.stat().st_size, 2_480)
+        self.assertEqual(
+            evidence.sha256_file(manifest),
+            "430971b61511f2fdb94f0855c13b9a28bf4f8bb79432a084abfae659e6859732",
+        )
+        summary = attrahite_evidence.validate_archived_evidence(archive)
+        self.assertEqual(summary.profile_id, attrahite_evidence.PROFILE_ID)
+        self.assertEqual(summary.assertion_count, 91)
+        self.assertEqual(summary.screenshot_count, 2)
+        self.assertEqual(
+            summary.reopen_changed_pixel_ratio,
+            0.021750096450617283,
+        )
+        self.assertEqual(
+            summary.production_sha256,
+            "f370e0c91de3ef7439fe18c673ccf336708c99231e252bdec289f768840f18b1",
+        )
+        self.assertEqual(
+            summary.harness_sha256,
+            "1c978b594d0f6d92355b1d588993cc979e47f4fb39548213c7ac17ed813d267a",
+        )
+
+    def test_consumed_v30_runtime_history_remains_exact_when_present(self) -> None:
+        validate_consumed_v30_runtime_history(REPOSITORY_ROOT)
+
+    def test_consumed_v30_history_rejects_dangling_leaf_symlinks(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository_root = Path(temporary_directory)
+            missing_targets = repository_root / "missing-targets"
+            for index, relative_path in enumerate(ACCEPTED_V30_RUNTIME_HISTORY):
+                artifact = repository_root / relative_path
+                artifact.parent.mkdir(parents=True, exist_ok=True)
+                artifact.symlink_to(missing_targets / str(index))
+
+            with self.assertRaisesRegex(AssertionError, "missing or linked"):
+                validate_consumed_v30_runtime_history(repository_root)
+
+    def test_consumed_v30_history_rejects_linked_parent_components(self) -> None:
+        for parent_name in ("runtimes", "logs"):
+            with self.subTest(parent_name=parent_name):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    repository_root = Path(temporary_directory)
+                    state_root = repository_root / "scripts/e2e/.state"
+                    state_root.mkdir(parents=True)
+                    linked_target = repository_root / f"linked-{parent_name}"
+                    linked_target.mkdir()
+                    (state_root / parent_name).symlink_to(
+                        linked_target,
+                        target_is_directory=True,
+                    )
+
+                    with self.assertRaisesRegex(AssertionError, "parent is linked"):
+                        validate_consumed_v30_runtime_history(repository_root)
+
     def test_v20_through_v29_profiles_remain_byte_exact(self) -> None:
         expected = {
             20: "77e2319ce711aa6c62de5aba4107f62d29ab96411c3fe2fba557e08e52444a8b",
@@ -441,6 +624,46 @@ class ActiveProfileTests(unittest.TestCase):
         for version, digest in expected.items():
             path = SCRIPT_DIRECTORY / f"fabric-1.20.1-profile-v{version}.json"
             self.assertEqual(digest, evidence.sha256_file(path))
+
+    def test_capture_lock_inventory_is_exact_without_object_order_semantics(
+        self,
+    ) -> None:
+        reported = archived_artifacts({"artifacts": artifact_records()})
+        locked = {
+            role: {
+                "mod_id": record["mod_id"],
+                "target_file": record["file_name"],
+                "size": record["size"],
+                "sha256": record["sha256"],
+            }
+            for role, record in reversed(tuple(reported.items()))
+        }
+        lock = {
+            "schema": 2,
+            "profile_id": attrahite_evidence.PROFILE_ID,
+            "artifact_node": "fabric-1.20.1",
+            "artifacts": locked,
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            lock_path = Path(temporary_directory) / "artifact-lock.json"
+            lock_path.write_text("{}\n", encoding="utf-8")
+            with mock.patch.object(client, "load_artifact_lock", return_value=lock):
+                with mock.patch.object(
+                    client,
+                    "artifact_lock_path",
+                    return_value=lock_path,
+                ):
+                    self.assertEqual(
+                        attrahite_evidence.validate_capture_artifact_lock(
+                            object(), Path(temporary_directory), reported
+                        ),
+                        lock_path,
+                    )
+                    lock["artifacts"]["foreign"] = {}
+                    with self.assertRaises(client.E2EError):
+                        attrahite_evidence.validate_capture_artifact_lock(
+                            object(), Path(temporary_directory), reported
+                        )
 
     def test_historical_v29_verifier_rejects_active_v30_profile(self) -> None:
         configuration = client.load_configuration()

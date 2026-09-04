@@ -5,6 +5,60 @@ the baseline Mac. Every run uses a new repository-owned profile under
 `scripts/e2e/.state/`; no external launcher profile is read, modified, or used as
 a source.
 
+## Current Attrahite block-registry proof (v30)
+
+The one-shot `etherology-e2e-fabric-1.20.1-v30` profile ran the packaged
+`attrahite-block-registry` scenario in a fresh integrated world. The report
+passed all 91 assertions in 586 client ticks, force-saved, disconnected,
+reopened the world, and published two unedited native 1920x1080 composed
+framebuffers. Provisioning and launch consulted no external game profile.
+
+![Fabric 1.20.1 Attrahite gallery](attrahite-block-registry-v30/screenshots/attrahite-block-registry-initial.png)
+
+- Profile manifest: `7,051` bytes, SHA-256
+  `f2131cb9190b17b42035604d26988a1aa8091cbc94541cb29c0e9d018bcf8000`
+- Minecraft: `1.20.1`; Fabric Loader: `0.17.3`; runtime Java: `17`
+- Production JAR SHA-256:
+  `f370e0c91de3ef7439fe18c673ccf336708c99231e252bdec289f768840f18b1`
+- Harness JAR SHA-256:
+  `1c978b594d0f6d92355b1d588993cc979e47f4fb39548213c7ac17ed813d267a`
+- Report status: `passed`; assertions: `91` passed, `0` failed
+- Reopened changed-pixel ratio: `0.021750`
+
+The verifier proves the exact four block/item registrations, runtime classes,
+default states, valid unique non-negative default-state network IDs, canonical
+resources, block/item tags, four loot tables, nine recipes and advancements,
+native `BlockItem` placement, plain, Silk Touch, and seeded Fortune III loot,
+and exact structural/data persistence after reopen. Before the first fixture
+mutation, 20 consecutive client ticks proved all four arena chunks loaded, an
+empty update queue, an idle lighting provider, all four light columns enabled,
+and all six future SKY samples at 15.
+
+Frozen file digests:
+
+- `attrahite-block-registry-v30/archive-manifest.json`:
+  `430971b61511f2fdb94f0855c13b9a28bf4f8bb79432a084abfae659e6859732`
+- `attrahite-block-registry-v30/reports/report.json`:
+  `db5f6d7af11f1406c304b8ec64aa3022a25f774f8704fde4a70cc9fc31faebb5`
+- `attrahite-block-registry-v30/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `attrahite-block-registry-v30/screenshots/attrahite-block-registry-initial.png`:
+  `3b0e9c87f794886835879db2f54091e74632f316d9905bd1418116074055adca`
+- `attrahite-block-registry-v30/screenshots/attrahite-block-registry-reopened.png`:
+  `7041da05fe40d27ffedcc21e848c477b8b173e61561f4bceeb53ad284a2f4e2f`
+
+Repeat the archive-only check with:
+
+```bash
+python3 -B scripts/e2e/fabric_attrahite_evidence_v30.py \
+  --archive docs/evidence/fabric-1.20.1/attrahite-block-registry-v30
+```
+
+This is a bounded block-family, loot, recipe, rendering, and persistence proof;
+it does not establish natural Attrahite generation. The v30 identity is
+permanently consumed and must not be provisioned, staged, checked, or launched
+again.
+
 ## Current Forest Lantern visual proof (v24)
 
 The one-shot `etherology-e2e-fabric-1.20.1-v24` profile ran the packaged

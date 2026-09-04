@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "kind": "etherology-fabric-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "attrahite-block-registry",
+  "profile": {
+    "id": "etherology-e2e-fabric-1.20.1-v30",
+    "manifest_path": "scripts/e2e/fabric-1.20.1-profile.json",
+    "manifest_size": 7051,
+    "manifest_sha256": "f2131cb9190b17b42035604d26988a1aa8091cbc94541cb29c0e9d018bcf8000"
+  },
+  "runtime": {
+    "artifact_node": "fabric-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 17,
+    "capture_kind": "composed-minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788504284518012322,
+      "reports/done.marker": 1788504284518257283,
+      "screenshots/attrahite-block-registry-initial.png": 1788504276249203296,
+      "screenshots/attrahite-block-registry-reopened.png": 1788504284491631444
+    }
+  },
+  "capture_metadata": {
+    "path": "artifact-lock.json",
+    "size": 1119,
+    "sha256": "2b913ff0f065313bec3484d40bcb7a888d1d43a2de0c3ef2db036c3ce82520a9"
+  },
+  "assertion_count": 91,
+  "screenshot_count": 2,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-under-test.jar",
+      "size": 2894988,
+      "sha256": "f370e0c91de3ef7439fe18c673ccf336708c99231e252bdec289f768840f18b1"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-e2e-harness.jar",
+      "size": 300673,
+      "sha256": "1c978b594d0f6d92355b1d588993cc979e47f4fb39548213c7ac17ed813d267a"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 36736,
+      "sha256": "db5f6d7af11f1406c304b8ec64aa3022a25f774f8704fde4a70cc9fc31faebb5"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/attrahite-block-registry-initial.png": {
+      "size": 304959,
+      "sha256": "3b0e9c87f794886835879db2f54091e74632f316d9905bd1418116074055adca"
+    },
+    "screenshots/attrahite-block-registry-reopened.png": {
+      "size": 289664,
+      "sha256": "7041da05fe40d27ffedcc21e848c477b8b173e61561f4bceeb53ad284a2f4e2f"
+    }
+  }
+}

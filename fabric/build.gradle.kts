@@ -624,6 +624,56 @@ if (minecraftVersion == "1.20.1") {
                 ),
             ).withPropertyName("fabricAttrahiteV29FailureHistory").optional()
             inputs.files(
+                rootProject.file(
+                    "scripts/e2e/.state/etherology-e2e-fabric-1.20.1-v30-start.attempted",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        ".etherology-e2e-profile.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "artifact-lock.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "evidence/.etherology-e2e-evidence.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "evidence/attrahite-block-registry/reports/report.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "evidence/attrahite-block-registry/reports/done.marker",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "evidence/attrahite-block-registry/screenshots/" +
+                        "attrahite-block-registry-initial.png",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "evidence/attrahite-block-registry/screenshots/" +
+                        "attrahite-block-registry-reopened.png",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/logs/fabric-1.20.1-20260904T064355Z.log",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "game/logs/latest.log",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "game/mods/etherology-e2e-harness.jar",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/" +
+                        "game/mods/etherology-under-test.jar",
+                ),
+            ).withPropertyName("fabricAttrahiteV30AcceptedHistory").optional()
+            inputs.files(
                 rootProject.fileTree("src/main/generated/assets/etherology") {
                     include("blockstates/attrahite*.json")
                     include("models/block/attrahite*.json")
@@ -633,6 +683,8 @@ if (minecraftVersion == "1.20.1") {
                     include("textures/block/attrahite*.png")
                 },
             )
+            inputs.dir(fabricAttrahiteEvidenceArchive)
+                .withPropertyName("fabricAttrahiteEvidenceArchiveSafetyFixture")
         }
 
     val validateFabricAttrahiteEvidenceArchiveIntegrity =

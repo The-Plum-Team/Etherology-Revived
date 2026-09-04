@@ -1155,10 +1155,10 @@ def validate_live_artifacts(
             "Forge Attrahite evidence has no exact artifact lock"
         )
     locked_artifacts = lock.get("artifacts")
-    if not isinstance(locked_artifacts, dict) or tuple(locked_artifacts) != (
+    if not isinstance(locked_artifacts, dict) or set(locked_artifacts) != {
         "production",
         "harness",
-    ):
+    }:
         raise forge_client.E2EError(
             "Forge Attrahite artifact lock inventory changed"
         )
@@ -1327,10 +1327,10 @@ def validate_capture_artifact_lock(
     ):
         raise forge_client.E2EError("Forge Attrahite capture has no exact artifact lock")
     locked_artifacts = lock.get("artifacts")
-    if not isinstance(locked_artifacts, dict) or tuple(locked_artifacts) != (
+    if not isinstance(locked_artifacts, dict) or set(locked_artifacts) != {
         "production",
         "harness",
-    ):
+    }:
         raise forge_client.E2EError("Forge Attrahite capture artifact lock inventory changed")
     for role, mod_id, file_name in EXPECTED_ARTIFACTS:
         locked = locked_artifacts.get(role)

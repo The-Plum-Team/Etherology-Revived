@@ -1194,10 +1194,10 @@ def validate_capture_artifact_lock(
     ):
         raise client.E2EError("Fabric Attrahite capture has no exact artifact lock")
     locked_artifacts = lock.get("artifacts")
-    if not isinstance(locked_artifacts, dict) or tuple(locked_artifacts) != (
+    if not isinstance(locked_artifacts, dict) or set(locked_artifacts) != {
         "production",
         "harness",
-    ):
+    }:
         raise client.E2EError("Fabric Attrahite capture artifact lock inventory changed")
     for role, mod_id, file_name in EXPECTED_ARTIFACTS:
         locked = locked_artifacts.get(role)

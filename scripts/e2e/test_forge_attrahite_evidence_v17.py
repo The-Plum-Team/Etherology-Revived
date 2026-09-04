@@ -7,6 +7,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -362,6 +363,25 @@ def archived_artifacts(report: dict[str, object]) -> dict[str, dict[str, object]
     }
 
 
+def reversed_artifact_lock(
+    report_artifacts: dict[str, dict[str, object]],
+) -> dict[str, object]:
+    return {
+        "schema": 1,
+        "profile_id": attrahite_evidence.PROFILE_ID,
+        "artifact_node": "forge-1.20.1",
+        "artifacts": {
+            role: {
+                "mod_id": record["mod_id"],
+                "target_file": record["file_name"],
+                "size": record["size"],
+                "sha256": record["sha256"],
+            }
+            for role, record in reversed(tuple(report_artifacts.items()))
+        },
+    }
+
+
 def build_archive_manifest(
     archive_root: Path, report: dict[str, object]
 ) -> dict[str, object]:
@@ -426,6 +446,77 @@ class ActiveProfileTests(unittest.TestCase):
             (SCRIPT_DIRECTORY / "forge-1.20.1-profile.json").read_bytes(),
             (SCRIPT_DIRECTORY / "forge-1.20.1-profile-v17.json").read_bytes(),
         )
+
+    def test_capture_lock_inventory_is_exact_without_object_order_semantics(
+        self,
+    ) -> None:
+        reported = archived_artifacts({"artifacts": artifact_records()})
+        lock = reversed_artifact_lock(reported)
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            lock_path = Path(temporary_directory) / "artifact-lock.json"
+            lock_path.write_text("{}\n", encoding="utf-8")
+            with mock.patch.object(
+                forge_client,
+                "load_artifact_lock",
+                return_value=lock,
+            ):
+                with mock.patch.object(
+                    forge_client,
+                    "artifact_lock_path",
+                    return_value=lock_path,
+                ):
+                    self.assertEqual(
+                        attrahite_evidence.validate_capture_artifact_lock(
+                            object(), Path(temporary_directory), reported
+                        ),
+                        lock_path,
+                    )
+                    lock["artifacts"]["foreign"] = {}
+                    with self.assertRaises(forge_client.E2EError):
+                        attrahite_evidence.validate_capture_artifact_lock(
+                            object(), Path(temporary_directory), reported
+                        )
+
+    def test_live_lock_inventory_is_exact_without_object_order_semantics(
+        self,
+    ) -> None:
+        reported = archived_artifacts({"artifacts": artifact_records()})
+        lock = reversed_artifact_lock(reported)
+        configuration = object()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory)
+            with mock.patch.object(
+                forge_client,
+                "verify_locked_artifacts",
+            ) as verify_locked_artifacts:
+                with mock.patch.object(
+                    forge_client,
+                    "load_artifact_lock",
+                    return_value=lock,
+                ):
+                    self.assertEqual(
+                        attrahite_evidence.validate_live_artifacts(
+                            configuration,
+                            runtime,
+                            reported,
+                        ),
+                        (
+                            str(reported["production"]["sha256"]),
+                            str(reported["harness"]["sha256"]),
+                        ),
+                    )
+                    verify_locked_artifacts.assert_called_once_with(
+                        configuration,
+                        runtime,
+                        verify_source=False,
+                    )
+                    lock["artifacts"]["foreign"] = {}
+                    with self.assertRaises(forge_client.E2EError):
+                        attrahite_evidence.validate_live_artifacts(
+                            configuration,
+                            runtime,
+                            reported,
+                        )
 
     def test_rejects_a_linked_v17_snapshot(self) -> None:
         configuration = forge_client.load_configuration()

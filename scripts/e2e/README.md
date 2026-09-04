@@ -13,15 +13,15 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
-The tracked v30 profile is a fresh repository-owned runtime prepared for one
-`attrahite-block-registry` attempt. It is not accepted evidence until the native
-run, stopped-live verification, archive sealing, and archive-only verification
-all succeed. The accepted v20 through v24 archives and all consumed v20
-through v29 profiles remain immutable history. In particular, v29 timed out on
+The tracked v30 profile consumed its one repository-owned
+`attrahite-block-registry` attempt and is now accepted evidence. The native run,
+stopped-live verification, archive seal, and archive-only verification all
+passed. The accepted v20 through v24 and v30 archives and all consumed v20
+through v30 profiles remain immutable history. In particular, v29 timed out on
 the initial client-light payload race and has no accepted archive. The
 `client.py validate` action and archive-only validation are safe because they do
-not mutate or launch a runtime. v30 is the only Fabric client identity eligible
-for the prepared lifecycle below.
+not mutate or launch a runtime. Any later Fabric client attempt must first roll
+the entire contract to v31 or newer.
 
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
@@ -38,7 +38,7 @@ must also be nested in the production Etherology JAR. None of those are added
 as a second root mod. The packaged E2E harness is the only additional local
 root mod.
 
-## Validate the fresh profile without launching
+## Validate the consumed profile without launching
 
 Validate the tracked configuration without creating or launching a game:
 
@@ -46,10 +46,10 @@ Validate the tracked configuration without creating or launching a game:
 python3 -B scripts/e2e/client.py validate
 ```
 
-The remaining lifecycle commands apply only to fresh v30. They are not part of
-the build/unit-test gate and must never be used for a consumed identity.
+The remaining v30 lifecycle commands below are retained as provenance only.
+They must not be executed against the consumed identity.
 
-## Prepare v30 without launching
+## Historical v30 preparation commands
 
 Install the pinned launcher helper into ignored repository state:
 
@@ -58,7 +58,7 @@ python3 -m pip install --target scripts/e2e/.state/python \
   -r scripts/e2e/requirements.txt
 ```
 
-Provision the new isolated v30 runtime:
+The original isolated v30 runtime was provisioned with:
 
 ```bash
 python3 -B scripts/e2e/client.py provision
@@ -156,11 +156,11 @@ The stable Fabric entrypoint remains
 `dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness`, so the isolated profile
 identity and staged-artifact contract do not change.
 
-## Prepared v30 client lifecycle
+## Consumed v30 client lifecycle
 
-The fresh v30 run uses these commands after `check` succeeds. `start` is
-authorized exactly once; its durable attempt marker rejects reuse even if the
-attempt fails early:
+The fresh v30 run used these commands after `check` succeeded. They are recorded
+only as provenance and must not be rerun; the durable attempt marker rejects
+reuse:
 
 ```bash
 python3 -B scripts/e2e/client.py start --scenario attrahite-block-registry
@@ -170,7 +170,7 @@ python3 -B scripts/e2e/client.py status
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. That marker is never
 removed and blocks another provision, stage, check, or start for v30, including
-after an early launch failure. All v20-v29 identities are already consumed and
+after an early launch failure. All v20-v30 identities are already consumed and
 must never be reused. `status` remains available; `stop` is an
 abort-only command and must not be used for a normally auto-completing capture.
 
@@ -213,8 +213,9 @@ or symlink makes verification fail instead of adopting or mixing evidence.
 
 ## Safety tests
 
-The tests are pure temporary-directory/configuration checks. They do not
-download dependencies, create a game runtime, or launch a process:
+The tests use temporary fixtures plus read-only checks of the frozen archive
+and, when present, exact consumed local history. They do not download
+dependencies, create or mutate a game runtime, or launch a process:
 
 ```bash
 python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
@@ -228,6 +229,49 @@ python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
 ./gradlew :fabric:1.20.1:fabricAttrahiteEvidenceSafetyTest \
   --no-daemon --console=plain
 ```
+
+## Accepted Fabric Attrahite evidence (v30)
+
+The packaged v30 scenario and strict verifier passed the native capture with 91
+ordered assertions and two unedited 1920x1080 framebuffer PNGs. It proves the
+four exact block/item pairs, their native classes and states, resources, tags,
+loot, recipes and advancements, real `BlockItem` placement, deterministic
+plain/Silk Touch/Fortune III outcomes, and exact save/disconnect/reopen
+persistence. Its pre-setup gate first held every client-light payload predicate
+for 20 consecutive ticks. The reopened changed-pixel ratio is `0.021750`.
+
+The stopped live runtime was verified before its four payloads were copied with
+preserved timestamps. Archive creation then bound those bytes to the exact v30
+profile and artifact lock, and archive-only validation passed. Manifest
+creation must not be repeated:
+
+```bash
+python3 -B scripts/e2e/fabric_attrahite_evidence_v30.py --live
+/bin/mkdir docs/evidence/fabric-1.20.1/attrahite-block-registry-v30
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/evidence/attrahite-block-registry/. \
+  docs/evidence/fabric-1.20.1/attrahite-block-registry-v30/
+python3 -B scripts/e2e/fabric_attrahite_evidence_v30.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/attrahite-block-registry-v30 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
+```
+
+Archive-only verification remains repeatable:
+
+```bash
+python3 -B scripts/e2e/fabric_attrahite_evidence_v30.py \
+  --archive docs/evidence/fabric-1.20.1/attrahite-block-registry-v30
+./gradlew :fabric:1.20.1:validateFabricAttrahiteEvidenceArchiveIntegrity \
+  --no-daemon --console=plain
+```
+
+The production-JAR SHA-256 is
+`f370e0c91de3ef7439fe18c673ccf336708c99231e252bdec289f768840f18b1`,
+the harness-JAR SHA-256 is
+`1c978b594d0f6d92355b1d588993cc979e47f4fb39548213c7ac17ed813d267a`,
+and the archive-manifest SHA-256 is
+`430971b61511f2fdb94f0855c13b9a28bf4f8bb79432a084abfae659e6859732`.
 
 ## Accepted Fabric Forest Lantern evidence (v24)
 
@@ -323,12 +367,11 @@ direct server-side placement and exact client rendering only. It does not prove
 enforcement, beacon activation, recipe execution, creative tabs, restart
 persistence, multiplayer, or release readiness.
 
-The v23 and v24 identities are consumed and remain archive-only history. The
-v25-v29 identities are also consumed history and have no accepted Attrahite
-archive. The active v30 profile is the only Fabric identity eligible for the
-prepared one-shot lifecycle; a later attempt must first advance every profile,
-runtime, snapshot, test, verifier, and archive literal to a fresh v31-or-newer
-identity.
+The v23, v24, and v30 identities are consumed and remain archive-only history.
+The v25-v29 identities are also consumed history and have no accepted Attrahite
+archive. No Fabric identity is currently eligible for another one-shot client
+lifecycle; a later attempt must first advance every profile, runtime, snapshot,
+test, verifier, and archive literal to a fresh v31-or-newer identity.
 
 ### Historical Phase 0 archive (v22)
 

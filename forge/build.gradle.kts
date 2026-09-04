@@ -4397,6 +4397,7 @@ tasks.named<Test>("test").configure {
     exclude("**/AttrahiteBlockRegistryResourcesTest.class")
     exclude("**/SlitheriteCanonicalResourcesTest.class")
     exclude("**/WarpCounterRegistryResourcesTest.class")
+    exclude("**/LensFoundationCrossArtifactTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -5332,6 +5333,108 @@ val warpCounterRegistryTest = tasks.register<Test>("warpCounterRegistryTest") {
         )
     }
 }
+
+val lensFoundationCrossArtifactTest =
+    tasks.register<Test>("lensFoundationCrossArtifactTest") {
+        group = "verification"
+        description =
+            "Runs exact cross-loader lens-foundation ownership and isolation tests."
+        dependsOn(
+            tasks.named("testClasses"),
+            commonJar,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            fabricShadowJar,
+            fabricRemapJar,
+            forgeShadowJar,
+        )
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform()
+        filter {
+            includeTestsMatching(
+                "ru.feytox.etherology.forge.LensFoundationCrossArtifactTest",
+            )
+        }
+        inputs.file(commonJar.flatMap { it.archiveFile })
+            .withPropertyName("lensFoundationCommonJar")
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("lensFoundationFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("lensFoundationForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("lensFoundationFabricDevelopmentJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+            .withPropertyName("lensFoundationFabricProductionJar")
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("lensFoundationForgeShadowJar")
+        inputs.files(
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/magic/staff/StaffPattern.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/magic/staff/StaffLenses.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/magic/lens/LensComponent.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/magic/lens/LensDataKeys.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/item/LensRuntimeBackend.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/item/LensRuntime.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/item/LensItem.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/item/UnadjustedLens.java",
+            ),
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/item/"
+                    + "FabricLensRuntimeBackend.java",
+            ),
+        ).withPropertyName("canonicalLensFoundationSources")
+        doFirst {
+            systemProperty(
+                "etherology.lensFoundation.commonJar",
+                commonJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.lensFoundation.fabricTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.lensFoundation.forgeTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.lensFoundation.fabricDevelopmentJar",
+                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.lensFoundation.fabricProductionJar",
+                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.lensFoundation.forgeShadowJar",
+                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.lensFoundation.repositoryRoot",
+                rootProject.projectDir.absolutePath,
+            )
+        }
+    }
 
 val metalBlockRegistryTest = tasks.register<Test>("metalBlockRegistryTest") {
     group = "verification"
@@ -7306,12 +7409,62 @@ val validateForgeWarpCounterStaticMilestone =
         ).withPropertyName("canonicalWarpCounterStaticResources")
     }
 
+val validateForgeLensFoundationStaticMilestone =
+    tasks.register("validateForgeLensFoundationStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates canonical shared lens types, Fabric delegation, and Forge isolation."
+        dependsOn(
+            validateForgeWarpCounterStaticMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            lensFoundationCrossArtifactTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("lensFoundationFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("lensFoundationForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree("common/src/main/java/ru/feytox/etherology") {
+                include("item/LensItem.java")
+                include("item/LensRuntime.java")
+                include("item/LensRuntimeBackend.java")
+                include("item/UnadjustedLens.java")
+                include("magic/lens/LensComponent.java")
+                include("magic/lens/LensDataKeys.java")
+                include("magic/staff/StaffLenses.java")
+                include("magic/staff/StaffPattern.java")
+            },
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/item/"
+                    + "FabricLensRuntimeBackend.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/misc/ComponentTypes.java",
+            ),
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/EtherologyFabric.java",
+            ),
+        ).withPropertyName("canonicalLensFoundationSources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeWarpCounterStaticMilestone)
+        dependsOn(validateForgeLensFoundationStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -7362,6 +7515,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeAttrahiteMilestone,
         validateForgeSlitheriteStaticMilestone,
         validateForgeWarpCounterStaticMilestone,
+        validateForgeLensFoundationStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -7370,7 +7524,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeWarpCounterStaticMilestone)
+    dependsOn(validateForgeLensFoundationStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

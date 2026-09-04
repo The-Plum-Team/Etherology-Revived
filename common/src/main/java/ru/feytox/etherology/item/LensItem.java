@@ -1,7 +1,5 @@
 package ru.feytox.etherology.item;
 
-import lombok.Getter;
-import lombok.val;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.Item;
@@ -21,29 +19,26 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import ru.feytox.etherology.magic.ether.EtherComponent;
 import ru.feytox.etherology.magic.lens.LensComponent;
+import ru.feytox.etherology.magic.lens.LensDataKeys;
 import ru.feytox.etherology.magic.lens.LensModifier;
 import ru.feytox.etherology.magic.lens.LensModifiersData;
-import ru.feytox.etherology.magic.staff.*;
-import ru.feytox.etherology.registry.misc.ComponentTypes;
-import ru.feytox.etherology.util.misc.ItemComponent;
+import ru.feytox.etherology.magic.staff.StaffLenses;
+import ru.feytox.etherology.magic.staff.StaffPattern;
 import ru.feytox.etherology.util.misc.ItemData;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
  * @see LensComponent
- * @see StaffItem
  */
 public abstract class LensItem extends Item {
 
     public static final int CHARGE_LIMIT = 100;
     public static final int MAX_DAMAGE = 100;
 
-    @Nullable @Getter
+    @Nullable
     private final StaffLenses lensType;
     private final float streamCost;
     private final float chargeCost;
@@ -84,7 +79,7 @@ public abstract class LensItem extends Item {
      */
     public static boolean decrementEther(LivingEntity entity, ItemStack lensStack, LensComponent lensData) {
         if (!(lensStack.getItem() instanceof LensItem lensItem)) return true;
-        return !EtherComponent.decrement(entity, lensItem.getEtherCost(lensData));
+        return !LensRuntime.decrementEther(entity, lensItem.getEtherCost(lensData));
     }
 
     public float getEtherCost(LensComponent lensData) {
@@ -110,7 +105,7 @@ public abstract class LensItem extends Item {
     @Override
     public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
         super.appendTooltip(stack, world, tooltip, context);
-        val lensData = LensComponent.get(stack).orElse(null);
+        LensComponent lensData = LensComponent.get(stack).orElse(null);
         if (lensData == null) return;
 
         lensData.modifiers().getModifiers().forEach((id, level) -> {
@@ -158,11 +153,11 @@ public abstract class LensItem extends Item {
     }
 
     private static int getDamage(ItemStack stack) {
-        return ComponentTypes.PSEUDO_DAMAGE.getOrDefault(stack, 0);
+        return LensDataKeys.PSEUDO_DAMAGE.getOrDefault(stack, 0);
     }
 
     private static void setDamage(ItemStack stack, int damage) {
-        ComponentTypes.PSEUDO_DAMAGE.set(stack, damage);
+        LensDataKeys.PSEUDO_DAMAGE.set(stack, damage);
     }
 
     public static void playLensBrakeSound(ServerWorld world, Vec3d pos) {
@@ -172,7 +167,7 @@ public abstract class LensItem extends Item {
 
     public static void spawnLensBrakeParticles(ServerWorld world, Item item, Vec3d pos, float pitch, float yaw) {
         Random random = world.getRandom();
-        val effect = new ItemStackParticleEffect(ParticleTypes.ITEM, item.getDefaultStack());
+        ItemStackParticleEffect effect = new ItemStackParticleEffect(ParticleTypes.ITEM, item.getDefaultStack());
         for(int i = 0; i < 5; ++i) {
             Vec3d velocity = new Vec3d((random.nextDouble() - 0.5) * 0.1, Math.random() * 0.1 + 0.1, 0.0);
             velocity = velocity.rotateX(-pitch * 0.017453292F);
@@ -199,17 +194,14 @@ public abstract class LensItem extends Item {
      * @param lensStack the ItemStack representing the lens
      */
     public static void placeLensOnStaff(ItemStack staffStack, ItemStack lensStack) {
-        if (!(staffStack.getItem() instanceof StaffItem)) return;
+        if (!LensRuntime.isStaff(staffStack)) return;
         if (!(lensStack.getItem() instanceof LensItem lensItem)) return;
         if (lensItem.isUnadjusted()) return;
 
         StaffLenses lensType = StaffLenses.getLens(lensStack);
         if (lensType == null) return;
 
-        StaffItem.setLensComponent(staffStack, lensStack.copy());
-        StaffComponent.getWrapper(staffStack)
-                .ifPresent(staff -> staff.set(new StaffPartInfo(StaffPart.LENS, lensType, StaffPattern.EMPTY), StaffComponent::setPartInfo).save());
-
+        LensRuntime.placeStaffLens(staffStack, lensStack.copy(), lensType);
         lensStack.decrement(1);
     }
 
@@ -221,14 +213,8 @@ public abstract class LensItem extends Item {
      */
     @Nullable
     public static ItemStack takeLensFromStaff(ItemStack staffStack) {
-        if (!(staffStack.getItem() instanceof StaffItem)) return null;
-
-        ItemStack lensStack = getStaffLens(staffStack);
-        StaffComponent.getWrapper(staffStack)
-                .ifPresent(staff -> staff.set(StaffPart.LENS, StaffComponent::removePartInfo).save());
-        ComponentTypes.STAFF_LENS.remove(staffStack);
-
-        return lensStack;
+        if (!LensRuntime.isStaff(staffStack)) return null;
+        return LensRuntime.takeStaffLens(staffStack);
     }
 
     @Nullable
@@ -239,8 +225,7 @@ public abstract class LensItem extends Item {
 
     @Nullable
     public static ItemStack getStaffLens(ItemStack staffStack) {
-        return ComponentTypes.STAFF_LENS.get(staffStack)
-                .map(ItemComponent::stack).filter(stack -> !stack.isEmpty()).orElse(null);
+        return LensRuntime.getStaffLens(staffStack);
     }
 
     public boolean isUnadjusted() {
@@ -250,5 +235,10 @@ public abstract class LensItem extends Item {
     @Override
     public boolean hasGlint(ItemStack stack) {
         return !LensComponent.get(stack).map(LensComponent::modifiers).map(LensModifiersData::isEmpty).orElse(true);
+    }
+
+    @Nullable
+    public StaffLenses getLensType() {
+        return lensType;
     }
 }

@@ -1,7 +1,5 @@
 package ru.feytox.etherology.magic.staff;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import net.minecraft.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.item.LensItem;
@@ -9,8 +7,6 @@ import ru.feytox.etherology.item.LensItem;
 import java.util.List;
 import java.util.function.Supplier;
 
-@Getter
-@RequiredArgsConstructor
 public enum StaffLenses implements StaffPattern {
     REDSTONE;
 

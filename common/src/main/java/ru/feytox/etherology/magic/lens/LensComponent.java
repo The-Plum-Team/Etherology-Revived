@@ -2,16 +2,13 @@ package ru.feytox.etherology.magic.lens;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import lombok.With;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import ru.feytox.etherology.item.LensItem;
-import ru.feytox.etherology.registry.misc.ComponentTypes;
 import ru.feytox.etherology.util.misc.ItemData;
 
 import java.util.Optional;
 
-@With
 public record LensComponent(int charge, LensMode mode, LensPattern pattern, LensModifiersData modifiers, long endTick) {
 
     public static final Codec<LensComponent> CODEC;
@@ -64,12 +61,42 @@ public record LensComponent(int charge, LensMode mode, LensPattern pattern, Lens
     }
 
     public static Optional<ItemData<LensComponent>> getWrapper(ItemStack stack) {
-        return get(stack).map(component -> new ItemData<>(stack, ComponentTypes.LENS, component));
+        return get(stack).map(component -> new ItemData<>(stack, LensDataKeys.LENS, component));
     }
 
     public static Optional<LensComponent> get(ItemStack stack) {
         if (!(stack.getItem() instanceof LensItem)) return Optional.empty();
-        return Optional.of(ComponentTypes.LENS.getOrDefault(stack, EMPTY));
+        return Optional.of(LensDataKeys.LENS.getOrDefault(stack, EMPTY));
+    }
+
+    public LensComponent withCharge(int charge) {
+        return this.charge == charge
+                ? this
+                : new LensComponent(charge, mode, pattern, modifiers, endTick);
+    }
+
+    public LensComponent withMode(LensMode mode) {
+        return this.mode == mode
+                ? this
+                : new LensComponent(charge, mode, pattern, modifiers, endTick);
+    }
+
+    public LensComponent withPattern(LensPattern pattern) {
+        return this.pattern == pattern
+                ? this
+                : new LensComponent(charge, mode, pattern, modifiers, endTick);
+    }
+
+    public LensComponent withModifiers(LensModifiersData modifiers) {
+        return this.modifiers == modifiers
+                ? this
+                : new LensComponent(charge, mode, pattern, modifiers, endTick);
+    }
+
+    public LensComponent withEndTick(long endTick) {
+        return this.endTick == endTick
+                ? this
+                : new LensComponent(charge, mode, pattern, modifiers, endTick);
     }
 
     static {

@@ -19,6 +19,7 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
 import client
+import macos_guarded_java
 
 
 def fabric_jar_bytes(
@@ -540,6 +541,47 @@ class OwnershipTests(unittest.TestCase):
         state_path.write_text(json.dumps(state), encoding="utf-8")
         return state_path
 
+    def upgrade_process_state_to_guarded(self, state_path: Path) -> dict[str, object]:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        runtime = Path(str(state["game_directory"])).parent
+        target = {
+            "pid": state["pid"],
+            "process_group_id": state["pid"],
+            "proc_start_abstime": 987654321,
+            "expected_executable": "/test/java",
+        }
+        telemetry_path = runtime / "memory-guard-telemetry.json"
+        readiness_path = runtime / ".memory-guard-ready.json"
+        telemetry_path.write_text(
+            json.dumps({"schema": 1, "target": target}),
+            encoding="utf-8",
+        )
+        readiness_path.write_text(
+            json.dumps(
+                {
+                    "schema": 1,
+                    "status": "ready",
+                    "monitor_pid": 12346,
+                    "target": target,
+                    "telemetry": str(telemetry_path),
+                }
+            ),
+            encoding="utf-8",
+        )
+        state.update(
+            {
+                "schema": 2,
+                "process_group_id": state["pid"],
+                "proc_start_abstime": 987654321,
+                "expected_executable": "/test/java",
+                "memory_guard_pid": 12346,
+                "memory_guard_telemetry": str(telemetry_path),
+                "memory_guard_readiness": str(readiness_path),
+            }
+        )
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+        return state
+
     def test_linked_state_root_is_rejected_before_lifecycle_access(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
@@ -626,6 +668,44 @@ class OwnershipTests(unittest.TestCase):
             ["etherology-e2e-current", "etherology-e2e-legacy"],
             [str(state["profile_id"]) for _path, state in states],
         )
+
+    def test_schema_two_state_pins_direct_java_and_guard_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory) / "state"
+            state_root.mkdir()
+            state_path = self.write_owned_process_state(
+                state_root,
+                "etherology-e2e-guarded",
+                "phase0-smoke",
+            )
+            expected = self.upgrade_process_state_to_guarded(state_path)
+
+            actual = client.read_owned_process_state(state_path, state_root)
+
+        self.assertEqual(expected, actual)
+
+    def test_schema_two_state_rejects_non_dedicated_or_coerced_identity(self) -> None:
+        for field_name, invalid_value in (
+            ("process_group_id", 12344),
+            ("process_group_id", "12345"),
+            ("proc_start_abstime", True),
+            ("memory_guard_pid", 12345),
+        ):
+            with self.subTest(field_name=field_name, invalid_value=invalid_value):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    state_root = Path(temporary_directory) / "state"
+                    state_root.mkdir()
+                    state_path = self.write_owned_process_state(
+                        state_root,
+                        "etherology-e2e-guarded",
+                        "phase0-smoke",
+                    )
+                    state = self.upgrade_process_state_to_guarded(state_path)
+                    state[field_name] = invalid_value
+                    state_path.write_text(json.dumps(state), encoding="utf-8")
+
+                    with self.assertRaises(client.E2EError):
+                        client.read_owned_process_state(state_path, state_root)
 
     def test_stale_owned_states_are_cleared_before_a_new_launch(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -753,7 +833,7 @@ class StartAttemptTests(unittest.TestCase):
 
             def fail_spawn(*_args: object, **_kwargs: object) -> None:
                 self.assertTrue(attempt_path.is_file())
-                raise OSError("synthetic spawn failure")
+                raise client.GuardedJavaError("synthetic spawn failure")
 
             with (
                 mock.patch.object(client, "STATE_ROOT", state_root),
@@ -796,9 +876,13 @@ class StartAttemptTests(unittest.TestCase):
                     return_value=game_directory,
                 ),
                 mock.patch.object(client.os, "open", side_effect=inspect_open),
-                mock.patch.object(client.subprocess, "Popen", side_effect=fail_spawn),
+                mock.patch.object(
+                    client,
+                    "start_guarded_java",
+                    side_effect=fail_spawn,
+                ),
             ):
-                with self.assertRaisesRegex(OSError, "synthetic spawn failure"):
+                with self.assertRaisesRegex(client.E2EError, "synthetic spawn failure"):
                     client.start_command("forest-lantern")
                 with self.assertRaisesRegex(client.E2EError, "start attempt.*consumed"):
                     client.start_command("forest-lantern")
@@ -854,6 +938,79 @@ class StartAttemptTests(unittest.TestCase):
             self.assertFalse(
                 client.start_attempt_path(self.configuration, state_root).exists()
             )
+
+    def test_failed_guarded_cleanup_retains_the_only_process_state(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory).resolve() / ".state"
+            runtime = state_root / "runtimes" / "runtime"
+            game = runtime / "game"
+            game.mkdir(parents=True)
+            state_path = state_root / "current.json"
+            target = macos_guarded_java.OwnedJavaProcess(
+                pid=12345,
+                process_group_id=12345,
+                proc_start_abstime=987654321,
+                expected_executable="/test/java",
+            )
+            launch = macos_guarded_java.GuardedJavaLaunch(
+                java_process=mock.Mock(pid=12345),
+                monitor_process=mock.Mock(pid=12346),
+                caffeinate_process=mock.Mock(pid=12347),
+                target=target,
+                telemetry_path=runtime / "memory-guard-telemetry.json",
+                readiness_path=runtime / ".memory-guard-ready.json",
+            )
+            with (
+                mock.patch.object(client, "STATE_ROOT", state_root),
+                mock.patch.object(client, "ensure_owned_state_roots"),
+                mock.patch.object(
+                    client,
+                    "load_configuration",
+                    return_value=self.configuration,
+                ),
+                mock.patch.object(client, "require_unattempted_profile"),
+                mock.patch.object(
+                    client,
+                    "clear_stale_and_reject_live_owned_clients",
+                ),
+                mock.patch.object(
+                    client,
+                    "verify_environment",
+                    return_value=(
+                        Path("/test/java"),
+                        ["/test/java", "-Xmx4096M", "Main"],
+                    ),
+                ),
+                mock.patch.object(client, "assert_runtime_not_running"),
+                mock.patch.object(client, "reserve_start_attempt"),
+                mock.patch.object(client, "runtime_root", return_value=runtime),
+                mock.patch.object(client, "game_directory", return_value=game),
+                mock.patch.object(
+                    client,
+                    "process_state_path",
+                    return_value=state_path,
+                ),
+                mock.patch.object(
+                    client,
+                    "start_guarded_java",
+                    return_value=launch,
+                ),
+                mock.patch.object(
+                    client,
+                    "wait_for_stable_client_start",
+                    side_effect=client.E2EError("startup failed"),
+                ),
+                mock.patch.object(
+                    client,
+                    "stop_guarded_java_launch",
+                    side_effect=client.GuardedJavaError("stop failed"),
+                ),
+                self.assertRaisesRegex(client.E2EError, "state was retained"),
+            ):
+                client.start_command("forest-lantern")
+
+            self.assertTrue(state_path.is_file())
+            self.assertEqual(2, json.loads(state_path.read_text())["schema"])
 
     def test_consumed_profile_cannot_retry_mutating_lifecycle(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1181,6 +1338,38 @@ class ArtifactStagingTests(unittest.TestCase):
 
 
 class LaunchTests(unittest.TestCase):
+    def test_inherited_java_options_are_rejected_before_java_probe(self) -> None:
+        configuration = client.load_configuration()
+        for variable_name in (
+            "JAVA_TOOL_OPTIONS",
+            "JDK_JAVA_OPTIONS",
+            "_JAVA_OPTIONS",
+        ):
+            with self.subTest(variable_name=variable_name):
+                with (
+                    mock.patch.dict(
+                        client.os.environ,
+                        {variable_name: ""},
+                        clear=True,
+                    ),
+                    mock.patch.object(client, "resolve_java_17") as resolve_java,
+                    self.assertRaisesRegex(client.E2EError, variable_name),
+                ):
+                    client.verify_environment(configuration)
+
+                resolve_java.assert_not_called()
+
+    def test_manifest_rejects_a_non_four_gib_native_heap(self) -> None:
+        configuration = client.load_configuration()
+        changed_manifest = json.loads(json.dumps(configuration.manifest))
+        changed_manifest["launch"]["maximum_memory_mb"] = 8192
+
+        with self.assertRaisesRegex(client.E2EError, "must remain 4096"):
+            client.validate_manifest_shape(
+                changed_manifest,
+                configuration.properties,
+            )
+
     def test_fabric_metadata_selects_inherited_vanilla_jar(self) -> None:
         configuration = client.load_configuration()
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1332,6 +1521,62 @@ class LaunchTests(unittest.TestCase):
 
         self.assertEqual(2, status)
         self.assertIn("client failed", output.getvalue())
+        self.assertNotIn("client is running", output.getvalue())
+
+    def test_schema_two_startup_rejects_a_non_enforcing_guard(self) -> None:
+        state = {"schema": 2, "pid": 12345}
+        with (
+            mock.patch.object(
+                client.time,
+                "monotonic",
+                side_effect=(0.0, 0.1),
+            ),
+            mock.patch.object(client, "client_failure_marker", return_value=None),
+            mock.patch.object(client, "process_exists", return_value=True),
+            mock.patch.object(client, "process_matches", return_value=True),
+            mock.patch.object(
+                client,
+                "memory_guard_process_matches",
+                return_value=True,
+            ),
+            mock.patch.object(
+                client,
+                "memory_guard_is_enforcing",
+                return_value=False,
+            ),
+            self.assertRaisesRegex(client.E2EError, "stopped enforcing"),
+        ):
+            client.wait_for_stable_client_start(state)
+
+    def test_status_never_reports_a_live_unmonitored_client_as_healthy(self) -> None:
+        configuration = client.load_configuration()
+        state = {
+            "schema": 2,
+            "profile_id": client.profile_spec(configuration)["id"],
+            "pid": 12345,
+            "scenario": "phase0-smoke",
+            "version_id": client.version_id(configuration),
+            "game_directory": str(client.game_directory(configuration)),
+            "log": str(client.STATE_ROOT / "logs" / "fabric-test.log"),
+            "memory_guard_telemetry": "/owned/runtime/memory-guard-telemetry.json",
+        }
+        output = io.StringIO()
+        with (
+            mock.patch.object(client, "load_configuration", return_value=configuration),
+            mock.patch.object(client, "read_process_state", return_value=state),
+            mock.patch.object(client, "process_exists", return_value=True),
+            mock.patch.object(client, "process_matches", return_value=True),
+            mock.patch.object(
+                client,
+                "memory_guard_process_matches",
+                return_value=False,
+            ),
+            redirect_stdout(output),
+        ):
+            status = client.status_command()
+
+        self.assertEqual(2, status)
+        self.assertIn("live but unmonitored", output.getvalue())
         self.assertNotIn("client is running", output.getvalue())
 
 

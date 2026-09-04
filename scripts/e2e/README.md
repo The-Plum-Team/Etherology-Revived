@@ -185,13 +185,17 @@ and the repository-owned game directory. On the baseline Mac's 2x Retina display
 that logical size produces the required 1920x1080 composed framebuffer without
 macOS clamping the window height. The controlled option set also pins fancy
 graphics, clouds, particles, mipmaps, field of view, gamma, GUI scale, view
-bobbing, raw mouse input, focus pausing, and the English locale. `start` wraps
-it in macOS `caffeinate` and
-stores only PID metadata and console logs below `scripts/e2e/.state/`. `stop`
-signals a process only when its PID, Fabric version id, game directory, and
-Knot client command all match the recorded state. `start` watches the first two
-seconds for a dead process or fatal loader marker, and `status` reports those
-markers as a failed client rather than a running game.
+bobbing, raw mouse input, focus pausing, and the English locale. `start` launches
+Java directly in a dedicated process group with exactly `-Xmx4096M`, rejects
+inherited JVM option injection, and attaches `caffeinate` to that Java PID. The
+state pins the Java PID, PGID, start time, and executable together with a
+persistent monitor identity. That monitor samples macOS's authoritative current
+physical footprint once per second, writes bounded telemetry inside the owned
+runtime, warns above 8 GiB, and stops only the revalidated owned process group
+after the sustained 12 GiB or emergency 16 GiB threshold. `start` watches the
+first two seconds for a dead process, fatal loader marker, or monitor failure;
+`status` never reports a live but non-enforcing client as healthy. `stop` also
+revalidates the pinned Java identity before signaling its process group.
 
 Before any launch, `start` inventories every `*-current.json` state below this
 repository's ignored E2E root. A live client from an older test-profile revision

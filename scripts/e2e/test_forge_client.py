@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 import io
 import json
@@ -19,6 +19,7 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
 import forge_client
+import macos_guarded_java
 
 
 def forge_jar_bytes(
@@ -609,6 +610,132 @@ class MetadataIntegrityTests(unittest.TestCase):
 
 
 class RuntimeIsolationTests(unittest.TestCase):
+    def write_guarded_process_state(self, state_root: Path) -> Path:
+        profile_id = "etherology-e2e-forge-1.20.1-v18"
+        runtime = state_root / "runtimes" / profile_id
+        game = runtime / "game"
+        game.mkdir(parents=True)
+        logs = state_root / "logs"
+        logs.mkdir()
+        log_path = logs / "client.log"
+        log_path.write_text("", encoding="utf-8")
+        marker = {
+            "schema": 1,
+            "profile_id": profile_id,
+            "managed_by": forge_client.MANAGED_BY,
+            "isolation": {
+                "scope": "repository-owned-ignored-state",
+                "source_profiles": [],
+            },
+            "release": {"loader": "forge", "java": 17},
+        }
+        (runtime / forge_client.PROFILE_MARKER_NAME).write_text(
+            json.dumps(marker),
+            encoding="utf-8",
+        )
+        target = {
+            "pid": 12345,
+            "process_group_id": 12345,
+            "proc_start_abstime": 987654321,
+            "expected_executable": "/test/java",
+        }
+        telemetry_path = runtime / "memory-guard-telemetry.json"
+        readiness_path = runtime / ".memory-guard-ready.json"
+        telemetry_path.write_text(
+            json.dumps({"schema": 1, "target": target}),
+            encoding="utf-8",
+        )
+        readiness_path.write_text(
+            json.dumps(
+                {
+                    "schema": 1,
+                    "status": "ready",
+                    "monitor_pid": 12346,
+                    "target": target,
+                    "telemetry": str(telemetry_path),
+                }
+            ),
+            encoding="utf-8",
+        )
+        state_path = state_root / f"{profile_id}-current.json"
+        state_path.write_text(
+            json.dumps(
+                {
+                    "schema": 2,
+                    "managed_by": forge_client.MANAGED_BY,
+                    "profile_id": profile_id,
+                    "pid": 12345,
+                    "process_group_id": 12345,
+                    "proc_start_abstime": 987654321,
+                    "expected_executable": "/test/java",
+                    "memory_guard_pid": 12346,
+                    "memory_guard_telemetry": str(telemetry_path),
+                    "memory_guard_readiness": str(readiness_path),
+                    "scenario": "ethereal-storage",
+                    "version_id": "1.20.1-forge-47.4.9",
+                    "game_directory": str(game),
+                    "log": str(log_path),
+                }
+            ),
+            encoding="utf-8",
+        )
+        return state_path
+
+    def test_inherited_java_options_are_rejected_before_java_probe(self) -> None:
+        configuration = forge_client.load_configuration()
+        for variable_name in (
+            "JAVA_TOOL_OPTIONS",
+            "JDK_JAVA_OPTIONS",
+            "_JAVA_OPTIONS",
+        ):
+            with self.subTest(variable_name=variable_name):
+                with (
+                    mock.patch.dict(
+                        forge_client.os.environ,
+                        {variable_name: ""},
+                        clear=True,
+                    ),
+                    mock.patch.object(
+                        forge_client,
+                        "resolve_java_17",
+                    ) as resolve_java,
+                    self.assertRaisesRegex(forge_client.E2EError, variable_name),
+                ):
+                    forge_client.verify_environment(configuration)
+
+                resolve_java.assert_not_called()
+
+    def test_schema_two_state_pins_direct_java_and_guard_artifacts(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory).resolve() / ".state"
+            state_root.mkdir()
+            state_path = self.write_guarded_process_state(state_root)
+
+            state = forge_client.read_owned_process_state(state_path, state_root)
+
+        self.assertEqual(2, state["schema"])
+        self.assertEqual(state["pid"], state["process_group_id"])
+        self.assertNotEqual(state["pid"], state["memory_guard_pid"])
+
+    def test_schema_two_state_rejects_non_dedicated_or_coerced_identity(self) -> None:
+        for field_name, invalid_value in (
+            ("process_group_id", 12344),
+            ("process_group_id", "12345"),
+            ("proc_start_abstime", True),
+            ("memory_guard_pid", 12345),
+        ):
+            with self.subTest(field_name=field_name, invalid_value=invalid_value):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    state_root = Path(temporary_directory).resolve() / ".state"
+                    state_root.mkdir()
+                    state_path = self.write_guarded_process_state(state_root)
+                    state = json.loads(state_path.read_text(encoding="utf-8"))
+                    state[field_name] = invalid_value
+                    state_path.write_text(json.dumps(state), encoding="utf-8")
+
+                    with self.assertRaises(forge_client.E2EError):
+                        forge_client.read_owned_process_state(state_path, state_root)
+
     def test_start_attempt_is_durable_exact_and_one_use(self) -> None:
         configuration = forge_client.load_configuration()
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -805,6 +932,154 @@ class RuntimeIsolationTests(unittest.TestCase):
             self.assertRaisesRegex(forge_client.E2EError, "identity changed"),
         ):
             forge_client.wait_for_stable_client_start(state)
+
+    def test_schema_two_startup_rejects_a_non_enforcing_guard(self) -> None:
+        state = {"schema": 2, "pid": 123}
+        with (
+            mock.patch.object(
+                forge_client.time,
+                "monotonic",
+                side_effect=(0.0, 0.0),
+            ),
+            mock.patch.object(forge_client, "client_failure_marker", return_value=None),
+            mock.patch.object(forge_client, "process_exists", return_value=True),
+            mock.patch.object(forge_client, "process_matches", return_value=True),
+            mock.patch.object(
+                forge_client,
+                "memory_guard_process_matches",
+                return_value=True,
+            ),
+            mock.patch.object(
+                forge_client,
+                "memory_guard_is_enforcing",
+                return_value=False,
+            ),
+            self.assertRaisesRegex(forge_client.E2EError, "stopped enforcing"),
+        ):
+            forge_client.wait_for_stable_client_start(state)
+
+    def test_status_never_reports_a_live_unmonitored_client_as_healthy(self) -> None:
+        configuration = forge_client.load_configuration()
+        state = {
+            "schema": 2,
+            "profile_id": forge_client.profile_spec(configuration)["id"],
+            "pid": 12345,
+            "scenario": "ethereal-storage",
+            "version_id": forge_client.forge_version_id(configuration),
+            "game_directory": str(forge_client.game_directory(configuration)),
+            "log": str(forge_client.STATE_ROOT / "logs" / "forge-test.log"),
+            "memory_guard_telemetry": "/owned/runtime/memory-guard-telemetry.json",
+        }
+        output = io.StringIO()
+        with (
+            mock.patch.object(
+                forge_client,
+                "load_configuration",
+                return_value=configuration,
+            ),
+            mock.patch.object(
+                forge_client,
+                "read_process_state",
+                return_value=state,
+            ),
+            mock.patch.object(forge_client, "process_exists", return_value=True),
+            mock.patch.object(forge_client, "process_matches", return_value=True),
+            mock.patch.object(
+                forge_client,
+                "memory_guard_process_matches",
+                return_value=False,
+            ),
+            redirect_stdout(output),
+        ):
+            status = forge_client.status_command()
+
+        self.assertEqual(2, status)
+        self.assertIn("live but unmonitored", output.getvalue())
+        self.assertNotIn("client is running", output.getvalue())
+
+    def test_failed_guarded_cleanup_retains_the_only_process_state(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory).resolve() / ".state"
+            runtime = state_root / "runtimes" / "runtime"
+            game = runtime / "game"
+            game.mkdir(parents=True)
+            state_path = state_root / "current.json"
+            target = macos_guarded_java.OwnedJavaProcess(
+                pid=12345,
+                process_group_id=12345,
+                proc_start_abstime=987654321,
+                expected_executable="/test/java",
+            )
+            launch = macos_guarded_java.GuardedJavaLaunch(
+                java_process=mock.Mock(pid=12345),
+                monitor_process=mock.Mock(pid=12346),
+                caffeinate_process=mock.Mock(pid=12347),
+                target=target,
+                telemetry_path=runtime / "memory-guard-telemetry.json",
+                readiness_path=runtime / ".memory-guard-ready.json",
+            )
+            with (
+                mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                mock.patch.object(forge_client, "ensure_owned_state_roots"),
+                mock.patch.object(
+                    forge_client,
+                    "load_configuration",
+                    return_value=configuration,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "clear_stale_and_reject_live_owned_clients",
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "verify_environment",
+                    return_value=(
+                        Path("/test/java"),
+                        ["/test/java", "-Xmx4096M", "Main"],
+                    ),
+                ),
+                mock.patch.object(forge_client, "assert_runtime_not_running"),
+                mock.patch.object(forge_client, "reserve_launch_attempt"),
+                mock.patch.object(
+                    forge_client,
+                    "runtime_root",
+                    return_value=runtime,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "game_directory",
+                    return_value=game,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "process_state_path",
+                    return_value=state_path,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "start_guarded_java",
+                    return_value=launch,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "wait_for_stable_client_start",
+                    side_effect=forge_client.E2EError("startup failed"),
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "stop_guarded_java_launch",
+                    side_effect=forge_client.GuardedJavaError("stop failed"),
+                ),
+                self.assertRaisesRegex(
+                    forge_client.E2EError,
+                    "state was retained",
+                ),
+            ):
+                forge_client.start_command("ethereal-storage")
+
+            self.assertTrue(state_path.is_file())
+            self.assertEqual(2, json.loads(state_path.read_text())["schema"])
 
     def test_launch_command_enforces_game_directory_version_and_classpath(self) -> None:
         configuration = forge_client.load_configuration()

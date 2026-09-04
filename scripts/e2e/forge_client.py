@@ -25,6 +25,19 @@ import urllib.request
 import uuid
 import zipfile
 
+from macos_guarded_java import (
+    GuardedJavaError,
+    memory_guard_is_enforcing,
+    memory_guard_process_matches,
+    owned_java_process_from_state,
+    start_guarded_java,
+    stop_guarded_java_launch,
+    stop_owned_java_process,
+    verify_guard_state_paths,
+    verify_java_launch_contract,
+    verify_java_option_environment,
+)
+
 
 EXPECTED_LAUNCHER_LIBRARY_VERSION = "8.0"
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -1965,6 +1978,10 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     configured_scenario_id: str | None = None,
 ) -> tuple[Path, list[str]]:
+    try:
+        verify_java_option_environment(os.environ)
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     require_unattempted_profile(configuration)
     verify_runtime(configuration, artifact_policy="required")
     verify_evidence_layout(configuration)
@@ -1973,6 +1990,16 @@ def verify_environment(
     verify_launch_command(
         configuration, command, configured_scenario_id=configured_scenario_id
     )
+    launch = require_object(configuration.manifest, "launch")
+    try:
+        verify_java_launch_contract(
+            command,
+            java_path,
+            int(launch["maximum_memory_mb"]),
+            os.environ,
+        )
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     if not CAFFEINATE_PATH.is_file():
         raise E2EError(f"macOS caffeinate is missing: {CAFFEINATE_PATH}")
     return java_path, command
@@ -2016,7 +2043,7 @@ def read_owned_process_state(
     runtime = target_game_directory.parent
     expected_runtimes_root = state_root / "runtimes"
     if (
-        state.get("schema") != 1
+        state.get("schema") not in (1, 2)
         or state.get("managed_by") != MANAGED_BY
         or state.get("profile_id") != profile_id
         or type(state.get("pid")) is not int
@@ -2056,6 +2083,22 @@ def read_owned_process_state(
     scenario = state.get("scenario")
     if not isinstance(scenario, str) or re.fullmatch(r"[a-z0-9][a-z0-9-]*", scenario) is None:
         raise E2EError("Forge process state has an unsafe scenario id")
+    if state["schema"] == 2:
+        try:
+            target = owned_java_process_from_state(state)
+            verify_guard_state_paths(state, runtime)
+        except GuardedJavaError as exception:
+            raise E2EError(str(exception)) from exception
+        if target.pid != int(state["pid"]) or target.process_group_id != target.pid:
+            raise E2EError(
+                "Forge process state does not pin one dedicated Java process group"
+            )
+        if (
+            type(state.get("memory_guard_pid")) is not int
+            or int(state["memory_guard_pid"]) <= 0
+            or int(state["memory_guard_pid"]) == target.pid
+        ):
+            raise E2EError("Forge process state has no valid memory guard PID")
     process_log_path(state, state_root)
     return state
 
@@ -2133,6 +2176,13 @@ def clear_stale_and_reject_live_owned_clients(
             raise E2EError(
                 f"Owned Forge state PID {pid} belongs to another process; refusing access"
             )
+        if state.get("schema") == 2 and (
+            not memory_guard_process_matches(state)
+            or not memory_guard_is_enforcing(state)
+        ):
+            raise E2EError(
+                f"Owned Forge state PID {pid} is live without its exact memory guard"
+            )
         live_descriptions.append(f"{state['profile_id']} (PID {pid})")
     for path in stale_paths:
         path.unlink()
@@ -2175,7 +2225,18 @@ def wait_for_stable_client_start(state: dict[str, object]) -> None:
             raise E2EError(f"Forge client failed during startup: {marker}")
         if not process_exists(pid):
             raise E2EError("Forge client exited during startup")
-        if process_matches(pid, state):
+        if state.get("schema") == 2:
+            if not process_matches(pid, state):
+                raise E2EError("Forge client process identity changed during startup")
+            if (
+                not memory_guard_process_matches(state)
+                or not memory_guard_is_enforcing(state)
+            ):
+                raise E2EError(
+                    "Forge client memory guard stopped enforcing during startup"
+                )
+            identity_observed = True
+        elif process_matches(pid, state):
             identity_observed = True
         elif identity_observed or now >= identity_deadline:
             raise E2EError("Forge client process identity changed during startup")
@@ -2184,7 +2245,13 @@ def wait_for_stable_client_start(state: dict[str, object]) -> None:
         raise E2EError("Forge client identity was not observed during startup")
 
 
-def stop_owned_process_group(pid: int) -> bool:
+def stop_owned_process_group(state: dict[str, object]) -> bool:
+    pid = int(state["pid"])
+    if state.get("schema") == 2:
+        try:
+            return stop_owned_java_process(owned_java_process_from_state(state))
+        except GuardedJavaError as exception:
+            raise E2EError(str(exception)) from exception
     try:
         os.killpg(pid, signal.SIGTERM)
     except ProcessLookupError:
@@ -2295,45 +2362,58 @@ def start_command(configured_scenario_id: str | None = None) -> int:
             "authentication=deterministic-offline-identity\n\n"
         ).encode("utf-8")
     )
+    launch_environment = dict(os.environ)
+    launch_specification = require_object(configuration.manifest, "launch")
     try:
-        process = subprocess.Popen(
-            [str(CAFFEINATE_PATH), "-dimsu", *command],
-            cwd=game_directory(configuration),
-            stdin=subprocess.DEVNULL,
-            stdout=log_handle,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-            close_fds=True,
+        guarded_launch = start_guarded_java(
+            command,
+            java_path,
+            int(launch_specification["maximum_memory_mb"]),
+            launch_environment,
+            runtime_root(configuration),
+            game_directory(configuration),
+            log_handle,
+            CAFFEINATE_PATH,
         )
-    except OSError:
+    except (GuardedJavaError, OSError) as exception:
         log_handle.close()
-        raise
+        raise E2EError(f"Cannot start guarded Java client: {exception}") from exception
     log_handle.close()
     state = {
-        "schema": 1,
+        "schema": 2,
         "managed_by": MANAGED_BY,
         "profile_id": profile_spec(configuration)["id"],
-        "pid": process.pid,
+        "pid": guarded_launch.target.pid,
         "started_utc": timestamp,
         "scenario": scenario_id,
         "version_id": forge_version_id(configuration),
         "game_directory": str(game_directory(configuration)),
         "log": str(log_path),
+        **guarded_launch.state_fields(),
     }
     try:
         write_json_atomic(process_state_path(configuration), state)
     except (OSError, TypeError, ValueError):
-        stop_owned_process_group(process.pid)
+        stop_guarded_java_launch(guarded_launch)
         raise
     try:
         wait_for_stable_client_start(state)
     except E2EError as exception:
-        if process_exists(process.pid) and process_matches(process.pid, state):
-            stop_owned_process_group(process.pid)
+        try:
+            stop_guarded_java_launch(guarded_launch)
+        except (GuardedJavaError, OSError) as cleanup_exception:
+            raise E2EError(
+                f"{exception}; guarded cleanup failed and process state was retained: "
+                f"{cleanup_exception}; log: {log_path}"
+            ) from cleanup_exception
         clear_stale_process_state(configuration)
         raise E2EError(f"{exception}; log: {log_path}") from exception
-    print(f"Started isolated Forge {scenario_id} client as PID {process.pid}")
+    print(
+        f"Started isolated Forge {scenario_id} client as PID "
+        f"{guarded_launch.target.pid}"
+    )
     print(f"Log: {log_path}")
+    print(f"Memory telemetry: {guarded_launch.telemetry_path}")
     return 0
 
 
@@ -2354,6 +2434,14 @@ def status_command() -> int:
         return 1
     if not process_matches(pid, state):
         raise E2EError("Forge state PID belongs to another process; refusing to manage it")
+    if state.get("schema") == 2 and (
+        not memory_guard_process_matches(state)
+        or not memory_guard_is_enforcing(state)
+    ):
+        print("Etherology Forge 1.20.1 E2E client is live but unmonitored")
+        print(f"Process PID {pid} remains owned; run stop before another launch")
+        print(f"Memory telemetry: {state['memory_guard_telemetry']}")
+        return 2
     marker = client_failure_marker(state)
     if marker is not None:
         print(f"Etherology Forge E2E client failed: {marker}")
@@ -2362,6 +2450,8 @@ def status_command() -> int:
     print(f"Etherology Forge E2E client is running as PID {pid}")
     print(f"Scenario: {state['scenario']}")
     print(f"Log: {state['log']}")
+    if state.get("schema") == 2:
+        print(f"Memory telemetry: {state['memory_guard_telemetry']}")
     return 0
 
 
@@ -2379,7 +2469,7 @@ def stop_command() -> int:
         return 0
     if not process_matches(pid, state):
         raise E2EError("Forge state PID belongs to another process; refusing to stop it")
-    forced = stop_owned_process_group(pid)
+    forced = stop_owned_process_group(state)
     qualifier = "required a forced stop" if forced else "stopped normally"
     print(f"Forge E2E client PID {pid} {qualifier}")
     clear_stale_process_state(configuration)
@@ -2401,7 +2491,7 @@ def stop_all_owned_command() -> int:
         live_states.append((path, state))
     for _path, state in live_states:
         pid = int(state["pid"])
-        forced = stop_owned_process_group(pid)
+        forced = stop_owned_process_group(state)
         qualifier = "required a forced stop" if forced else "stopped normally"
         print(f"Owned Forge client {state['profile_id']} PID {pid} {qualifier}")
     for path, _state in states:

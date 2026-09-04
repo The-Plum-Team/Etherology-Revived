@@ -25,6 +25,19 @@ import urllib.request
 import uuid
 import zipfile
 
+from macos_guarded_java import (
+    GuardedJavaError,
+    memory_guard_is_enforcing,
+    memory_guard_process_matches,
+    owned_java_process_from_state,
+    start_guarded_java,
+    stop_guarded_java_launch,
+    stop_owned_java_process,
+    verify_guard_state_paths,
+    verify_java_launch_contract,
+    verify_java_option_environment,
+)
+
 
 EXPECTED_LAUNCHER_LIBRARY_VERSION = "8.0"
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -183,8 +196,8 @@ def validate_manifest_shape(
         if type(resolution.get(field_name)) is not int or int(resolution[field_name]) <= 0:
             raise E2EError(f"The launch.resolution.{field_name} field is invalid")
     maximum_memory_mb = launch.get("maximum_memory_mb")
-    if type(maximum_memory_mb) is not int or int(maximum_memory_mb) < 1024:
-        raise E2EError("The launch.maximum_memory_mb field is invalid")
+    if type(maximum_memory_mb) is not int or maximum_memory_mb != 4096:
+        raise E2EError("The launch.maximum_memory_mb field must remain 4096")
 
     artifacts = require_object(manifest, "artifacts")
     if set(artifacts) != {"lock_file", "production", "harness"}:
@@ -2133,6 +2146,10 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     configured_scenario_id: str | None = None,
 ) -> tuple[Path, list[str]]:
+    try:
+        verify_java_option_environment(os.environ)
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     verify_runtime(configuration, artifact_policy="required")
     verify_evidence_layout(configuration)
     java_path = resolve_java_17()
@@ -2142,6 +2159,16 @@ def verify_environment(
         command,
         configured_scenario_id=configured_scenario_id,
     )
+    launch = require_object(configuration.manifest, "launch")
+    try:
+        verify_java_launch_contract(
+            command,
+            java_path,
+            int(launch["maximum_memory_mb"]),
+            os.environ,
+        )
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     if not CAFFEINATE_PATH.is_file():
         raise E2EError(f"macOS caffeinate is missing: {CAFFEINATE_PATH}")
     return java_path, command
@@ -2187,7 +2214,7 @@ def read_owned_process_state(
     runtime = target_game_directory.parent
     expected_runtimes_root = state_root / "runtimes"
     if (
-        state.get("schema") != 1
+        state.get("schema") not in (1, 2)
         or state.get("profile_id") != profile_id
         or type(state.get("pid")) is not int
         or int(state["pid"]) <= 0
@@ -2229,6 +2256,22 @@ def read_owned_process_state(
         or re.fullmatch(r"[a-z0-9][a-z0-9-]*", scenario) is None
     ):
         raise E2EError("E2E process state has an unsafe scenario id")
+    if state["schema"] == 2:
+        try:
+            target = owned_java_process_from_state(state)
+            verify_guard_state_paths(state, runtime)
+        except GuardedJavaError as exception:
+            raise E2EError(str(exception)) from exception
+        if target.pid != int(state["pid"]) or target.process_group_id != target.pid:
+            raise E2EError(
+                "E2E process state does not pin one dedicated Java process group"
+            )
+        if (
+            type(state.get("memory_guard_pid")) is not int
+            or int(state["memory_guard_pid"]) <= 0
+            or int(state["memory_guard_pid"]) == target.pid
+        ):
+            raise E2EError("E2E process state has no valid memory guard PID")
     process_log_path(state, state_root)
     return state
 
@@ -2258,6 +2301,13 @@ def clear_stale_and_reject_live_owned_clients(
         if not process_matches(pid, state):
             raise E2EError(
                 f"Owned state PID {pid} belongs to another process; refusing lifecycle access"
+            )
+        if state.get("schema") == 2 and (
+            not memory_guard_process_matches(state)
+            or not memory_guard_is_enforcing(state)
+        ):
+            raise E2EError(
+                f"Owned state PID {pid} is live without its exact memory guard"
             )
         live_states.append(state)
 
@@ -2357,10 +2407,21 @@ def wait_for_stable_client_start(state: dict[str, object]) -> None:
             raise E2EError("Client exited during startup")
         if not process_matches(pid, state):
             raise E2EError("Client process identity changed during startup")
+        if state.get("schema") == 2 and (
+            not memory_guard_process_matches(state)
+            or not memory_guard_is_enforcing(state)
+        ):
+            raise E2EError("Client memory guard stopped enforcing during startup")
         time.sleep(0.1)
 
 
-def stop_owned_process_group(pid: int) -> bool:
+def stop_owned_process_group(state: dict[str, object]) -> bool:
+    pid = int(state["pid"])
+    if state.get("schema") == 2:
+        try:
+            return stop_owned_java_process(owned_java_process_from_state(state))
+        except GuardedJavaError as exception:
+            raise E2EError(str(exception)) from exception
     try:
         os.killpg(pid, signal.SIGTERM)
     except ProcessLookupError:
@@ -2488,47 +2549,57 @@ def start_command(configured_scenario_id: str | None = None) -> int:
         "authentication=deterministic-offline-identity\n\n"
     ).encode("utf-8")
     log_handle.write(header)
+    launch_environment = dict(os.environ)
+    launch_specification = require_object(configuration.manifest, "launch")
     try:
-        process = subprocess.Popen(
-            [str(CAFFEINATE_PATH), "-dimsu", *command],
-            cwd=game_directory(configuration),
-            stdin=subprocess.DEVNULL,
-            stdout=log_handle,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-            close_fds=True,
+        guarded_launch = start_guarded_java(
+            command,
+            java_path,
+            int(launch_specification["maximum_memory_mb"]),
+            launch_environment,
+            runtime_root(configuration),
+            game_directory(configuration),
+            log_handle,
+            CAFFEINATE_PATH,
         )
-    except OSError:
+    except (GuardedJavaError, OSError) as exception:
         log_handle.close()
-        raise
+        raise E2EError(f"Cannot start guarded Java client: {exception}") from exception
     log_handle.close()
     state = {
-        "schema": 1,
+        "schema": 2,
         "profile_id": profile_spec(configuration)["id"],
-        "pid": process.pid,
+        "pid": guarded_launch.target.pid,
         "started_utc": timestamp,
         "scenario": scenario_id,
         "version_id": version_id(configuration),
         "game_directory": str(game_directory(configuration)),
         "log": str(log_path),
+        **guarded_launch.state_fields(),
     }
     try:
         write_json_atomic(process_state_path(configuration), state)
     except (OSError, TypeError, ValueError):
-        stop_owned_process_group(process.pid)
+        stop_guarded_java_launch(guarded_launch)
         raise
     try:
         wait_for_stable_client_start(state)
     except E2EError as exception:
-        if process_exists(process.pid) and process_matches(process.pid, state):
-            stop_owned_process_group(process.pid)
+        try:
+            stop_guarded_java_launch(guarded_launch)
+        except (GuardedJavaError, OSError) as cleanup_exception:
+            raise E2EError(
+                f"{exception}; guarded cleanup failed and process state was retained: "
+                f"{cleanup_exception}; log: {log_path}"
+            ) from cleanup_exception
         clear_stale_process_state(configuration)
         raise E2EError(f"{exception}; log: {log_path}") from exception
     print(
         f"Started isolated Etherology Fabric 1.20.1 {scenario_id} client "
-        f"as PID {process.pid}"
+        f"as PID {guarded_launch.target.pid}"
     )
     print(f"Log: {log_path}")
+    print(f"Memory telemetry: {guarded_launch.telemetry_path}")
     return 0
 
 
@@ -2554,6 +2625,14 @@ def status_command() -> int:
         return 1
     if not process_matches(pid, state):
         raise E2EError("State PID belongs to another process; refusing to manage it")
+    if state.get("schema") == 2 and (
+        not memory_guard_process_matches(state)
+        or not memory_guard_is_enforcing(state)
+    ):
+        print("Etherology Fabric 1.20.1 E2E client is live but unmonitored")
+        print(f"Process PID {pid} remains owned; run stop before another launch")
+        print(f"Memory telemetry: {state['memory_guard_telemetry']}")
+        return 2
     failure_marker = client_failure_marker(state)
     if failure_marker is not None:
         print(f"Etherology Fabric 1.20.1 E2E client failed: {failure_marker}")
@@ -2563,6 +2642,8 @@ def status_command() -> int:
     print(f"Etherology Fabric 1.20.1 E2E client is running as PID {pid}")
     print(f"Scenario: {state['scenario']}")
     print(f"Log: {state.get('log', 'unknown')}")
+    if state.get("schema") == 2:
+        print(f"Memory telemetry: {state['memory_guard_telemetry']}")
     return 0
 
 
@@ -2581,7 +2662,7 @@ def stop_command() -> int:
     if not process_matches(pid, state):
         raise E2EError("State PID belongs to another process; refusing to stop it")
 
-    if stop_owned_process_group(pid):
+    if stop_owned_process_group(state):
         print(f"Etherology E2E client PID {pid} required a forced stop")
     else:
         print(f"Stopped Etherology E2E client PID {pid}")
@@ -2605,7 +2686,7 @@ def stop_all_owned_command() -> int:
 
     for path, state in live_states:
         pid = int(state["pid"])
-        forced = stop_owned_process_group(pid)
+        forced = stop_owned_process_group(state)
         qualifier = "required a forced stop" if forced else "stopped normally"
         print(f"Owned E2E client {state['profile_id']} PID {pid} {qualifier}")
     for path, _state in states:

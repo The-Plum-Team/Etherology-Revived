@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -34,51 +35,67 @@ final class SharedSlitheriteRegistryBytecodeTest {
             "ru/feytox/etherology/registry/SharedDeferredRegister";
     private static final String REGISTRY_SUPPLIER =
             "dev/architectury/registry/registries/RegistrySupplier";
-    private static final List<String> BLOCK_FIELDS = List.of(
-            "SLITHERITE",
-            "SLITHERITE_STAIRS",
-            "SLITHERITE_SLAB",
-            "SLITHERITE_WALL"
+    private static final List<BlockExpectation> BLOCK_EXPECTATIONS = List.of(
+            plainBlock("SLITHERITE", "STONE"),
+            stairs("SLITHERITE_STAIRS", "SLITHERITE"),
+            slab("SLITHERITE_SLAB", "STONE_STAIRS"),
+            wall("SLITHERITE_WALL"),
+            plainBlock("POLISHED_SLITHERITE", "SMOOTH_STONE"),
+            stairs("POLISHED_SLITHERITE_STAIRS", "POLISHED_SLITHERITE"),
+            slab("POLISHED_SLITHERITE_SLAB", "SMOOTH_STONE_SLAB"),
+            wall("POLISHED_SLITHERITE_WALL"),
+            button("POLISHED_SLITHERITE_BUTTON"),
+            pressurePlate("POLISHED_SLITHERITE_PRESSURE_PLATE"),
+            plainBlock("POLISHED_SLITHERITE_BRICKS", "STONE_BRICKS"),
+            stairs(
+                    "POLISHED_SLITHERITE_BRICK_STAIRS",
+                    "POLISHED_SLITHERITE_BRICKS"
+            ),
+            slab("POLISHED_SLITHERITE_BRICK_SLAB", "STONE_BRICKS"),
+            wall("POLISHED_SLITHERITE_BRICK_WALL"),
+            plainBlock("CHISELED_POLISHED_SLITHERITE", "CHISELED_STONE_BRICKS"),
+            plainBlock(
+                    "CHISELED_POLISHED_SLITHERITE_BRICKS",
+                    "CHISELED_STONE_BRICKS"
+            ),
+            plainBlock(
+                    "CRACKED_POLISHED_SLITHERITE_BRICKS",
+                    "CRACKED_STONE_BRICKS"
+            )
     );
-    private static final List<String> ITEM_FIELDS = List.of(
-            "SLITHERITE_ITEM",
-            "SLITHERITE_STAIRS_ITEM",
-            "SLITHERITE_SLAB_ITEM",
-            "SLITHERITE_WALL_ITEM"
-    );
-    private static final List<String> IDS = List.of(
-            "slitherite",
-            "slitherite_stairs",
-            "slitherite_slab",
-            "slitherite_wall"
-    );
+    private static final List<String> BLOCK_FIELDS = BLOCK_EXPECTATIONS.stream()
+            .map(BlockExpectation::field)
+            .toList();
+    private static final List<String> ITEM_FIELDS = BLOCK_EXPECTATIONS.stream()
+            .map(BlockExpectation::itemField)
+            .toList();
+    private static final List<String> IDS = BLOCK_EXPECTATIONS.stream()
+            .map(BlockExpectation::id)
+            .toList();
 
     @Test
-    void declaresExactlyFourLazyCanonicalBlockFactories() throws IOException {
+    void declaresExactlySeventeenLazyCanonicalBlockFactories() throws IOException {
         Map<String, FieldDefinition> fields = fields(BLOCK_CLASS);
+        List<String> expectedFields = new ArrayList<>();
+        expectedFields.add("BLOCKS");
+        expectedFields.add("POLISHED_SLITHERITE_TYPE");
+        expectedFields.addAll(BLOCK_FIELDS);
         assertEquals(
-                List.of(
-                        "BLOCKS",
-                        "SLITHERITE",
-                        "SLITHERITE_STAIRS",
-                        "SLITHERITE_SLAB",
-                        "SLITHERITE_WALL"
-                ),
+                expectedFields,
                 new ArrayList<>(fields.keySet())
         );
-        assertPublicSupplier(fields.get("SLITHERITE"), "net/minecraft/block/Block");
-        assertPublicSupplier(
-                fields.get("SLITHERITE_STAIRS"),
-                "net/minecraft/block/StairsBlock"
+        assertEquals(
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                fields.get("BLOCKS").access()
         );
-        assertPublicSupplier(
-                fields.get("SLITHERITE_SLAB"),
-                "net/minecraft/block/SlabBlock"
+        assertEquals(
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+                fields.get("POLISHED_SLITHERITE_TYPE").access()
         );
-        assertPublicSupplier(
-                fields.get("SLITHERITE_WALL"),
-                "net/minecraft/block/WallBlock"
-        );
+        BLOCK_EXPECTATIONS.forEach(expectation -> assertPublicSupplier(
+                fields.get(expectation.field()),
+                expectation.suppliedType()
+        ));
 
         Map<String, BlockRegistration> registrations = blockRegistrations();
         assertEquals(BLOCK_FIELDS, new ArrayList<>(registrations.keySet()));
@@ -86,48 +103,96 @@ final class SharedSlitheriteRegistryBytecodeTest {
                 IDS,
                 registrations.values().stream().map(BlockRegistration::id).toList()
         );
+        assertEquals(
+                BLOCK_EXPECTATIONS.size(),
+                invocationCount(BLOCK_CLASS, SHARED_DEFERRED_REGISTER, "register")
+        );
         assertEquals(0, invocationCount(BLOCK_CLASS, "<clinit>", REGISTRY_SUPPLIER, "get"));
         assertEquals(Set.of(), directRegistryInvocations(BLOCK_CLASS));
-
-        assertEquals(
-                List.of("Blocks#STONE", "Settings#copy", "Block#<init>"),
-                blockFactoryEvents(registrations.get("SLITHERITE").factoryMethod())
-        );
+        for (BlockExpectation expectation : BLOCK_EXPECTATIONS) {
+            assertEquals(
+                    expectation.factoryEvents(),
+                    blockFactoryEvents(
+                            registrations.get(expectation.field()).factoryMethod()
+                    ),
+                    expectation.field()
+            );
+        }
         assertEquals(
                 List.of(
-                        "SharedSlitheriteBlocks#SLITHERITE",
                         "RegistrySupplier#get",
                         "Block#getDefaultState",
                         "Settings#copy",
                         "StairsBlock#<init>"
                 ),
-                blockFactoryEvents(registrations.get("SLITHERITE_STAIRS").factoryMethod())
+                blockFactoryEvents("createStairs")
         );
         assertEquals(
-                List.of("Blocks#STONE_STAIRS", "Settings#copy", "SlabBlock#<init>"),
-                blockFactoryEvents(registrations.get("SLITHERITE_SLAB").factoryMethod())
-        );
-        assertEquals(
-                List.of(
-                        "Blocks#STONE_BRICK_WALL",
-                        "Settings#copy",
-                        "WallBlock#<init>"
-                ),
-                blockFactoryEvents(registrations.get("SLITHERITE_WALL").factoryMethod())
+                List.of(SHARED_DEFERRED_REGISTER + "#attach"),
+                ownerInvocations(
+                        BLOCK_CLASS,
+                        "register",
+                        Set.of(SHARED_DEFERRED_REGISTER)
+                )
         );
     }
 
     @Test
-    void bindsExactlyFourLazyBlockItemsToCanonicalBlocks() throws IOException {
-        Map<String, FieldDefinition> fields = fields(ITEM_CLASS);
+    void clonesAndRegistersTheCanonicalPolishedSlitheriteBlockSetType()
+            throws IOException {
+        assertEquals(
+                List.of("etherology", "polished_slitherite"),
+                stringConstants(BLOCK_CLASS, "registerPolishedSlitheriteType")
+        );
         assertEquals(
                 List.of(
-                        "ITEMS",
-                        "SLITHERITE_ITEM",
-                        "SLITHERITE_STAIRS_ITEM",
-                        "SLITHERITE_SLAB_ITEM",
-                        "SLITHERITE_WALL_ITEM"
+                        "BlockSetType#STONE",
+                        "Identifier#of",
+                        "Identifier#toString",
+                        "BlockSetType#canOpenByHand",
+                        "BlockSetType#soundType",
+                        "BlockSetType#doorClose",
+                        "BlockSetType#doorOpen",
+                        "BlockSetType#trapdoorClose",
+                        "BlockSetType#trapdoorOpen",
+                        "BlockSetType#pressurePlateClickOff",
+                        "BlockSetType#pressurePlateClickOn",
+                        "BlockSetType#buttonClickOff",
+                        "BlockSetType#buttonClickOn",
+                        "BlockSetType#<init>",
+                        "BlockSetType#register"
                 ),
+                blockFactoryEvents("registerPolishedSlitheriteType")
+        );
+    }
+
+    @Test
+    void preservesTheOriginalAggregateBlockStateCardinality() {
+        assertEquals(
+                List.of(
+                        1, 80, 6, 324,
+                        1, 80, 6, 324, 24, 2,
+                        1, 80, 6, 324,
+                        1, 1, 1
+                ),
+                BLOCK_EXPECTATIONS.stream().map(BlockExpectation::stateCount).toList()
+        );
+        assertEquals(
+                1262,
+                BLOCK_EXPECTATIONS.stream()
+                        .mapToInt(BlockExpectation::stateCount)
+                        .sum()
+        );
+    }
+
+    @Test
+    void bindsExactlySeventeenLazyBlockItemsToCanonicalBlocks() throws IOException {
+        Map<String, FieldDefinition> fields = fields(ITEM_CLASS);
+        List<String> expectedFields = new ArrayList<>();
+        expectedFields.add("ITEMS");
+        expectedFields.addAll(ITEM_FIELDS);
+        assertEquals(
+                expectedFields,
                 new ArrayList<>(fields.keySet())
         );
         for (String field : ITEM_FIELDS) {
@@ -137,8 +202,26 @@ final class SharedSlitheriteRegistryBytecodeTest {
         ItemRegistrationTrace trace = itemRegistrations();
         assertEquals(IDS, trace.ids());
         assertEquals(BLOCK_FIELDS, trace.blockFields());
+        assertEquals(
+                1,
+                invocationCount(ITEM_CLASS, SHARED_DEFERRED_REGISTER, "register")
+        );
         assertEquals(0, invocationCount(ITEM_CLASS, "<clinit>", REGISTRY_SUPPLIER, "get"));
+        assertEquals(1, invocationCount(ITEM_CLASS, REGISTRY_SUPPLIER, "get"));
+        assertEquals(1, invocationCount(ITEM_CLASS, "net/minecraft/item/BlockItem", "<init>"));
+        assertEquals(
+                1,
+                invocationCount(ITEM_CLASS, "net/minecraft/item/BlockItem", "appendBlocks")
+        );
         assertEquals(Set.of(), directRegistryInvocations(ITEM_CLASS));
+        assertEquals(
+                List.of(SHARED_DEFERRED_REGISTER + "#attach"),
+                ownerInvocations(
+                        ITEM_CLASS,
+                        "register",
+                        Set.of(SHARED_DEFERRED_REGISTER)
+                )
+        );
     }
 
     @Test
@@ -146,6 +229,89 @@ final class SharedSlitheriteRegistryBytecodeTest {
         assertEquals(
                 List.of(BLOCK_OWNER + "#register", ITEM_OWNER + "#register"),
                 ownerInvocations(BOOTSTRAP_CLASS, "initialize", Set.of(BLOCK_OWNER, ITEM_OWNER))
+        );
+    }
+
+    private static BlockExpectation plainBlock(String field, String copiedBlock) {
+        return new BlockExpectation(
+                field,
+                "net/minecraft/block/Block",
+                1,
+                List.of(
+                        "Blocks#" + copiedBlock,
+                        "Settings#copy",
+                        "Block#<init>"
+                )
+        );
+    }
+
+    private static BlockExpectation stairs(String field, String baseBlockField) {
+        return new BlockExpectation(
+                field,
+                "net/minecraft/block/StairsBlock",
+                80,
+                List.of(
+                        "SharedSlitheriteBlocks#" + baseBlockField,
+                        "SharedSlitheriteBlocks#createStairs"
+                )
+        );
+    }
+
+    private static BlockExpectation slab(String field, String copiedBlock) {
+        return new BlockExpectation(
+                field,
+                "net/minecraft/block/SlabBlock",
+                6,
+                List.of(
+                        "Blocks#" + copiedBlock,
+                        "Settings#copy",
+                        "SlabBlock#<init>"
+                )
+        );
+    }
+
+    private static BlockExpectation wall(String field) {
+        return new BlockExpectation(
+                field,
+                "net/minecraft/block/WallBlock",
+                324,
+                List.of(
+                        "Blocks#STONE_BRICK_WALL",
+                        "Settings#copy",
+                        "WallBlock#<init>"
+                )
+        );
+    }
+
+    private static BlockExpectation button(String field) {
+        return new BlockExpectation(
+                field,
+                "net/minecraft/block/ButtonBlock",
+                24,
+                List.of(
+                        "Settings#create",
+                        "Settings#noCollision",
+                        "Settings#strength",
+                        "PistonBehavior#DESTROY",
+                        "Settings#pistonBehavior",
+                        "BlockSetType#STONE",
+                        "ButtonBlock#<init>"
+                )
+        );
+    }
+
+    private static BlockExpectation pressurePlate(String field) {
+        return new BlockExpectation(
+                field,
+                "net/minecraft/block/PressurePlateBlock",
+                2,
+                List.of(
+                        "PressurePlateBlock$ActivationRule#MOBS",
+                        "Blocks#STONE_PRESSURE_PLATE",
+                        "Settings#copy",
+                        "SharedSlitheriteBlocks#POLISHED_SLITHERITE_TYPE",
+                        "PressurePlateBlock#<init>"
+                )
         );
     }
 
@@ -334,6 +500,14 @@ final class SharedSlitheriteRegistryBytecodeTest {
                             events.add("Blocks#" + name);
                         } else if (owner.equals(BLOCK_OWNER)) {
                             events.add("SharedSlitheriteBlocks#" + name);
+                        } else if (owner.equals("net/minecraft/block/BlockSetType")) {
+                            events.add("BlockSetType#" + name);
+                        } else if (owner.equals("net/minecraft/block/piston/PistonBehavior")) {
+                            events.add("PistonBehavior#" + name);
+                        } else if (owner.equals(
+                                "net/minecraft/block/PressurePlateBlock$ActivationRule"
+                        )) {
+                            events.add("PressurePlateBlock$ActivationRule#" + name);
                         }
                     }
 
@@ -355,6 +529,16 @@ final class SharedSlitheriteRegistryBytecodeTest {
                             events.add("SlabBlock#" + name);
                         } else if (owner.equals("net/minecraft/block/WallBlock")) {
                             events.add("WallBlock#" + name);
+                        } else if (owner.equals("net/minecraft/block/ButtonBlock")) {
+                            events.add("ButtonBlock#" + name);
+                        } else if (owner.equals("net/minecraft/block/PressurePlateBlock")) {
+                            events.add("PressurePlateBlock#" + name);
+                        } else if (owner.equals("net/minecraft/block/BlockSetType")) {
+                            events.add("BlockSetType#" + name);
+                        } else if (owner.equals("net/minecraft/util/Identifier")) {
+                            events.add("Identifier#" + name);
+                        } else if (owner.equals(BLOCK_OWNER)) {
+                            events.add("SharedSlitheriteBlocks#" + name);
                         } else if (owner.equals(REGISTRY_SUPPLIER) && name.equals("get")) {
                             events.add("RegistrySupplier#get");
                         }
@@ -363,6 +547,38 @@ final class SharedSlitheriteRegistryBytecodeTest {
             }
         }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
         return List.copyOf(events);
+    }
+
+    private static List<String> stringConstants(String resource, String method)
+            throws IOException {
+        List<String> constants = new ArrayList<>();
+        reader(resource).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!name.equals(method)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitLdcInsn(Object value) {
+                        if (value instanceof String constant) constants.add(constant);
+                    }
+                };
+            }
+        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        return List.copyOf(constants);
+    }
+
+    private static int invocationCount(
+            String resource,
+            String targetOwner,
+            String targetMethod
+    ) throws IOException {
+        return invocationCount(resource, null, targetOwner, targetMethod);
     }
 
     private static int invocationCount(
@@ -381,7 +597,7 @@ final class SharedSlitheriteRegistryBytecodeTest {
                     String signature,
                     String[] exceptions
             ) {
-                if (!name.equals(method)) return null;
+                if (method != null && !name.equals(method)) return null;
                 return new MethodVisitor(Opcodes.ASM9) {
                     @Override
                     public void visitMethodInsn(
@@ -473,6 +689,22 @@ final class SharedSlitheriteRegistryBytecodeTest {
     }
 
     private record FieldDefinition(int access, String descriptor, String signature) {
+    }
+
+    private record BlockExpectation(
+            String field,
+            String suppliedType,
+            int stateCount,
+            List<String> factoryEvents
+    ) {
+
+        private String itemField() {
+            return field + "_ITEM";
+        }
+
+        private String id() {
+            return field.toLowerCase(Locale.ROOT);
+        }
     }
 
     private record BlockRegistration(String id, String factoryMethod) {

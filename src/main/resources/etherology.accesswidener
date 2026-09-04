@@ -8,6 +8,10 @@ extendable method net/minecraft/client/gui/tooltip/BundleTooltipComponent getRow
 
 accessible method net/minecraft/block/FireBlock registerFlammableBlock (Lnet/minecraft/block/Block;II)V
 
+accessible method net/minecraft/block/BlockSetType register (Lnet/minecraft/block/BlockSetType;)Lnet/minecraft/block/BlockSetType;
+accessible method net/minecraft/block/ButtonBlock <init> (Lnet/minecraft/block/AbstractBlock$Settings;Lnet/minecraft/block/BlockSetType;IZ)V
+accessible method net/minecraft/block/PressurePlateBlock <init> (Lnet/minecraft/block/PressurePlateBlock$ActivationRule;Lnet/minecraft/block/AbstractBlock$Settings;Lnet/minecraft/block/BlockSetType;)V
+
 accessible method net/minecraft/data/client/Model createTextureMap (Lnet/minecraft/data/client/TextureMap;)Ljava/util/Map;
 accessible field net/minecraft/client/option/KeyBinding timesPressed I
 accessible field net/minecraft/client/option/KeyBinding boundKey Lnet/minecraft/client/util/InputUtil$Key;

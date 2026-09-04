@@ -2,13 +2,7 @@
   "replace": false,
   "values": [
     "etherology:slitherite_wall",
-    {
-      "id": "etherology:polished_slitherite_wall",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_brick_wall",
-      "required": false
-    }
+    "etherology:polished_slitherite_wall",
+    "etherology:polished_slitherite_brick_wall"
   ]
 }

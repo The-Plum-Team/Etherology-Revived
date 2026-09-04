@@ -112,10 +112,120 @@ val canonicalAttrahiteBlockDataEntries = setOf(
     "minecraft/tags/items/slabs.json",
     "minecraft/tags/items/stairs.json",
 )
+val canonicalSlitheriteLootDataEntries = setOf(
+    "chiseled_polished_slitherite",
+    "chiseled_polished_slitherite_bricks",
+    "cracked_polished_slitherite_bricks",
+    "polished_slitherite",
+    "polished_slitherite_brick_slab",
+    "polished_slitherite_brick_stairs",
+    "polished_slitherite_brick_wall",
+    "polished_slitherite_bricks",
+    "polished_slitherite_button",
+    "polished_slitherite_pressure_plate",
+    "polished_slitherite_slab",
+    "polished_slitherite_stairs",
+    "polished_slitherite_wall",
+    "slitherite",
+    "slitherite_slab",
+    "slitherite_stairs",
+    "slitherite_wall",
+).map { id -> "etherology/loot_tables/blocks/$id.json" }.toSet()
+val canonicalSlitheriteRecipeIds = setOf(
+    "chiseled_polished_slitherite",
+    "chiseled_polished_slitherite_bricks",
+    "chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting",
+    "chiseled_polished_slitherite_from_polished_slitherite_stonecutting",
+    "cracked_polished_slitherite_bricks",
+    "polished_slitherite",
+    "polished_slitherite_brick_slab",
+    "polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting",
+    "polished_slitherite_brick_stairs",
+    "polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting",
+    "polished_slitherite_brick_wall",
+    "polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting",
+    "polished_slitherite_bricks",
+    "polished_slitherite_bricks_from_polished_slitherite_stonecutting",
+    "polished_slitherite_button",
+    "polished_slitherite_from_slitherite_stonecutting",
+    "polished_slitherite_pressure_plate",
+    "polished_slitherite_slab",
+    "polished_slitherite_slab_from_polished_slitherite_stonecutting",
+    "polished_slitherite_stairs",
+    "polished_slitherite_stairs_from_polished_slitherite_stonecutting",
+    "polished_slitherite_wall",
+    "polished_slitherite_wall_from_polished_slitherite_stonecutting",
+    "slitherite_slab",
+    "slitherite_slab_from_slitherite_stonecutting",
+    "slitherite_stairs",
+    "slitherite_stairs_from_slitherite_stonecutting",
+    "slitherite_wall",
+    "slitherite_wall_from_slitherite_stonecutting",
+)
+val canonicalSlitheriteRecipeDataEntries = canonicalSlitheriteRecipeIds
+    .map { id -> "etherology/recipes/$id.json" }
+    .toSet()
+val canonicalSlitheriteAdvancementDataEntries = setOf(
+    "building_blocks/chiseled_polished_slitherite",
+    "building_blocks/chiseled_polished_slitherite_bricks",
+    "building_blocks/chiseled_polished_slitherite_bricks_from_" +
+        "polished_slitherite_bricks_stonecutting",
+    "building_blocks/chiseled_polished_slitherite_from_" +
+        "polished_slitherite_stonecutting",
+    "building_blocks/cracked_polished_slitherite_bricks",
+    "building_blocks/polished_slitherite",
+    "building_blocks/polished_slitherite_brick_slab",
+    "building_blocks/polished_slitherite_brick_slab_from_" +
+        "polished_slitherite_bricks_stonecutting",
+    "building_blocks/polished_slitherite_brick_stairs",
+    "building_blocks/polished_slitherite_brick_stairs_from_" +
+        "polished_slitherite_bricks_stonecutting",
+    "building_blocks/polished_slitherite_bricks",
+    "building_blocks/polished_slitherite_bricks_from_" +
+        "polished_slitherite_stonecutting",
+    "building_blocks/polished_slitherite_from_slitherite_stonecutting",
+    "building_blocks/polished_slitherite_slab",
+    "building_blocks/polished_slitherite_slab_from_" +
+        "polished_slitherite_stonecutting",
+    "building_blocks/polished_slitherite_stairs",
+    "building_blocks/polished_slitherite_stairs_from_" +
+        "polished_slitherite_stonecutting",
+    "building_blocks/slitherite_slab",
+    "building_blocks/slitherite_slab_from_slitherite_stonecutting",
+    "building_blocks/slitherite_stairs",
+    "building_blocks/slitherite_stairs_from_slitherite_stonecutting",
+    "decorations/polished_slitherite_brick_wall",
+    "decorations/polished_slitherite_brick_wall_from_" +
+        "polished_slitherite_bricks_stonecutting",
+    "decorations/polished_slitherite_wall",
+    "decorations/polished_slitherite_wall_from_polished_slitherite_stonecutting",
+    "decorations/slitherite_wall",
+    "decorations/slitherite_wall_from_slitherite_stonecutting",
+    "redstone/polished_slitherite_button",
+    "redstone/polished_slitherite_pressure_plate",
+).map { path -> "etherology/advancements/recipes/$path.json" }.toSet()
+val canonicalSlitheriteTagDataEntries = setOf(
+    "minecraft/tags/blocks/mineable/pickaxe.json",
+    "minecraft/tags/blocks/needs_stone_tool.json",
+    "minecraft/tags/blocks/slabs.json",
+    "minecraft/tags/blocks/stairs.json",
+    "minecraft/tags/blocks/stone_bricks.json",
+    "minecraft/tags/blocks/stone_pressure_plates.json",
+    "minecraft/tags/blocks/walls.json",
+    "minecraft/tags/items/buttons.json",
+    "minecraft/tags/items/slabs.json",
+    "minecraft/tags/items/stairs.json",
+    "minecraft/tags/items/walls.json",
+)
+val canonicalSlitheriteDataEntries =
+    canonicalSlitheriteLootDataEntries +
+        canonicalSlitheriteRecipeDataEntries +
+        canonicalSlitheriteAdvancementDataEntries +
+        canonicalSlitheriteTagDataEntries
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
-    canonicalAttrahiteBlockDataEntries +
+    canonicalAttrahiteBlockDataEntries + canonicalSlitheriteDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
@@ -857,6 +967,9 @@ sourceSets {
                 include("data/$entry")
             }
             canonicalAttrahiteBlockDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+            canonicalSlitheriteDataEntries.forEach { entry ->
                 include("data/$entry")
             }
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
@@ -4235,6 +4348,7 @@ tasks.named<Test>("test").configure {
     exclude("**/MetalBlockRegistryResourcesTest.class")
     exclude("**/ForestLanternBlockResourcesTest.class")
     exclude("**/AttrahiteBlockRegistryResourcesTest.class")
+    exclude("**/SlitheriteCanonicalResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -4990,6 +5104,95 @@ val attrahiteBlockRegistryTest = tasks.register<Test>("attrahiteBlockRegistryTes
         )
         systemProperty(
             "etherology.attrahiteBlocks.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
+val slitheriteBlockRegistryTest = tasks.register<Test>("slitheriteBlockRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader Slitherite ownership and packaged-resource tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.SlitheriteCanonicalResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("slitheriteCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("slitheriteFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("slitheriteForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("slitheriteFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("slitheriteFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("slitheriteForgeShadowJar")
+    inputs.files(
+        rootProject.fileTree("src/main/generated/assets/etherology") {
+            include("blockstates/*slitherite*.json")
+            include("models/block/*slitherite*.json")
+            include("models/item/*slitherite*.json")
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology") {
+            include("blockstates/*slitherite*.json")
+            include("models/block/*slitherite*.json")
+            include("models/item/*slitherite*.json")
+            include("textures/block/*slitherite*.png")
+        },
+        rootProject.fileTree("src/main/generated/data") {
+            canonicalSlitheriteDataEntries.forEach { entry -> include(entry) }
+        },
+        englishLanguageFile,
+        rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+    ).withPropertyName("canonicalSlitheriteResources")
+    doFirst {
+        systemProperty(
+            "etherology.slitheriteBlocks.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.slitheriteBlocks.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.slitheriteBlocks.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.slitheriteBlocks.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.slitheriteBlocks.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.slitheriteBlocks.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.slitheriteBlocks.repositoryRoot",
             rootProject.projectDir.absolutePath,
         )
     }
@@ -6861,6 +7064,53 @@ val validateForgeAttrahiteMilestone =
         }
     }
 
+val validateForgeSlitheriteStaticMilestone =
+    tasks.register("validateForgeSlitheriteStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the shared 17-ID Slitherite family and its exact packaged resources."
+        dependsOn(
+            validateForgeAttrahiteMilestone,
+            validateForgeAcceptedDataSet,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            slitheriteBlockRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("slitheriteFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("slitheriteForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree("src/main/generated/assets/etherology") {
+                include("blockstates/*slitherite*.json")
+                include("models/block/*slitherite*.json")
+                include("models/item/*slitherite*.json")
+            },
+            rootProject.fileTree("src/client/resources/assets/etherology") {
+                include("blockstates/*slitherite*.json")
+                include("models/block/*slitherite*.json")
+                include("models/item/*slitherite*.json")
+                include("textures/block/*slitherite*.png")
+                include("lang/en_us.json")
+            },
+            rootProject.fileTree("src/main/generated") {
+                canonicalSlitheriteDataEntries.forEach { entry -> include("data/$entry") }
+                include("assets/etherology/lang/ru_ru.json")
+            },
+        ).withPropertyName("canonicalSlitheriteResources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
@@ -6915,6 +7165,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeFoodItemRegistryMilestone,
         validateForgeForestLanternMilestone,
         validateForgeAttrahiteMilestone,
+        validateForgeSlitheriteStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -6923,7 +7174,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeAttrahiteStaticMilestone)
+    dependsOn(validateForgeSlitheriteStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

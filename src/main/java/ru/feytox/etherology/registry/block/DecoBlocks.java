@@ -27,7 +27,6 @@ import static net.minecraft.block.Blocks.*;
 public class DecoBlocks {
     // various types registries
     private static final BlockSetType PEACH_TYPE = BlockSetTypeBuilder.copyOf(BlockSetType.OAK).register(EIdentifier.of("peach"));
-    private static final BlockSetType POLISHED_SLITHERITE_TYPE = BlockSetTypeBuilder.copyOf(BlockSetType.STONE).register(EIdentifier.of("polished_slitherite"));
     public static final WoodType PEACH_WOOD_TYPE = WoodTypeBuilder.copyOf(WoodType.OAK).register(EIdentifier.of("peach"), PEACH_TYPE);
 
     // peach wood
@@ -56,31 +55,44 @@ public class DecoBlocks {
     public static final Block SLITHERITE_SLAB = SharedSlitheriteBlocks.SLITHERITE_SLAB.get();
     public static final Block SLITHERITE_WALL = SharedSlitheriteBlocks.SLITHERITE_WALL.get();
 
+    // polished slitherite
+    public static final Block POLISHED_SLITHERITE = SharedSlitheriteBlocks.POLISHED_SLITHERITE.get();
+    public static final Block POLISHED_SLITHERITE_STAIRS = SharedSlitheriteBlocks.POLISHED_SLITHERITE_STAIRS.get();
+    public static final Block POLISHED_SLITHERITE_SLAB = SharedSlitheriteBlocks.POLISHED_SLITHERITE_SLAB.get();
+    public static final Block POLISHED_SLITHERITE_WALL = SharedSlitheriteBlocks.POLISHED_SLITHERITE_WALL.get();
+    public static final Block POLISHED_SLITHERITE_BUTTON = SharedSlitheriteBlocks.POLISHED_SLITHERITE_BUTTON.get();
+    public static final Block POLISHED_SLITHERITE_PRESSURE_PLATE = SharedSlitheriteBlocks.POLISHED_SLITHERITE_PRESSURE_PLATE.get();
+
+    // polished slitherite bricks
+    public static final Block POLISHED_SLITHERITE_BRICKS = SharedSlitheriteBlocks.POLISHED_SLITHERITE_BRICKS.get();
+    public static final Block POLISHED_SLITHERITE_BRICK_STAIRS = SharedSlitheriteBlocks.POLISHED_SLITHERITE_BRICK_STAIRS.get();
+    public static final Block POLISHED_SLITHERITE_BRICK_SLAB = SharedSlitheriteBlocks.POLISHED_SLITHERITE_BRICK_SLAB.get();
+    public static final Block POLISHED_SLITHERITE_BRICK_WALL = SharedSlitheriteBlocks.POLISHED_SLITHERITE_BRICK_WALL.get();
+
+    // single slitherite blocks
+    public static final Block CHISELED_POLISHED_SLITHERITE = SharedSlitheriteBlocks.CHISELED_POLISHED_SLITHERITE.get();
+    public static final Block CHISELED_POLISHED_SLITHERITE_BRICKS = SharedSlitheriteBlocks.CHISELED_POLISHED_SLITHERITE_BRICKS.get();
+    public static final Block CRACKED_POLISHED_SLITHERITE_BRICKS = SharedSlitheriteBlocks.CRACKED_POLISHED_SLITHERITE_BRICKS.get();
+
     static {
         AutoBlockLootTable.markAsAuto(SLITHERITE, null);
         AutoBlockLootTable.markAsAuto(SLITHERITE_STAIRS, null);
         AutoBlockLootTable.markAsAuto(SLITHERITE_SLAB, null);
         AutoBlockLootTable.markAsAuto(SLITHERITE_WALL, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_STAIRS, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_SLAB, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_WALL, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_BUTTON, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_PRESSURE_PLATE, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_BRICKS, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_BRICK_STAIRS, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_BRICK_SLAB, null);
+        AutoBlockLootTable.markAsAuto(POLISHED_SLITHERITE_BRICK_WALL, null);
+        AutoBlockLootTable.markAsAuto(CHISELED_POLISHED_SLITHERITE, null);
+        AutoBlockLootTable.markAsAuto(CHISELED_POLISHED_SLITHERITE_BRICKS, null);
+        AutoBlockLootTable.markAsAuto(CRACKED_POLISHED_SLITHERITE_BRICKS, null);
     }
-
-    // polished slitherite
-    public static final Block POLISHED_SLITHERITE = registerSimple("polished_slitherite", copy(SMOOTH_STONE)).withItem();
-    public static final Block POLISHED_SLITHERITE_STAIRS = registerStairs("polished_slitherite_stairs", POLISHED_SLITHERITE).withItem();
-    public static final Block POLISHED_SLITHERITE_SLAB = register("polished_slitherite_slab", new SlabBlock(copy(SMOOTH_STONE_SLAB))).withItem();
-    public static final Block POLISHED_SLITHERITE_WALL = register("polished_slitherite_wall", new WallBlock(copy(STONE_BRICK_WALL))).withItem();
-    public static final Block POLISHED_SLITHERITE_BUTTON = register("polished_slitherite_button", createStoneButtonBlock()).withItem();
-    public static final Block POLISHED_SLITHERITE_PRESSURE_PLATE = register("polished_slitherite_pressure_plate", new PressurePlateBlock(PressurePlateBlock.ActivationRule.MOBS, copy(STONE_PRESSURE_PLATE), POLISHED_SLITHERITE_TYPE)).withItem();
-
-    // polished slitherite bricks
-    public static final Block POLISHED_SLITHERITE_BRICKS = registerSimple("polished_slitherite_bricks", copy(STONE_BRICKS)).withItem();
-    public static final Block POLISHED_SLITHERITE_BRICK_STAIRS = registerStairs("polished_slitherite_brick_stairs", POLISHED_SLITHERITE_BRICKS).withItem();
-    public static final Block POLISHED_SLITHERITE_BRICK_SLAB = register("polished_slitherite_brick_slab", new SlabBlock(copy(STONE_BRICKS))).withItem();
-    public static final Block POLISHED_SLITHERITE_BRICK_WALL = register("polished_slitherite_brick_wall", new WallBlock(copy(STONE_BRICK_WALL))).withItem();
-
-    // single slitherite blocks
-    public static final Block CHISELED_POLISHED_SLITHERITE = registerSimple("chiseled_polished_slitherite", copy(CHISELED_STONE_BRICKS)).withItem();
-    public static final Block CHISELED_POLISHED_SLITHERITE_BRICKS = registerSimple("chiseled_polished_slitherite_bricks", copy(CHISELED_STONE_BRICKS)).withItem();
-    public static final Block CRACKED_POLISHED_SLITHERITE_BRICKS = registerSimple("cracked_polished_slitherite_bricks", copy(CRACKED_STONE_BRICKS)).withItem();
 
     // plants
     public static final BeamerBlock BEAMER = (BeamerBlock) new BeamerBlock().registerBlock();
@@ -117,10 +129,6 @@ public class DecoBlocks {
     public static EBlock register(String id, Block block) {
         Block registredBlock = Registry.register(Registries.BLOCK, EIdentifier.of(id), block);
         return new EBlock(registredBlock);
-    }
-
-    private static EBlock registerSimple(String id, AbstractBlock.Settings settings) {
-        return register(id, new Block(settings));
     }
 
     private static EBlock registerStairs(String id, Block baseBlock) {

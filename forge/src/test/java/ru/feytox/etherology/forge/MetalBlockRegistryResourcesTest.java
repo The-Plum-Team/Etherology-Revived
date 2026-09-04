@@ -66,6 +66,25 @@ final class MetalBlockRegistryResourcesTest {
             "data/minecraft/tags/blocks/needs_iron_tool.json";
     private static final String BEACON_BASE_BLOCKS_TAG =
             "data/minecraft/tags/blocks/beacon_base_blocks.json";
+    private static final Set<String> SLITHERITE_IDS = Set.of(
+            "chiseled_polished_slitherite",
+            "chiseled_polished_slitherite_bricks",
+            "cracked_polished_slitherite_bricks",
+            "polished_slitherite",
+            "polished_slitherite_brick_slab",
+            "polished_slitherite_brick_stairs",
+            "polished_slitherite_brick_wall",
+            "polished_slitherite_bricks",
+            "polished_slitherite_button",
+            "polished_slitherite_pressure_plate",
+            "polished_slitherite_slab",
+            "polished_slitherite_stairs",
+            "polished_slitherite_wall",
+            "slitherite",
+            "slitherite_slab",
+            "slitherite_stairs",
+            "slitherite_wall"
+    );
 
     private static final Map<String, MetalBlock> METALS = metals();
 
@@ -212,21 +231,7 @@ final class MetalBlockRegistryResourcesTest {
         assertOnlyRequiredTagIds(
                 Files.readString(repositoryRoot.resolve("src/main/generated/" + PICKAXE_TAG)),
                 PICKAXE_TAG,
-                Set.of(
-                        "etherology:attrahite",
-                        "etherology:attrahite_brick_slab",
-                        "etherology:attrahite_brick_stairs",
-                        "etherology:attrahite_bricks",
-                        "etherology:azel_block",
-                        "etherology:ebony_block",
-                        "etherology:ethereal_channel",
-                        "etherology:ethereal_storage",
-                        "etherology:ethril_block",
-                        "etherology:slitherite",
-                        "etherology:slitherite_slab",
-                        "etherology:slitherite_stairs",
-                        "etherology:slitherite_wall"
-                )
+                expectedPickaxeIds()
         );
         assertTagMembership(
                 Files.readString(
@@ -275,21 +280,7 @@ final class MetalBlockRegistryResourcesTest {
                         PICKAXE_TAG,
                         Set.copyOf(METALS.keySet()),
                         Set.of(),
-                        Set.of(
-                                "etherology:attrahite",
-                                "etherology:attrahite_brick_slab",
-                                "etherology:attrahite_brick_stairs",
-                                "etherology:attrahite_bricks",
-                                "etherology:azel_block",
-                                "etherology:ebony_block",
-                                "etherology:ethereal_channel",
-                                "etherology:ethereal_storage",
-                                "etherology:ethril_block",
-                                "etherology:slitherite",
-                                "etherology:slitherite_slab",
-                                "etherology:slitherite_stairs",
-                                "etherology:slitherite_wall"
-                        )
+                        expectedPickaxeIds()
                 );
                 assertPackagedTag(
                         artifact,
@@ -1237,6 +1228,22 @@ final class MetalBlockRegistryResourcesTest {
     private static Set<String> namespacedMetalIds() {
         Set<String> ids = new LinkedHashSet<>();
         METALS.keySet().forEach(id -> ids.add("etherology:" + id));
+        return Collections.unmodifiableSet(ids);
+    }
+
+    private static Set<String> expectedPickaxeIds() {
+        Set<String> ids = new LinkedHashSet<>(Set.of(
+                "etherology:attrahite",
+                "etherology:attrahite_brick_slab",
+                "etherology:attrahite_brick_stairs",
+                "etherology:attrahite_bricks",
+                "etherology:azel_block",
+                "etherology:ebony_block",
+                "etherology:ethereal_channel",
+                "etherology:ethereal_storage",
+                "etherology:ethril_block"
+        ));
+        SLITHERITE_IDS.forEach(id -> ids.add("etherology:" + id));
         return Collections.unmodifiableSet(ids);
     }
 

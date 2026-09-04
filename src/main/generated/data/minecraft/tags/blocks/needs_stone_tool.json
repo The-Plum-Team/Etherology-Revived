@@ -1,36 +1,15 @@
 {
   "replace": false,
   "values": [
-    {
-      "id": "etherology:brewing_cauldron",
-      "required": false
-    },
+    "etherology:brewing_cauldron",
     "etherology:ethereal_storage",
     "etherology:ethereal_channel",
-    {
-      "id": "etherology:ethereal_fork",
-      "required": false
-    },
-    {
-      "id": "etherology:ethereal_socket",
-      "required": false
-    },
-    {
-      "id": "etherology:ethereal_furnace",
-      "required": false
-    },
-    {
-      "id": "etherology:spinner",
-      "required": false
-    },
-    {
-      "id": "etherology:samovar",
-      "required": false
-    },
+    "etherology:ethereal_fork",
+    "etherology:ethereal_socket",
+    "etherology:ethereal_furnace",
+    "etherology:spinner",
+    "etherology:samovar",
     "etherology:attrahite",
-    {
-      "id": "etherology:tuning_fork",
-      "required": false
-    }
+    "etherology:tuning_fork"
   ]
 }

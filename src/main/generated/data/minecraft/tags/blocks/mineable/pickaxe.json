@@ -4,78 +4,23 @@
     "etherology:attrahite_brick_slab",
     "etherology:attrahite_brick_stairs",
     "etherology:attrahite_bricks",
-    {
-      "id": "etherology:polished_slitherite",
-      "required": false
-    },
+    "etherology:polished_slitherite",
     "etherology:slitherite",
     "etherology:slitherite_slab",
     "etherology:slitherite_stairs",
     "etherology:slitherite_wall",
-    {
-      "id": "etherology:chiseled_polished_slitherite",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_button",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_pressure_plate",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_slab",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_stairs",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_wall",
-      "required": false
-    },
-    {
-      "id": "etherology:chiseled_polished_slitherite_bricks",
-      "required": false
-    },
-    {
-      "id": "etherology:cracked_polished_slitherite_bricks",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_brick_slab",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_brick_stairs",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_brick_wall",
-      "required": false
-    },
-    {
-      "id": "etherology:polished_slitherite_bricks",
-      "required": false
-    },
-    {
-      "id": "etherology:chiseled_polished_slitherite",
-      "required": false
-    },
-    {
-      "id": "etherology:chiseled_polished_slitherite_bricks",
-      "required": false
-    },
-    {
-      "id": "etherology:cracked_polished_slitherite_bricks",
-      "required": false
-    },
+    "etherology:chiseled_polished_slitherite",
+    "etherology:polished_slitherite_button",
+    "etherology:polished_slitherite_pressure_plate",
+    "etherology:polished_slitherite_slab",
+    "etherology:polished_slitherite_stairs",
+    "etherology:polished_slitherite_wall",
+    "etherology:chiseled_polished_slitherite_bricks",
+    "etherology:cracked_polished_slitherite_bricks",
+    "etherology:polished_slitherite_brick_slab",
+    "etherology:polished_slitherite_brick_stairs",
+    "etherology:polished_slitherite_brick_wall",
+    "etherology:polished_slitherite_bricks",
     {
       "id": "etherology:pedestal",
       "required": false
@@ -166,6 +111,7 @@
     },
     "etherology:ethereal_storage",
     "etherology:ethereal_channel",
+    "etherology:attrahite",
     {
       "id": "etherology:brewing_cauldron",
       "required": false
@@ -190,7 +136,6 @@
       "id": "etherology:samovar",
       "required": false
     },
-    "etherology:attrahite",
     {
       "id": "etherology:tuning_fork",
       "required": false

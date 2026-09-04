@@ -1,4 +1,5 @@
 import dev.architectury.plugin.ArchitectPluginExtension
+import net.fabricmc.loom.api.LoomGradleExtensionAPI
 import org.gradle.api.tasks.Sync
 
 plugins {
@@ -27,6 +28,10 @@ extensions.configure<BasePluginExtension>("base") {
 extensions.configure<ArchitectPluginExtension>("architectury") {
     minecraft = minecraftVersion
     common(listOf("fabric", "forge"))
+}
+
+extensions.configure<LoomGradleExtensionAPI>("loom") {
+    accessWidenerPath.set(rootProject.file("src/main/resources/etherology.accesswidener"))
 }
 
 repositories {

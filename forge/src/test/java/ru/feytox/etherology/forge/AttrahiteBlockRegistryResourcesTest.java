@@ -982,27 +982,27 @@ final class AttrahiteBlockRegistryResourcesTest {
                 ),
                 data(
                         "minecraft/tags/blocks/mineable/pickaxe.json",
-                        "dc177566ae1e14f00ee2c4206b085ed839868e80b6d6428c185bbacff7582593"
+                        "632ad6edd689227cdb1ef9c8b62796cbfaeda47726896a84b6138e0a96715866"
                 ),
                 data(
                         "minecraft/tags/blocks/needs_stone_tool.json",
-                        "d1a44b46f412d1af95b624d70f641dc8ce3e0a6610d1cb05e5a1f04a8b311c28"
+                        "64a01926e983ba9dc0e1fe6d0924bd5d2e4d82defd35e604f85d0c59a1c839ad"
                 ),
                 data(
                         "minecraft/tags/blocks/slabs.json",
-                        "e791aab36b9ce7958c6742207c1c5618d87f0079ded952a78973d2d976badcec"
+                        "7db9640210269cd1663f47c471d648902eefefd245c9e58b5fcf408c3a6a89fe"
                 ),
                 data(
                         "minecraft/tags/blocks/stairs.json",
-                        "7ab30520cf4e71f7edf1db18cda063ff4e4ec506c1a70d183c7df6d7724eed88"
+                        "8eecf3f968b80388d401b7ab39b52bcf593950515570db537bd9902d84cd0b1b"
                 ),
                 data(
                         "minecraft/tags/items/slabs.json",
-                        "e791aab36b9ce7958c6742207c1c5618d87f0079ded952a78973d2d976badcec"
+                        "7db9640210269cd1663f47c471d648902eefefd245c9e58b5fcf408c3a6a89fe"
                 ),
                 data(
                         "minecraft/tags/items/stairs.json",
-                        "7ab30520cf4e71f7edf1db18cda063ff4e4ec506c1a70d183c7df6d7724eed88"
+                        "8eecf3f968b80388d401b7ab39b52bcf593950515570db537bd9902d84cd0b1b"
                 )
         );
     }

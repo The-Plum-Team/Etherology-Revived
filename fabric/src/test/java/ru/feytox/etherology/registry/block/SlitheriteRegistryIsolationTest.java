@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,30 +36,7 @@ final class SlitheriteRegistryIsolationTest {
             "SLITHERITE",
             "SLITHERITE_STAIRS",
             "SLITHERITE_SLAB",
-            "SLITHERITE_WALL"
-    );
-    private static final List<String> IDS = List.of(
-            "slitherite",
-            "slitherite_stairs",
-            "slitherite_slab",
-            "slitherite_wall"
-    );
-    private static final List<String> DEFERRED_IDS = List.of(
-            "polished_slitherite",
-            "polished_slitherite_stairs",
-            "polished_slitherite_slab",
-            "polished_slitherite_wall",
-            "polished_slitherite_button",
-            "polished_slitherite_pressure_plate",
-            "polished_slitherite_bricks",
-            "polished_slitherite_brick_stairs",
-            "polished_slitherite_brick_slab",
-            "polished_slitherite_brick_wall",
-            "chiseled_polished_slitherite",
-            "chiseled_polished_slitherite_bricks",
-            "cracked_polished_slitherite_bricks"
-    );
-    private static final List<String> DEFERRED_FIELDS = List.of(
+            "SLITHERITE_WALL",
             "POLISHED_SLITHERITE",
             "POLISHED_SLITHERITE_STAIRS",
             "POLISHED_SLITHERITE_SLAB",
@@ -73,28 +51,20 @@ final class SlitheriteRegistryIsolationTest {
             "CHISELED_POLISHED_SLITHERITE_BRICKS",
             "CRACKED_POLISHED_SLITHERITE_BRICKS"
     );
+    private static final List<String> IDS = FIELDS.stream()
+            .map(field -> field.toLowerCase(Locale.ROOT))
+            .toList();
 
     @Test
-    void aliasesExactlyFourSharedBlocksAndMarksTheirCanonicalDrops()
+    void aliasesAllSeventeenSharedBlocksAndMarksTheirCanonicalDrops()
             throws IOException {
         AliasTrace trace = aliasTrace();
+        Map<String, String> expectedAliases = new LinkedHashMap<>();
+        FIELDS.forEach(field -> expectedAliases.put(field, field));
 
-        assertEquals(
-                Map.of(
-                        "SLITHERITE", "SLITHERITE",
-                        "SLITHERITE_STAIRS", "SLITHERITE_STAIRS",
-                        "SLITHERITE_SLAB", "SLITHERITE_SLAB",
-                        "SLITHERITE_WALL", "SLITHERITE_WALL"
-                ),
-                trace.aliases()
-        );
+        assertEquals(expectedAliases, trace.aliases());
         assertEquals(FIELDS, trace.autoLootFields());
         assertEquals(List.of(), trace.legacyIds());
-    }
-
-    @Test
-    void preservesAllThirteenDeferredPolishedRegistrations() throws IOException {
-        assertEquals(DEFERRED_IDS, deferredIds());
     }
 
     @Test
@@ -179,50 +149,6 @@ final class SlitheriteRegistryIsolationTest {
                 List.copyOf(autoLootFields),
                 List.copyOf(legacyIds)
         );
-    }
-
-    private static List<String> deferredIds() throws IOException {
-        List<String> ids = new ArrayList<>();
-        reader(DECO_BLOCKS).accept(new ClassVisitor(Opcodes.ASM9) {
-            @Override
-            public MethodVisitor visitMethod(
-                    int access,
-                    String name,
-                    String descriptor,
-                    String signature,
-                    String[] exceptions
-            ) {
-                if (!name.equals("<clinit>")) return null;
-                return new MethodVisitor(Opcodes.ASM9) {
-                    private String pendingId;
-
-                    @Override
-                    public void visitLdcInsn(Object value) {
-                        if (value instanceof String id && DEFERRED_IDS.contains(id)) {
-                            pendingId = id;
-                        }
-                    }
-
-                    @Override
-                    public void visitFieldInsn(
-                            int opcode,
-                            String owner,
-                            String name,
-                            String descriptor
-                    ) {
-                        if (opcode != Opcodes.PUTSTATIC
-                                || !owner.equals(DECO_BLOCKS_OWNER)
-                                || !DEFERRED_FIELDS.contains(name)) {
-                            return;
-                        }
-                        assertNotNull(pendingId, name);
-                        ids.add(pendingId);
-                        pendingId = null;
-                    }
-                };
-            }
-        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-        return List.copyOf(ids);
     }
 
     private static List<String> initializerInvocations() throws IOException {

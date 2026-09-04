@@ -1,0 +1,220 @@
+{
+  "schema": 1,
+  "kind": "etherology-original-fabric-consumed-run-diagnostic",
+  "accepted": false,
+  "verification_scope": "archived-failed-report-log-and-sole-screenshot-integrity-without-mechanic-acceptance",
+  "archive_policy": {
+    "exact_relative_paths": [
+      "README.md",
+      "controller/original-client.log",
+      "diagnostic-manifest.json",
+      "reports/done.marker",
+      "reports/report.json",
+      "screenshots/pedestal-gallery.png"
+    ],
+    "symlinks_allowed": false,
+    "copied_runtime_artifacts_are_byte_for_byte": true
+  },
+  "reference": {
+    "id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit_binding": "unavailable"
+  },
+  "scenario": "pedestal-baseline",
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v13",
+    "manifest_path": "scripts/baseline/original-fabric-1.21.1-published-0.1.7-v13.json",
+    "manifest_size": 10307,
+    "manifest_sha256": "61e9d189041a826bfc8375884e559c26a38bbb5e109eff5279b315374c91fe9c"
+  },
+  "runtime": {
+    "minecraft": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 21,
+    "scope": "repository-owned-ignored-state",
+    "source_profiles": [],
+    "preserved_path": "scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v13",
+    "must_never_run_again": true
+  },
+  "repository": {
+    "prelaunch_commit": "60b3686ec8d6dfd73e46a93dab9e369d2c39a43e",
+    "prelaunch_commit_subject": "test: prepare original Pedestal v13 baseline",
+    "prelaunch_commit_time": "2026-09-04T18:06:49+02:00"
+  },
+  "controller": {
+    "commit": "60b3686ec8d6dfd73e46a93dab9e369d2c39a43e",
+    "path": "scripts/baseline/original_client.py",
+    "size": 302815,
+    "sha256": "431dcaeb9300d8c59fceb3a375b7d71f2e899992866f62bb8d4007bd32a79d77",
+    "timeout_seconds": 1800,
+    "failed_completion_shutdown_grace_seconds": 15,
+    "native_process_exit_observed": true,
+    "controller_process_exit_observed": true,
+    "process_group_forcibly_terminated": false,
+    "observed_exit_code": 2,
+    "observed_exit_code_provenance": "derived from the tracked BaselineError handler after the terminal error was directly witnessed; the unified wait result did not expose an exit_code field",
+    "observed_error": "Original-baseline screenshot inventory is incomplete or contaminated: missing=['pedestal-persistence-initial.png', 'pedestal-persistence-reopened.png', 'pedestal-transition-drops.png'], extra=[]",
+    "observed_error_provenance": "direct parent-terminal observation; this post-process verifier error is not a runtime-log line",
+    "clean_shutdown": true,
+    "controller_verification_published": false,
+    "termination": {
+      "classification": "direct-clean-shutdown-log-and-controller-completion-observation",
+      "summary": "After the failed report and marker were published, client.scheduleStop() completed integrated-server shutdown. The game log ends after every dimension was saved, the native process ended inside the 15-second failure grace, and the controller subsequently rejected the missing screenshot inventory.",
+      "terminal_game_log_line": "[18:14:50] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved"
+    }
+  },
+  "outcome": {
+    "launch_attempt_created_at_unix_ns": 1788538073069718000,
+    "controller_log_started_at_utc": "2026-09-04T16:07:56Z",
+    "harness_failure_published_at_local_time": "2026-09-04T18:14:50+02:00",
+    "world_created": true,
+    "runtime_retained_at_diagnostic_capture": true,
+    "report_published": true,
+    "completion_marker_published": true,
+    "report_status": "failed",
+    "report_passed": false,
+    "client_ticks": 7996,
+    "assertion_count": 74,
+    "assertions_true_at_publication": 49,
+    "assertions_false_at_publication": 25,
+    "expected_screenshot_count": 4,
+    "screenshot_count": 1,
+    "missing_screenshots": [
+      "pedestal-persistence-initial.png",
+      "pedestal-persistence-reopened.png",
+      "pedestal-transition-drops.png"
+    ],
+    "extra_screenshots": [],
+    "crash_report_count": 0,
+    "skin_cache_present": false,
+    "clean_shutdown": true,
+    "lifecycle_failure": {
+      "stage": "WAITING_FOR_CLIENT_MIRROR",
+      "capture_phase": "transition-drops",
+      "stage_tick_limit": 6000,
+      "stage_tick_unit": "client ticks elapsed in the current stage",
+      "stage_started_at_client_tick": 1996,
+      "failed_at_client_tick": 7996,
+      "message": "Timed out in WAITING_FOR_CLIENT_MIRROR after 6000 client ticks; capture_phase=transition-drops; camera=first_person=true;x=0.5;y=121.0;z=-15.5;yaw=0.0;pitch=10.0;on_ground=true"
+    },
+    "diagnosis": {
+      "classification": "direct-observation-without-mechanic-acceptance",
+      "summary": "The gallery phase completed, but the transition-drops phase never satisfied its client-mirror precondition before the 6000-stage-tick bound. The harness failed closed at client tick 7996 before the transition screenshot, persistence phases, restart, or reopened-world capture could complete.",
+      "false_assertion_interpretation": "The 25 false records at and after the interrupted transition phase include fail-closed or unexecuted defaults. They are downstream consequences of the lifecycle stopping point, not independent Pedestal mechanic failures.",
+      "underlying_cause": "not proven by the retained diagnostic artifacts",
+      "limitation": "No v13 result, including the sole gallery screenshot, is accepted as native Pedestal behavior evidence."
+    }
+  },
+  "artifacts": {
+    "reference_bundle": {
+      "size": 7838299,
+      "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b"
+    },
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    "harness": {
+      "mod_id": "etherology_original_baseline_harness",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.4.2.jar",
+      "version": "1.4.2",
+      "size": 340155,
+      "sha256": "82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04"
+    },
+    "scenario_verifier": {
+      "path": "scripts/baseline/original_pedestal_evidence_v13.py",
+      "size": 26963,
+      "sha256": "221afc8f88d11a60d94dc4bd94f1dd54b93e57cb93a387b336a8987d341afabe"
+    },
+    "prelaunch_placeholder": {
+      "path": "docs/evidence/original-1.21.1/pedestal-v13/README.md",
+      "size": 1714,
+      "sha256": "c67be775af3eac5964b3fca78e8dfcb50ba1a0f1fedc38651d7c1ec8d69e9303",
+      "relationship": "the verifier-pinned README-only prelaunch state replaced by this consumed-run archive"
+    },
+    "harness_sources": {
+      "commit": "60b3686ec8d6dfd73e46a93dab9e369d2c39a43e",
+      "contract": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalBaselineContract.java",
+        "size": 17454,
+        "sha256": "9bf244347a1b0a1d640efc762385f83fb3e713714aee55ef0547030a35d53a84"
+      },
+      "scenario": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalBaselineScenario.java",
+        "size": 165008,
+        "sha256": "7c7be291b99da287d951f831515c1beb5f1f22f3d745676d79ab2f2a3f48ac04"
+      },
+      "writer": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalEvidenceWriter.java",
+        "size": 6284,
+        "sha256": "bd1cb0271420bc9fd277dfc026efb15118343ac1ee876e54a784c68f93398e5a"
+      }
+    }
+  },
+  "runtime_bindings": {
+    "profile_marker": {
+      "size": 3110,
+      "sha256": "68c3c4091805e35a12aa3f26e2a1f8af3b55317262546fa8427b5abfd428e0bc"
+    },
+    "artifact_lock": {
+      "size": 5389,
+      "sha256": "028a13122e4bb8eec04121c111a4058b61a9046c29957fb7e4a4b11c948afb9c"
+    },
+    "runtime_lock": {
+      "size": 832422,
+      "sha256": "a0c95119bbf2870c791e82329e7e0d925d1c68553e811fe8e57c194713051229"
+    },
+    "launch_attempt": {
+      "size": 872152,
+      "sha256": "dbbc1a1f1140a5cd2e14b7781984a84fa0d07c25ce48988c08ee1d2a1ed09e79"
+    },
+    "evidence_descriptor": {
+      "size": 972,
+      "sha256": "fd1a9e99a3df099204ce4d14224903b446ba0c870bf03fd879bb945d3422d641"
+    },
+    "game_log": {
+      "size": 21310,
+      "sha256": "eb2dcbb6c6cd06da156e64bdf9b70d916e50952a038336caa9b9d64a9f9fa91a",
+      "archived_separately": false,
+      "relationship": "byte-for-byte suffix of controller/original-client.log after its 428-byte controller header"
+    }
+  },
+  "files": {
+    "README.md": {
+      "size": 3126,
+      "sha256": "b91e2b380fee5bda51fa4b6b405b0f86c5e31a904efb282928fcce60dfa239bc"
+    },
+    "controller/original-client.log": {
+      "source_path": "logs/original-client-20260904T160756Z.log",
+      "source_mtime_unix_seconds": 1788538490,
+      "size": 21738,
+      "sha256": "d85109c8a3a4eade11a67398a4a6deabecd0b2319a96d768cf6c63a44b915928"
+    },
+    "reports/report.json": {
+      "source_path": "evidence/pedestal-baseline/reports/report.json",
+      "source_mtime_unix_seconds": 1788538490,
+      "size": 51222,
+      "sha256": "fc840f34231676167834d453fcb73ab3bc7289c3a56f0cbeb6455ac96c29a563"
+    },
+    "reports/done.marker": {
+      "source_path": "evidence/pedestal-baseline/reports/done.marker",
+      "source_mtime_unix_seconds": 1788538490,
+      "size": 104,
+      "sha256": "51846087b089ed0d9a0200246a0212ef550d1f949ff1f0c37d6250a551bd21aa"
+    },
+    "screenshots/pedestal-gallery.png": {
+      "source_path": "evidence/pedestal-baseline/screenshots/pedestal-gallery.png",
+      "source_mtime_unix_seconds": 1788538189,
+      "width": 1920,
+      "height": 1080,
+      "source": "minecraft-framebuffer",
+      "edited": false,
+      "accepted_as_mechanic_evidence": false,
+      "size": 284835,
+      "sha256": "fc0e6c832d7a26103555fbb61aaf2fd3ca9964db40adbb0f200e1fab831703f0"
+    }
+  }
+}

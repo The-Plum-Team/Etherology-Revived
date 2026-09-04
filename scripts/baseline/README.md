@@ -1,40 +1,49 @@
 # Repository-owned original Fabric 1.21.1 baseline
 
 `original_client.py` controls one selected versioned runtime and no other game
-directory. The v11 and v12 Pedestal runtimes are consumed and preserved. The
-active v13 contract is prepared, but its separate runtime remains absent:
+directory. The v11, v12, and v13 Pedestal runtimes are consumed and preserved.
+The active v14 contract is prepared, but its separate runtime remains absent:
 
 ```text
 scripts/baseline/.state/runtimes/
   etherology-original-fabric-1.21.1-published-0.1.7-v11/  # consumed; never reuse
   etherology-original-fabric-1.21.1-published-0.1.7-v12/  # consumed; never reuse
-  etherology-original-fabric-1.21.1-published-0.1.7-v13/  # active; absent until provision
+  etherology-original-fabric-1.21.1-published-0.1.7-v13/  # consumed; never reuse
+  etherology-original-fabric-1.21.1-published-0.1.7-v14/  # active; absent until provision
 ```
 
-The currently tracked v13 contract is the only launchable Pedestal identity.
-`original-fabric-1.21.1-published-0.1.7-v13.json` pins Minecraft `1.21.1`, Fabric
+The currently tracked v14 contract is the only launchable Pedestal identity.
+`original-fabric-1.21.1-published-0.1.7-v14.json` pins Minecraft `1.21.1`, Fabric
 Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the exact
 eight top-level published JAR members. It also pins the separately built,
-client-only v1.4.2 capture harness as the ninth root JAR: `340,155` bytes with
+client-only v1.4.3 capture harness as the ninth root JAR: `340,723` bytes with
 SHA-256
-`82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04`.
+`9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6`.
 The controller recursively
 reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quickskin`),
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v13 manifest is `10,307` bytes with SHA-256
+The consumed v13 harness is `340,155` bytes with SHA-256
+`82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04`.
+Its manifest is `10,307` bytes with SHA-256
 `61e9d189041a826bfc8375884e559c26a38bbb5e109eff5279b315374c91fe9c`.
 Its verifier is `26,963` bytes with SHA-256
 `221afc8f88d11a60d94dc4bd94f1dd54b93e57cb93a387b336a8987d341afabe`.
+The v14 manifest is `10,307` bytes with SHA-256
+`ddee58342b8a0e6c45bea375247243be5cc20bfa1680ef28f0d9ab5c72518962`.
+Its `42,963`-byte verifier has SHA-256
+`8f4775e95f2eea7595c53197f2032d4379c22efbcb046a2bfc44d4148c92a819`.
 The consumed v12 manifest remains immutable at `10,307` bytes with SHA-256
 `bcf54994a6245284292adb4056a22b24c29fdaaec60a90579d2c1eac95c10c6a`.
 The consumed v11 manifest remains immutable at `10,307` bytes with SHA-256
 `34974855dd861c220915dd77ce694d3e5175c97e1c8f6edea0806601947e0cfc`.
 The consumed v10 manifest remains immutable at `10,349` bytes with SHA-256
 `32a96831e39034b704b92a0768639c8d776e6c7612ff2cefa2603cf19eec77d7`.
-V13 has not been provisioned, staged, checked, or launched. Its verifier pins
-the README-only fresh target and both consumed diagnostic histories.
+V13 consumed its sole launch and must not be reused. V14 has not been
+provisioned, staged, checked, or launched. Its preparation contract requires
+the verifier to pin the README-only fresh target and all three consumed
+Pedestal diagnostic histories.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -105,8 +114,10 @@ restored the camera at render start before the framebuffer was drawn, and kept
 render readiness under one monotonic 6,000-tick watchdog. All 51 Java tests and
 two clean reproducibility builds passed. The exact artifact and manifest bytes
 above were pinned before provisioning. Its one native launch is diagnostic
-history and must not be repeated. V13 with harness version 1.4.2 is the fresh
-active identity; its exact bytes are pinned above and its runtime remains absent.
+history and must not be repeated. V13 with harness version 1.4.2 later consumed
+its own launch and is also diagnostic history. V14 with harness version 1.4.3
+is the fresh active identity; its runtime remains absent and has never been
+launched.
 
 ### `source-0.1.8`: source and build reference
 
@@ -129,9 +140,9 @@ a mechanic hypothesis, but it cannot be cited as proof of what
 `published-0.1.7` did in game. Conversely, a `published-0.1.7` screenshot cannot
 prove the `source-0.1.8` implementation.
 
-## Prepared `pedestal-baseline` v13 lifecycle
+## Prepared `pedestal-baseline` v14 lifecycle
 
-V13 preserves the 74 ordered assertions and four 1920×1080 captures. Its
+V14 preserves the 74 ordered assertions and four 1920×1080 captures. Its
 dispenser fixtures call the actual placed `BlockState.scheduledTick` once, which
 enters vanilla `DispenserBlock.dispense` and Etherology's published mixin while
 removing the unrelated redstone/chunk scheduling race seen in v12. Every stage,
@@ -140,6 +151,15 @@ controller accepts a failed marker only when it is an unlinked regular file and
 its SHA-256 names the accompanying unlinked regular report; after that marker it
 allows 15 seconds for graceful shutdown before cleaning up the owned process
 group.
+
+V13 proved the exact five client transition block/block-entity predicates but
+timed out because capture readiness additionally required a transient client
+item-entity drop map to equal the authoritative server drop map. V14 removes
+only that transient equality from readiness and pass/fail. It records the
+expected and observed client drop maps at mirror readiness and immediately
+before capture as diagnostic data. The authoritative server drop assertions,
+exact client block-state snapshot, all five client stale-block-entity/removal
+and replacement-air checks, and all 74 assertion outcomes remain mandatory.
 
 The preparation gate is:
 
@@ -151,8 +171,31 @@ python3 -B scripts/baseline/original_client.py validate
 After the preparation commit is pushed, the one-shot lifecycle must remain
 sequential: `provision`, `stage`, `check`, and exactly one
 `run --scenario pedestal-baseline`. No build or repository mutation may overlap
-the native launch. The v13 runtime and README-only evidence target must be fresh
+the native launch. The v14 runtime and README-only evidence target must be fresh
 at every prelaunch gate.
+
+## Consumed `pedestal-baseline` v13 transition-mirror diagnostic
+
+The repository-owned v13 profile consumed its sole native launch on 2026-09-04.
+The published `0.1.7` client and v1.4.2 harness completed the gallery phase and
+wrote one native 1920x1080 `pedestal-gallery.png` capture. The run then timed out
+after 6,000 stage ticks in `WAITING_FOR_CLIENT_MIRROR` for the
+`transition-drops` phase.
+
+The failed report records 49 of 74 assertions true. The transition capture,
+persistence, restart, reopened-world, and three later screenshot records are
+fail-closed or unexecuted consequences of that lifecycle stop, not 25
+independent Pedestal mechanic failures. The native client and controller shut
+down cleanly, ending at `All dimensions are saved`, but the controller correctly
+rejected the missing three required screenshots and published no verification.
+The compact non-accepted archive is under
+`docs/evidence/original-1.21.1/pedestal-v13`; the ignored v13 runtime remains
+preserved and must never be launched again.
+
+The v13 archive does not record the transient client drop map, so the reason it
+did not equal the authoritative server snapshot remains unknown. V14 therefore
+makes only that equality diagnostic while retaining the server drops, exact
+client block/block-entity predicates, and complete 74-assertion contract.
 
 ## Consumed v12 controller lifecycle
 
@@ -177,7 +220,8 @@ bytes, while that adapter pinned the exact then-fresh evidence-placeholder
 README. V12 passed `provision`, `stage`, and `check`, then permanently consumed
 its launch. Neither the v11 nor v12 identity may pass through this lifecycle
 again. These commands are historical for v12; the active controller now selects
-the separately prepared v13 contract and must never be pointed back at v12.
+the separately prepared v14 contract and must never be pointed back at a
+consumed profile.
 
 The v12 lifecycle was deliberately split into distinct gates:
 
@@ -306,9 +350,9 @@ was published.
 The exact report, failed marker, complete controller log, launch and runtime
 bindings, and the non-duplicated game-log hash are recorded under
 `docs/evidence/original-1.21.1/pedestal-v12`. The ignored v12 runtime remains
-preserved and must never be launched again. The v13 harness, manifest, verifier,
-and fresh README-only target are now pinned; its runtime remains absent and it
-has not been launched.
+preserved and must never be launched again. V13 later consumed its own separate
+launch as documented above. The v14 README-only target is fresh, its runtime is
+absent, and it has never been launched.
 
 ## Consumed `pedestal-baseline` v11 timeout diagnostic
 

@@ -25,14 +25,15 @@ Customizable Player Models, Ears, and Architectury are excluded recursively.
 
 The controller creates a new ignored, repository-owned runtime for each
 one-shot capture. The accepted Slitherite v10 runtime remains immutable. The
-Pedestal v11 and v12 runtimes each consumed their only launch and remain
-preserved. The prepared v13 contract will use a separate runtime:
+Pedestal v11, v12, and v13 runtimes each consumed their only launch and remain
+preserved. The prepared v14 contract will use a separate runtime:
 
 ```text
 scripts/baseline/.state/runtimes/
   etherology-original-fabric-1.21.1-published-0.1.7-v11/  # consumed; never reuse
   etherology-original-fabric-1.21.1-published-0.1.7-v12/  # consumed; never reuse
-  etherology-original-fabric-1.21.1-published-0.1.7-v13/  # active; absent until provision
+  etherology-original-fabric-1.21.1-published-0.1.7-v13/  # consumed; never reuse
+  etherology-original-fabric-1.21.1-published-0.1.7-v14/  # active; absent until provision
 ```
 
 It never consults or mutates a launcher or user profile. The separately built
@@ -74,7 +75,25 @@ The `10,307`-byte v13 manifest has SHA-256
 `61e9d189041a826bfc8375884e559c26a38bbb5e109eff5279b315374c91fe9c`,
 and its `26,963`-byte verifier has SHA-256
 `221afc8f88d11a60d94dc4bd94f1dd54b93e57cb93a387b336a8987d341afabe`.
-The profile is prepared but not provisioned or launched.
+Its sole native run completed the gallery and wrote only
+`pedestal-gallery.png`, then timed out in the `transition-drops` client-mirror
+stage. The failed report records 49 of 74 assertions true. The original client
+and controller shut down cleanly, but the three missing later screenshots made
+the run diagnostic and non-accepted; its compact archive is under
+`docs/evidence/original-1.21.1/pedestal-v13`.
+
+The prepared v14 v1.4.3 contract changes only the transient client item-entity
+drop-map equality from a readiness/pass-fail condition into diagnostic data.
+Authoritative server drops, the exact client block-state snapshot, all five
+client block-entity/removal predicates, and all 74 assertions remain required.
+Its 51 Java tests and two reproducible clean builds produced a `340,723`-byte
+JAR with SHA-256
+`9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6`.
+The `10,307`-byte v14 manifest has SHA-256
+`ddee58342b8a0e6c45bea375247243be5cc20bfa1680ef28f0d9ab5c72518962`,
+and its `42,963`-byte verifier has SHA-256
+`8f4775e95f2eea7595c53197f2032d4379c22efbcb046a2bfc44d4148c92a819`.
+The v14 runtime is absent and has never been launched.
 The earlier phase-zero runtime proof remains under
 `docs/evidence/original-1.21.1/phase0-smoke-v1`.
 
@@ -142,9 +161,15 @@ never be reused. V12 later reached the dispenser phase, where its exact
 eight-unfired/four-fired chunk split indicated redstone-scheduled harness
 nondeterminism as the best-supported inference; it published a failed report
 and marker without a screenshot, then failed to shut down cleanly before the
-controller timeout. V12 also must never be reused. A fresh v13 profile with
-harness version 1.4.2 is prepared and pinned, but is not yet provisioned or
-launched. See
+controller timeout. V12 also must never be reused. V13 replaced the redstone
+schedule with one explicit vanilla scheduled dispenser tick per fixture and
+completed its gallery, but timed out waiting for the `transition-drops` client
+mirror. It wrote only the gallery screenshot, reported 49 of 74 assertions
+true, and shut down cleanly. V13 is diagnostic, not accepted, and must never be
+reused. A fresh v14 profile with harness version 1.4.3 retains the authoritative
+server drops, exact client block/block-entity predicates, and all 74 assertions
+while recording transient client drop equality only as diagnostic data. Its
+runtime is absent and has never been launched. See
 [`pedestal`](mechanics/pedestal/README.md).
 
 The first dedicated original Fabric 1.21.1 harness now implements

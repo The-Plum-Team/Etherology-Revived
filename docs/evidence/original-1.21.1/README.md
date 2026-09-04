@@ -4,17 +4,42 @@ This archive preserves native evidence from the separately isolated original
 Etherology runtime. It is the `published-0.1.7` binary reference, not the
 unbound `source-0.1.8` tree.
 
-## `pedestal-v13` — prepared, never run
+## `pedestal-v14` — prepared, never run
 
 The fresh profile
-`etherology-original-fabric-1.21.1-published-0.1.7-v13` is the sole active
-Pedestal lane. Its v1.4.2 harness enters the real vanilla dispenser scheduled
-tick and published Etherology mixin exactly once per fixture, bounds every
-scenario stage, and lets the controller terminate only its owned process group
-after a hash-bound failed marker and 15-second shutdown grace. The harness,
-manifest, verifier, both consumed histories, and README-only target are pinned.
-The v13 runtime is absent and no native result is claimed. See
-[`pedestal-v13`](pedestal-v13/) for the fresh contract.
+`etherology-original-fabric-1.21.1-published-0.1.7-v14` is the sole active
+Pedestal lane. Its v1.4.3 harness retains the authoritative server drop
+assertions, exact client block-state snapshot, all five client
+block-entity/removal predicates, all 74 ordered assertions, and four required
+captures. It records transient client item-entity drop-map equality only as
+diagnostic data, so that observation cannot affect pass/fail readiness. The
+v14 runtime is absent and has never been launched. See
+[`pedestal-v14`](pedestal-v14/) for the fresh contract.
+
+## `pedestal-v13` — consumed transition-mirror diagnostic
+
+The repository-owned profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v13` consumed its sole native
+launch on 2026-09-04. Its v1.4.2 harness completed the gallery phase and wrote
+one native 1920x1080 `pedestal-gallery.png` capture. It then timed out after
+6,000 stage ticks in `WAITING_FOR_CLIENT_MIRROR` for `transition-drops`.
+
+The failed report records 49 of 74 assertions true. The interrupted transition
+capture, persistence, restart, reopened-world, and three later screenshot
+records include fail-closed or unexecuted values rather than independent
+Pedestal mechanic failures. The native client and controller shut down cleanly
+and the game log ends with `All dimensions are saved`, but the controller
+correctly rejected the incomplete four-screenshot inventory. No controller
+verification was published. V13 is diagnostic, not accepted evidence; its
+compact record is under [`pedestal-v13`](pedestal-v13/), and its preserved
+runtime must never be launched again.
+
+V13 proved the five exact client transition block/block-entity predicates, but
+its capture-readiness predicate also required a transient client item-entity
+drop map to equal the authoritative server drop map. The retained artifacts do
+not record that client map, so the mismatch's cause is unknown. The prepared
+v14 lane makes only this transient equality diagnostic while retaining the
+server drops, exact client block/block-entity checks, and all 74 assertions.
 
 ## `pedestal-v12` — consumed failure diagnostic
 
@@ -34,8 +59,8 @@ at 16:52:51 Europe/Madrid, with no screenshot. Its scheduled stop then hung at
 owned process group, and returned exit code `2`. There is no clean shutdown or
 controller verification, so v12 is not accepted evidence. Its compact,
 hash-bound record is under [`pedestal-v12`](pedestal-v12/). The preserved
-runtime must never be launched again. The prepared v13 profile is the next
-attempt, but it has not been provisioned or launched.
+runtime must never be launched again. V13 later consumed its own separate
+launch and is recorded above; v14 is the fresh, never-launched successor.
 
 ## `pedestal-v11` — consumed timeout diagnostic
 

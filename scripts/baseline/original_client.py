@@ -99,14 +99,14 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v13.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v14.json"
 )
 PEDESTAL_EVIDENCE_VERIFIER_PATH = (
-    SCRIPT_DIRECTORY / "original_pedestal_evidence_v13.py"
+    SCRIPT_DIRECTORY / "original_pedestal_evidence_v14.py"
 )
-PEDESTAL_EVIDENCE_VERIFIER_SIZE = 26_963
+PEDESTAL_EVIDENCE_VERIFIER_SIZE = 42_963
 PEDESTAL_EVIDENCE_VERIFIER_SHA256 = (
-    "221afc8f88d11a60d94dc4bd94f1dd54b93e57cb93a387b336a8987d341afabe"
+    "8f4775e95f2eea7595c53197f2032d4379c22efbcb046a2bfc44d4148c92a819"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -644,6 +644,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v11": "v11",
         "etherology-original-fabric-1.21.1-published-0.1.7-v12": "v12",
         "etherology-original-fabric-1.21.1-published-0.1.7-v13": "v13",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v14": "v14",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -946,6 +947,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v11": "1.4.0",
         "v12": "1.4.1",
         "v13": "1.4.2",
+        "v14": "1.4.3",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -1113,6 +1115,15 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_seed": 4995697396257403185,
         },
         "v13": {
+            "id": "pedestal-baseline",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "pedestal-gallery.png",
+            "world_directory_name": "etherology-original-pedestal-baseline-world",
+            "world_display_name": "Etherology Original 0.1.7 Pedestal",
+            "world_seed": 4995697396257403185,
+        },
+        "v14": {
             "id": "pedestal-baseline",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -1661,6 +1672,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "1.4.0",
                 "1.4.1",
                 "1.4.2",
+                "1.4.3",
             }
             expected_slitherite_class = (
                 "dev/theplumteam/etherology/baseline/fabric/"
@@ -6244,10 +6256,10 @@ def load_pedestal_evidence_verifier() -> types.ModuleType:
         verifier_path,
         PEDESTAL_EVIDENCE_VERIFIER_SHA256,
         PEDESTAL_EVIDENCE_VERIFIER_SIZE,
-        "Pedestal v13 evidence verifier",
+        "Pedestal v14 evidence verifier",
     )
     specification = importlib.util.spec_from_file_location(
-        "etherology_original_pedestal_evidence_v13",
+        "etherology_original_pedestal_evidence_v14",
         verifier_path,
     )
     if specification is None or specification.loader is None:
@@ -6291,7 +6303,7 @@ def verify_pedestal_evidence_verifier_binding(
         or len(verifier.EXPECTED_ASSERTION_NAMES) != 74
     ):
         raise BaselineError(
-            "The Pedestal verifier is not bound to the exact active v13 contract"
+            "The Pedestal verifier is not bound to the exact active v14 contract"
         )
     return verifier
 
@@ -6328,7 +6340,7 @@ def scenario_verifier_descriptor(
         PEDESTAL_EVIDENCE_VERIFIER_PATH,
         PEDESTAL_EVIDENCE_VERIFIER_SHA256,
         PEDESTAL_EVIDENCE_VERIFIER_SIZE,
-        "Pedestal v13 evidence verifier",
+        "Pedestal v14 evidence verifier",
     )
     return {
         "path": PEDESTAL_EVIDENCE_VERIFIER_PATH.relative_to(
@@ -7117,6 +7129,24 @@ def failed_completion_marker_published(
     ) is not None
 
 
+def raise_for_published_failed_evidence(
+    marker_path: Path,
+    report_path: Path,
+    scenario_id: str,
+    controller_log_path: Path,
+) -> None:
+    if not failed_completion_marker_published(
+        marker_path,
+        report_path,
+        scenario_id,
+    ):
+        return
+    raise BaselineError(
+        "Original-baseline client published authenticated failed evidence; "
+        f"report: {report_path}; log: {controller_log_path}"
+    )
+
+
 def stream_owned_process_output(
     process: subprocess.Popen[bytes],
     log_handle: BinaryIO,
@@ -7315,6 +7345,12 @@ def _run_owned_client_locked(
                     ):
                         process_state_path(configuration, root).unlink(missing_ok=True)
 
+    raise_for_published_failed_evidence(
+        completion_marker_path(configuration, root),
+        report_path(configuration, root),
+        scenario_id,
+        log_path,
+    )
     content = log_path.read_text(encoding="utf-8", errors="replace")
     fatal_marker = find_fatal_log_marker(content)
     if fatal_marker is not None:

@@ -484,7 +484,7 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             )
         with self.assertRaisesRegex(
             client.BaselineError,
-            "exact active v13 contract",
+            "exact active v14 contract",
         ):
             client.verify_pedestal_evidence_verifier_binding(
                 client.load_configuration(v11_manifest)
@@ -493,13 +493,13 @@ class PedestalEvidenceV12Test(unittest.TestCase):
         v12_manifest = REPOSITORY_ROOT / verifier.PROFILE_RELATIVE_PATH
         with self.assertRaisesRegex(
             client.BaselineError,
-            "exact active v13 contract",
+            "exact active v14 contract",
         ):
             client.verify_pedestal_evidence_verifier_binding(
                 client.load_configuration(v12_manifest)
             )
 
-    def test_controller_pins_and_describes_the_active_v13_adapter(self) -> None:
+    def test_controller_pins_and_describes_the_active_v14_adapter(self) -> None:
         configuration = client.load_configuration()
         descriptor = client.scenario_verifier_descriptor(
             configuration,
@@ -508,7 +508,7 @@ class PedestalEvidenceV12Test(unittest.TestCase):
         self.assertEqual(
             descriptor,
             {
-                "path": "scripts/baseline/original_pedestal_evidence_v13.py",
+                "path": "scripts/baseline/original_pedestal_evidence_v14.py",
                 "size": client.PEDESTAL_EVIDENCE_VERIFIER_SIZE,
                 "sha256": client.PEDESTAL_EVIDENCE_VERIFIER_SHA256,
             },
@@ -532,7 +532,7 @@ class PedestalEvidenceV12Test(unittest.TestCase):
                 with self.assertRaisesRegex(client.BaselineError, "SHA-256"):
                     client.load_pedestal_evidence_verifier()
 
-    def test_active_v13_profile_is_fresh_and_v12_history_is_immutable(
+    def test_active_v14_profile_is_fresh_and_v12_history_is_immutable(
         self,
     ) -> None:
         configuration = client.load_configuration()

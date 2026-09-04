@@ -60,7 +60,7 @@ ACTIVE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v10.json"
 )
 ACTIVE_PEDESTAL_MANIFEST_PATH = (
-    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v13.json"
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v14.json"
 )
 LEGACY_SLITHERITE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
@@ -151,6 +151,7 @@ def harness_jar_bytes(
         "1.4.0",
         "1.4.1",
         "1.4.2",
+        "1.4.3",
     }
     metadata = {
         "schemaVersion": 1,
@@ -3876,11 +3877,11 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
     def test_current_capture_harness_is_exactly_pinned(self) -> None:
         configuration = client.load_configuration(ACTIVE_PEDESTAL_MANIFEST_PATH)
         client.require_capture_harness(configuration)
-        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.2")
-        self.assertEqual(client.harness_spec(configuration)["size"], 340_155)
+        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.3")
+        self.assertEqual(client.harness_spec(configuration)["size"], 340_723)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04",
+            "9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:
@@ -4165,6 +4166,253 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
                     report,
                     "pedestal-baseline",
                 )
+            )
+
+    def test_published_failed_evidence_raises_before_success_verification(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            marker = root / "done.marker"
+            report = root / "report.json"
+            controller_log = root / "original-client.log"
+            report.write_bytes(b'{"status":"failed"}\n')
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + client.sha256_file(report)
+                + "\n",
+                encoding="utf-8",
+            )
+
+            with self.assertRaisesRegex(
+                client.BaselineError,
+                "published authenticated failed evidence",
+            ) as raised:
+                client.raise_for_published_failed_evidence(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                    controller_log,
+                )
+
+            self.assertIn(str(report), str(raised.exception))
+            self.assertIn(str(controller_log), str(raised.exception))
+
+    def test_owned_client_failed_evidence_guard_runs_after_clean_cleanup(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(
+                temporary_root,
+                source_manifest_path=ACTIVE_PEDESTAL_MANIFEST_PATH,
+            )
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            caffeinate = temporary_root / "caffeinate"
+            caffeinate.write_bytes(b"fixture")
+            java = temporary_root / "jdk" / "bin" / "java"
+            java.parent.mkdir(parents=True)
+            java.write_bytes(b"fixture")
+            scenario_id = str(client.scenario_spec(configuration)["id"])
+            command = [str(java), "fixture-client"]
+            process = mock.Mock()
+            process.pid = 424_242
+            process.stdout = io.BytesIO()
+            state_path = client.process_state_path(configuration, root)
+            observed: dict[str, object] = {}
+
+            def publish_failed_evidence(
+                streamed_process: object,
+                log_handle: object,
+                initial_size: int,
+                timeout_seconds: int,
+                marker_path: Path,
+                report_path: Path,
+                streamed_scenario_id: str,
+            ) -> int:
+                self.assertIs(streamed_process, process)
+                self.assertGreater(initial_size, 0)
+                self.assertGreater(timeout_seconds, 0)
+                self.assertEqual(streamed_scenario_id, scenario_id)
+                observed["log_handle"] = log_handle
+                log_handle.write(b"clean owned client shutdown\n")
+                report_path.write_bytes(b'{"status":"failed"}\n')
+                marker_path.write_text(
+                    f"{scenario_id}:failed\n"
+                    f"report_sha256:{client.sha256_file(report_path)}\n",
+                    encoding="utf-8",
+                )
+                return 0
+
+            real_failed_evidence_guard = (
+                client.raise_for_published_failed_evidence
+            )
+
+            def observe_cleaned_state_then_raise(
+                marker_path: Path,
+                report_path: Path,
+                guarded_scenario_id: str,
+                controller_log_path: Path,
+            ) -> None:
+                self.assertTrue(
+                    client.failed_completion_marker_published(
+                        marker_path,
+                        report_path,
+                        guarded_scenario_id,
+                    )
+                )
+                self.assertFalse(state_path.exists())
+                log_handle = observed["log_handle"]
+                self.assertTrue(log_handle.closed)
+                log_content = controller_log_path.read_bytes()
+                self.assertIn(b"clean owned client shutdown\n", log_content)
+                observed["state_removed_before_guard"] = True
+                observed["log_path"] = controller_log_path
+                observed["log_content"] = log_content
+                real_failed_evidence_guard(
+                    marker_path,
+                    report_path,
+                    guarded_scenario_id,
+                    controller_log_path,
+                )
+
+            with ExitStack() as stack:
+                stack.enter_context(
+                    mock.patch.object(client, "CAFFEINATE_PATH", caffeinate)
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "verify_owned_runtime",
+                        return_value=root,
+                    )
+                )
+                for function_name in (
+                    "verify_installed_game",
+                    "verify_runtime_lock",
+                    "verify_staged_reference",
+                    "verify_scenario_prelaunch_contract",
+                    "verify_capture_layout",
+                    "assert_runtime_not_running",
+                    "verify_launch_attempt",
+                ):
+                    stack.enter_context(mock.patch.object(client, function_name))
+                stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "launch_attempt_descriptor",
+                        return_value={"fixture": "launch-attempt"},
+                    )
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "controlled_termination_signals",
+                        side_effect=ExitStack,
+                    )
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "blocked_termination_signals",
+                        side_effect=ExitStack,
+                    )
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "controlled_launch_environment",
+                        return_value={},
+                    )
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client.subprocess,
+                        "Popen",
+                        return_value=process,
+                    )
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client.os,
+                        "getpgid",
+                        return_value=process.pid,
+                    )
+                )
+                stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "process_group_exists",
+                        return_value=False,
+                    )
+                )
+                stop = stack.enter_context(
+                    mock.patch.object(client, "stop_owned_process_group")
+                )
+                stream = stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "stream_owned_process_output",
+                        side_effect=publish_failed_evidence,
+                    )
+                )
+                guard = stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "raise_for_published_failed_evidence",
+                        side_effect=observe_cleaned_state_then_raise,
+                    )
+                )
+                verify = stack.enter_context(
+                    mock.patch.object(client, "verify_scenario_evidence")
+                )
+                publish_verification = stack.enter_context(
+                    mock.patch.object(
+                        client,
+                        "write_successful_run_verification",
+                    )
+                )
+                stack.enter_context(
+                    self.assertRaisesRegex(
+                        client.BaselineError,
+                        "published authenticated failed evidence",
+                    )
+                )
+                client._run_owned_client_locked(
+                    configuration,
+                    scenario_id,
+                    java,
+                    command,
+                )
+
+            stream.assert_called_once()
+            guard.assert_called_once()
+            stop.assert_not_called()
+            verify.assert_not_called()
+            publish_verification.assert_not_called()
+            self.assertIs(observed["state_removed_before_guard"], True)
+            self.assertFalse(state_path.exists())
+            self.assertTrue(observed["log_handle"].closed)
+            log_path = observed["log_path"]
+            self.assertEqual(log_path.read_bytes(), observed["log_content"])
+            self.assertTrue(process.stdout.closed)
+
+    def test_failed_evidence_guard_ignores_an_unauthenticated_marker(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            marker = root / "done.marker"
+            report = root / "report.json"
+            controller_log = root / "original-client.log"
+            report.write_bytes(b'{"status":"failed"}\n')
+            marker.write_text(
+                "pedestal-baseline:failed\nreport_sha256:" + "0" * 64 + "\n",
+                encoding="utf-8",
+            )
+
+            client.raise_for_published_failed_evidence(
+                marker,
+                report,
+                "pedestal-baseline",
+                controller_log,
             )
 
     def test_failed_completion_marker_rejects_untrusted_files(self) -> None:

@@ -6,8 +6,11 @@ The repository-owned Fabric 1.21.1 v11 profile consumed its sole launch on
 controller's 1,800-second deadline before publishing a report or screenshot.
 V11 is diagnostic history, not accepted runtime evidence. The fresh v12
 profile later consumed its own sole launch and also failed closed; it is
-separate diagnostic history and cannot be reused. The v13 profile and v1.4.2
-harness are prepared and pinned, but its fresh runtime remains absent.
+separate diagnostic history and cannot be reused. The v13 profile then
+consumed its sole launch and failed closed after its gallery capture; it also
+remains diagnostic history and cannot be reused. The v14 profile and v1.4.3
+harness are prepared, but its fresh runtime remains absent and has never been
+launched.
 
 The dedicated scenario is designed to record:
 
@@ -97,4 +100,28 @@ Etherology mixin. Its 51 tests and two clean reproducibility builds produced a
 `340,155`-byte JAR with SHA-256
 `82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04`.
 The controller verifies the failed marker against its regular report before a
-15-second failure-shutdown grace. V13 remains fresh and has no native claim yet.
+15-second failure-shutdown grace.
+
+The v13 native run completed the gallery phase and wrote the sole retained
+`pedestal-gallery.png` 1920x1080 capture. It then spent 6,000 stage ticks in
+`WAITING_FOR_CLIENT_MIRROR` for `transition-drops` before failing closed. Its
+report records 49 of 74 assertions true; the transition capture, persistence,
+restart, reopened-world, and three later screenshot assertions were not
+completed. The native client and controller shut down cleanly, but clean
+shutdown cannot make an incomplete scenario acceptable. The run is diagnostic
+only and its compact archive is
+[`pedestal-v13`](../../../../evidence/original-1.21.1/pedestal-v13/). The
+preserved v13 runtime must never be launched again.
+
+V13 proved the five exact client transition block/block-entity predicates, but
+capture readiness also required a transient client item-entity drop map to
+equal the already-authoritative server drop map. The archive does not record
+the transient client map, so the mismatch's cause remains unknown. V14 changes
+only that equality to diagnostic data recorded at mirror readiness and before
+capture. Authoritative server drop assertions, the exact client block-state
+snapshot, all five client stale-block-entity/removal and replacement-air
+checks, and the complete 74-assertion contract remain mandatory. The v14
+v1.4.3 harness passed 51 Java tests and two reproducible clean builds. Both
+builds produced a `340,723`-byte JAR with SHA-256
+`9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6`.
+The v14 runtime is absent and has never been launched.

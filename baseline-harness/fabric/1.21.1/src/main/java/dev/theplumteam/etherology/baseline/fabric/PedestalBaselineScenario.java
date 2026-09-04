@@ -235,6 +235,10 @@ final class PedestalBaselineScenario implements ClientScenario {
     private boolean replacementTransitionClientLookupAbsent;
     private boolean replacementTransitionClientReferenceRemoved;
     private boolean replacementTransitionClientAir;
+    private boolean transitionClientDropsAtMirrorRecorded;
+    private boolean transitionClientDropsAtCaptureRecorded;
+    private DropSnapshot transitionClientDropsAtMirror = DropSnapshot.empty();
+    private DropSnapshot transitionClientDropsAtCapture = DropSnapshot.empty();
     private String lifecycleFailure = "";
     private EvidenceLayout evidenceLayout;
     private ResourceProbe clientResourceProbe = ResourceProbe.missing();
@@ -511,6 +515,13 @@ final class PedestalBaselineScenario implements ClientScenario {
                 && clientSnapshot.exact(capturePhase.fixtures());
         if (capturePhase == CapturePhase.TRANSITION_DROPS) {
             snapshotExact &= refreshTransitionClientEvidence(client);
+            if (snapshotExact && !transitionClientDropsAtMirrorRecorded) {
+                transitionClientDropsAtMirror = recordTransitionClientDrops(
+                        client,
+                        "mirror-ready"
+                );
+                transitionClientDropsAtMirrorRecorded = true;
+            }
         }
         boolean lightReady = snapshotExact && captureLightReady(client);
         lightReadyClientTicks = lightReady
@@ -1232,6 +1243,13 @@ final class PedestalBaselineScenario implements ClientScenario {
             stableWorldRenders.observe(false);
             return;
         }
+        if (capturePhase == CapturePhase.TRANSITION_DROPS) {
+            transitionClientDropsAtCapture = recordTransitionClientDrops(
+                    client,
+                    "capture"
+            );
+            transitionClientDropsAtCaptureRecorded = true;
+        }
         SceneSnapshot clientSnapshot = SceneSnapshot.capture(
                 client.world,
                 capturePhase.fixtures()
@@ -1318,9 +1336,23 @@ final class PedestalBaselineScenario implements ClientScenario {
                 && stackTransitionClientReferenceRemoved
                 && replacementTransitionClientLookupAbsent
                 && replacementTransitionClientReferenceRemoved
-                && replacementTransitionClientAir
-                && DropSnapshot.capture(client.world, TRANSITION_DROP_BOX)
-                .equals(transitionProbe.combinedDrops());
+                && replacementTransitionClientAir;
+    }
+
+    private DropSnapshot recordTransitionClientDrops(
+            MinecraftClient client,
+            String checkpoint
+    ) {
+        DropSnapshot actual = DropSnapshot.capture(client.world, TRANSITION_DROP_BOX);
+        LOGGER.info(
+                "Transition client drop diagnostic: checkpoint={}; expected={}; "
+                        + "actual={}; exact={}",
+                checkpoint,
+                transitionProbe.combinedDrops().description(),
+                actual.description(),
+                actual.equals(transitionProbe.combinedDrops())
+        );
+        return actual;
     }
 
     private boolean isRenderReady(MinecraftClient client) {
@@ -1913,6 +1945,33 @@ final class PedestalBaselineScenario implements ClientScenario {
                 "replacement_client_air",
                 replacementTransitionClientAir
         );
+        JsonObject clientDrops = new JsonObject();
+        clientDrops.add("expected", transitionProbe.combinedDrops().toJson());
+        clientDrops.add("mirror_ready", transitionClientDropsAtMirror.toJson());
+        clientDrops.addProperty(
+                "mirror_ready_recorded",
+                transitionClientDropsAtMirrorRecorded
+        );
+        clientDrops.addProperty(
+                "mirror_ready_exact",
+                transitionClientDropsAtMirrorRecorded
+                        && transitionClientDropsAtMirror.equals(
+                        transitionProbe.combinedDrops()
+                )
+        );
+        clientDrops.add("capture", transitionClientDropsAtCapture.toJson());
+        clientDrops.addProperty(
+                "capture_recorded",
+                transitionClientDropsAtCaptureRecorded
+        );
+        clientDrops.addProperty(
+                "capture_exact",
+                transitionClientDropsAtCaptureRecorded
+                        && transitionClientDropsAtCapture.equals(
+                        transitionProbe.combinedDrops()
+                )
+        );
+        transitions.add("client_drop_diagnostics", clientDrops);
         return transitions;
     }
 

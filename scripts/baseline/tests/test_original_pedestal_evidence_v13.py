@@ -25,6 +25,18 @@ verifier = importlib.util.module_from_spec(VERIFIER_SPECIFICATION)
 sys.modules[VERIFIER_SPECIFICATION.name] = verifier
 VERIFIER_SPECIFICATION.loader.exec_module(verifier)
 
+CONTROLLER_PATH = BASELINE_DIRECTORY / "original_client.py"
+CONTROLLER_SPECIFICATION = importlib.util.spec_from_file_location(
+    "etherology_original_client_pedestal_v14_tested",
+    CONTROLLER_PATH,
+)
+if CONTROLLER_SPECIFICATION is None or CONTROLLER_SPECIFICATION.loader is None:
+    raise RuntimeError(f"Cannot load original controller: {CONTROLLER_PATH}")
+client = importlib.util.module_from_spec(CONTROLLER_SPECIFICATION)
+sys.modules[CONTROLLER_SPECIFICATION.name] = client
+CONTROLLER_SPECIFICATION.loader.exec_module(client)
+active_verifier = client.load_pedestal_evidence_verifier()
+
 
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -61,8 +73,8 @@ class PedestalEvidenceV13Test(unittest.TestCase):
 
     @staticmethod
     def copy_fresh_archive(repository: Path) -> Path:
-        source = REPOSITORY_ROOT / verifier.FRESH_ARCHIVE_RELATIVE_PATH
-        destination = repository / verifier.FRESH_ARCHIVE_RELATIVE_PATH
+        source = REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
+        destination = repository / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copytree(source, destination)
         return destination
@@ -390,7 +402,7 @@ class PedestalEvidenceV13Test(unittest.TestCase):
                     verifier.PedestalEvidenceError,
                 )
 
-    def test_fresh_v13_archive_is_exact_and_rejects_drift(self) -> None:
+    def test_active_fresh_v14_archive_is_exact_and_rejects_drift(self) -> None:
         def change_readme(repository: Path, archive: Path) -> None:
             del repository
             readme = archive / "README.md"
@@ -415,52 +427,124 @@ class PedestalEvidenceV13Test(unittest.TestCase):
                     repository = Path(temporary_directory)
                     archive = self.copy_fresh_archive(repository)
                     if mutation is None:
-                        verifier.validate_fresh_archive(
+                        active_verifier.validate_fresh_archive(
                             repository_root=repository,
                             archive_path=archive,
                         )
                     else:
                         mutation(repository, archive)
-                        with self.assertRaises(verifier.PedestalEvidenceError):
-                            verifier.validate_fresh_archive(
+                        with self.assertRaises(
+                            active_verifier.PedestalEvidenceError
+                        ):
+                            active_verifier.validate_fresh_archive(
                                 repository_root=repository,
                                 archive_path=archive,
                             )
 
-    def test_v13_pinned_contract_accepts_only_the_v13_profile(self) -> None:
-        harness = (
-            REPOSITORY_ROOT
-            / "baseline-harness/fabric/1.21.1/build/libs"
-            / verifier.HARNESS_FILE
-        )
-        manifest = REPOSITORY_ROOT / verifier.PROFILE_RELATIVE_PATH
-        verifier.validate_pinned_contract(
-            repository_root=REPOSITORY_ROOT,
-            manifest_path=manifest,
-            harness_path=harness,
-            sha256_file=sha256_file,
-        )
+    def test_historical_v13_contract_and_active_controller_reject_old_profiles(
+        self,
+    ) -> None:
+        configuration = client.load_configuration()
         with self.assertRaises(verifier.PedestalEvidenceError):
             verifier.validate_pinned_contract(
                 repository_root=REPOSITORY_ROOT,
                 manifest_path=(
                     REPOSITORY_ROOT / verifier._V12_PROFILE_RELATIVE_PATH
                 ),
-                harness_path=harness,
+                harness_path=configuration.harness_path,
                 sha256_file=sha256_file,
             )
 
-    def test_fresh_contract_rejects_reusing_the_consumed_v12_runtime(self) -> None:
+        for manifest_path in (
+            REPOSITORY_ROOT / verifier._V12_PROFILE_RELATIVE_PATH,
+            REPOSITORY_ROOT / verifier.PROFILE_RELATIVE_PATH,
+        ):
+            with self.subTest(manifest_path=manifest_path.name):
+                with self.assertRaisesRegex(
+                    client.BaselineError,
+                    "exact active v14 contract",
+                ):
+                    client.verify_pedestal_evidence_verifier_binding(
+                        client.load_configuration(manifest_path)
+                    )
+
+    def test_controller_pins_and_describes_the_active_v14_adapter(self) -> None:
+        configuration = client.load_configuration()
+        descriptor = client.scenario_verifier_descriptor(
+            configuration,
+            "pedestal-baseline",
+        )
+        self.assertEqual(
+            descriptor,
+            {
+                "path": "scripts/baseline/original_pedestal_evidence_v14.py",
+                "size": client.PEDESTAL_EVIDENCE_VERIFIER_SIZE,
+                "sha256": client.PEDESTAL_EVIDENCE_VERIFIER_SHA256,
+            },
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            tampered = (
+                Path(temporary_directory)
+                / client.PEDESTAL_EVIDENCE_VERIFIER_PATH.name
+            )
+            content = bytearray(
+                client.PEDESTAL_EVIDENCE_VERIFIER_PATH.read_bytes()
+            )
+            content[-2] ^= 1
+            tampered.write_bytes(content)
+            with mock.patch.object(
+                client,
+                "PEDESTAL_EVIDENCE_VERIFIER_PATH",
+                tampered,
+            ):
+                with self.assertRaisesRegex(client.BaselineError, "SHA-256"):
+                    client.load_pedestal_evidence_verifier()
+
+    def test_active_v14_profile_is_fresh_and_v13_history_is_immutable(
+        self,
+    ) -> None:
+        configuration = client.load_configuration()
+        self.assertEqual(
+            configuration.manifest_path,
+            REPOSITORY_ROOT / active_verifier.PROFILE_RELATIVE_PATH,
+        )
+        self.assertEqual(
+            configuration.manifest_path.stat().st_size,
+            active_verifier.PROFILE_SIZE,
+        )
+        self.assertEqual(
+            sha256_file(configuration.manifest_path),
+            active_verifier.PROFILE_SHA256,
+        )
+        active_verifier._validate_consumed_v13_history(
+            REPOSITORY_ROOT,
+            active_verifier.PedestalEvidenceError,
+        )
+        active_verifier.validate_fresh_contract(
+            repository_root=REPOSITORY_ROOT,
+            manifest_path=configuration.manifest_path,
+            harness_path=configuration.harness_path,
+            runtime_path=client.runtime_root(configuration),
+            archive_path=(
+                REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            ),
+            sha256_file=sha256_file,
+        )
+
+    def test_fresh_contract_rejects_reusing_the_consumed_v13_runtime(self) -> None:
         harness = (
             REPOSITORY_ROOT
             / "baseline-harness/fabric/1.21.1/build/libs"
-            / verifier.HARNESS_FILE
+            / active_verifier.HARNESS_FILE
         )
-        manifest = REPOSITORY_ROOT / verifier.PROFILE_RELATIVE_PATH
-        archive = REPOSITORY_ROOT / verifier.FRESH_ARCHIVE_RELATIVE_PATH
-        active_runtime = REPOSITORY_ROOT / verifier.ACTIVE_RUNTIME_RELATIVE_PATH
+        manifest = REPOSITORY_ROOT / active_verifier.PROFILE_RELATIVE_PATH
+        archive = REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
+        active_runtime = (
+            REPOSITORY_ROOT / active_verifier.ACTIVE_RUNTIME_RELATIVE_PATH
+        )
         self.assertFalse(active_runtime.exists() or active_runtime.is_symlink())
-        verifier.validate_fresh_contract(
+        active_verifier.validate_fresh_contract(
             repository_root=REPOSITORY_ROOT,
             manifest_path=manifest,
             harness_path=harness,
@@ -471,13 +555,13 @@ class PedestalEvidenceV13Test(unittest.TestCase):
         consumed_runtime = (
             REPOSITORY_ROOT
             / "scripts/baseline/.state/runtimes"
-            / verifier._V12_PROFILE_ID
+            / active_verifier._V13_PROFILE_ID
         )
         with self.assertRaisesRegex(
-            verifier.PedestalEvidenceError,
-            "active runtime path is not the fresh Pedestal v13 lane",
+            active_verifier.PedestalEvidenceError,
+            "active runtime path is not the fresh Pedestal v14 lane",
         ):
-            verifier.validate_fresh_contract(
+            active_verifier.validate_fresh_contract(
                 repository_root=REPOSITORY_ROOT,
                 manifest_path=manifest,
                 harness_path=harness,

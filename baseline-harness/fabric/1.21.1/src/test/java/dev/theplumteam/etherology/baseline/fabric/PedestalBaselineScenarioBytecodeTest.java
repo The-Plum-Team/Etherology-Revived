@@ -20,6 +20,7 @@ final class PedestalBaselineScenarioBytecodeTest {
 
     private static final String SCENARIO =
             "dev/theplumteam/etherology/baseline/fabric/PedestalBaselineScenario";
+    private static final String DROP_SNAPSHOT = SCENARIO + "$DropSnapshot";
 
     @Test
     void scenarioUsesOnlyGenericMinecraftContractsForOriginalBehavior()
@@ -76,8 +77,7 @@ final class PedestalBaselineScenarioBytecodeTest {
                 "getBlockEntity",
                 "isRemoved",
                 "getBlockState",
-                "isAir",
-                "capture"
+                "isAir"
         )));
         assertTrue(allInvocations().containsAll(Set.of(
                 "saveAll",
@@ -114,9 +114,64 @@ final class PedestalBaselineScenarioBytecodeTest {
         assertFalse(renderWaitCalls.contains("transition"));
         assertTrue(invocations("transition").contains("info"));
 
+        Set<String> transitionMirrorCalls = invocations(
+                "refreshTransitionClientEvidence"
+        );
+        assertTrue(transitionMirrorCalls.containsAll(Set.of(
+                "getBlockEntity",
+                "isRemoved",
+                "getBlockState",
+                "isAir"
+        )));
+        assertFalse(transitionMirrorCalls.contains("capture"));
+        assertFalse(transitionMirrorCalls.contains("equals"));
+        assertTrue(invocations("recordTransitionClientDrops").containsAll(Set.of(
+                "capture",
+                "description",
+                "equals",
+                "info"
+        )));
+        assertEquals(
+                Set.of("tickWaitingForClientMirror", "captureCurrentPhase"),
+                invokingMethods(SCENARIO, "recordTransitionClientDrops")
+        );
+        assertTrue(singleFieldWriteFollowsSingleInvocation(
+                "tickWaitingForClientMirror",
+                SCENARIO,
+                "recordTransitionClientDrops",
+                "transitionClientDropsAtMirrorRecorded"
+        ));
+        assertTrue(singleFieldWriteFollowsSingleInvocation(
+                "captureCurrentPhase",
+                SCENARIO,
+                "recordTransitionClientDrops",
+                "transitionClientDropsAtCaptureRecorded"
+        ));
+        assertEquals(
+                Set.of("recordTransitionClientDrops", "createTransitionsReport"),
+                invokingMethods(DROP_SNAPSHOT, "equals")
+        );
+        assertTrue(invocations("createTransitionsReport").containsAll(Set.of(
+                "toJson",
+                "equals",
+                "add"
+        )));
+        assertEquals(2, fieldReadCount(
+                "createTransitionsReport",
+                "transitionClientDropsAtMirrorRecorded"
+        ));
+        assertEquals(2, fieldReadCount(
+                "createTransitionsReport",
+                "transitionClientDropsAtCaptureRecorded"
+        ));
+
         String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
         assertTrue(constants.contains("client ticks; capture_phase="));
         assertTrue(constants.contains("Pedestal stage transition: from="));
+        assertTrue(constants.contains("Transition client drop diagnostic: checkpoint="));
+        assertTrue(constants.contains("client_drop_diagnostics"));
+        assertTrue(constants.contains("mirror_ready_recorded"));
+        assertTrue(constants.contains("capture_recorded"));
     }
 
     private static Set<String> invocations(String methodName) throws IOException {
@@ -190,6 +245,131 @@ final class PedestalBaselineScenarioBytecodeTest {
             }
         }, 0);
         return count[0];
+    }
+
+    private static Set<String> invokingMethods(
+            String invokedOwner,
+            String invokedName
+    ) throws IOException {
+        Set<String> names = new HashSet<>();
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                String callerName = name;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor,
+                            boolean isInterface
+                    ) {
+                        if (invokedOwner.equals(owner) && invokedName.equals(name)) {
+                            names.add(callerName);
+                        }
+                    }
+                };
+            }
+        }, 0);
+        return names;
+    }
+
+    private static int fieldReadCount(String methodName, String fieldName)
+            throws IOException {
+        int[] count = {0};
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitFieldInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor
+                    ) {
+                        if (opcode == Opcodes.GETFIELD
+                                && SCENARIO.equals(owner)
+                                && fieldName.equals(name)) count[0]++;
+                    }
+                };
+            }
+        }, 0);
+        return count[0];
+    }
+
+    private static boolean singleFieldWriteFollowsSingleInvocation(
+            String methodName,
+            String invokedOwner,
+            String invokedName,
+            String fieldName
+    ) throws IOException {
+        int[] eventIndex = {0};
+        int[] invocationIndex = {-1};
+        int[] fieldWriteIndex = {-1};
+        int[] invocationCount = {0};
+        int[] fieldWriteCount = {0};
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor,
+                            boolean isInterface
+                    ) {
+                        if (invokedOwner.equals(owner) && invokedName.equals(name)) {
+                            invocationCount[0]++;
+                            invocationIndex[0] = eventIndex[0];
+                        }
+                        eventIndex[0]++;
+                    }
+
+                    @Override
+                    public void visitFieldInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor
+                    ) {
+                        if (opcode == Opcodes.PUTFIELD
+                                && SCENARIO.equals(owner)
+                                && fieldName.equals(name)) {
+                            fieldWriteCount[0]++;
+                            fieldWriteIndex[0] = eventIndex[0];
+                        }
+                        eventIndex[0]++;
+                    }
+                };
+            }
+        }, 0);
+        return invocationCount[0] == 1
+                && fieldWriteCount[0] == 1
+                && invocationIndex[0] < fieldWriteIndex[0];
     }
 
     private static MethodVisitor invocationCollector(Set<String> names) {

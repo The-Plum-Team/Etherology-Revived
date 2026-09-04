@@ -701,6 +701,8 @@ final class FoodItemRegistryResourcesTest {
             ) {
                 if (!name.equals("<clinit>")) return null;
                 return new MethodVisitor(Opcodes.ASM9) {
+                    private boolean recordingFoodAlias;
+
                     @Override
                     public void visitLdcInsn(Object value) {
                         instructionIndex[0]++;
@@ -718,6 +720,7 @@ final class FoodItemRegistryResourcesTest {
                         if (opcode == Opcodes.GETSTATIC
                                 && owner.equals(SHARED_FOOD_ITEMS_OWNER)
                                 && name.equals(FOOD_FIELD)) {
+                            recordingFoodAlias = true;
                             sharedSupplierReads[0]++;
                             sharedSupplierReadIndex[0] = instructionIndex[0];
                         }
@@ -726,6 +729,7 @@ final class FoodItemRegistryResourcesTest {
                                 && name.equals(FOOD_FIELD)) {
                             legacyFieldAssignments[0]++;
                             legacyFieldAssignmentIndex[0] = instructionIndex[0];
+                            recordingFoodAlias = false;
                         }
                     }
 
@@ -738,7 +742,9 @@ final class FoodItemRegistryResourcesTest {
                             boolean isInterface
                     ) {
                         instructionIndex[0]++;
-                        if (owner.equals(REGISTRY_SUPPLIER_OWNER) && name.equals("get")) {
+                        if (recordingFoodAlias
+                                && owner.equals(REGISTRY_SUPPLIER_OWNER)
+                                && name.equals("get")) {
                             supplierGetInvocations[0]++;
                             supplierGetIndex[0] = instructionIndex[0];
                         }

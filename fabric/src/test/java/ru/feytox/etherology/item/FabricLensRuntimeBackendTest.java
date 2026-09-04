@@ -25,8 +25,6 @@ final class FabricLensRuntimeBackendTest {
             "/ru/feytox/etherology/registry/misc/ComponentTypes.class";
     private static final String ENTRYPOINT =
             "/ru/feytox/etherology/EtherologyFabric.class";
-    private static final String LEGACY_ITEMS =
-            "/ru/feytox/etherology/registry/item/EItems.class";
 
     @Test
     void compiledAliasesReadBothSharedFieldsWithoutRecreatingTheirIds()
@@ -297,83 +295,6 @@ final class FabricLensRuntimeBackendTest {
                         "ru/feytox/etherology/Etherology#initialize()V"
                 ),
                 calls
-        );
-    }
-
-    @Test
-    void canonicalFabricRegistrationStillConstructsTheSharedSubtypeOnce()
-            throws IOException {
-        List<String> events = new ArrayList<>();
-        reader(LEGACY_ITEMS).accept(new ClassVisitor(Opcodes.ASM9) {
-            @Override
-            public MethodVisitor visitMethod(
-                    int access,
-                    String name,
-                    String descriptor,
-                    String signature,
-                    String[] exceptions
-            ) {
-                if (!name.equals("<clinit>")) return null;
-                return new MethodVisitor(Opcodes.ASM9) {
-                    private boolean recording;
-
-                    @Override
-                    public void visitLdcInsn(Object value) {
-                        if (value.equals("unadjusted_lens")) {
-                            recording = true;
-                            events.add("ID:unadjusted_lens");
-                        }
-                    }
-
-                    @Override
-                    public void visitTypeInsn(int opcode, String type) {
-                        if (recording && opcode == Opcodes.NEW) {
-                            events.add("NEW:" + type);
-                        }
-                    }
-
-                    @Override
-                    public void visitMethodInsn(
-                            int opcode,
-                            String owner,
-                            String calledName,
-                            String calledDescriptor,
-                            boolean isInterface
-                    ) {
-                        if (recording) {
-                            events.add(owner + "#" + calledName + calledDescriptor);
-                        }
-                    }
-
-                    @Override
-                    public void visitFieldInsn(
-                            int opcode,
-                            String owner,
-                            String fieldName,
-                            String fieldDescriptor
-                    ) {
-                        if (recording
-                                && opcode == Opcodes.PUTSTATIC
-                                && fieldName.equals("UNADJUSTED_LENS")) {
-                            events.add(owner + "#UNADJUSTED_LENS");
-                            recording = false;
-                        }
-                    }
-                };
-            }
-        }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
-
-        assertEquals(
-                List.of(
-                        "ID:unadjusted_lens",
-                        "NEW:ru/feytox/etherology/item/UnadjustedLens",
-                        "ru/feytox/etherology/item/UnadjustedLens#<init>()V",
-                        "ru/feytox/etherology/registry/item/EItems#registerItem"
-                                + "(Ljava/lang/String;Lnet/minecraft/item/Item;)"
-                                + "Lnet/minecraft/item/Item;",
-                        "ru/feytox/etherology/registry/item/EItems#UNADJUSTED_LENS"
-                ),
-                events
         );
     }
 

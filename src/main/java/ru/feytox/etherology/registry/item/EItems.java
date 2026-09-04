@@ -37,7 +37,7 @@ public class EItems {
     public static final Item TRADITIONAL_PATTERN_TABLET = registerItem("traditional_pattern_tablet", new PatternTabletItem(StaffStyles.TRADITIONAL));
     public static final Item[] PATTERN_TABLETS = {ARISTOCRAT_PATTERN_TABLET, ASTRONOMY_PATTERN_TABLET, HEAVENLY_PATTERN_TABLET, OCULAR_PATTERN_TABLET, RITUAL_PATTERN_TABLET, ROYAL_PATTERN_TABLET, TRADITIONAL_PATTERN_TABLET};
 
-    public static final Item UNADJUSTED_LENS = registerItem("unadjusted_lens", new UnadjustedLens());
+    public static final Item UNADJUSTED_LENS = SharedLensItems.UNADJUSTED_LENS.get();
     public static final Item REDSTONE_LENS = registerItem("redstone_lens", new RedstoneLens());
     public static final Item[] LENSES = {REDSTONE_LENS};
 

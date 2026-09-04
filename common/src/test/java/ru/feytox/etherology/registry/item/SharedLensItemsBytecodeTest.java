@@ -10,10 +10,8 @@ import org.objectweb.asm.Opcodes;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -21,31 +19,34 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-final class SharedToolItemsBytecodeTest {
+final class SharedLensItemsBytecodeTest {
 
-    private static final String SHARED_TOOL_ITEMS =
-            "/ru/feytox/etherology/registry/item/SharedToolItems.class";
+    private static final String SHARED_LENS_ITEMS =
+            "/ru/feytox/etherology/registry/item/SharedLensItems.class";
     private static final String BOOTSTRAP =
             "/ru/feytox/etherology/bootstrap/EtherologyBootstrap.class";
     private static final String OWNER =
-            "ru/feytox/etherology/registry/item/SharedToolItems";
+            "ru/feytox/etherology/registry/item/SharedLensItems";
+    private static final String UNADJUSTED_LENS =
+            "ru/feytox/etherology/item/UnadjustedLens";
     private static final String SHARED_DEFERRED_REGISTER =
             "ru/feytox/etherology/registry/SharedDeferredRegister";
     private static final String REGISTRY_SUPPLIER =
             "dev/architectury/registry/registries/RegistrySupplier";
 
     @Test
-    void declaresOneLazyPlainItemWithTheCanonicalStackLimit() throws IOException {
+    void ownsOneLazyCanonicalUnadjustedLensSubtype() throws IOException {
         AtomicInteger classAccess = new AtomicInteger();
         AtomicInteger privateConstructors = new AtomicInteger();
         AtomicInteger deferredRegistrations = new AtomicInteger();
         AtomicInteger supplierGets = new AtomicInteger();
+        AtomicInteger lensConstructions = new AtomicInteger();
+        AtomicInteger lensConstructorCalls = new AtomicInteger();
         List<FieldInfo> fields = new ArrayList<>();
         List<String> registrationIds = new ArrayList<>();
         Set<String> forbiddenOwners = new LinkedHashSet<>();
-        Map<String, List<String>> eventsByMethod = new LinkedHashMap<>();
 
-        classReader(SHARED_TOOL_ITEMS).accept(new ClassVisitor(Opcodes.ASM9) {
+        classReader(SHARED_LENS_ITEMS).accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public void visit(
                     int version,
@@ -56,12 +57,6 @@ final class SharedToolItemsBytecodeTest {
                     String[] interfaces
             ) {
                 classAccess.set(access);
-                checkOwner(superName, forbiddenOwners);
-                if (interfaces != null) {
-                    for (String interfaceName : interfaces) {
-                        checkOwner(interfaceName, forbiddenOwners);
-                    }
-                }
             }
 
             @Override
@@ -93,54 +88,20 @@ final class SharedToolItemsBytecodeTest {
                 }
                 checkOwner(descriptor, forbiddenOwners);
                 checkOwner(signature, forbiddenOwners);
-                List<String> events = new ArrayList<>();
-                eventsByMethod.put(name + descriptor, events);
                 return new MethodVisitor(Opcodes.ASM9) {
-                    private boolean clinitIdLoaded;
-
                     @Override
                     public void visitTypeInsn(int opcode, String type) {
                         checkOwner(type, forbiddenOwners);
-                        if (opcode == Opcodes.NEW
-                                && type.equals("net/minecraft/item/Item")) {
-                            events.add("NEW Item");
-                        }
-                        if (opcode == Opcodes.NEW
-                                && type.equals("net/minecraft/item/Item$Settings")) {
-                            events.add("NEW Item$Settings");
-                        }
-                    }
-
-                    @Override
-                    public void visitInsn(int opcode) {
-                        if (opcode == Opcodes.ICONST_1) {
-                            events.add("INT:1");
+                        if (opcode == Opcodes.NEW && type.equals(UNADJUSTED_LENS)) {
+                            lensConstructions.incrementAndGet();
                         }
                     }
 
                     @Override
                     public void visitLdcInsn(Object value) {
-                        if (name.equals("<clinit>") && value.equals("warp_counter")) {
-                            registrationIds.add("warp_counter");
-                            clinitIdLoaded = true;
-                        }
-                    }
-
-                    @Override
-                    public void visitFieldInsn(
-                            int opcode,
-                            String owner,
-                            String fieldName,
-                            String fieldDescriptor
-                    ) {
-                        checkOwner(owner, forbiddenOwners);
-                        checkOwner(fieldDescriptor, forbiddenOwners);
                         if (name.equals("<clinit>")
-                                && opcode == Opcodes.PUTSTATIC
-                                && owner.equals(OWNER)
-                                && fieldName.equals("WARP_COUNTER")) {
-                            assertTrue(clinitIdLoaded);
-                            clinitIdLoaded = false;
+                                && value.equals("unadjusted_lens")) {
+                            registrationIds.add("unadjusted_lens");
                         }
                     }
 
@@ -162,15 +123,13 @@ final class SharedToolItemsBytecodeTest {
                                 && invokedName.equals("get")) {
                             supplierGets.incrementAndGet();
                         }
+                        if (owner.equals(UNADJUSTED_LENS)
+                                && invokedName.equals("<init>")
+                                && invokedDescriptor.equals("()V")) {
+                            lensConstructorCalls.incrementAndGet();
+                        }
                         if (isDirectRegistryOwner(owner)) {
                             forbiddenOwners.add(owner + "#" + invokedName);
-                        }
-                        if (owner.equals("net/minecraft/item/Item$Settings")) {
-                            events.add("Item$Settings#" + invokedName + invokedDescriptor);
-                        }
-                        if (owner.equals("net/minecraft/item/Item")
-                                && invokedName.equals("<init>")) {
-                            events.add("Item#<init>" + invokedDescriptor);
                         }
                     }
                 };
@@ -181,51 +140,37 @@ final class SharedToolItemsBytecodeTest {
         assertTrue((classAccess.get() & Opcodes.ACC_FINAL) != 0);
         assertEquals(expectedFields(), fields);
         assertEquals(1, privateConstructors.get());
-        assertEquals(List.of("warp_counter"), registrationIds);
+        assertEquals(List.of("unadjusted_lens"), registrationIds);
         assertEquals(1, deferredRegistrations.get());
         assertEquals(0, supplierGets.get());
+        assertEquals(1, lensConstructions.get());
+        assertEquals(1, lensConstructorCalls.get());
         assertEquals(Set.of(), forbiddenOwners);
-
-        List<List<String>> itemFactories = eventsByMethod.values().stream()
-                .filter(events -> events.contains("NEW Item"))
-                .toList();
-        assertEquals(1, itemFactories.size());
-        assertEquals(
-                List.of(
-                        "NEW Item",
-                        "NEW Item$Settings",
-                        "Item$Settings#<init>()V",
-                        "INT:1",
-                        "Item$Settings#maxCount(I)Lnet/minecraft/item/Item$Settings;",
-                        "Item#<init>(Lnet/minecraft/item/Item$Settings;)V"
-                ),
-                itemFactories.get(0)
-        );
     }
 
     @Test
-    void attachesOnceAfterFoodAndBeforeLensItems() throws IOException {
+    void attachesOnceAfterToolItemsAndBeforeBlockEntities() throws IOException {
         List<String> invocations = methodInvocations(
                 classReader(BOOTSTRAP),
                 "initialize"
         );
-        String foodRegistration =
-                "ru/feytox/etherology/registry/item/SharedFoodItems#register()V";
-        String toolRegistration = OWNER + "#register()V";
-        String lensRegistration =
-                "ru/feytox/etherology/registry/item/SharedLensItems#register()V";
-        int toolIndex = invocations.indexOf(toolRegistration);
+        String toolRegistration =
+                "ru/feytox/etherology/registry/item/SharedToolItems#register()V";
+        String lensRegistration = OWNER + "#register()V";
+        String blockEntityRegistration =
+                "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V";
+        int lensIndex = invocations.indexOf(lensRegistration);
 
-        assertTrue(toolIndex > 0);
-        assertEquals(foodRegistration, invocations.get(toolIndex - 1));
-        assertEquals(lensRegistration, invocations.get(toolIndex + 1));
+        assertTrue(lensIndex > 0);
+        assertEquals(toolRegistration, invocations.get(lensIndex - 1));
+        assertEquals(blockEntityRegistration, invocations.get(lensIndex + 1));
         assertEquals(
                 1,
-                invocations.stream().filter(toolRegistration::equals).count()
+                invocations.stream().filter(lensRegistration::equals).count()
         );
         assertEquals(
                 List.of(SHARED_DEFERRED_REGISTER + "#attach()V"),
-                methodInvocations(classReader(SHARED_TOOL_ITEMS), "register")
+                methodInvocations(classReader(SHARED_LENS_ITEMS), "register")
         );
     }
 
@@ -240,10 +185,10 @@ final class SharedToolItemsBytecodeTest {
                 ),
                 new FieldInfo(
                         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-                        "WARP_COUNTER",
+                        "UNADJUSTED_LENS",
                         "Ldev/architectury/registry/registries/RegistrySupplier;",
                         "Ldev/architectury/registry/registries/RegistrySupplier"
-                                + "<Lnet/minecraft/item/Item;>;"
+                                + "<Lru/feytox/etherology/item/UnadjustedLens;>;"
                 )
         );
     }
@@ -298,7 +243,7 @@ final class SharedToolItemsBytecodeTest {
     }
 
     private static ClassReader classReader(String resource) throws IOException {
-        InputStream stream = SharedToolItemsBytecodeTest.class.getResourceAsStream(resource);
+        InputStream stream = SharedLensItemsBytecodeTest.class.getResourceAsStream(resource);
         assertNotNull(stream, "Missing class resource " + resource);
         try (stream) {
             return new ClassReader(stream);

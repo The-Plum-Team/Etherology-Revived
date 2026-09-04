@@ -4398,6 +4398,7 @@ tasks.named<Test>("test").configure {
     exclude("**/SlitheriteCanonicalResourcesTest.class")
     exclude("**/WarpCounterRegistryResourcesTest.class")
     exclude("**/LensFoundationCrossArtifactTest.class")
+    exclude("**/UnadjustedLensRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -5431,6 +5432,108 @@ val lensFoundationCrossArtifactTest =
             )
             systemProperty(
                 "etherology.lensFoundation.repositoryRoot",
+                rootProject.projectDir.absolutePath,
+            )
+        }
+    }
+
+val unadjustedLensRegistryTest =
+    tasks.register<Test>("unadjustedLensRegistryTest") {
+        group = "verification"
+        description =
+            "Runs exact cross-loader unadjusted-lens ownership and static-resource tests."
+        dependsOn(
+            tasks.named("testClasses"),
+            commonJar,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            fabricShadowJar,
+            fabricRemapJar,
+            forgeShadowJar,
+        )
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform()
+        filter {
+            includeTestsMatching(
+                "ru.feytox.etherology.forge.UnadjustedLensRegistryResourcesTest",
+            )
+        }
+        inputs.file(commonJar.flatMap { it.archiveFile })
+            .withPropertyName("unadjustedLensCommonJar")
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("unadjustedLensFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("unadjustedLensForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("unadjustedLensFabricDevelopmentJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+            .withPropertyName("unadjustedLensFabricProductionJar")
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("unadjustedLensForgeShadowJar")
+        inputs.files(
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/item/"
+                    + "SharedLensItems.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/item/EItems.java",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/models/item/"
+                    + "unadjusted_lens.json",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/models/item/"
+                    + "unadjusted_cracked_lens.json",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/textures/item/"
+                    + "unadjusted_lens.png",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/textures/item/"
+                    + "unadjusted_cracked_lens.png",
+            ),
+            englishLanguageFile,
+            rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+            rootProject.file(
+                "src/main/generated/data/etherology/recipes/unadjusted_lens.json",
+            ),
+        ).withPropertyName("canonicalUnadjustedLensSourcesAndResources")
+        doFirst {
+            systemProperty(
+                "etherology.unadjustedLens.commonJar",
+                commonJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.unadjustedLens.fabricTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.unadjustedLens.forgeTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.unadjustedLens.fabricDevelopmentJar",
+                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.unadjustedLens.fabricProductionJar",
+                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.unadjustedLens.forgeShadowJar",
+                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.unadjustedLens.repositoryRoot",
                 rootProject.projectDir.absolutePath,
             )
         }
@@ -7459,12 +7562,71 @@ val validateForgeLensFoundationStaticMilestone =
         ).withPropertyName("canonicalLensFoundationSources")
     }
 
+val validateForgeUnadjustedLensStaticMilestone =
+    tasks.register("validateForgeUnadjustedLensStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates one shared unadjusted-lens registry owner and exact static assets; " +
+                "Forge alchemy loading and lens runtime behavior remain deferred."
+        dependsOn(
+            validateForgeLensFoundationStaticMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            unadjustedLensRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("unadjustedLensFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("unadjustedLensForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/item/"
+                    + "SharedLensItems.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/item/EItems.java",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/models/item/"
+                    + "unadjusted_lens.json",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/models/item/"
+                    + "unadjusted_cracked_lens.json",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/textures/item/"
+                    + "unadjusted_lens.png",
+            ),
+            rootProject.file(
+                "src/client/resources/assets/etherology/textures/item/"
+                    + "unadjusted_cracked_lens.png",
+            ),
+            englishLanguageFile,
+            rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+            rootProject.file(
+                "src/main/generated/data/etherology/recipes/unadjusted_lens.json",
+            ),
+        ).withPropertyName("canonicalUnadjustedLensSourcesAndResources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeLensFoundationStaticMilestone)
+        dependsOn(validateForgeUnadjustedLensStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -7516,6 +7678,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeSlitheriteStaticMilestone,
         validateForgeWarpCounterStaticMilestone,
         validateForgeLensFoundationStaticMilestone,
+        validateForgeUnadjustedLensStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -7524,7 +7687,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeLensFoundationStaticMilestone)
+    dependsOn(validateForgeUnadjustedLensStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

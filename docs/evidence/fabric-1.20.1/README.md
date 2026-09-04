@@ -5,6 +5,68 @@ the baseline Mac. Every run uses a new repository-owned profile under
 `scripts/e2e/.state/`; no external launcher profile is read, modified, or used as
 a source.
 
+## Current Slitherite block-registry proof (v31)
+
+The one-shot `etherology-e2e-fabric-1.20.1-v31` profile ran the packaged
+`slitherite-block-registry` scenario in a fresh repository-owned runtime and
+integrated world. The report passed all 185 ordered assertions in 1,128 client
+ticks, force-saved, disconnected, reopened the same world, and shut down
+normally. Provisioning and launch consulted no external game profile.
+
+![Fabric 1.20.1 Slitherite gallery](slitherite-block-registry-v31/screenshots/slitherite-block-registry-initial.png)
+
+![Fabric 1.20.1 Slitherite gallery after reopen](slitherite-block-registry-v31/screenshots/slitherite-block-registry-reopened.png)
+
+- Profile manifest: `7,086` bytes, SHA-256
+  `924f1290991514e341f2bb176a85239a773ddc67ca6daa880ffa8876b7708e14`
+- Minecraft: `1.20.1`; Fabric Loader: `0.17.3`; runtime Java: `17`
+- Production JAR SHA-256:
+  `1b1a5a5e80f4ff48c9110c286bd88e5f81d4a69d6c735a5648733f2af99bcd79`
+- Harness JAR SHA-256:
+  `8f702fe349f14bc8f1824fb0937b27bf3ea40a2b94a32da559390922a13905d0`
+- Report status: `passed`; assertions: `185` passed, `0` failed
+- Screenshots: `2` unedited native composed Minecraft framebuffers,
+  `1920x1080`, each after 120 stable completed renders
+- Reopened material changed-pixel ratio: `0.072453`
+
+The verifier proves the exact 17 block and `BlockItem` registrations, 1,262
+unique non-negative block-state network IDs, 79 Slitherite visual resources,
+11 block/item tags, 17 loot tables, 29 owned recipes and their 29
+advancements, and the five related recipes recorded but not owned by the
+Slitherite family. It also proves real `BlockItem` placement for all 17 blocks,
+the button's scheduled powered/reset cycle, item rejection and living-entity
+activation/reset for the pressure plate, exact client/server fixture mirrors,
+and structural and data equality after the full save/disconnect/reopen
+lifecycle.
+
+Frozen file digests:
+
+- `slitherite-block-registry-v31/archive-manifest.json`:
+  `12c12e1d2772ae2a449a2c140e6af77e32f1f8eefb35aec06718eead1a4140c5`
+- `slitherite-block-registry-v31/reports/report.json`:
+  `e7648183de3bafb8da9c1f31466e78868077b43304af93b16902f10f9bc74e44`
+- `slitherite-block-registry-v31/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `slitherite-block-registry-v31/screenshots/slitherite-block-registry-initial.png`:
+  `7f51f94f7564faecffb4b45fcdcbc53b23e0afcc09ee02f016d1f1e361cf8c09`
+- `slitherite-block-registry-v31/screenshots/slitherite-block-registry-reopened.png`:
+  `0dc45779791d6f3eb48af93830b57f510953184780df857289dc3843d0ee957f`
+
+Repeat the archive-only check with:
+
+```bash
+python3 -B scripts/e2e/fabric_slitherite_evidence_v31.py \
+  --archive docs/evidence/fabric-1.20.1/slitherite-block-registry-v31
+```
+
+This is a bounded Slitherite-family registration, resource, data, interaction,
+rendering, and persistence proof. It does not establish natural generation or
+release readiness. The v31 profile is permanently consumed and must never be
+provisioned, staged, checked, or launched again. A native Forge counterpart is
+postponed until the real pedestal, alchemy, and lens dependency graphs are
+ported; the five-related-recipe contract must not be weakened to manufacture an
+earlier result.
+
 ## Current Attrahite block-registry proof (v30)
 
 The one-shot `etherology-e2e-fabric-1.20.1-v30` profile ran the packaged

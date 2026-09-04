@@ -22,7 +22,9 @@ final class ScenarioDispatcher {
             ForestLanternScenario.SCENARIO_ID,
             ForestLanternScenario::new,
             AttrahiteBlockRegistryScenario.SCENARIO_ID,
-            AttrahiteBlockRegistryScenario::new
+            AttrahiteBlockRegistryScenario::new,
+            FabricSlitheriteBlockRegistryScenario.SCENARIO_ID,
+            FabricSlitheriteBlockRegistryScenario::new
     );
 
     private ScenarioDispatcher() {

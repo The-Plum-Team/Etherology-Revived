@@ -10,6 +10,7 @@ import org.gradle.language.jvm.tasks.ProcessResources
 import org.gradle.jvm.tasks.Jar
 import groovy.json.JsonSlurper
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.security.MessageDigest
 import java.util.zip.ZipFile
 
@@ -416,6 +417,27 @@ if (minecraftVersion == "1.20.1") {
     val fabricAttrahiteHarnessSize = 300673L
     val fabricAttrahiteHarnessSha256 =
         "1c978b594d0f6d92355b1d588993cc979e47f4fb39548213c7ac17ed813d267a"
+    val fabricSlitheriteEvidenceArchive = rootProject.file(
+        "docs/evidence/fabric-1.20.1/slitherite-block-registry-v31",
+    )
+    val fabricSlitheriteArchiveManifestSize = 2487L
+    val fabricSlitheriteArchiveManifestSha256 =
+        "12c12e1d2772ae2a449a2c140e6af77e32f1f8eefb35aec06718eead1a4140c5"
+    val fabricSlitheriteEvidenceVerifier =
+        rootProject.file("scripts/e2e/fabric_slitherite_evidence_v31.py")
+    val fabricSlitheriteEvidenceTest =
+        rootProject.file("scripts/e2e/test_fabric_slitherite_evidence_v31.py")
+    val slitheriteClientEvidenceContract =
+        rootProject.file("scripts/e2e/slitherite_client_evidence_contract_v1.py")
+    val slitheriteClientEvidenceTestSupport =
+        rootProject.file("scripts/e2e/slitherite_client_evidence_test_support_v1.py")
+    val originalSlitheriteEvidenceVerifier =
+        rootProject.file("scripts/baseline/original_slitherite_evidence_v10.py")
+    val fabricProfileSnapshotV31 =
+        rootProject.file("scripts/e2e/fabric-1.20.1-profile-v31.json")
+    val fabricSlitheriteHarnessSize = 405976L
+    val fabricSlitheriteHarnessSha256 =
+        "8f702fe349f14bc8f1824fb0937b27bf3ea40a2b94a32da559390922a13905d0"
 
     val fabricMetalBlockRegistryEvidenceSafetyTest =
         tasks.register<Exec>("fabricMetalBlockRegistryEvidenceSafetyTest") {
@@ -712,9 +734,86 @@ if (minecraftVersion == "1.20.1") {
                 .optional()
         }
 
+    val fabricSlitheriteEvidenceSafetyTest =
+        tasks.register<Exec>("fabricSlitheriteEvidenceSafetyTest") {
+            group = "verification"
+            description =
+                "Runs the Fabric Slitherite block-registry v31 verifier safety tests."
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                "-m",
+                "unittest",
+                "scripts/e2e/test_fabric_slitherite_evidence_v31.py",
+                "scripts/e2e/test_client.py",
+            )
+            inputs.files(
+                fabricSlitheriteEvidenceVerifier,
+                fabricSlitheriteEvidenceTest,
+                slitheriteClientEvidenceContract,
+                slitheriteClientEvidenceTestSupport,
+                originalSlitheriteEvidenceVerifier,
+                fabricClientRunner,
+                rootProject.file("scripts/e2e/test_client.py"),
+                fabricActiveProfile,
+                fabricProfileSnapshotV31,
+                rootProject.file("docs/testing/E2E-CONTRACT.md"),
+            )
+        }
+
+    val validateFabricSlitheriteEvidenceArchiveIntegrity =
+        tasks.register<Exec>("validateFabricSlitheriteEvidenceArchiveIntegrity") {
+            group = "verification"
+            description =
+                "Validates the immutable Fabric Slitherite block-registry v31 archive."
+            dependsOn(fabricSlitheriteEvidenceSafetyTest)
+            workingDir(rootProject.projectDir)
+            commandLine(
+                "python3",
+                "-B",
+                fabricSlitheriteEvidenceVerifier.absolutePath,
+                "--archive",
+                fabricSlitheriteEvidenceArchive.absolutePath,
+            )
+            inputs.files(
+                fabricSlitheriteEvidenceVerifier,
+                slitheriteClientEvidenceContract,
+                originalSlitheriteEvidenceVerifier,
+                fabricClientRunner,
+                fabricEvidenceLibrary,
+            )
+            inputs.dir(fabricSlitheriteEvidenceArchive)
+                .withPropertyName("fabricSlitheriteEvidenceArchive")
+                .optional()
+            doFirst {
+                val archiveManifest =
+                    fabricSlitheriteEvidenceArchive.resolve("archive-manifest.json")
+                check(archiveManifest.isFile && !Files.isSymbolicLink(archiveManifest.toPath())) {
+                    "Fabric Slitherite archive manifest is missing or linked"
+                }
+                val archiveManifestDigest = MessageDigest.getInstance("SHA-256")
+                    .digest(archiveManifest.readBytes())
+                    .joinToString("") { byte ->
+                        "%02x".format(byte.toInt() and 0xff)
+                    }
+                check(archiveManifest.length() == fabricSlitheriteArchiveManifestSize) {
+                    "Fabric Slitherite archive manifest size changed: " +
+                        archiveManifest.length()
+                }
+                check(archiveManifestDigest == fabricSlitheriteArchiveManifestSha256) {
+                    "Fabric Slitherite archive manifest SHA-256 changed: " +
+                        archiveManifestDigest
+                }
+            }
+        }
+
     val e2eHarness = sourceSets.create("e2eHarness") {
         java.setSrcDirs(
-            listOf(rootProject.file("e2e-harness/fabric/1.20.1/src/main/java")),
+            listOf(
+                rootProject.file("e2e-harness/fabric/1.20.1/src/main/java"),
+                rootProject.file("e2e-harness/shared/1.20.1/src/main/java"),
+            ),
         )
         resources.setSrcDirs(
             listOf(rootProject.file("e2e-harness/fabric/1.20.1/src/main/resources")),
@@ -725,7 +824,10 @@ if (minecraftVersion == "1.20.1") {
 
     val e2eHarnessTest = sourceSets.create("e2eHarnessTest") {
         java.setSrcDirs(
-            listOf(rootProject.file("e2e-harness/fabric/1.20.1/src/test/java")),
+            listOf(
+                rootProject.file("e2e-harness/fabric/1.20.1/src/test/java"),
+                rootProject.file("e2e-harness/shared/1.20.1/src/test/java"),
+            ),
         )
         resources.setSrcDirs(emptyList<String>())
         compileClasspath += e2eHarness.output + e2eHarness.compileClasspath
@@ -800,8 +902,21 @@ if (minecraftVersion == "1.20.1") {
             ) {
                 "E2E harness JAR has no completed-render callback mixin"
             }
+            check(
+                "dev/theplumteam/etherology/e2e/fabric/" +
+                    "FabricSlitheriteBlockRegistryScenario.class" in harnessEntries,
+            ) {
+                "E2E harness JAR has no Fabric Slitherite adapter"
+            }
+            check(
+                "dev/theplumteam/etherology/e2e/shared/" +
+                    "SlitheriteBlockRegistryScenario.class" in harnessEntries,
+            ) {
+                "E2E harness JAR has no shared Slitherite scenario"
+            }
             check(harnessClassEntries.all {
                 it.startsWith("dev/theplumteam/etherology/e2e/fabric/")
+                    || it.startsWith("dev/theplumteam/etherology/e2e/shared/")
             }) {
                 "E2E harness JAR contains classes outside its isolated package"
             }
@@ -813,7 +928,8 @@ if (minecraftVersion == "1.20.1") {
                 val classConstants = harnessZip.getInputStream(classEntry).use { input ->
                     String(input.readAllBytes(), StandardCharsets.ISO_8859_1)
                 }
-                check(!classConstants.contains("ru/feytox/etherology/")) {
+                check(!classConstants.contains("ru/feytox/etherology/")
+                    && !classConstants.contains("ru.feytox.etherology.")) {
                     "E2E harness class $classEntryName links to production Etherology code"
                 }
             }
@@ -886,7 +1002,41 @@ if (minecraftVersion == "1.20.1") {
         tasks.register("verifyAttrahiteE2eHarnessArtifact") {
             group = "verification"
             description =
-                "Binds the Fabric Attrahite v30 run to its exact packaged harness bytes."
+                "Binds the accepted Fabric Attrahite v30 archive to its captured harness bytes."
+            val archiveManifest =
+                fabricAttrahiteEvidenceArchive.resolve("archive-manifest.json")
+            inputs.file(archiveManifest)
+
+            doLast {
+                val manifest = JsonSlurper().parse(archiveManifest) as? Map<*, *>
+                    ?: error("Fabric Attrahite archive manifest is not an object")
+                val artifacts = manifest["artifacts"] as? Map<*, *>
+                    ?: error("Fabric Attrahite archive has no artifact inventory")
+                val harness = artifacts["harness"] as? Map<*, *>
+                    ?: error("Fabric Attrahite archive has no harness identity")
+                check((harness["size"] as? Number)?.toLong() == fabricAttrahiteHarnessSize) {
+                    "Fabric Attrahite archived harness size changed"
+                }
+                check(harness["sha256"] == fabricAttrahiteHarnessSha256) {
+                    "Fabric Attrahite archived harness SHA-256 changed"
+                }
+                check(
+                    harness["mod_id"] == "etherology_e2e_harness" &&
+                        harness["file_name"] == "etherology-e2e-harness.jar",
+                ) {
+                    "Fabric Attrahite archived harness identity changed"
+                }
+            }
+        }
+    fabricAttrahiteEvidenceSafetyTest.configure {
+        dependsOn(verifyAttrahiteE2eHarnessArtifact)
+    }
+
+    val verifySlitheriteE2eHarnessArtifact =
+        tasks.register("verifySlitheriteE2eHarnessArtifact") {
+            group = "verification"
+            description =
+                "Binds the Fabric Slitherite v31 run to its exact packaged harness bytes."
             dependsOn(verifyE2eHarnessArtifact)
             inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
 
@@ -897,16 +1047,16 @@ if (minecraftVersion == "1.20.1") {
                     .joinToString("") { byte ->
                         "%02x".format(byte.toInt() and 0xff)
                     }
-                check(harnessFile.length() == fabricAttrahiteHarnessSize) {
-                    "Fabric Attrahite harness size changed: ${harnessFile.length()}"
+                check(harnessFile.length() == fabricSlitheriteHarnessSize) {
+                    "Fabric Slitherite harness size changed: ${harnessFile.length()}"
                 }
-                check(harnessDigest == fabricAttrahiteHarnessSha256) {
-                    "Fabric Attrahite harness SHA-256 changed: $harnessDigest"
+                check(harnessDigest == fabricSlitheriteHarnessSha256) {
+                    "Fabric Slitherite harness SHA-256 changed: $harnessDigest"
                 }
             }
         }
-    fabricAttrahiteEvidenceSafetyTest.configure {
-        dependsOn(verifyAttrahiteE2eHarnessArtifact)
+    fabricSlitheriteEvidenceSafetyTest.configure {
+        dependsOn(verifySlitheriteE2eHarnessArtifact)
     }
 
     val productionJar = tasks.named<RemapJarTask>("remapJar")
@@ -956,7 +1106,11 @@ if (minecraftVersion == "1.20.1") {
     tasks.register("buildE2eHarness") {
         group = "e2e"
         description = "Builds and validates the separate Fabric 1.20.1 packaged E2E harness."
-        dependsOn(e2eHarnessTestTask, verifyE2eHarnessArtifact)
+        dependsOn(
+            e2eHarnessTestTask,
+            fabricSlitheriteEvidenceSafetyTest,
+            verifyE2eHarnessArtifact,
+        )
     }
 
     tasks.register("validateFabricForestLanternV24Milestone") {
@@ -978,6 +1132,17 @@ if (minecraftVersion == "1.20.1") {
             e2eHarnessTestTask,
             verifyAttrahiteE2eHarnessArtifact,
             validateFabricAttrahiteEvidenceArchiveIntegrity,
+        )
+    }
+
+    tasks.register("validateFabricSlitheriteV31Milestone") {
+        group = "verification"
+        description =
+            "Validates the pinned harness and frozen Fabric Slitherite v31 evidence."
+        dependsOn(
+            e2eHarnessTestTask,
+            verifySlitheriteE2eHarnessArtifact,
+            validateFabricSlitheriteEvidenceArchiveIntegrity,
         )
     }
 }

@@ -288,7 +288,7 @@ def validate_manifest_shape(
     profile_id = safe_leaf_name(profile.get("id"), "profile.id")
     if re.fullmatch(r"[a-z0-9][a-z0-9.-]+", profile_id) is None:
         raise E2EError("The Forge profile id is not stable lowercase text")
-    if profile_id != "etherology-e2e-forge-1.20.1-v17":
+    if profile_id != "etherology-e2e-forge-1.20.1-v18":
         raise E2EError("The Forge profile id differs from the isolated profile contract")
     if profile.get("runtime_directory") != profile_id:
         raise E2EError("The Forge runtime directory must equal its unique profile id")
@@ -345,10 +345,11 @@ def validate_manifest_shape(
         "ethereal-channel",
         "forest-lantern",
         "attrahite-block-registry",
+        "slitherite-block-registry",
     ]:
         raise E2EError(
             "The Forge harness must expose storage, channel, Forest Lantern, "
-            "then Attrahite block registry"
+            "Attrahite block registry, then Slitherite block registry"
         )
 
     directories = require_list(manifest, "profile_directories")
@@ -1214,16 +1215,24 @@ def verify_harness_artifact_metadata(
         raise E2EError("Harness JAR has no configured Forge entrypoint class")
     class_entries = {name for name in entries if name.endswith(".class")}
     harness_prefix = expected_entry.rsplit("/", 1)[0] + "/"
+    shared_harness_prefix = "dev/theplumteam/etherology/e2e/shared/"
     outside_classes = sorted(
-        name for name in class_entries if not name.startswith(harness_prefix)
+        name
+        for name in class_entries
+        if not name.startswith(harness_prefix)
+        and not name.startswith(shared_harness_prefix)
     )
     if outside_classes:
         raise E2EError(f"Harness JAR contains classes outside its package: {outside_classes}")
-    production_prefix = b"ru/feytox/etherology/"
+    production_prefixes = (
+        b"ru/feytox/etherology/",
+        b"ru.feytox.etherology.",
+    )
     try:
         with zipfile.ZipFile(path) as archive:
             for class_entry in class_entries:
-                if production_prefix in archive.read(class_entry):
+                class_bytes = archive.read(class_entry)
+                if any(prefix in class_bytes for prefix in production_prefixes):
                     raise E2EError(
                         f"Harness class {class_entry} links to production Etherology code"
                     )

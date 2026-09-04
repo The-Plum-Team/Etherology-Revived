@@ -26,6 +26,10 @@ class ScenarioSelectionTest {
                 ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY,
                 ScenarioSelection.parse(ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY)
         );
+        assertEquals(
+                ScenarioSelection.SLITHERITE_BLOCK_REGISTRY,
+                ScenarioSelection.parse(ScenarioSelection.SLITHERITE_BLOCK_REGISTRY)
+        );
     }
 
     @Test
@@ -50,6 +54,10 @@ class ScenarioSelectionTest {
         assertThrows(
                 IllegalArgumentException.class,
                 () -> ScenarioSelection.parse("attrahite-block-registry ")
+        );
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> ScenarioSelection.parse("slitherite-block-registry ")
         );
         assertThrows(
                 IllegalArgumentException.class,

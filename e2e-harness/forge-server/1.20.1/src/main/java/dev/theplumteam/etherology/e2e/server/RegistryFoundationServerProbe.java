@@ -2,16 +2,41 @@ package dev.theplumteam.etherology.e2e.server;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.authlib.GameProfile;
 import com.mojang.logging.LogUtils;
 import net.minecraft.SharedConstants;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.command.argument.BlockArgumentParser;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.ItemUsageContext;
+import net.minecraft.item.Items;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.tag.GameEventTags;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.state.property.Properties;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.GameMode;
 import net.minecraft.world.event.GameEvent;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStartingEvent;
@@ -27,9 +52,13 @@ import org.slf4j.Logger;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.UUID;
+import java.util.function.Predicate;
 
 /**
  * Exercises the shared registry foundation in a real dedicated Forge server.
@@ -55,6 +84,14 @@ public final class RegistryFoundationServerProbe {
     );
     private static final String INTERNAL_EVENT_ID = "etherology_resonance";
     private static final int EVENT_RANGE = 16;
+    static final long MAXIMUM_SLITHERITE_ENTITY_TICK_GATE_TICKS = 100L;
+    static final long MAXIMUM_SLITHERITE_PROBE_ENTITY_TICK_TICKS = 20L;
+    static final long MAXIMUM_SLITHERITE_LIVING_ACTIVATION_TICKS = 20L;
+    static final long SLITHERITE_PRESSURE_PLATE_RESET_TICKS = 25L;
+    private static final UUID SLITHERITE_PLAYER_UUID = UUID.fromString(
+            "69aac04b-baf3-4c06-b6c8-0f74f456107a"
+    );
+    private static final String SLITHERITE_PLAYER_NAME = "SlitheriteProbe";
     private static final List<String> EXPECTED_ETHERLOGY_TAG_IDS = List.of(
             "minecraft:vibrations",
             "minecraft:warden_can_listen"
@@ -142,11 +179,31 @@ public final class RegistryFoundationServerProbe {
             AttrahiteBlockProbeState.PlacementState.missing();
     private AttrahiteBlockProbeState.PlacementState reloadedAttrahiteBlockPlacement =
             AttrahiteBlockProbeState.PlacementState.missing();
+    private SlitheriteBlockProbeState tagLoadedSlitheriteBlockState =
+            SlitheriteBlockProbeState.missing();
+    private SlitheriteBlockProbeState initialSlitheriteBlockState =
+            SlitheriteBlockProbeState.missing();
+    private SlitheriteBlockProbeState reloadedSlitheriteBlockState =
+            SlitheriteBlockProbeState.missing();
+    private SlitheriteBlockProbeState serverStartedSlitheriteBlockState =
+            SlitheriteBlockProbeState.missing();
+    private SlitheriteBlockProbeState.PlacementState initialSlitheriteBlockPlacement =
+            SlitheriteBlockProbeState.PlacementState.missing();
+    private SlitheriteBlockProbeState.PlacementState savedSlitheriteBlockPlacement =
+            SlitheriteBlockProbeState.PlacementState.missing();
+    private SlitheriteBlockProbeState.PlacementState reloadedSlitheriteBlockPlacement =
+            SlitheriteBlockProbeState.PlacementState.missing();
+    private SlitheriteNativePlacementState initialSlitheriteNativePlacement =
+            SlitheriteNativePlacementState.missing();
+    private SlitheriteBehaviorSequence slitheriteBehaviorSequence;
+    private SlitheriteBehaviorProbe slitheriteBehaviorProbe =
+            SlitheriteBehaviorProbe.missing();
     private LootConditionProbeState lootConditionState = LootConditionProbeState.missing();
     private MinecraftServer startedServer;
     private GameEvent taggedEvent;
     private String reloadFailure = "not requested";
     private String attrahiteWorldSaveFailure = "not requested";
+    private String slitheriteWorldSaveFailure = "not requested";
     private String reloadPackDirectory = "";
     private List<String> reloadPackResourcePaths = List.of();
     private List<String> enabledDataPackNamesAfterReload = List.of();
@@ -182,6 +239,8 @@ public final class RegistryFoundationServerProbe {
     private boolean metalBlocksCapturedAfterServerDataLoad;
     private boolean attrahiteBlocksCapturedAtInitialTagLoad;
     private boolean attrahiteBlocksCapturedAfterServerDataLoad;
+    private boolean slitheriteBlocksCapturedAtInitialTagLoad;
+    private boolean slitheriteBlocksCapturedAfterServerDataLoad;
     private boolean serverStartedLootConditionRechecked;
     private boolean serverStartedEnchantmentsRechecked;
     private boolean serverStartedParticlesRechecked;
@@ -190,6 +249,7 @@ public final class RegistryFoundationServerProbe {
     private boolean serverStartedForestLanternRechecked;
     private boolean serverStartedMetalBlocksRechecked;
     private boolean serverStartedAttrahiteBlocksRechecked;
+    private boolean serverStartedSlitheriteBlocksRechecked;
     private boolean reloadRequested;
     private boolean reloadTagsObserved;
     private boolean reloadCompleted;
@@ -233,6 +293,15 @@ public final class RegistryFoundationServerProbe {
     private boolean attrahiteBlockLoadedDataFreshAfterReload;
     private boolean attrahiteBlockPlacementStableAfterReload;
     private boolean attrahiteWorldSavedAfterPlacement;
+    private boolean slitheriteBlockRegistryStableAfterReload;
+    private boolean slitheriteBlockDefaultStatesStableAfterReload;
+    private boolean slitheriteBlockTagsStableAfterReload;
+    private boolean slitheriteBlockLoadedDataStableAfterReload;
+    private boolean slitheriteBlockLoadedDataFreshAfterReload;
+    private boolean slitheriteBlockPlacementSavedAfterForceSave;
+    private boolean slitheriteBlockPlacementStableAfterReload;
+    private boolean slitheriteWorldSavedAfterPlacement;
+    private boolean serverStartedContinuationStarted;
     private boolean stopRequestedAfterReload;
     private boolean stopRequestedWithoutRestart;
     private boolean stoppingServerMatched;
@@ -299,6 +368,10 @@ public final class RegistryFoundationServerProbe {
             tagLoadedAttrahiteBlockState = AttrahiteBlockProbeState.captureTagLoaded();
             attrahiteBlocksCapturedAtInitialTagLoad = tagLoadedAttrahiteBlockState
                     .hasExactCoreContract();
+            tagLoadedSlitheriteBlockState =
+                    SlitheriteBlockProbeState.captureTagLoaded();
+            slitheriteBlocksCapturedAtInitialTagLoad =
+                    tagLoadedSlitheriteBlockState.hasExactCoreContract();
             LOGGER.info("[EtherologyServerProbe] tags_updated_initial");
             return;
         }
@@ -315,6 +388,9 @@ public final class RegistryFoundationServerProbe {
         reloadedAttrahiteBlockState = startedServer == null
                 ? AttrahiteBlockProbeState.missing()
                 : AttrahiteBlockProbeState.capture(startedServer);
+        reloadedSlitheriteBlockState = startedServer == null
+                ? SlitheriteBlockProbeState.missing()
+                : SlitheriteBlockProbeState.capture(startedServer);
         reloadedForestLanternState = startedServer == null
                 ? ForestLanternProbeState.missing()
                 : ForestLanternProbeState.capture(startedServer);
@@ -472,6 +548,36 @@ public final class RegistryFoundationServerProbe {
                         reloadedAttrahiteBlockPlacement
                 )
                 && reloadedAttrahiteBlockPlacement.hasExactPlacement();
+        slitheriteBlockRegistryStableAfterReload = reloadTagsObserved
+                && initialSlitheriteBlockState.hasSameRegistry(
+                        reloadedSlitheriteBlockState
+                );
+        slitheriteBlockDefaultStatesStableAfterReload = reloadTagsObserved
+                && initialSlitheriteBlockState.hasSameDefaultStatesAndRawIds(
+                        reloadedSlitheriteBlockState
+                );
+        slitheriteBlockTagsStableAfterReload = reloadTagsObserved
+                && initialSlitheriteBlockState.hasSameTags(
+                        reloadedSlitheriteBlockState
+                );
+        slitheriteBlockLoadedDataStableAfterReload = reloadTagsObserved
+                && initialSlitheriteBlockState.hasReloadedDataOutcome(
+                        reloadedSlitheriteBlockState
+                );
+        slitheriteBlockLoadedDataFreshAfterReload = reloadTagsObserved
+                && initialSlitheriteBlockState.hasFreshReloadedData(
+                        reloadedSlitheriteBlockState
+                );
+        reloadedSlitheriteBlockPlacement = startedServer == null
+                ? SlitheriteBlockProbeState.PlacementState.missing()
+                : SlitheriteBlockProbeState.capturePlacement(
+                        startedServer.getOverworld()
+                );
+        slitheriteBlockPlacementStableAfterReload = reloadTagsObserved
+                && savedSlitheriteBlockPlacement.samePlacement(
+                        reloadedSlitheriteBlockPlacement
+                )
+                && reloadedSlitheriteBlockPlacement.hasExactPlacement();
         LOGGER.info("[EtherologyServerProbe] tags_updated_reload");
     }
 
@@ -516,6 +622,16 @@ public final class RegistryFoundationServerProbe {
                                 initialAttrahiteBlockState
                         )
                         && initialAttrahiteBlockState.hasExactContract();
+        initialSlitheriteBlockState = SlitheriteBlockProbeState.capture(
+                event.getServer()
+        );
+        slitheriteBlocksCapturedAfterServerDataLoad =
+                lootConditionCapturedAfterServerDataLoad
+                        && slitheriteBlocksCapturedAtInitialTagLoad
+                        && tagLoadedSlitheriteBlockState.sameCoreState(
+                                initialSlitheriteBlockState
+                        )
+                        && initialSlitheriteBlockState.hasExactContract();
         lootConditionState = LootConditionProbeState.capture(event.getServer());
         LOGGER.info("[EtherologyServerProbe] registry_foundation_checked");
     }
@@ -607,20 +723,92 @@ public final class RegistryFoundationServerProbe {
         initialAttrahiteBlockPlacement = AttrahiteBlockProbeState.placeIn(
                 event.getServer().getOverworld()
         );
+        serverStartedSlitheriteBlockState = SlitheriteBlockProbeState.capture(
+                event.getServer()
+        );
+        serverStartedSlitheriteBlocksRechecked = initialSlitheriteBlockState
+                .sameStateAtServerStarted(serverStartedSlitheriteBlockState);
         try {
-            attrahiteWorldSavedAfterPlacement = event.getServer().save(
-                    true,
-                    true,
-                    false
+            SlitheritePlacementSetup setup = placeSlitheriteBlockItems(
+                    event.getServer(),
+                    event.getServer().getOverworld()
             );
-            attrahiteWorldSaveFailure = "";
+            initialSlitheriteNativePlacement = setup.placement();
+            initialSlitheriteBlockPlacement =
+                    SlitheriteBlockProbeState.capturePlacement(
+                            event.getServer().getOverworld()
+                    );
+            initializeSlitheriteBehaviorProbe(
+                    event.getServer().getOverworld(),
+                    setup.player()
+            );
         } catch (RuntimeException exception) {
-            attrahiteWorldSaveFailure = exception.getClass().getName();
+            initialSlitheriteNativePlacement =
+                    SlitheriteNativePlacementState.failed(
+                            exception.getClass().getName()
+                    );
+            slitheriteBehaviorProbe = SlitheriteBehaviorProbe.failed(
+                    exception.getClass().getName()
+            );
+            continueServerStartedProbe(event.getServer());
+        }
+    }
+
+    /**
+     * Advances the tick-dependent Slitherite button and pressure-plate checks.
+     *
+     * @param event the Forge server tick notification
+     */
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase != TickEvent.Phase.END
+                || event.getServer() != startedServer
+                || serverStartedContinuationStarted
+                || slitheriteBehaviorSequence == null) {
+            return;
+        }
+        try {
+            advanceSlitheriteBehaviorProbe(event.getServer().getOverworld());
+        } catch (RuntimeException exception) {
+            discardSlitheriteProbeEntities();
+            slitheriteBehaviorProbe = SlitheriteBehaviorProbe.failed(
+                    exception.getClass().getName()
+            );
+        }
+        if (slitheriteBehaviorProbe.completed()) {
+            continueServerStartedProbe(event.getServer());
+        }
+    }
+
+    private void continueServerStartedProbe(MinecraftServer server) {
+        if (serverStartedContinuationStarted) {
+            return;
+        }
+        serverStartedContinuationStarted = true;
+        try {
+            boolean saved = server.save(true, true, false);
+            attrahiteWorldSavedAfterPlacement = saved;
+            slitheriteWorldSavedAfterPlacement = saved;
+            attrahiteWorldSaveFailure = "";
+            slitheriteWorldSaveFailure = "";
+            savedSlitheriteBlockPlacement =
+                    SlitheriteBlockProbeState.capturePlacement(
+                            server.getOverworld()
+                    );
+            slitheriteBlockPlacementSavedAfterForceSave = saved
+                    && initialSlitheriteBlockPlacement.samePlacement(
+                            savedSlitheriteBlockPlacement
+                    )
+                    && savedSlitheriteBlockPlacement.hasExactPlacement();
+        } catch (RuntimeException exception) {
+            String failure = exception.getClass().getName();
+            attrahiteWorldSaveFailure = failure;
+            slitheriteWorldSaveFailure = failure;
         }
 
         try {
             ReloadDataPackWriter.WrittenPack writtenPack = ReloadDataPackWriter.write(
-                    event.getServer()
+                    server
             );
             reloadPackDirectory = writtenPack.directoryName();
             reloadPackResourcePaths = writtenPack.resourcePaths();
@@ -628,11 +816,11 @@ public final class RegistryFoundationServerProbe {
             reloadRequested = true;
             lifecycle.add("reload_requested");
             LOGGER.info("[EtherologyServerProbe] reload_requested");
-            reloadCommandResult = event.getServer().getCommandManager().executeWithPrefix(
-                    event.getServer().getCommandSource(),
+            reloadCommandResult = server.getCommandManager().executeWithPrefix(
+                    server.getCommandSource(),
                     "reload"
             );
-            enabledDataPackNamesAfterReload = event.getServer().getDataPackManager()
+            enabledDataPackNamesAfterReload = server.getDataPackManager()
                     .getEnabledNames()
                     .stream()
                     .sorted()
@@ -650,7 +838,484 @@ public final class RegistryFoundationServerProbe {
         stopRequestedAfterReload = reloadCompleted;
         stopRequestedWithoutRestart = true;
         LOGGER.info("[EtherologyServerProbe] stop_requested");
-        event.getServer().stop(false);
+        server.stop(false);
+    }
+
+    private SlitheritePlacementSetup placeSlitheriteBlockItems(
+            MinecraftServer server,
+            ServerWorld world
+    ) {
+        ServerPlayerEntity player = new ServerPlayerEntity(
+                server,
+                world,
+                new GameProfile(SLITHERITE_PLAYER_UUID, SLITHERITE_PLAYER_NAME)
+        );
+        player.changeGameMode(GameMode.SURVIVAL);
+        player.setInvulnerable(true);
+        player.refreshPositionAndAngles(64.5, 201.0, 20.5, 180.0F, 0.0F);
+        Map<String, SlitheriteNativePlacementEntry> entries = new LinkedHashMap<>();
+        List<String> errors = new ArrayList<>();
+        for (int index = 0;
+                index < SlitheriteBlockProbeState.EXPECTED_BLOCK_IDS.size();
+                index++) {
+            String id = SlitheriteBlockProbeState.EXPECTED_BLOCK_IDS.get(index);
+            SlitheriteBlockProbeState.SlitheriteBlockSpec spec =
+                    SlitheriteBlockProbeState.EXPECTED_BLOCKS.get(id);
+            BlockPos position = slitheritePlacementPosition(index);
+            BlockPos supportPosition = slitheriteSupportPosition(position, spec);
+            try {
+                forceSlitheriteChunk(world, position);
+                Block block = registeredSlitheriteBlock(id);
+                Item item = registeredSlitheriteItem(id);
+                if (!(item instanceof BlockItem blockItem)) {
+                    throw new IllegalStateException(id + " is not a BlockItem");
+                }
+                Block support = spec.button()
+                        ? Blocks.SMOOTH_STONE
+                        : Blocks.POLISHED_ANDESITE;
+                world.setBlockState(
+                        supportPosition,
+                        support.getDefaultState(),
+                        Block.NOTIFY_ALL
+                );
+                world.setBlockState(
+                        position,
+                        Blocks.AIR.getDefaultState(),
+                        Block.NOTIFY_ALL
+                );
+                ItemStack stack = new ItemStack(item);
+                int beforeCount = stack.getCount();
+                player.setStackInHand(Hand.MAIN_HAND, stack);
+                ActionResult result = blockItem.useOnBlock(
+                        new ItemUsageContext(
+                                player,
+                                Hand.MAIN_HAND,
+                                slitheritePlacementHit(position, supportPosition, spec)
+                        )
+                );
+                BlockState placedState = world.getBlockState(position);
+                entries.put(
+                        id,
+                        new SlitheriteNativePlacementEntry(
+                                result.name(),
+                                result.isAccepted(),
+                                beforeCount,
+                                stack.getCount(),
+                                blockItem.getBlock() == block,
+                                registeredBlockId(placedState.getBlock()),
+                                BlockArgumentParser.stringifyBlockState(placedState)
+                        )
+                );
+            } catch (RuntimeException exception) {
+                entries.put(id, SlitheriteNativePlacementEntry.failed());
+                errors.add(id + "=" + exception.getClass().getName());
+            } finally {
+                player.setStackInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
+            }
+        }
+        return new SlitheritePlacementSetup(
+                new SlitheriteNativePlacementState(
+                        String.join(",", errors),
+                        Collections.unmodifiableMap(entries)
+                ),
+                player
+        );
+    }
+
+    private void initializeSlitheriteBehaviorProbe(
+            ServerWorld world,
+            ServerPlayerEntity player
+    ) {
+        long now = world.getTime();
+        slitheriteBehaviorSequence = new SlitheriteBehaviorSequence(
+                SlitheriteBehaviorPhase.WAITING_FOR_ENTITY_TICKING,
+                player,
+                now + MAXIMUM_SLITHERITE_ENTITY_TICK_GATE_TICKS,
+                -1L,
+                false,
+                false,
+                false,
+                null,
+                -1,
+                false,
+                false,
+                null,
+                -1,
+                false,
+                false
+        );
+    }
+
+    private void advanceSlitheriteBehaviorProbe(ServerWorld world) {
+        SlitheriteBehaviorSequence sequence = slitheriteBehaviorSequence;
+        if (sequence == null || slitheriteBehaviorProbe.completed()) {
+            return;
+        }
+        BlockPos pressurePosition = slitheritePlacementPosition(9);
+        boolean deadline = deadlineReached(world.getTime(), sequence.deadline());
+        switch (sequence.phase()) {
+            case WAITING_FOR_ENTITY_TICKING -> {
+                boolean tickable = world.shouldTickEntity(pressurePosition);
+                SlitheriteBehaviorPhase next = advanceSlitheriteBehaviorPhase(
+                        sequence.phase(),
+                        tickable,
+                        deadline
+                );
+                if (next == SlitheriteBehaviorPhase.FAILED) {
+                    failSlitheriteBehaviorProbe("entity_tick_gate_timeout");
+                } else if (next == SlitheriteBehaviorPhase.WAITING_FOR_ITEM_TICK) {
+                    startSlitheriteBehaviorProbe(world, sequence);
+                }
+            }
+            case WAITING_FOR_ITEM_TICK -> advanceSlitheriteItemProbe(
+                    world,
+                    sequence,
+                    deadline
+            );
+            case WAITING_FOR_LIVING_ACTIVATION -> advanceSlitheriteLivingProbe(
+                    world,
+                    sequence,
+                    deadline
+            );
+            case WAITING_FOR_RESET -> finishSlitheriteBehaviorProbe(
+                    world,
+                    sequence,
+                    deadline
+            );
+            case COMPLETE, FAILED -> {
+            }
+        }
+    }
+
+    private void startSlitheriteBehaviorProbe(
+            ServerWorld world,
+            SlitheriteBehaviorSequence sequence
+    ) {
+        BlockPos buttonPosition = slitheritePlacementPosition(8);
+        Block button = registeredSlitheriteBlock(
+                "etherology:polished_slitherite_button"
+        );
+        BlockState buttonBefore = world.getBlockState(buttonPosition);
+        BlockHitResult buttonHit = new BlockHitResult(
+                Vec3d.ofCenter(buttonPosition),
+                Direction.NORTH,
+                buttonPosition,
+                false
+        );
+        ActionResult result = sequence.player().interactionManager.interactBlock(
+                sequence.player(),
+                world,
+                ItemStack.EMPTY,
+                Hand.MAIN_HAND,
+                buttonHit
+        );
+        BlockState buttonAfter = world.getBlockState(buttonPosition);
+        boolean buttonActivated = !buttonBefore.get(Properties.POWERED)
+                && buttonAfter.get(Properties.POWERED);
+        boolean buttonResetScheduled = world.getBlockTickScheduler().isQueued(
+                buttonPosition,
+                button
+        );
+
+        BlockPos pressurePosition = slitheritePlacementPosition(9);
+        ItemEntity itemEntity = new ItemEntity(
+                world,
+                pressurePosition.getX() + 0.5,
+                pressurePosition.getY() + 0.5,
+                pressurePosition.getZ() + 0.5,
+                new ItemStack(Items.COBBLESTONE)
+        );
+        itemEntity.setVelocity(0.0, -0.3, 0.0);
+        itemEntity.setOnGround(false);
+        itemEntity.setNoGravity(false);
+        itemEntity.setPickupDelayInfinite();
+        if (!world.spawnEntity(itemEntity)) {
+            throw new IllegalStateException("Cannot spawn Slitherite item probe");
+        }
+        long now = world.getTime();
+        slitheriteBehaviorSequence = new SlitheriteBehaviorSequence(
+                SlitheriteBehaviorPhase.WAITING_FOR_ITEM_TICK,
+                sequence.player(),
+                now + MAXIMUM_SLITHERITE_PROBE_ENTITY_TICK_TICKS,
+                now,
+                result.isAccepted(),
+                buttonActivated,
+                buttonResetScheduled,
+                itemEntity,
+                itemEntity.age,
+                false,
+                false,
+                null,
+                -1,
+                false,
+                false
+        );
+    }
+
+    private void advanceSlitheriteItemProbe(
+            ServerWorld world,
+            SlitheriteBehaviorSequence sequence,
+            boolean deadline
+    ) {
+        boolean itemAdvanced = serverEntityAdvanced(
+                world,
+                sequence.itemEntity(),
+                sequence.itemInitialAge()
+        );
+        SlitheriteBehaviorPhase next = advanceSlitheriteBehaviorPhase(
+                sequence.phase(),
+                itemAdvanced,
+                deadline
+        );
+        if (next == SlitheriteBehaviorPhase.FAILED) {
+            failSlitheriteBehaviorProbe("item_entity_tick_timeout");
+            return;
+        }
+        if (next != SlitheriteBehaviorPhase.WAITING_FOR_LIVING_ACTIVATION) {
+            return;
+        }
+        BlockPos pressurePosition = slitheritePlacementPosition(9);
+        boolean itemIgnored = !world.getBlockState(pressurePosition)
+                .get(Properties.POWERED);
+        sequence.itemEntity().discard();
+        PigEntity pigEntity = EntityType.PIG.create(world);
+        if (pigEntity == null) {
+            throw new IllegalStateException("Cannot create Slitherite living probe");
+        }
+        pigEntity.setInvulnerable(true);
+        pigEntity.refreshPositionAndAngles(
+                pressurePosition.getX() + 0.5,
+                pressurePosition.getY() + 0.5,
+                pressurePosition.getZ() + 0.5,
+                0.0F,
+                0.0F
+        );
+        pigEntity.setVelocity(0.0, -0.3, 0.0);
+        pigEntity.setOnGround(false);
+        pigEntity.setNoGravity(false);
+        if (!world.spawnEntity(pigEntity)) {
+            throw new IllegalStateException("Cannot spawn Slitherite living probe");
+        }
+        long now = world.getTime();
+        slitheriteBehaviorSequence = new SlitheriteBehaviorSequence(
+                SlitheriteBehaviorPhase.WAITING_FOR_LIVING_ACTIVATION,
+                sequence.player(),
+                now + MAXIMUM_SLITHERITE_LIVING_ACTIVATION_TICKS,
+                sequence.buttonActivationTick(),
+                sequence.buttonInteractionAccepted(),
+                sequence.buttonActivated(),
+                sequence.buttonResetScheduled(),
+                sequence.itemEntity(),
+                sequence.itemInitialAge(),
+                true,
+                itemIgnored,
+                pigEntity,
+                pigEntity.age,
+                false,
+                false
+        );
+    }
+
+    private void advanceSlitheriteLivingProbe(
+            ServerWorld world,
+            SlitheriteBehaviorSequence sequence,
+            boolean deadline
+    ) {
+        boolean livingAdvanced = serverEntityAdvanced(
+                world,
+                sequence.pigEntity(),
+                sequence.pigInitialAge()
+        );
+        boolean livingActivated = world.getBlockState(
+                slitheritePlacementPosition(9)
+        ).get(Properties.POWERED);
+        if (deadline && !livingAdvanced) {
+            failSlitheriteBehaviorProbe("living_entity_tick_timeout");
+            return;
+        }
+        SlitheriteBehaviorPhase next = advanceSlitheriteBehaviorPhase(
+                sequence.phase(),
+                livingAdvanced && livingActivated,
+                deadline
+        );
+        if (next != SlitheriteBehaviorPhase.WAITING_FOR_RESET) {
+            return;
+        }
+        sequence.pigEntity().discard();
+        long now = world.getTime();
+        slitheriteBehaviorSequence = new SlitheriteBehaviorSequence(
+                SlitheriteBehaviorPhase.WAITING_FOR_RESET,
+                sequence.player(),
+                now + SLITHERITE_PRESSURE_PLATE_RESET_TICKS,
+                sequence.buttonActivationTick(),
+                sequence.buttonInteractionAccepted(),
+                sequence.buttonActivated(),
+                sequence.buttonResetScheduled(),
+                sequence.itemEntity(),
+                sequence.itemInitialAge(),
+                sequence.itemEntityAdvanced(),
+                sequence.itemIgnored(),
+                sequence.pigEntity(),
+                sequence.pigInitialAge(),
+                livingAdvanced,
+                livingActivated
+        );
+    }
+
+    private void finishSlitheriteBehaviorProbe(
+            ServerWorld world,
+            SlitheriteBehaviorSequence sequence,
+            boolean deadline
+    ) {
+        SlitheriteBehaviorPhase next = advanceSlitheriteBehaviorPhase(
+                sequence.phase(),
+                false,
+                deadline
+        );
+        if (next != SlitheriteBehaviorPhase.COMPLETE) {
+            return;
+        }
+        boolean buttonReset = !world.getBlockState(
+                slitheritePlacementPosition(8)
+        ).get(Properties.POWERED);
+        boolean pressureReset = !world.getBlockState(
+                slitheritePlacementPosition(9)
+        ).get(Properties.POWERED);
+        long elapsed = world.getTime() - sequence.buttonActivationTick();
+        SlitheriteBlockProbeState.PlacementState resetPlacement =
+                SlitheriteBlockProbeState.capturePlacement(world);
+        slitheriteBehaviorProbe = SlitheriteBehaviorProbe.complete(
+                sequence,
+                buttonReset,
+                elapsed,
+                pressureReset,
+                resetPlacement.hasExactPlacement()
+        );
+        slitheriteBehaviorSequence = sequence.withPhase(
+                SlitheriteBehaviorPhase.COMPLETE
+        );
+    }
+
+    private void failSlitheriteBehaviorProbe(String failure) {
+        discardSlitheriteProbeEntities();
+        slitheriteBehaviorProbe = SlitheriteBehaviorProbe.failed(failure);
+        if (slitheriteBehaviorSequence != null) {
+            slitheriteBehaviorSequence = slitheriteBehaviorSequence.withPhase(
+                    SlitheriteBehaviorPhase.FAILED
+            );
+        }
+    }
+
+    private void discardSlitheriteProbeEntities() {
+        if (slitheriteBehaviorSequence == null) {
+            return;
+        }
+        if (slitheriteBehaviorSequence.itemEntity() != null) {
+            slitheriteBehaviorSequence.itemEntity().discard();
+        }
+        if (slitheriteBehaviorSequence.pigEntity() != null) {
+            slitheriteBehaviorSequence.pigEntity().discard();
+        }
+    }
+
+    static SlitheriteBehaviorPhase advanceSlitheriteBehaviorPhase(
+            SlitheriteBehaviorPhase phase,
+            boolean milestoneReached,
+            boolean deadlineReached
+    ) {
+        return switch (phase) {
+            case WAITING_FOR_ENTITY_TICKING -> milestoneReached
+                    ? SlitheriteBehaviorPhase.WAITING_FOR_ITEM_TICK
+                    : deadlineReached ? SlitheriteBehaviorPhase.FAILED : phase;
+            case WAITING_FOR_ITEM_TICK -> milestoneReached
+                    ? SlitheriteBehaviorPhase.WAITING_FOR_LIVING_ACTIVATION
+                    : deadlineReached ? SlitheriteBehaviorPhase.FAILED : phase;
+            case WAITING_FOR_LIVING_ACTIVATION ->
+                    milestoneReached || deadlineReached
+                            ? SlitheriteBehaviorPhase.WAITING_FOR_RESET
+                            : phase;
+            case WAITING_FOR_RESET -> deadlineReached
+                    ? SlitheriteBehaviorPhase.COMPLETE
+                    : phase;
+            case COMPLETE, FAILED -> phase;
+        };
+    }
+
+    static boolean entityTickAdvanced(
+            boolean serverLookupExact,
+            int initialAge,
+            int currentAge
+    ) {
+        return serverLookupExact && currentAge > initialAge;
+    }
+
+    static boolean deadlineReached(long currentTick, long deadline) {
+        return currentTick >= deadline;
+    }
+
+    private static boolean serverEntityAdvanced(
+            ServerWorld world,
+            Entity entity,
+            int initialAge
+    ) {
+        return entity != null && entityTickAdvanced(
+                world.getEntityById(entity.getId()) == entity,
+                initialAge,
+                entity.age
+        );
+    }
+
+    private static void forceSlitheriteChunk(ServerWorld world, BlockPos position) {
+        world.setChunkForced(position.getX() >> 4, position.getZ() >> 4, true);
+    }
+
+    private static Block registeredSlitheriteBlock(String id) {
+        return Registries.BLOCK.getOrEmpty(Identifier.parse(id)).orElseThrow(
+                () -> new IllegalStateException("Missing block " + id)
+        );
+    }
+
+    private static Item registeredSlitheriteItem(String id) {
+        return Registries.ITEM.getOrEmpty(Identifier.parse(id)).orElseThrow(
+                () -> new IllegalStateException("Missing item " + id)
+        );
+    }
+
+    private static String registeredBlockId(Block block) {
+        Identifier id = Registries.BLOCK.getId(block);
+        return id == null ? "" : id.toString();
+    }
+
+    private static BlockPos slitheritePlacementPosition(int index) {
+        return new BlockPos(64 + index * 2, 200, 24);
+    }
+
+    private static BlockPos slitheriteSupportPosition(
+            BlockPos position,
+            SlitheriteBlockProbeState.SlitheriteBlockSpec spec
+    ) {
+        return spec.button() ? position.south() : position.down();
+    }
+
+    private static BlockHitResult slitheritePlacementHit(
+            BlockPos position,
+            BlockPos supportPosition,
+            SlitheriteBlockProbeState.SlitheriteBlockSpec spec
+    ) {
+        if (spec.button()) {
+            return new BlockHitResult(
+                    Vec3d.ofCenter(supportPosition).add(0.0, 0.0, -0.5),
+                    Direction.NORTH,
+                    supportPosition,
+                    false
+            );
+        }
+        return new BlockHitResult(
+                Vec3d.ofCenter(supportPosition).add(0.0, 0.5, 0.0),
+                Direction.UP,
+                supportPosition,
+                false
+        );
     }
 
     /**
@@ -1430,6 +2095,7 @@ public final class RegistryFoundationServerProbe {
                 "attrahite_block_placement_stable_after_reload",
                 attrahiteBlockPlacementStableAfterReload
         );
+        addSlitheriteAssertions(assertions);
         addAssertion(
                 assertions,
                 "registry:item:" + FoodItemProbeState.ITEM_ID,
@@ -2218,7 +2884,7 @@ public final class RegistryFoundationServerProbe {
         );
 
         JsonObject report = new JsonObject();
-        report.addProperty("schema", 11);
+        report.addProperty("schema", 12);
         report.addProperty("profile_id", profileId);
         report.addProperty("scenario", scenarioId);
         report.addProperty("status", assertionsPassed(assertions) ? "passed" : "failed");
@@ -2240,6 +2906,7 @@ public final class RegistryFoundationServerProbe {
         report.add("forest_lantern", buildForestLantern());
         report.add("metal_blocks", buildMetalBlocks());
         report.add("attrahite_blocks", buildAttrahiteBlocks());
+        report.add("slitherite_blocks", buildSlitheriteBlocks());
         report.add("loot_condition", buildLootCondition());
         report.add("ether_sources", buildEtherSources());
         report.add("reload", buildReload());
@@ -2247,6 +2914,483 @@ public final class RegistryFoundationServerProbe {
         report.add("lifecycle", buildLifecycle());
         report.add("assertions", assertions);
         return report;
+    }
+
+    private void addSlitheriteAssertions(JsonArray assertions) {
+        SlitheriteBlockProbeState.EXPECTED_BLOCKS.forEach((id, spec) -> {
+            SlitheriteBlockProbeState.SlitheriteBlockEntry entry =
+                    initialSlitheriteBlockState.entries().getOrDefault(
+                            id,
+                            SlitheriteBlockProbeState.SlitheriteBlockEntry.failed(id)
+                    );
+            addAssertion(
+                    assertions,
+                    "registry:block:" + id,
+                    "present",
+                    presentState(entry.blockIdentity() != null)
+            );
+            addAssertion(
+                    assertions,
+                    "registry:item:" + id,
+                    "present",
+                    presentState(entry.itemIdentity() != null)
+            );
+            addAssertion(
+                    assertions,
+                    "runtime:block_class:" + id,
+                    spec.blockClass(),
+                    entry.blockClass()
+            );
+            addAssertion(
+                    assertions,
+                    "runtime:block_item_class:" + id,
+                    SlitheriteBlockProbeState.BLOCK_ITEM_CLASS,
+                    entry.itemClass()
+            );
+            addBooleanAssertion(
+                    assertions,
+                    "block_item_mapping:" + id,
+                    entry.blockItem()
+                            && entry.blockItemMapsToBlock()
+                            && entry.blockAsItemMatches()
+            );
+            addAssertion(
+                    assertions,
+                    "default_state:" + id,
+                    spec.defaultState(),
+                    entry.defaultState()
+            );
+            addAssertion(
+                    assertions,
+                    "state_count:" + id,
+                    Integer.toString(spec.stateCount()),
+                    Integer.toString(entry.stateCount())
+            );
+            addAssertion(
+                    assertions,
+                    "default_state_network_id:" + id,
+                    "non-negative",
+                    entry.defaultStateRawId() >= 0
+                            ? "non-negative"
+                            : Integer.toString(entry.defaultStateRawId())
+            );
+            addBooleanAssertion(
+                    assertions,
+                    "slitherite_state_raw_ids_exact:" + id,
+                    entry.hasExactRawIds(spec.stateCount())
+            );
+        });
+        addAssertion(
+                assertions,
+                "registry:slitherite_block_ids_exact",
+                String.join(",", SlitheriteBlockProbeState.EXPECTED_BLOCK_IDS),
+                String.join(",", initialSlitheriteBlockState.blockIds())
+        );
+        addAssertion(
+                assertions,
+                "registry:slitherite_block_item_ids_exact",
+                String.join(",", SlitheriteBlockProbeState.EXPECTED_BLOCK_IDS),
+                String.join(",", initialSlitheriteBlockState.blockItemIds())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_block_capture_error",
+                "none",
+                errorState(initialSlitheriteBlockState.captureError())
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_block_runtime_classes_exact",
+                initialSlitheriteBlockState.hasExactRuntimeClasses()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_block_item_mappings_exact",
+                initialSlitheriteBlockState.hasExactBlockItemMappings()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_block_properties_exact",
+                SlitheriteBlockProbeState.expectedCanonicalProperties(),
+                initialSlitheriteBlockState.canonicalProperties()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_aggregate_state_count_exact",
+                Integer.toString(
+                        SlitheriteBlockProbeState.EXPECTED_AGGREGATE_STATE_COUNT
+                ),
+                Integer.toString(initialSlitheriteBlockState.aggregateStateCount())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_aggregate_unique_raw_id_count_exact",
+                Integer.toString(
+                        SlitheriteBlockProbeState.EXPECTED_AGGREGATE_STATE_COUNT
+                ),
+                Integer.toString(
+                        initialSlitheriteBlockState.aggregateUniqueRawIdCount()
+                )
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_state_raw_ids_aggregate_exact",
+                initialSlitheriteBlockState.hasExactRawIds()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_state_network_ids_exact",
+                initialSlitheriteBlockState.hasExactRawIds()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_block_tags_exact",
+                SlitheriteBlockProbeState.expectedCanonicalTags(),
+                initialSlitheriteBlockState.canonicalTags()
+        );
+        addSlitheriteTagAssertions(assertions);
+        addBooleanAssertion(
+                assertions,
+                "slitherite_blocks_captured_at_initial_tag_load",
+                slitheriteBlocksCapturedAtInitialTagLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_blocks_captured_after_server_data_load",
+                slitheriteBlocksCapturedAfterServerDataLoad
+        );
+        addBooleanAssertion(
+                assertions,
+                "server_started_slitherite_blocks_rechecked",
+                serverStartedSlitheriteBlocksRechecked
+        );
+        addAssertion(
+                assertions,
+                "slitherite_native_placement_capture_error",
+                "none",
+                errorState(initialSlitheriteNativePlacement.captureError())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_native_block_item_placements_exact",
+                SlitheriteNativePlacementState.expectedCanonical(),
+                initialSlitheriteNativePlacement.canonical()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_native_block_item_placement_contract_exact",
+                initialSlitheriteNativePlacement.hasExactPlacement()
+        );
+        addBooleanAssertion(
+                assertions,
+                "direct_block_item_placements_exact",
+                initialSlitheriteNativePlacement.hasExactPlacement()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_fixture_capture_error",
+                "none",
+                errorState(initialSlitheriteBlockPlacement.captureError())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_fixture_positions_exact",
+                SlitheriteBlockProbeState.PlacementState.expectedPositions().toString(),
+                initialSlitheriteBlockPlacement.positions().toString()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_fixture_support_positions_exact",
+                SlitheriteBlockProbeState.PlacementState.expectedSupports().toString(),
+                initialSlitheriteBlockPlacement.supportPositions().toString()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_fixture_placed_ids_exact",
+                SlitheriteBlockProbeState.PlacementState.expectedBlockIds().toString(),
+                initialSlitheriteBlockPlacement.placedBlockIds().toString()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_fixture_placed_states_exact",
+                SlitheriteBlockProbeState.PlacementState.expectedStates().toString(),
+                initialSlitheriteBlockPlacement.placedStates().toString()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_fixture_support_ids_exact",
+                SlitheriteBlockProbeState.PlacementState.expectedSupportIds().toString(),
+                initialSlitheriteBlockPlacement.supportBlockIds().toString()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_fixture_placement_exact",
+                initialSlitheriteBlockPlacement.hasExactPlacement()
+        );
+        addBooleanAssertion(
+                assertions,
+                "initial_server_fixture_exact",
+                initialSlitheriteBlockPlacement.hasExactPlacement()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_behavior_capture_error",
+                "none",
+                errorState(slitheriteBehaviorProbe.captureError())
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_button_pulse_reset_exact",
+                slitheriteBehaviorProbe.buttonExact()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_pressure_plate_entities_exact",
+                slitheriteBehaviorProbe.pressurePlateExact()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_behavior_fixture_reset_exact",
+                slitheriteBehaviorProbe.fixtureResetExact()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_behavior_contract_exact",
+                slitheriteBehaviorProbe.exact()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_world_save_failure",
+                "none",
+                errorState(slitheriteWorldSaveFailure)
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_world_saved_after_placement",
+                slitheriteWorldSavedAfterPlacement
+        );
+        addBooleanAssertion(
+                assertions,
+                "forced_world_save",
+                slitheriteWorldSavedAfterPlacement
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_fixture_saved_after_force_save",
+                slitheriteBlockPlacementSavedAfterForceSave
+        );
+        addSlitheriteLoadedDataAssertions(assertions);
+        addBooleanAssertion(
+                assertions,
+                "slitherite_block_registry_stable_after_reload",
+                slitheriteBlockRegistryStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_block_default_states_stable_after_reload",
+                slitheriteBlockDefaultStatesStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_block_tags_stable_after_reload",
+                slitheriteBlockTagsStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_loaded_data_stable_after_reload",
+                slitheriteBlockLoadedDataStableAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_loaded_data_fresh_after_reload",
+                slitheriteBlockLoadedDataFreshAfterReload
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_fixture_stable_after_reload",
+                slitheriteBlockPlacementStableAfterReload
+        );
+    }
+
+    private void addSlitheriteTagAssertions(JsonArray assertions) {
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:mineable/pickaxe",
+                SlitheriteBlockProbeState.EXPECTED_BLOCK_IDS,
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::pickaxeMineable
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:needs_stone_tool",
+                List.of(),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::needsStoneTool
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:block/slabs",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::slab
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::blockSlab
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:item/slabs",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::slab
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::itemSlab
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:block/stairs",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::stairs
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::blockStairs
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:item/stairs",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::stairs
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::itemStairs
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:block/walls",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::wall
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::blockWall
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:item/walls",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::wall
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::itemWall
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:block/stone_bricks",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::stoneBrick
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::blockStoneBrick
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:block/stone_pressure_plates",
+                expectedSlitheriteIds(
+                        SlitheriteBlockProbeState.SlitheriteBlockSpec::pressurePlate
+                ),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry
+                        ::blockStonePressurePlate
+        );
+        addSlitheriteTagAssertion(
+                assertions,
+                "tag:item/buttons",
+                List.of(),
+                SlitheriteBlockProbeState.SlitheriteBlockEntry::itemButton
+        );
+    }
+
+    private void addSlitheriteTagAssertion(
+            JsonArray assertions,
+            String name,
+            List<String> expected,
+            Predicate<SlitheriteBlockProbeState.SlitheriteBlockEntry> selector
+    ) {
+        List<String> actual = initialSlitheriteBlockState.entries()
+                .entrySet()
+                .stream()
+                .filter(entry -> selector.test(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
+        addAssertion(assertions, name, expected.toString(), actual.toString());
+    }
+
+    private static List<String> expectedSlitheriteIds(
+            Predicate<SlitheriteBlockProbeState.SlitheriteBlockSpec> selector
+    ) {
+        return SlitheriteBlockProbeState.EXPECTED_BLOCKS.entrySet()
+                .stream()
+                .filter(entry -> selector.test(entry.getValue()))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    private void addSlitheriteLoadedDataAssertions(JsonArray assertions) {
+        SlitheriteBlockProbeState.LoadedData loadedData =
+                initialSlitheriteBlockState.loadedData();
+        addAssertion(
+                assertions,
+                "slitherite_loaded_data_capture_error",
+                "none",
+                errorState(loadedData.captureError())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_loot_tables_exact",
+                String.join(",", SlitheriteBlockProbeState.LoadedData
+                        .EXPECTED_LOOT_TABLE_IDS),
+                String.join(",", loadedData.lootTableIds())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_self_drops_exact",
+                SlitheriteBlockProbeState.LoadedData.expectedCanonicalSelfDrops(),
+                loadedData.canonicalSelfDrops()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_double_slab_drops_x1_exact",
+                SlitheriteBlockProbeState.LoadedData
+                        .expectedCanonicalDoubleSlabDrops(),
+                loadedData.canonicalDoubleSlabDrops()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_owned_recipe_ids_exact",
+                String.join(",", SlitheriteBlockProbeState.LoadedData
+                        .EXPECTED_RECIPE_IDS),
+                String.join(",", loadedData.recipeIds())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_owned_recipes_exact",
+                SlitheriteBlockProbeState.LoadedData.expectedCanonicalRecipes(),
+                loadedData.canonicalRecipes()
+        );
+        addAssertion(
+                assertions,
+                "slitherite_owned_advancements_exact",
+                String.join(",", SlitheriteBlockProbeState.LoadedData
+                        .EXPECTED_ADVANCEMENT_IDS),
+                String.join(",", loadedData.advancementIds())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_related_recipe_ids_exact",
+                String.join(",", SlitheriteBlockProbeState.LoadedData
+                        .EXPECTED_RELATED_RECIPE_IDS),
+                String.join(",", loadedData.relatedRecipeIds())
+        );
+        addAssertion(
+                assertions,
+                "slitherite_related_recipes_recorded_not_owned",
+                SlitheriteBlockProbeState.LoadedData
+                        .expectedCanonicalRelatedRecipes(),
+                loadedData.canonicalRelatedRecipes()
+        );
+        addBooleanAssertion(
+                assertions,
+                "slitherite_loaded_data_contract_exact",
+                loadedData.hasExactContract()
+        );
     }
 
     private void scheduleProcessExit(Thread serverThread, int exitStatus) {
@@ -3042,6 +4186,278 @@ public final class RegistryFoundationServerProbe {
         return attrahiteBlocks;
     }
 
+    private JsonObject buildSlitheriteBlocks() {
+        JsonObject slitheriteBlocks = new JsonObject();
+        slitheriteBlocks.addProperty(
+                "block_registry_id",
+                SlitheriteBlockProbeState.BLOCK_REGISTRY_ID
+        );
+        slitheriteBlocks.addProperty(
+                "item_registry_id",
+                SlitheriteBlockProbeState.ITEM_REGISTRY_ID
+        );
+        slitheriteBlocks.addProperty(
+                "capture_error",
+                initialSlitheriteBlockState.captureError()
+        );
+        slitheriteBlocks.add(
+                "block_ids",
+                buildStringArray(initialSlitheriteBlockState.blockIds())
+        );
+        slitheriteBlocks.add(
+                "block_item_ids",
+                buildStringArray(initialSlitheriteBlockState.blockItemIds())
+        );
+        slitheriteBlocks.addProperty(
+                "aggregate_state_count",
+                initialSlitheriteBlockState.aggregateStateCount()
+        );
+        slitheriteBlocks.addProperty(
+                "aggregate_unique_raw_id_count",
+                initialSlitheriteBlockState.aggregateUniqueRawIdCount()
+        );
+        slitheriteBlocks.addProperty(
+                "registry",
+                initialSlitheriteBlockState.canonicalRegistry()
+        );
+        slitheriteBlocks.addProperty(
+                "properties",
+                initialSlitheriteBlockState.canonicalProperties()
+        );
+        slitheriteBlocks.addProperty(
+                "tags",
+                initialSlitheriteBlockState.canonicalTags()
+        );
+        JsonObject entries = new JsonObject();
+        initialSlitheriteBlockState.entries().forEach((id, entry) ->
+                entries.add(id, buildSlitheriteBlock(entry))
+        );
+        slitheriteBlocks.add("entries", entries);
+
+        JsonObject nativePlacement = new JsonObject();
+        nativePlacement.addProperty(
+                "capture_error",
+                initialSlitheriteNativePlacement.captureError()
+        );
+        nativePlacement.addProperty(
+                "canonical",
+                initialSlitheriteNativePlacement.canonical()
+        );
+        JsonObject nativeEntries = new JsonObject();
+        initialSlitheriteNativePlacement.entries().forEach((id, entry) ->
+                nativeEntries.add(id, buildSlitheriteNativePlacement(entry, id))
+        );
+        nativePlacement.add("entries", nativeEntries);
+        nativePlacement.addProperty(
+                "exact",
+                initialSlitheriteNativePlacement.hasExactPlacement()
+        );
+        slitheriteBlocks.add("native_placement", nativePlacement);
+
+        JsonObject placement = new JsonObject();
+        placement.add(
+                "initial",
+                buildSlitheritePlacement(initialSlitheriteBlockPlacement)
+        );
+        placement.add(
+                "saved",
+                buildSlitheritePlacement(savedSlitheriteBlockPlacement)
+        );
+        placement.add(
+                "reloaded",
+                buildSlitheritePlacement(reloadedSlitheriteBlockPlacement)
+        );
+        placement.addProperty("world_save_failure", slitheriteWorldSaveFailure);
+        placement.addProperty(
+                "world_saved_after_placement",
+                slitheriteWorldSavedAfterPlacement
+        );
+        placement.addProperty(
+                "saved_after_force_save",
+                slitheriteBlockPlacementSavedAfterForceSave
+        );
+        placement.addProperty(
+                "stable_after_reload",
+                slitheriteBlockPlacementStableAfterReload
+        );
+        slitheriteBlocks.add("placement", placement);
+
+        SlitheriteBlockProbeState.LoadedData loadedDataState =
+                initialSlitheriteBlockState.loadedData();
+        JsonObject loadedData = new JsonObject();
+        loadedData.addProperty("capture_error", loadedDataState.captureError());
+        loadedData.add(
+                "loot_table_ids",
+                buildStringArray(loadedDataState.lootTableIds())
+        );
+        loadedData.add("self_drops", buildStringMap(loadedDataState.selfDrops()));
+        loadedData.add(
+                "double_slab_drops",
+                buildStringMap(loadedDataState.doubleSlabDrops())
+        );
+        loadedData.add(
+                "recipe_ids",
+                buildStringArray(loadedDataState.recipeIds())
+        );
+        loadedData.add("recipes", buildStringMap(loadedDataState.recipes()));
+        loadedData.add(
+                "advancement_ids",
+                buildStringArray(loadedDataState.advancementIds())
+        );
+        loadedData.add(
+                "related_recipe_ids",
+                buildStringArray(loadedDataState.relatedRecipeIds())
+        );
+        loadedData.add(
+                "related_recipes",
+                buildStringMap(loadedDataState.relatedRecipes())
+        );
+        loadedData.addProperty("exact", loadedDataState.hasExactContract());
+        loadedData.addProperty(
+                "stable_after_reload",
+                slitheriteBlockLoadedDataStableAfterReload
+        );
+        loadedData.addProperty(
+                "fresh_instances_after_reload",
+                slitheriteBlockLoadedDataFreshAfterReload
+        );
+        slitheriteBlocks.add("loaded_data", loadedData);
+
+        JsonObject behavior = new JsonObject();
+        behavior.addProperty("capture_error", slitheriteBehaviorProbe.captureError());
+        behavior.addProperty("completed", slitheriteBehaviorProbe.completed());
+        behavior.addProperty(
+                "button_interaction_accepted",
+                slitheriteBehaviorProbe.buttonInteractionAccepted()
+        );
+        behavior.addProperty(
+                "button_activated",
+                slitheriteBehaviorProbe.buttonActivated()
+        );
+        behavior.addProperty(
+                "button_reset_scheduled",
+                slitheriteBehaviorProbe.buttonResetScheduled()
+        );
+        behavior.addProperty("button_reset", slitheriteBehaviorProbe.buttonReset());
+        behavior.addProperty(
+                "button_elapsed_ticks",
+                slitheriteBehaviorProbe.buttonElapsedTicks()
+        );
+        behavior.addProperty(
+                "item_entity_advanced",
+                slitheriteBehaviorProbe.itemEntityAdvanced()
+        );
+        behavior.addProperty("item_ignored", slitheriteBehaviorProbe.itemIgnored());
+        behavior.addProperty(
+                "living_entity_advanced",
+                slitheriteBehaviorProbe.livingEntityAdvanced()
+        );
+        behavior.addProperty(
+                "living_activated",
+                slitheriteBehaviorProbe.livingActivated()
+        );
+        behavior.addProperty(
+                "pressure_plate_reset",
+                slitheriteBehaviorProbe.pressurePlateReset()
+        );
+        behavior.addProperty(
+                "fixture_reset_exact",
+                slitheriteBehaviorProbe.fixtureResetExact()
+        );
+        behavior.addProperty(
+                "button_description",
+                slitheriteBehaviorProbe.buttonDescription()
+        );
+        behavior.addProperty(
+                "pressure_plate_description",
+                slitheriteBehaviorProbe.pressurePlateDescription()
+        );
+        behavior.addProperty("exact", slitheriteBehaviorProbe.exact());
+        slitheriteBlocks.add("behavior", behavior);
+
+        slitheriteBlocks.addProperty(
+                "captured_at_initial_tag_load",
+                slitheriteBlocksCapturedAtInitialTagLoad
+        );
+        slitheriteBlocks.addProperty(
+                "captured_after_server_data_load",
+                slitheriteBlocksCapturedAfterServerDataLoad
+        );
+        slitheriteBlocks.addProperty(
+                "same_state_at_server_started",
+                serverStartedSlitheriteBlocksRechecked
+        );
+        slitheriteBlocks.addProperty(
+                "registry_stable_after_reload",
+                slitheriteBlockRegistryStableAfterReload
+        );
+        slitheriteBlocks.addProperty(
+                "default_states_stable_after_reload",
+                slitheriteBlockDefaultStatesStableAfterReload
+        );
+        slitheriteBlocks.addProperty(
+                "tags_stable_after_reload",
+                slitheriteBlockTagsStableAfterReload
+        );
+        slitheriteBlocks.addProperty(
+                "exact",
+                initialSlitheriteBlockState.hasExactContract()
+                        && reloadedSlitheriteBlockState.hasExactContract()
+                        && serverStartedSlitheriteBlocksRechecked
+                        && initialSlitheriteNativePlacement.hasExactPlacement()
+                        && initialSlitheriteBlockPlacement.hasExactPlacement()
+                        && slitheriteBehaviorProbe.exact()
+                        && slitheriteWorldSavedAfterPlacement
+                        && slitheriteBlockPlacementSavedAfterForceSave
+                        && slitheriteBlockRegistryStableAfterReload
+                        && slitheriteBlockDefaultStatesStableAfterReload
+                        && slitheriteBlockTagsStableAfterReload
+                        && slitheriteBlockLoadedDataStableAfterReload
+                        && slitheriteBlockLoadedDataFreshAfterReload
+                        && slitheriteBlockPlacementStableAfterReload
+        );
+        return slitheriteBlocks;
+    }
+
+    private static JsonObject buildSlitheritePlacement(
+            SlitheriteBlockProbeState.PlacementState state
+    ) {
+        JsonObject placement = new JsonObject();
+        placement.addProperty("capture_error", state.captureError());
+        placement.add("positions", buildStringMap(state.positions()));
+        placement.add(
+                "support_positions",
+                buildStringMap(state.supportPositions())
+        );
+        placement.add(
+                "placed_block_ids",
+                buildStringMap(state.placedBlockIds())
+        );
+        placement.add("placed_states", buildStringMap(state.placedStates()));
+        placement.add(
+                "support_block_ids",
+                buildStringMap(state.supportBlockIds())
+        );
+        placement.addProperty("exact", state.hasExactPlacement());
+        return placement;
+    }
+
+    private static JsonObject buildSlitheriteNativePlacement(
+            SlitheriteNativePlacementEntry entry,
+            String id
+    ) {
+        JsonObject placement = new JsonObject();
+        placement.addProperty("action_result", entry.actionResult());
+        placement.addProperty("accepted", entry.accepted());
+        placement.addProperty("before_count", entry.beforeCount());
+        placement.addProperty("after_count", entry.afterCount());
+        placement.addProperty("block_item_mapping", entry.blockItemMapping());
+        placement.addProperty("placed_id", entry.placedId());
+        placement.addProperty("placed_state", entry.placedState());
+        placement.addProperty("exact", entry.exact(id));
+        return placement;
+    }
+
     private JsonObject buildLootCondition() {
         JsonObject lootCondition = new JsonObject();
         lootCondition.addProperty(
@@ -3251,6 +4667,30 @@ public final class RegistryFoundationServerProbe {
         reload.addProperty(
                 "attrahite_block_placement_stable",
                 attrahiteBlockPlacementStableAfterReload
+        );
+        reload.addProperty(
+                "slitherite_block_registry_stable",
+                slitheriteBlockRegistryStableAfterReload
+        );
+        reload.addProperty(
+                "slitherite_block_default_states_stable",
+                slitheriteBlockDefaultStatesStableAfterReload
+        );
+        reload.addProperty(
+                "slitherite_block_tags_stable",
+                slitheriteBlockTagsStableAfterReload
+        );
+        reload.addProperty(
+                "slitherite_block_loaded_data_stable",
+                slitheriteBlockLoadedDataStableAfterReload
+        );
+        reload.addProperty(
+                "slitherite_block_loaded_data_fresh",
+                slitheriteBlockLoadedDataFreshAfterReload
+        );
+        reload.addProperty(
+                "slitherite_block_placement_stable",
+                slitheriteBlockPlacementStableAfterReload
         );
         reload.addProperty("stop_requested_after_completion", stopRequestedAfterReload);
         return reload;
@@ -3511,6 +4951,54 @@ public final class RegistryFoundationServerProbe {
         return attrahiteBlock;
     }
 
+    private static JsonObject buildSlitheriteBlock(
+            SlitheriteBlockProbeState.SlitheriteBlockEntry entry
+    ) {
+        JsonObject slitheriteBlock = new JsonObject();
+        slitheriteBlock.addProperty("block_id", entry.blockId());
+        slitheriteBlock.addProperty("item_id", entry.itemId());
+        slitheriteBlock.addProperty("block_class", entry.blockClass());
+        slitheriteBlock.addProperty("item_class", entry.itemClass());
+        slitheriteBlock.addProperty("block_item", entry.blockItem());
+        slitheriteBlock.addProperty(
+                "block_item_maps_to_block",
+                entry.blockItemMapsToBlock()
+        );
+        slitheriteBlock.addProperty(
+                "block_as_item_matches",
+                entry.blockAsItemMatches()
+        );
+        slitheriteBlock.add(
+                "default_properties",
+                buildStringMap(entry.defaultProperties())
+        );
+        slitheriteBlock.addProperty("default_state", entry.defaultState());
+        slitheriteBlock.addProperty("state_count", entry.stateCount());
+        slitheriteBlock.addProperty(
+                "default_state_raw_id",
+                entry.defaultStateRawId()
+        );
+        slitheriteBlock.add(
+                "state_raw_ids",
+                buildIntegerArray(entry.stateRawIds())
+        );
+        slitheriteBlock.addProperty("pickaxe_mineable", entry.pickaxeMineable());
+        slitheriteBlock.addProperty("needs_stone_tool", entry.needsStoneTool());
+        slitheriteBlock.addProperty("block_slab", entry.blockSlab());
+        slitheriteBlock.addProperty("item_slab", entry.itemSlab());
+        slitheriteBlock.addProperty("block_stairs", entry.blockStairs());
+        slitheriteBlock.addProperty("item_stairs", entry.itemStairs());
+        slitheriteBlock.addProperty("block_wall", entry.blockWall());
+        slitheriteBlock.addProperty("item_wall", entry.itemWall());
+        slitheriteBlock.addProperty("block_stone_brick", entry.blockStoneBrick());
+        slitheriteBlock.addProperty(
+                "block_stone_pressure_plate",
+                entry.blockStonePressurePlate()
+        );
+        slitheriteBlock.addProperty("item_button", entry.itemButton());
+        return slitheriteBlock;
+    }
+
     private static JsonObject buildSealType(
             ParticleProbeState.SealTypeEntry entry
     ) {
@@ -3531,6 +5019,268 @@ public final class RegistryFoundationServerProbe {
         state.entries().forEach(entries::addProperty);
         capture.add("entries", entries);
         return capture;
+    }
+
+    enum SlitheriteBehaviorPhase {
+        WAITING_FOR_ENTITY_TICKING,
+        WAITING_FOR_ITEM_TICK,
+        WAITING_FOR_LIVING_ACTIVATION,
+        WAITING_FOR_RESET,
+        COMPLETE,
+        FAILED
+    }
+
+    record SlitheriteNativePlacementEntry(
+            String actionResult,
+            boolean accepted,
+            int beforeCount,
+            int afterCount,
+            boolean blockItemMapping,
+            String placedId,
+            String placedState
+    ) {
+
+        static SlitheriteNativePlacementEntry failed() {
+            return new SlitheriteNativePlacementEntry(
+                    "",
+                    false,
+                    -1,
+                    -1,
+                    false,
+                    "",
+                    ""
+            );
+        }
+
+        boolean exact(String id) {
+            SlitheriteBlockProbeState.SlitheriteBlockSpec spec =
+                    SlitheriteBlockProbeState.EXPECTED_BLOCKS.get(id);
+            return spec != null
+                    && "CONSUME".equals(actionResult)
+                    && accepted
+                    && beforeCount == 1
+                    && afterCount == 0
+                    && blockItemMapping
+                    && id.equals(placedId)
+                    && spec.defaultState().equals(placedState);
+        }
+
+        String description() {
+            return "action=" + actionResult
+                    + "|accepted=" + accepted
+                    + "|before=" + beforeCount
+                    + "|after=" + afterCount
+                    + "|mapping=" + blockItemMapping
+                    + "|placed=" + placedId
+                    + "|state=" + placedState;
+        }
+    }
+
+    record SlitheriteNativePlacementState(
+            String captureError,
+            Map<String, SlitheriteNativePlacementEntry> entries
+    ) {
+
+        SlitheriteNativePlacementState {
+            entries = Collections.unmodifiableMap(new LinkedHashMap<>(entries));
+        }
+
+        static SlitheriteNativePlacementState missing() {
+            return failed("not captured");
+        }
+
+        static SlitheriteNativePlacementState failed(String failure) {
+            return new SlitheriteNativePlacementState(failure, Map.of());
+        }
+
+        boolean hasExactPlacement() {
+            return captureError.isEmpty()
+                    && entries.keySet().equals(
+                            SlitheriteBlockProbeState.EXPECTED_BLOCKS.keySet()
+                    )
+                    && entries.entrySet().stream().allMatch(entry ->
+                            entry.getValue().exact(entry.getKey())
+                    );
+        }
+
+        String canonical() {
+            return entries.entrySet().stream()
+                    .map(entry -> entry.getKey() + "="
+                            + entry.getValue().description())
+                    .collect(java.util.stream.Collectors.joining(","));
+        }
+
+        static String expectedCanonical() {
+            return SlitheriteBlockProbeState.EXPECTED_BLOCKS.entrySet()
+                    .stream()
+                    .map(entry -> entry.getKey() + "=action=CONSUME"
+                            + "|accepted=true|before=1|after=0|mapping=true"
+                            + "|placed=" + entry.getKey()
+                            + "|state=" + entry.getValue().defaultState())
+                    .collect(java.util.stream.Collectors.joining(","));
+        }
+    }
+
+    private record SlitheritePlacementSetup(
+            SlitheriteNativePlacementState placement,
+            ServerPlayerEntity player
+    ) {
+    }
+
+    private record SlitheriteBehaviorSequence(
+            SlitheriteBehaviorPhase phase,
+            ServerPlayerEntity player,
+            long deadline,
+            long buttonActivationTick,
+            boolean buttonInteractionAccepted,
+            boolean buttonActivated,
+            boolean buttonResetScheduled,
+            ItemEntity itemEntity,
+            int itemInitialAge,
+            boolean itemEntityAdvanced,
+            boolean itemIgnored,
+            PigEntity pigEntity,
+            int pigInitialAge,
+            boolean livingEntityAdvanced,
+            boolean livingActivated
+    ) {
+
+        SlitheriteBehaviorSequence withPhase(SlitheriteBehaviorPhase replacement) {
+            return new SlitheriteBehaviorSequence(
+                    replacement,
+                    player,
+                    deadline,
+                    buttonActivationTick,
+                    buttonInteractionAccepted,
+                    buttonActivated,
+                    buttonResetScheduled,
+                    itemEntity,
+                    itemInitialAge,
+                    itemEntityAdvanced,
+                    itemIgnored,
+                    pigEntity,
+                    pigInitialAge,
+                    livingEntityAdvanced,
+                    livingActivated
+            );
+        }
+    }
+
+    record SlitheriteBehaviorProbe(
+            String captureError,
+            boolean completed,
+            boolean buttonInteractionAccepted,
+            boolean buttonActivated,
+            boolean buttonResetScheduled,
+            boolean buttonReset,
+            long buttonElapsedTicks,
+            boolean itemEntityAdvanced,
+            boolean itemIgnored,
+            boolean livingEntityAdvanced,
+            boolean livingActivated,
+            boolean pressurePlateReset,
+            boolean fixtureResetExact
+    ) {
+
+        static SlitheriteBehaviorProbe missing() {
+            return new SlitheriteBehaviorProbe(
+                    "not captured",
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    0L,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+            );
+        }
+
+        static SlitheriteBehaviorProbe failed(String failure) {
+            return new SlitheriteBehaviorProbe(
+                    failure,
+                    true,
+                    false,
+                    false,
+                    false,
+                    false,
+                    0L,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    false
+            );
+        }
+
+        private static SlitheriteBehaviorProbe complete(
+                SlitheriteBehaviorSequence sequence,
+                boolean buttonReset,
+                long buttonElapsedTicks,
+                boolean pressurePlateReset,
+                boolean fixtureResetExact
+        ) {
+            return new SlitheriteBehaviorProbe(
+                    "",
+                    true,
+                    sequence.buttonInteractionAccepted(),
+                    sequence.buttonActivated(),
+                    sequence.buttonResetScheduled(),
+                    buttonReset,
+                    buttonElapsedTicks,
+                    sequence.itemEntityAdvanced(),
+                    sequence.itemIgnored(),
+                    sequence.livingEntityAdvanced(),
+                    sequence.livingActivated(),
+                    pressurePlateReset,
+                    fixtureResetExact
+            );
+        }
+
+        boolean buttonExact() {
+            return captureError.isEmpty()
+                    && completed
+                    && buttonInteractionAccepted
+                    && buttonActivated
+                    && buttonResetScheduled
+                    && buttonReset
+                    && buttonElapsedTicks >= 20L;
+        }
+
+        boolean pressurePlateExact() {
+            return captureError.isEmpty()
+                    && completed
+                    && itemEntityAdvanced
+                    && itemIgnored
+                    && livingEntityAdvanced
+                    && livingActivated
+                    && pressurePlateReset;
+        }
+
+        boolean exact() {
+            return buttonExact() && pressurePlateExact() && fixtureResetExact;
+        }
+
+        String buttonDescription() {
+            return "accepted=" + buttonInteractionAccepted
+                    + "|powered=" + buttonActivated
+                    + "|scheduled=" + buttonResetScheduled
+                    + "|elapsed=" + buttonElapsedTicks
+                    + "|reset=" + buttonReset;
+        }
+
+        String pressurePlateDescription() {
+            return "item_advanced=" + itemEntityAdvanced
+                    + "|item_powered=" + !itemIgnored
+                    + "|living_advanced=" + livingEntityAdvanced
+                    + "|living_powered=" + livingActivated
+                    + "|reset=" + pressurePlateReset;
+        }
     }
 
     private static Map<String, List<String>> collectEtherologyTagMemberships() {

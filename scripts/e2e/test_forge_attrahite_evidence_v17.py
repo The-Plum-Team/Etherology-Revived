@@ -502,17 +502,15 @@ def build_archive_manifest(
 
 
 class ActiveProfileTests(unittest.TestCase):
-    def test_active_profile_is_exact_v17_snapshot(self) -> None:
-        configuration = forge_client.load_configuration()
-
-        attrahite_evidence.validate_active_profile(configuration)
+    def test_v17_profile_snapshot_is_byte_exact(self) -> None:
+        snapshot = SCRIPT_DIRECTORY / "forge-1.20.1-profile-v17.json"
         self.assertEqual(
-            attrahite_evidence.PROFILE_SHA256,
-            forge_client.sha256_file(SCRIPT_DIRECTORY / "forge-1.20.1-profile.json"),
+            snapshot.stat().st_size,
+            attrahite_evidence.PROFILE_SIZE,
         )
         self.assertEqual(
-            (SCRIPT_DIRECTORY / "forge-1.20.1-profile.json").read_bytes(),
-            (SCRIPT_DIRECTORY / "forge-1.20.1-profile-v17.json").read_bytes(),
+            attrahite_evidence.PROFILE_SHA256,
+            forge_client.sha256_file(snapshot),
         )
 
     def test_accepted_v17_archive_is_byte_exact_and_self_contained(self) -> None:

@@ -181,7 +181,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = client.load_configuration()
         profile = client.profile_spec(configuration)
 
-        self.assertEqual("etherology-e2e-fabric-1.20.1-v30", profile["id"])
+        self.assertEqual("etherology-e2e-fabric-1.20.1-v31", profile["id"])
         self.assertEqual(profile["id"], profile["runtime_directory"])
         self.assertEqual("fabric-1.20.1", configuration.artifact_lane["artifact_node"])
         self.assertEqual("1.20.1", configuration.runtime_lane["runtime_version"])
@@ -192,7 +192,7 @@ class ConfigurationTests(unittest.TestCase):
         resolution = client.require_object(launch, "resolution")
         self.assertEqual({"width": 960, "height": 540}, resolution)
 
-    def test_active_profile_matches_v30_and_preserves_v20_through_v29_snapshots(
+    def test_active_profile_matches_v31_and_preserves_v20_through_v30_snapshots(
         self,
     ) -> None:
         active_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile.json"
@@ -207,9 +207,11 @@ class ConfigurationTests(unittest.TestCase):
         v28_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v28.json"
         v29_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v29.json"
         v30_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v30.json"
+        v31_profile = SCRIPT_DIRECTORY / "fabric-1.20.1-profile-v31.json"
 
-        self.assertEqual(active_profile.read_bytes(), v30_profile.read_bytes())
-        self.assertNotEqual(active_profile.read_bytes(), v29_profile.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v31_profile.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v30_profile.read_bytes())
+        self.assertNotEqual(v30_profile.read_bytes(), v29_profile.read_bytes())
         self.assertNotEqual(v29_profile.read_bytes(), v28_profile.read_bytes())
         self.assertNotEqual(v28_profile.read_bytes(), v27_profile.read_bytes())
         self.assertNotEqual(v27_profile.read_bytes(), v26_profile.read_bytes())
@@ -269,6 +271,16 @@ class ConfigurationTests(unittest.TestCase):
                 v29_profile,
                 "etherology-e2e-fabric-1.20.1-v29",
                 "71c6296a6959689dfcce50d3f3965107bd8e6cf9a447c3de9d06f2c7da80de12",
+            ),
+            (
+                v30_profile,
+                "etherology-e2e-fabric-1.20.1-v30",
+                "f2131cb9190b17b42035604d26988a1aa8091cbc94541cb29c0e9d018bcf8000",
+            ),
+            (
+                v31_profile,
+                "etherology-e2e-fabric-1.20.1-v31",
+                "924f1290991514e341f2bb176a85239a773ddc67ca6daa880ffa8876b7708e14",
             ),
         )
         for snapshot, expected_id, expected_sha256 in snapshots:
@@ -379,6 +391,7 @@ class ConfigurationTests(unittest.TestCase):
             "metal-block-registry",
             "forest-lantern",
             "attrahite-block-registry",
+            "slitherite-block-registry",
         ]
         contract = (
             configuration.repository_root / "docs/testing/E2E-CONTRACT.md"
@@ -421,6 +434,10 @@ class ConfigurationTests(unittest.TestCase):
         self.assertEqual(
             "attrahite-block-registry",
             client.resolve_scenario_id(configuration, "attrahite-block-registry"),
+        )
+        self.assertEqual(
+            "slitherite-block-registry",
+            client.resolve_scenario_id(configuration, "slitherite-block-registry"),
         )
         with self.assertRaisesRegex(client.E2EError, "Unsupported E2E scenario"):
             client.resolve_scenario_id(configuration, "phase0-smoke ")
@@ -657,13 +674,13 @@ class StartAttemptTests(unittest.TestCase):
                 state_root,
             )
             expected_attempt_path = (
-                state_root / "etherology-e2e-fabric-1.20.1-v30-start.attempted"
+                state_root / "etherology-e2e-fabric-1.20.1-v31-start.attempted"
             )
 
             self.assertEqual(expected_attempt_path, attempt_path)
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-fabric-1.20.1-v30\n"
+                    "profile_id=etherology-e2e-fabric-1.20.1-v31\n"
                     "scenario=forest-lantern\n"
                     f"pid={os.getpid()}\n"
                 ).encode("utf-8"),
@@ -995,6 +1012,52 @@ class IntegrityTests(unittest.TestCase):
 
             with self.assertRaisesRegex(client.E2EError, "isolated package"):
                 client.verify_artifact_metadata(configuration, "harness", path)
+
+    def test_harness_with_dotted_production_link_is_rejected(self) -> None:
+        configuration = client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "harness.jar"
+            path.write_bytes(
+                harness_jar_bytes(
+                    configuration,
+                    entries=[
+                        (
+                            "dev/theplumteam/etherology/e2e/shared/Reflection.class",
+                            b"ru.feytox.etherology.HiddenProductionClass",
+                        )
+                    ],
+                )
+            )
+
+            with self.assertRaisesRegex(client.E2EError, "links to production"):
+                client.verify_artifact_metadata(configuration, "harness", path)
+
+    def test_harness_with_shared_scenario_class_is_accepted(self) -> None:
+        configuration = client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "harness.jar"
+            path.write_bytes(
+                harness_jar_bytes(
+                    configuration,
+                    entries=[
+                        (
+                            "dev/theplumteam/etherology/e2e/shared/"
+                            "SlitheriteBlockRegistryScenario.class",
+                            b"shared harness bytecode",
+                        )
+                    ],
+                )
+            )
+
+            digest, size, mod_ids = client.verify_artifact_metadata(
+                configuration,
+                "harness",
+                path,
+            )
+
+            self.assertEqual(client.sha256_file(path), digest)
+            self.assertEqual(path.stat().st_size, size)
+            self.assertEqual({"etherology_e2e_harness"}, mod_ids)
 
     def test_harness_with_unlisted_nested_jar_is_rejected(self) -> None:
         configuration = client.load_configuration()

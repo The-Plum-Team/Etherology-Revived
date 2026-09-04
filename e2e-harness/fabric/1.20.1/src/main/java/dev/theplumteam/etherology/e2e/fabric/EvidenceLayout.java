@@ -10,11 +10,37 @@ import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.regex.Pattern;
 
-record EvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screenshotsDirectory) {
+record EvidenceLayout(
+        Path scenarioRoot,
+        Path reportsDirectory,
+        Path screenshotsDirectory,
+        String profileId
+) {
 
     private static final String ARTIFACT_NODE = "fabric-1.20.1";
+    static final String PROFILE_ID = "etherology-e2e-fabric-1.20.1-v31";
+    private static final List<String> SCENARIO_IDS = List.of(
+            "phase0-smoke",
+            "progression-oculus",
+            "seals-aspects",
+            "golden-forest",
+            "alchemy",
+            "ether-network",
+            "staff-lenses",
+            "spiritual-energy",
+            "armillary",
+            "storage-utilities",
+            "combat-equipment",
+            "persistence",
+            "multiplayer-sync",
+            "metal-block-registry",
+            "forest-lantern",
+            "attrahite-block-registry",
+            "slitherite-block-registry"
+    );
     private static final Pattern PROFILE_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9.-]+");
     private static final Pattern SCENARIO_ID_PATTERN = Pattern.compile("[a-z0-9][a-z0-9-]*");
 
@@ -47,7 +73,12 @@ record EvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screenshots
         requireDirectory(scenarioRoot, scenarioId + " scenario root");
         requireDirectory(reportsDirectory, scenarioId + " reports directory");
         requireDirectory(screenshotsDirectory, scenarioId + " screenshots directory");
-        return new EvidenceLayout(scenarioRoot, reportsDirectory, screenshotsDirectory);
+        return new EvidenceLayout(
+                scenarioRoot,
+                reportsDirectory,
+                screenshotsDirectory,
+                profileId
+        );
     }
 
     Path screenshotPath(String fileName) {
@@ -75,6 +106,9 @@ record EvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screenshots
                 PROFILE_ID_PATTERN,
                 "isolated profile marker"
         );
+        if (!PROFILE_ID.equals(profileId)) {
+            throw new IOException("The isolated profile marker has the wrong profile_id");
+        }
         requireString(marker, "managed_by", "scripts/e2e/client.py", "isolated profile marker");
 
         JsonObject isolation = requireObject(marker, "isolation", "isolated profile marker");
@@ -88,6 +122,7 @@ record EvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screenshots
         requireString(release, "artifact_node", ARTIFACT_NODE, "profile release");
         requireString(release, "minecraft_version", "1.20.1", "profile release");
         requireString(release, "loader", "fabric", "profile release");
+        requireString(release, "loader_version", "0.17.3", "profile release");
         requireInteger(release, "java", 17, "profile release");
         return profileId;
     }
@@ -99,14 +134,17 @@ record EvidenceLayout(Path scenarioRoot, Path reportsDirectory, Path screenshots
         requireString(marker, "artifact_node", ARTIFACT_NODE, "evidence marker");
 
         JsonArray scenarios = requireArray(marker, "scenarios", "evidence marker");
-        boolean scenarioDeclared = false;
-        for (JsonElement scenario : scenarios) {
-            if (scenario.isJsonPrimitive() && scenarioId.equals(scenario.getAsString())) {
-                scenarioDeclared = true;
-                break;
+        if (scenarios.size() != SCENARIO_IDS.size()) {
+            throw new IOException("The evidence marker scenario inventory changed");
+        }
+        for (int index = 0; index < SCENARIO_IDS.size(); index++) {
+            JsonElement scenario = scenarios.get(index);
+            if (!scenario.isJsonPrimitive()
+                    || !SCENARIO_IDS.get(index).equals(scenario.getAsString())) {
+                throw new IOException("The evidence marker scenario order changed");
             }
         }
-        if (!scenarioDeclared) {
+        if (!SCENARIO_IDS.contains(scenarioId)) {
             throw new IOException("The evidence marker does not declare " + scenarioId);
         }
 

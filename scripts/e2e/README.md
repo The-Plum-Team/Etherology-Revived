@@ -5,7 +5,7 @@ copies, registers, inspects, or launches an existing game profile. Its only
 game directory is below the ignored repository path:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/game/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v31/game/
 ```
 
 The parent runtime must contain the exact provenance marker written by this
@@ -13,15 +13,15 @@ script. If the configured directory already exists without that marker, has a
 different marker, or is a symlink, every lifecycle action fails closed. There
 is no profile-path argument and no adopt, reset, or delete action.
 
-The tracked v30 profile consumed its one repository-owned
-`attrahite-block-registry` attempt and is now accepted evidence. The native run,
+The tracked v31 profile consumed its one repository-owned
+`slitherite-block-registry` attempt and is now accepted evidence. The native run,
 stopped-live verification, archive seal, and archive-only verification all
-passed. The accepted v20 through v24 and v30 archives and all consumed v20
-through v30 profiles remain immutable history. In particular, v29 timed out on
+passed. The accepted v20 through v24, v30, and v31 archives and all consumed v20
+through v31 profiles remain immutable history. In particular, v29 timed out on
 the initial client-light payload race and has no accepted archive. The
 `client.py validate` action and archive-only validation are safe because they do
 not mutate or launch a runtime. Any later Fabric client attempt must first roll
-the entire contract to v31 or newer.
+the entire contract to v32 or newer.
 
 `fabric-1.20.1-profile.json` declares the complete root mod inventory required
 by Etherology. Every dependency has an HTTPS source, exact byte size, SHA-256,
@@ -46,10 +46,10 @@ Validate the tracked configuration without creating or launching a game:
 python3 -B scripts/e2e/client.py validate
 ```
 
-The remaining v30 lifecycle commands below are retained as provenance only.
+The remaining v31 lifecycle commands below are retained as provenance only.
 They must not be executed against the consumed identity.
 
-## Historical v30 preparation commands
+## Historical v31 preparation commands
 
 Install the pinned launcher helper into ignored repository state:
 
@@ -58,7 +58,7 @@ python3 -m pip install --target scripts/e2e/.state/python \
   -r scripts/e2e/requirements.txt
 ```
 
-The original isolated v30 runtime was provisioned with:
+The original isolated v31 runtime was provisioned with:
 
 ```bash
 python3 -B scripts/e2e/client.py provision
@@ -81,7 +81,7 @@ then stage them together:
 ./gradlew :fabric:1.20.1:buildE2eHarness \
   :fabric:1.20.1:verifyE2eHarnessIsolation --no-daemon --console=plain
 python3 -B scripts/e2e/client.py stage
-python3 -B scripts/e2e/client.py check --scenario attrahite-block-registry
+python3 -B scripts/e2e/client.py check --scenario slitherite-block-registry
 ```
 
 `buildE2eHarness` runs the dispatcher/controller unit tests before validating the
@@ -125,9 +125,9 @@ python3 -B scripts/e2e/client.py start --scenario phase0-smoke
 ```
 
 The implemented scenarios include `phase0-smoke`, `storage-utilities`,
-`ether-network`, `metal-block-registry`, `forest-lantern`, and
-`attrahite-block-registry`. The storage scenario creates a fresh integrated
-world and exercises crate, shelf,
+`ether-network`, `metal-block-registry`, `forest-lantern`,
+`attrahite-block-registry`, and `slitherite-block-registry`. The storage
+scenario creates a fresh integrated world and exercises crate, shelf,
 spill-barrel, and tuning-fork interactions and persistence. The ether scenario
 creates a separate fresh world and exercises a
 Spinner, directional channels, Ethereal Storage, a redstone gate, and a
@@ -149,28 +149,34 @@ first server fixture mutation, 20 consecutive client ticks must show all four
 arena chunks loaded, an empty chunk-update queue, an idle lighting provider,
 all four light columns enabled, and six ordered SKY samples at 15. It never
 invokes client-local relighting, drains the client light engine, constructs
-light packets, or resends light data. An explicit empty, whitespace-padded, or
+light packets, or resends light data. The Slitherite scenario applies the same
+public-state lighting gate before building its 17-block gallery. It proves all
+1,262 block states, 79 visual resources, 11 tags, 17 loot tables, 29 owned
+recipes and their 29 advancements, and five related recipes; performs real
+`BlockItem` placement for every block; exercises the button and pressure plate; and checks
+the exact fixture through save, disconnect, and reopen before writing two
+native framebuffers. An explicit empty, whitespace-padded, or
 unknown value aborts harness initialization before any client callbacks are
 registered; it is never silently normalized or replaced with another scenario.
 The stable Fabric entrypoint remains
 `dev.theplumteam.etherology.e2e.fabric.PhaseZeroHarness`, so the isolated profile
 identity and staged-artifact contract do not change.
 
-## Consumed v30 client lifecycle
+## Consumed v31 client lifecycle
 
-The fresh v30 run used these commands after `check` succeeded. They are recorded
+The fresh v31 run used these commands after `check` succeeded. They are recorded
 only as provenance and must not be rerun; the durable attempt marker rejects
 reuse:
 
 ```bash
-python3 -B scripts/e2e/client.py start --scenario attrahite-block-registry
+python3 -B scripts/e2e/client.py start --scenario slitherite-block-registry
 python3 -B scripts/e2e/client.py status
 ```
 
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. That marker is never
-removed and blocks another provision, stage, check, or start for v30, including
-after an early launch failure. All v20-v30 identities are already consumed and
+removed and blocks another provision, stage, check, or start for v31, including
+after an early launch failure. All v20-v31 identities are already consumed and
 must never be reused. `status` remains available; `stop` is an
 abort-only command and must not be used for a normally auto-completing capture.
 
@@ -200,8 +206,8 @@ Minecraft's `ScreenshotRecorder` writes the native captures directly into the
 fail-closed scenario evidence tree created by `provision`:
 
 ```text
-scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v30/evidence/
-  attrahite-block-registry/
+scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v31/evidence/
+  slitherite-block-registry/
     reports/
     screenshots/
 ```
@@ -221,14 +227,63 @@ dependencies, create or mutate a game runtime, or launch a process:
 python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
   scripts/e2e/test_fabric_metal_block_evidence.py \
   scripts/e2e/test_fabric_forest_lantern_evidence.py \
-  scripts/e2e/test_fabric_attrahite_evidence_v30.py
+  scripts/e2e/test_fabric_attrahite_evidence_v30.py \
+  scripts/e2e/test_fabric_slitherite_evidence_v31.py
 ./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
   --no-daemon --console=plain
 ./gradlew :fabric:1.20.1:fabricForestLanternEvidenceSafetyTest \
   --no-daemon --console=plain
 ./gradlew :fabric:1.20.1:fabricAttrahiteEvidenceSafetyTest \
   --no-daemon --console=plain
+./gradlew :fabric:1.20.1:fabricSlitheriteEvidenceSafetyTest \
+  --no-daemon --console=plain
 ```
+
+## Accepted Fabric Slitherite evidence (v31)
+
+The packaged v31 scenario and strict verifier passed the native capture with
+185 ordered assertions and two unedited 1920x1080 framebuffer PNGs. It proves
+the exact 17 block/item pairs and their 1,262 states, 79 visual resources, 11
+tags, 17 loot tables, 29 owned recipes and their advancements, five related
+recipes, real placement for every block, button and pressure-plate behavior,
+and exact state/data persistence through save, disconnect, and reopen. The
+reopened material changed-pixel ratio is `0.072453`.
+
+The stopped live runtime was verified before its four payloads were copied with
+preserved timestamps. Archive creation then bound those bytes to the exact v31
+profile and artifact lock, and archive-only validation passed. The completed
+one-shot commands below are provenance and must not be repeated:
+
+```bash
+python3 -B scripts/e2e/fabric_slitherite_evidence_v31.py --live
+/bin/mkdir docs/evidence/fabric-1.20.1/slitherite-block-registry-v31
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v31/evidence/slitherite-block-registry/. \
+  docs/evidence/fabric-1.20.1/slitherite-block-registry-v31/
+python3 -B scripts/e2e/fabric_slitherite_evidence_v31.py \
+  --create-archive-manifest docs/evidence/fabric-1.20.1/slitherite-block-registry-v31 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-fabric-1.20.1-v31 \
+  --profile-manifest scripts/e2e/fabric-1.20.1-profile.json
+```
+
+Archive-only verification is repeatable and does not consult or mutate the
+consumed runtime:
+
+```bash
+python3 -B scripts/e2e/fabric_slitherite_evidence_v31.py \
+  --archive docs/evidence/fabric-1.20.1/slitherite-block-registry-v31
+```
+
+The report SHA-256 is
+`e7648183de3bafb8da9c1f31466e78868077b43304af93b16902f10f9bc74e44`,
+the initial and reopened screenshot SHA-256 values are
+`7f51f94f7564faecffb4b45fcdcbc53b23e0afcc09ee02f016d1f1e361cf8c09`
+and
+`0dc45779791d6f3eb48af93830b57f510953184780df857289dc3843d0ee957f`,
+and the archive-manifest SHA-256 is
+`12c12e1d2772ae2a449a2c140e6af77e32f1f8eefb35aec06718eead1a4140c5`.
+The v31 identity is permanently consumed and must never be provisioned,
+staged, checked, or launched again.
 
 ## Accepted Fabric Attrahite evidence (v30)
 
@@ -367,11 +422,12 @@ direct server-side placement and exact client rendering only. It does not prove
 enforcement, beacon activation, recipe execution, creative tabs, restart
 persistence, multiplayer, or release readiness.
 
-The v23, v24, and v30 identities are consumed and remain archive-only history.
+The v23, v24, v30, and v31 identities are consumed and remain archive-only
+history.
 The v25-v29 identities are also consumed history and have no accepted Attrahite
 archive. No Fabric identity is currently eligible for another one-shot client
 lifecycle; a later attempt must first advance every profile, runtime, snapshot,
-test, verifier, and archive literal to a fresh v31-or-newer identity.
+test, verifier, and archive literal to a fresh v32-or-newer identity.
 
 ### Historical Phase 0 archive (v22)
 
@@ -416,6 +472,14 @@ solid instead of using `BakedModel#getRenderTypes`, which returns the exact
 cutout render type. No v12 archive was accepted, and its snapshot and
 repository-owned runtime remain immutable history. The v11 profile and Channel
 archive also remain immutable.
+
+The prepared Slitherite harness retains the same standard 185-assertion
+contract used by Fabric, including all five related recipes. Its Forge native
+run is intentionally postponed: `etherology:pedestal` and
+`etherology:unadjusted_lens` require the real pedestal, alchemy, and lens
+dependency graphs, which are not yet ported. No placeholder registration or
+reduced recipe inventory is accepted as a substitute, and no v18 profile has
+been provisioned or launched.
 
 The consumed v16 Attrahite attempt remains exact failed history and must never
 be provisioned, staged, checked, or launched again. It timed out while waiting
@@ -614,6 +678,28 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
+## Prepared Forge 1.20.1 dedicated-server Slitherite contract (v20; blocked)
+
+The active `forge-server-1.20.1-profile.json` and its immutable
+`forge-server-1.20.1-profile-v20.json` snapshot now describe the never-provisioned
+`etherology-e2e-forge-server-1.20.1-v20` identity. The two profile files are
+byte-identical at 1,206 bytes with SHA-256
+`1a38dd4e88ee8960df96bcd9d4d074adc8f967c03534bee837b013badc7771be`.
+The prepared schema-12 contract requires exactly 525 ordered assertions for all
+17 Slitherite blocks and their 1,262 unique state IDs. It covers exact
+server-side `BlockItem` placement, button reset timing, living-only pressure
+plate behavior, loot/recipe/advancement data, force-save, and registry,
+placement, and fresh loaded-data stability through a real `/reload`.
+
+This is a contract, not native evidence. Provision, check, and run fail before
+runtime or evidence mutation until the complete five-related-recipe inventory
+can load with its real pedestal, alchemy, and lens dependencies. No v20 runtime,
+launch-attempt marker, report, or archive exists, and no native v20 success is
+claimed. Force-save followed by `/reload` remains one server lifecycle; it does
+not prove restart persistence or deserialize the saved fixture in a second JVM.
+The v19 section below remains the latest accepted immutable dedicated-server
+history.
+
 ## Accepted Forge 1.20.1 dedicated-server Attrahite block-registry probe (v19)
 
 The v18 identity is permanently consumed. Its native run reached save, reload,
@@ -624,7 +710,7 @@ archive is accepted and v18 must never be relaunched. The v19 probe keeps the
 same report contract while translating its Forest Lantern fixture X/Z
 coordinates relative to the generated world's spawn.
 
-The active server-only profile is the consumed, repository-owned
+The latest accepted server-only profile is the consumed, repository-owned
 `etherology-e2e-forge-server-1.20.1-v19` identity. Its tracked manifest and v19
 snapshot are byte-identical at 1,204 bytes with SHA-256
 `626cd5354057da6afe426d88de6849f6daef1a95a56ad3e5e4bb7afad2ceceec`.
@@ -790,9 +876,9 @@ was captured in the separate fresh v13 runtime.
 
 The immutable v11 predecessor passed all 163 schema-7 assertions for the exact
 14 `SharedMaterialItems` IDs, vanilla runtime classes, maximum counts, and
-in-process `ItemStack` NBT round trips through a real reload. The current v19
-record re-proves those assertions cumulatively. Validate the frozen v11 archive
-only with its pinned verifier:
+in-process `ItemStack` NBT round trips through a real reload. The latest
+accepted v19 record re-proves those assertions cumulatively. Validate the frozen
+v11 archive only with its pinned verifier:
 
 ```bash
 python3 -B scripts/e2e/forge_server_material_item_evidence_v11.py \
@@ -815,10 +901,11 @@ The immutable v10 predecessor passed all 138 schema-6 assertions for the exact
 22 `SharedParticleTypes` IDs, eight payload families, concrete types, spawn
 flags, codecs, factories, command/packet/codec round trips, and seal metadata.
 It used the fresh repository-owned
-`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; v19
-re-proves all of its assertions cumulatively. Its five-file archive remains
-frozen at `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not
-be recaptured with the current v19 runner.
+`etherology-e2e-forge-server-1.20.1-v10` profile and a real `reload`; the latest
+accepted v19 run re-proves all of its assertions cumulatively. Its five-file
+archive remains frozen at
+`docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not be
+recaptured with the active, blocked v20 controller.
 
 Validate only the completed historical runtime or immutable archive with the
 pinned verifier:
@@ -884,13 +971,15 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
-and forbidden mod-ID inventories. The mutable runner has advanced to v19, so v6
-must be inspected only through its immutable snapshot and verifier. It must
-never be provisioned, reused, cleaned, or replaced.
+and forbidden mod-ID inventories. The mutable controller and profile have
+advanced to the blocked v20 Slitherite contract, so v6 must be inspected only
+through its immutable snapshot and verifier. It must never be provisioned,
+reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
-runner lifecycle shown above. Those mutable runner commands now target v19 and
-must not be used as instructions to recapture v6.
+runner lifecycle shown above. Those mutable controller commands now target the
+blocked, never-provisioned v20 contract and must not be used as instructions to
+recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
 dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
@@ -956,9 +1045,9 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to v19. They cannot recapture v4, and v4 must not be provisioned,
-reused, cleaned, or replaced. Only its immutable archive verifier remains an
-active instruction:
+advanced to the blocked, never-provisioned v20 contract. They cannot recapture
+v4, and v4 must not be provisioned, reused, cleaned, or replaced. Only its
+immutable archive verifier remains an active instruction:
 
 ```bash
 python3 -B scripts/e2e/forge_server_evidence.py \
@@ -1021,9 +1110,9 @@ current Common/Fabric/Forge artifact structure. The combined
 probe isolation checks, and v4 archive integrity.
 
 The v4 synthetic table proves the shared condition and serializer, not
-Attrahite gameplay or drop parity. The current v19 archive supplies the bounded
-Forge dedicated-server Attrahite proof described above. The historical v4 run
-also does not satisfy the
+Attrahite gameplay or drop parity. The latest accepted v19 archive supplies the
+bounded Forge dedicated-server Attrahite proof described above. The historical
+v4 run also does not satisfy the
 full authoritative registry/catalog placement-and-save smoke, native sound
 playback, or Forge custom sculk-frequency behavior. Fabric's supported
 `SculkSensorFrequencyRegistry` frequency 10 is statically checked, while Forge
@@ -1046,8 +1135,9 @@ historical evidence; v10 is the historical particle-registry predecessor, v11
 is the historical material-item predecessor, v13 is the historical
 metal-block-registry proof, v14 is the historical food-item proof, and v16 is
 the historical Forest Lantern dedicated-server proof. The v19 Attrahite archive
-is the current cumulative dedicated-server proof. Forge client v13 is the
-separately accepted packaged-client Forest Lantern proof.
+is the latest accepted cumulative dedicated-server proof; the active v20
+contract remains blocked and has no runtime or evidence. Forge client v13 is
+the separately accepted packaged-client Forest Lantern proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:

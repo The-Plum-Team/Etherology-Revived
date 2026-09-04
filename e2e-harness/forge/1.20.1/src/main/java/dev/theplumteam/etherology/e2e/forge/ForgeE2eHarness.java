@@ -25,6 +25,8 @@ public final class ForgeE2eHarness {
             case ScenarioSelection.FOREST_LANTERN -> new ForestLanternScenario();
             case ScenarioSelection.ATTRAHITE_BLOCK_REGISTRY ->
                     new AttrahiteBlockRegistryScenario();
+            case ScenarioSelection.SLITHERITE_BLOCK_REGISTRY ->
+                    new ForgeSlitheriteBlockRegistryScenario();
             default -> throw new IllegalStateException(
                     "No Forge E2E controller for " + scenarioId
             );

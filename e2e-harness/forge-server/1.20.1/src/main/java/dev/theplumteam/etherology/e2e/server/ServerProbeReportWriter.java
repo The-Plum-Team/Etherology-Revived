@@ -6,11 +6,10 @@ import com.google.gson.JsonObject;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 
 final class ServerProbeReportWriter {
 
@@ -51,10 +50,16 @@ final class ServerProbeReportWriter {
         try {
             Files.writeString(temporaryPath, reportJson, StandardCharsets.UTF_8);
             try {
-                Files.move(temporaryPath, reportPath, StandardCopyOption.ATOMIC_MOVE);
-            } catch (AtomicMoveNotSupportedException exception) {
+                Files.createLink(reportPath, temporaryPath);
+            } catch (FileAlreadyExistsException exception) {
                 throw new IOException(
-                        "Atomic server-probe report publication is unsupported for " + reportPath,
+                        "The server-probe report already exists: " + reportPath,
+                        exception
+                );
+            } catch (UnsupportedOperationException exception) {
+                throw new IOException(
+                        "Atomic exclusive server-probe report publication is unsupported for "
+                                + reportPath,
                         exception
                 );
             }

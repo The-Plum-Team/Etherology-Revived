@@ -67,6 +67,16 @@ final class ScenarioDispatcherTest {
     }
 
     @Test
+    void exactSlitheriteBlockRegistryIdIsAccepted() {
+        assertEquals(
+                FabricSlitheriteBlockRegistryScenario.SCENARIO_ID,
+                ScenarioDispatcher.resolveScenarioId(
+                        FabricSlitheriteBlockRegistryScenario.SCENARIO_ID
+                )
+        );
+    }
+
+    @Test
     void blankPropertyFailsClosed() {
         IllegalArgumentException exception = assertThrows(
                 IllegalArgumentException.class,
@@ -81,6 +91,9 @@ final class ScenarioDispatcherTest {
         assertTrue(exception.getMessage().contains(ForestLanternScenario.SCENARIO_ID));
         assertTrue(exception.getMessage().contains(
                 AttrahiteBlockRegistryScenario.SCENARIO_ID
+        ));
+        assertTrue(exception.getMessage().contains(
+                FabricSlitheriteBlockRegistryScenario.SCENARIO_ID
         ));
     }
 
@@ -100,6 +113,9 @@ final class ScenarioDispatcherTest {
         assertTrue(exception.getMessage().contains(ForestLanternScenario.SCENARIO_ID));
         assertTrue(exception.getMessage().contains(
                 AttrahiteBlockRegistryScenario.SCENARIO_ID
+        ));
+        assertTrue(exception.getMessage().contains(
+                FabricSlitheriteBlockRegistryScenario.SCENARIO_ID
         ));
     }
 }

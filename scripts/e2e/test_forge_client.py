@@ -189,7 +189,7 @@ class ConfigurationTests(unittest.TestCase):
         descriptor = forge_client.profile_descriptor(configuration)
         manifest_provenance = descriptor["profile_manifest"]
 
-        self.assertEqual("etherology-e2e-forge-1.20.1-v17", profile["id"])
+        self.assertEqual("etherology-e2e-forge-1.20.1-v18", profile["id"])
         self.assertNotEqual(
             "etherology-e2e-fabric-1.20.1-v23", profile["runtime_directory"]
         )
@@ -211,10 +211,14 @@ class ConfigurationTests(unittest.TestCase):
             manifest_provenance["sha256"],
         )
 
-    def test_active_profile_exactly_matches_v17_snapshot_and_preserves_prior_versions(
+    def test_active_profile_exactly_matches_v18_snapshot_and_preserves_prior_versions(
         self,
     ) -> None:
         active_profile = forge_client.REPOSITORY_ROOT / "scripts/e2e/forge-1.20.1-profile.json"
+        v18_snapshot = (
+            forge_client.REPOSITORY_ROOT
+            / "scripts/e2e/forge-1.20.1-profile-v18.json"
+        )
         v17_snapshot = (
             forge_client.REPOSITORY_ROOT
             / "scripts/e2e/forge-1.20.1-profile-v17.json"
@@ -244,13 +248,19 @@ class ConfigurationTests(unittest.TestCase):
             / "scripts/e2e/forge-1.20.1-profile-v11.json"
         )
 
-        self.assertEqual(active_profile.read_bytes(), v17_snapshot.read_bytes())
-        self.assertNotEqual(active_profile.read_bytes(), v16_snapshot.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v18_snapshot.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v17_snapshot.read_bytes())
+        self.assertNotEqual(v17_snapshot.read_bytes(), v16_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v15_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v14_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v13_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v12_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v11_snapshot.read_bytes())
+        self.assertEqual(3737, v18_snapshot.stat().st_size)
+        self.assertEqual(
+            "16473184a6f11c74c9a18013b3473b48ea50752c47f4908b7927a297381edb3f",
+            forge_client.sha256_file(v18_snapshot),
+        )
         self.assertEqual(3702, v17_snapshot.stat().st_size)
         self.assertEqual(
             "00475fd4af5741119b44b3ca70484e967ee0b7a8c51fdc222ebdde3e2bf0ba58",
@@ -333,6 +343,7 @@ class ConfigurationTests(unittest.TestCase):
                 "ethereal-channel",
                 "forest-lantern",
                 "attrahite-block-registry",
+                "slitherite-block-registry",
             ],
             forge_client.scenario_ids(configuration),
         )
@@ -346,6 +357,7 @@ class ConfigurationTests(unittest.TestCase):
                 "ethereal-channel",
                 "forest-lantern",
                 "attrahite-block-registry",
+                "slitherite-block-registry",
             ],
             forge_client.scenario_ids(configuration),
         )
@@ -366,6 +378,13 @@ class ConfigurationTests(unittest.TestCase):
             forge_client.resolve_scenario_id(
                 configuration,
                 "attrahite-block-registry",
+            ),
+        )
+        self.assertEqual(
+            "slitherite-block-registry",
+            forge_client.resolve_scenario_id(
+                configuration,
+                "slitherite-block-registry",
             ),
         )
         with self.assertRaisesRegex(forge_client.E2EError, "Unsupported"):
@@ -521,11 +540,59 @@ class MetadataIntegrityTests(unittest.TestCase):
                     "etherology_e2e_harness",
                     version,
                     dependencies,
+                    [(entrypoint, b"ru.feytox.etherology.LinkedReflectively")],
+                )
+            )
+            with self.assertRaisesRegex(forge_client.E2EError, "links to production"):
+                forge_client.verify_harness_artifact_metadata(configuration, path)
+
+            path.write_bytes(
+                forge_jar_bytes(
+                    "etherology_e2e_harness",
+                    version,
+                    dependencies,
                     [(entrypoint, b"isolated"), ("META-INF/jarjar/extra.jar", b"jar")],
                 )
             )
             with self.assertRaisesRegex(forge_client.E2EError, "nested JAR"):
                 forge_client.verify_harness_artifact_metadata(configuration, path)
+
+    def test_harness_accepts_shared_scenario_classes(self) -> None:
+        configuration = forge_client.load_configuration()
+        version = configuration.properties["mod_version"]
+        harness = forge_client.artifact_spec(configuration, "harness")
+        entrypoint = str(harness["entrypoint"]).replace(".", "/") + ".class"
+        dependencies = {
+            "forge": ("[47,)", "CLIENT"),
+            "minecraft": ("[1.20.1,1.20.2)", "CLIENT"),
+            "etherology": (f"[{version}]", "CLIENT"),
+        }
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "harness.jar"
+            path.write_bytes(
+                forge_jar_bytes(
+                    "etherology_e2e_harness",
+                    version,
+                    dependencies,
+                    [
+                        (entrypoint, b"isolated"),
+                        (
+                            "dev/theplumteam/etherology/e2e/shared/"
+                            "SlitheriteBlockRegistryScenario.class",
+                            b"shared harness bytecode",
+                        ),
+                    ],
+                )
+            )
+
+            inspection = forge_client.verify_harness_artifact_metadata(
+                configuration,
+                path,
+            )
+
+            self.assertEqual(forge_client.sha256_file(path), inspection[0])
+            self.assertEqual(path.stat().st_size, inspection[1])
+            self.assertEqual({"etherology_e2e_harness"}, inspection[2])
 
     def test_symlinked_dependency_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -554,14 +621,14 @@ class RuntimeIsolationTests(unittest.TestCase):
             ) as sync:
                 attempt = forge_client.reserve_launch_attempt(
                     configuration,
-                    "attrahite-block-registry",
+                    "slitherite-block-registry",
                     state_root,
                 )
 
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-forge-1.20.1-v17\n"
-                    "scenario=attrahite-block-registry\n"
+                    "profile_id=etherology-e2e-forge-1.20.1-v18\n"
+                    "scenario=slitherite-block-registry\n"
                     f"controller_pid={os.getpid()}\n"
                 ),
                 attempt.read_text(encoding="utf-8"),
@@ -570,7 +637,7 @@ class RuntimeIsolationTests(unittest.TestCase):
             with self.assertRaisesRegex(forge_client.E2EError, "consumed"):
                 forge_client.reserve_launch_attempt(
                     configuration,
-                    "attrahite-block-registry",
+                    "slitherite-block-registry",
                     state_root,
                 )
             with self.assertRaisesRegex(forge_client.E2EError, "consumed"):
@@ -798,6 +865,7 @@ class RuntimeIsolationTests(unittest.TestCase):
                 "ethereal-channel",
                 "forest-lantern",
                 "attrahite-block-registry",
+                "slitherite-block-registry",
             ):
                 command = [
                     "/java17",

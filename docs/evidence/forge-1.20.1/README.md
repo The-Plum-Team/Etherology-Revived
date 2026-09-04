@@ -5,6 +5,12 @@ clients and a dedicated server on the baseline Mac. Every run used a new
 repository-owned profile under `scripts/e2e/.state/`; none read, modified, or
 derived data from an external launcher profile.
 
+The active mutable dedicated-server contract is the blocked,
+never-provisioned v20 Slitherite profile. It has no runtime, launch-attempt
+marker, or archive in this directory. The immutable
+[`attrahite-block-registry-server-v19`](attrahite-block-registry-server-v19)
+archive remains the latest accepted cumulative dedicated-server evidence.
+
 ## Current Attrahite packaged client (v17)
 
 The one-shot `etherology-e2e-forge-1.20.1-v17` profile ran the packaged
@@ -996,9 +1002,9 @@ integrity, not identity with later sources or rebuilt artifacts.
 This bounded record does not prove furnace or machine consumption, the wider
 Ether network, the full authoritative registry, native sound playback, Forge
 custom sculk-frequency behavior, Attrahite drops, or release readiness. It is
-retained as immutable historical proof; the cumulative v7, v10, v11, v13, and
-v14 sections remain successors, and the v16 Forest Lantern section is the
-current cumulative dedicated-server proof.
+retained as immutable historical proof; the cumulative v7, v10, v11, v13, v14,
+and v16 sections remain successors, and the accepted v19 Attrahite archive is
+the latest cumulative dedicated-server proof.
 
 ## Historical registry-foundation dedicated server (v4)
 
@@ -1087,8 +1093,9 @@ capture-time observations and payload integrity, not identity with later builds.
 
 At the time of this historical v4 capture, the canonical Attrahite resource and
 items were still Fabric-only. Its synthetic table proves only the shared
-condition and serializer; the current Forge server-v19 and packaged-client-v17
-archives above now provide bounded Attrahite gameplay and drop parity. Native
+condition and serializer; the latest accepted Forge server-v19 and
+packaged-client-v17 archives now provide bounded Attrahite gameplay and drop
+parity. Native
 sound playback, Forge's unsupported custom sculk frequency, the full
 authoritative registry spine, and the broader gameplay/native E2E matrix remain
 deferred. The Fabric `v21` Phase 0 archive
@@ -1102,9 +1109,10 @@ immutable historical archive.
 
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
-registry-foundation proof. The v16 Forest Lantern archive is the current
-cumulative dedicated-server proof. No current acceptance task or verifier
-treats v2 as the active archive.
+registry-foundation proof. The v19 Attrahite archive is the latest accepted
+cumulative dedicated-server proof; the active v20 contract remains blocked and
+has no evidence. No current acceptance task or verifier treats v2 as the active
+archive.
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v2`
 - Runtime directory:

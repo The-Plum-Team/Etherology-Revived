@@ -58,6 +58,15 @@ final class ServerProbeReportWriterTest {
 
         assertTrue(exception.getMessage().contains("already exists"));
         assertEquals("prior\n", Files.readString(reportPath));
+        try (Stream<Path> reportFiles = Files.list(reportPath.getParent())) {
+            assertEquals(
+                    List.of("report.json"),
+                    reportFiles
+                            .map(path -> path.getFileName().toString())
+                            .sorted()
+                            .toList()
+            );
+        }
     }
 
     @Test

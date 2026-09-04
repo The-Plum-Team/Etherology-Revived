@@ -189,6 +189,7 @@ def valid_report() -> dict[str, object]:
             "stack_nbt_stable_after_reload": True,
         },
         "attrahite_blocks": copy.deepcopy(forge_server.ATTRAHITE_BLOCKS),
+        "slitherite_blocks": forge_server.build_slitherite_blocks(),
         "food_items": {
             "registry_id": forge_server.FOOD_ITEM_REGISTRY_ID,
             "capture_error": "",
@@ -289,6 +290,12 @@ def valid_report() -> dict[str, object]:
             "attrahite_block_loaded_data_stable": True,
             "attrahite_block_loaded_data_fresh": True,
             "attrahite_block_placement_stable": True,
+            "slitherite_block_registry_stable": True,
+            "slitherite_block_default_states_stable": True,
+            "slitherite_block_tags_stable": True,
+            "slitherite_block_loaded_data_stable": True,
+            "slitherite_block_loaded_data_fresh": True,
+            "slitherite_block_placement_stable": True,
             "food_item_registry_stable": True,
             "food_item_properties_stable": True,
             "food_item_stack_nbt_stable": True,
@@ -352,7 +359,7 @@ def valid_server_log() -> bytes:
 
 
 def failed_v18_report() -> dict[str, object]:
-    report = valid_report()
+    report = forge_server.contract_v20._v19_baseline(valid_report())
     report["profile_id"] = forge_server.HISTORICAL_V18_PROFILE_ID
     report["status"] = "failed"
     failures = {
@@ -371,7 +378,7 @@ class ConfigurationTests(unittest.TestCase):
         configuration = forge_server.load_configuration()
 
         self.assertEqual(
-            "etherology-e2e-forge-server-1.20.1-v19",
+            "etherology-e2e-forge-server-1.20.1-v20",
             forge_server.PROFILE_ID,
         )
         self.assertEqual("forge-1.20.1", configuration.artifact_lane["artifact_node"])
@@ -397,8 +404,13 @@ class ConfigurationTests(unittest.TestCase):
             "etherology_e2e_harness", configuration.manifest["forbidden_mod_ids"]
         )
 
-    def test_active_profile_matches_v19_snapshot_and_preserves_prior_versions(self) -> None:
+    def test_active_profile_matches_v20_snapshot_and_preserves_prior_versions(self) -> None:
         active = forge_server.MANIFEST_PATH.read_bytes()
+        v20_snapshot_path = (
+            forge_server.REPOSITORY_ROOT
+            / "scripts/e2e/forge-server-1.20.1-profile-v20.json"
+        )
+        v20_snapshot = v20_snapshot_path.read_bytes()
         v19_snapshot_path = (
             forge_server.REPOSITORY_ROOT
             / "scripts/e2e/forge-server-1.20.1-profile-v19.json"
@@ -437,7 +449,8 @@ class ConfigurationTests(unittest.TestCase):
         )
         v12_snapshot = v12_snapshot_path.read_bytes()
 
-        self.assertEqual(v19_snapshot, active)
+        self.assertEqual(v20_snapshot, active)
+        self.assertNotEqual(v19_snapshot, active)
         self.assertNotEqual(v18_snapshot, active)
         self.assertNotEqual(v17_snapshot, active)
         self.assertNotEqual(v16_snapshot, active)
@@ -445,6 +458,14 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotEqual(v14_snapshot, active)
         self.assertNotEqual(v13_snapshot, active)
         self.assertNotEqual(v12_snapshot, active)
+        self.assertEqual(
+            forge_server.contract_v20.PROFILE_MANIFEST_SIZE,
+            len(v20_snapshot),
+        )
+        self.assertEqual(
+            forge_server.contract_v20.PROFILE_MANIFEST_SHA256,
+            forge_server.sha256_file(v20_snapshot_path),
+        )
         self.assertEqual(
             forge_server.contract_v19.PROFILE_MANIFEST_SIZE,
             len(v19_snapshot),
@@ -531,6 +552,32 @@ class ConfigurationTests(unittest.TestCase):
             "scripts/e2e/test_forge_server_attrahite_evidence_v18.py": (
                 133658,
                 "9460210108ec4bbd49c4d9edd3f6235d6d0db1430474c96af93ab7db7ae41dd1",
+            ),
+        }
+
+        for relative_path, (expected_size, expected_sha256) in expected_files.items():
+            with self.subTest(relative_path=relative_path):
+                path = forge_server.REPOSITORY_ROOT / relative_path
+                self.assertEqual(expected_size, path.stat().st_size)
+                self.assertEqual(expected_sha256, forge_server.sha256_file(path))
+
+    def test_consumed_v19_contract_files_remain_byte_exact(self) -> None:
+        expected_files = {
+            "scripts/e2e/forge_server_contract_v19.py": (
+                1714,
+                "4c54999e8a50b9eb56afe248f0dc694533e47abfe233b88c1b2d112994b5306c",
+            ),
+            "scripts/e2e/forge_server_attrahite_evidence_v19.py": (
+                40317,
+                "9a0402f867f2988be3751b4fbe5aac5eca7e64612544e6cc80775777c341ef60",
+            ),
+            "scripts/e2e/test_forge_server_attrahite_evidence_v19.py": (
+                132924,
+                "e4d50515cf3eb81b2976b87196710ce7b5f444918d47bd25025369e72e2d7cc1",
+            ),
+            "scripts/e2e/forge-server-1.20.1-profile-v19.json": (
+                1204,
+                "626cd5354057da6afe426d88de6849f6daef1a95a56ad3e5e4bb7afad2ceceec",
             ),
         }
 
@@ -702,6 +749,11 @@ class ConsumedV18HistoryTests(unittest.TestCase):
 
 class RuntimeIsolationTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.native_run_guard = mock.patch.object(
+            forge_server,
+            "require_native_run_ready",
+        )
+        self.native_run_guard.start()
         self.repository_context = temporary_repository()
         self.repository_root, self.manifest_path = self.repository_context.__enter__()
         self.configuration = load_temporary_configuration(
@@ -713,6 +765,7 @@ class RuntimeIsolationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.state_context.cleanup()
         self.repository_context.__exit__(None, None, None)
+        self.native_run_guard.stop()
 
     def test_provision_creates_only_the_new_repository_owned_runtime(self) -> None:
         self.assertIsNone(
@@ -734,7 +787,7 @@ class RuntimeIsolationTests(unittest.TestCase):
         )
         self.assertEqual([], marker["isolation"]["source_profiles"])
 
-    def test_consumed_v18_attempt_isolated_from_fresh_v19_before_provision(
+    def test_consumed_v18_attempt_isolated_from_fresh_v20_before_provision(
         self,
     ) -> None:
         self.state_root.mkdir(parents=True)
@@ -820,7 +873,7 @@ class RuntimeIsolationTests(unittest.TestCase):
         forge_server.sealed_archive_path(self.configuration).mkdir(parents=True)
 
         with self.assertRaisesRegex(forge_server.E2EError, "sealed evidence.*consumed"):
-            forge_server.verify_environment(self.configuration, self.state_root)
+            forge_server.require_unsealed_profile(self.configuration)
 
     def test_linked_archive_destination_is_rejected_before_provision(self) -> None:
         archive = forge_server.sealed_archive_path(self.configuration)
@@ -1026,7 +1079,7 @@ class ProbeReportTests(unittest.TestCase):
             "mods_forbidden_intersection_empty",
         )
 
-        self.assertEqual(310, len(forge_server.EXPECTED_ASSERTION_NAMES))
+        self.assertEqual(525, len(forge_server.EXPECTED_ASSERTION_NAMES))
         self.assertEqual(expected_prefix, forge_server.EXPECTED_ASSERTION_NAMES[:12])
         self.assertEqual(
             ("DEDICATED_SERVER", "loom-userdev", "loaded", "loaded")
@@ -1190,7 +1243,7 @@ class ProbeReportTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            f"registry:item:{forge_server.FOOD_ITEM_ID}",
+            forge_server.SLITHERITE_ASSERTION_NAMES[0],
             forge_server.EXPECTED_ASSERTION_NAMES[
                 insertion_index + len(forge_server.ATTRAHITE_ASSERTION_NAMES)
             ],
@@ -1316,7 +1369,7 @@ class ProbeReportTests(unittest.TestCase):
         )
         insertion_index = (
             forge_server.EXPECTED_ASSERTION_NAMES.index(
-                "attrahite_block_placement_stable_after_reload"
+                forge_server.SLITHERITE_ASSERTION_NAMES[-1]
             )
             + 1
         )
@@ -1785,7 +1838,8 @@ class LifecycleEvidenceTests(unittest.TestCase):
             configuration = load_temporary_configuration(root, manifest_path)
             with tempfile.TemporaryDirectory() as temporary_directory:
                 state_root = Path(temporary_directory) / ".state"
-                forge_server.provision_profile(configuration, state_root)
+                with mock.patch.object(forge_server, "require_native_run_ready"):
+                    forge_server.provision_profile(configuration, state_root)
                 runtime = forge_server.runtime_root(configuration, state_root)
                 level_data = (
                     forge_server.game_directory(configuration, runtime)
@@ -1827,6 +1881,11 @@ class FakeProcess:
 
 class ExecutionTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.native_run_guard = mock.patch.object(
+            forge_server,
+            "require_native_run_ready",
+        )
+        self.native_run_guard.start()
         self.repository_context = temporary_repository()
         self.repository_root, self.manifest_path = self.repository_context.__enter__()
         self.configuration = load_temporary_configuration(
@@ -1839,6 +1898,7 @@ class ExecutionTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.state_context.cleanup()
         self.repository_context.__exit__(None, None, None)
+        self.native_run_guard.stop()
 
     def publish_probe_outputs(self, output_handle: object) -> None:
         runtime = forge_server.runtime_root(self.configuration, self.state_root)
@@ -1968,7 +2028,10 @@ class ExecutionTests(unittest.TestCase):
             forge_server.E2EError,
             "launch attempt.*consumed",
         ):
-            forge_server.verify_environment(self.configuration, self.state_root)
+            forge_server.require_unattempted_profile(
+                self.configuration,
+                self.state_root,
+            )
 
     def test_timeout_contains_process_group_and_publishes_no_done_marker(self) -> None:
         process = FakeProcess(timeout=True)

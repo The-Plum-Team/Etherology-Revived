@@ -13,10 +13,31 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 
 | Minecraft | Loader | Status |
 | --- | --- | --- |
-| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and five real-client E2E slices pass, including the dedicated metal-block and Forest Lantern visual proofs; broader parity is pending |
+| 1.20.1 | Fabric | Active port; build, datagen, unit tests, and six real-client E2E slices pass, including the dedicated Slitherite, metal-block, and Forest Lantern visual proofs; broader parity is pending |
 | 1.20.1 | Forge | Active port; bounded Storage, Channel, and Forest Lantern client E2E plus the shared registry/reload foundation and cumulative Forest Lantern dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
+
+The newest Fabric proof used the fresh repository-owned, now permanently
+consumed `etherology-e2e-fabric-1.20.1-v31` profile. Its packaged Slitherite
+scenario passed 185 of 185 assertions across all 17 blocks, 1,262 states, 11
+tags, 79 visual resources, 29 owned recipes and their 29 advancements, five
+related recipes, real placement, button and pressure-plate behavior, and a
+complete save/disconnect/reopen lifecycle. The two unedited native screenshots
+and full report are frozen in
+[`slitherite-block-registry-v31`](docs/evidence/fabric-1.20.1/slitherite-block-registry-v31).
+The report SHA-256 is
+`e7648183de3bafb8da9c1f31466e78868077b43304af93b16902f10f9bc74e44`,
+the initial and reopened screenshot SHA-256 values are
+`7f51f94f7564faecffb4b45fcdcbc53b23e0afcc09ee02f016d1f1e361cf8c09`
+and
+`0dc45779791d6f3eb48af93830b57f510953184780df857289dc3843d0ee957f`,
+and the archive-manifest SHA-256 is
+`12c12e1d2772ae2a449a2c140e6af77e32f1f8eefb35aec06718eead1a4140c5`.
+The v31 identity must never be rerun. The equivalent Forge dedicated-server
+contract is prepared as the never-provisioned v20 profile, but its native run
+remains blocked until the real pedestal, alchemy, and lens dependencies satisfy
+the standard five-related-recipe contract. No v20 runtime or evidence exists.
 
 Forge artifacts are intentionally blocked until the remaining gameplay,
 client, native-loader, and E2E parity gates pass. See
@@ -157,17 +178,15 @@ authoritative registry, or release readiness. The
 inherited particle, enchantment, sound, sculk-frequency, Attrahite-drop, block
 interaction, and combat caveats also remain.
 
-The current cumulative dedicated-server proof is the fresh, consumed
-`etherology-e2e-forge-server-1.20.1-v16` Forest Lantern profile. Its schema-10
-report passed 266 of 266 assertions on Java 17 and Forge 47.4.9, including the
-entire prior registry/reload contract, all twenty Forest Lantern age/facing
-states, exact shapes and properties, support and removal, shears/mining behavior,
-seeded jumps and drops, loot, recipes/advancements, reload stability, save, and
-normal shutdown. Its immutable archive is
-[`forest-lantern-server-v16`](docs/evidence/forge-1.20.1/forest-lantern-server-v16).
-The prior v15 identity is consumed without an accepted archive because its
-prepared oracle incorrectly expected `opaque=false`; v16 corrected only that
-oracle.
+The latest accepted cumulative dedicated-server proof is the consumed
+`etherology-e2e-forge-server-1.20.1-v19` Attrahite profile. Its schema-11 report
+passed 310 of 310 assertions on Java 17 and Forge 47.4.9, including the exact
+four-block Attrahite contract and all earlier registry, reload, and Forest
+Lantern checks. Its immutable archive is
+[`attrahite-block-registry-server-v19`](docs/evidence/forge-1.20.1/attrahite-block-registry-server-v19).
+The active v20 Slitherite contract is blocked before provisioning or launch and
+does not supersede that evidence. The historical v16 Forest Lantern archive
+remains immutable.
 
 The consumed Forge packaged-client v13 profile separately passed 69 of 69
 assertions in 575 ticks and wrote seven unedited 1920x1080 native framebuffers.
@@ -206,8 +225,8 @@ block and item set has not been ported. The synthetic table proves the shared co
 serializer, not Attrahite gameplay or drop parity. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
 archive superseded it as the registry-foundation proof and is now retained
-alongside the current v16 cumulative Forest Lantern proof, historical v14
-food-item proof, historical v13
+alongside the latest accepted v19 cumulative Attrahite proof, historical v16
+Forest Lantern proof, historical v14 food-item proof, historical v13
 metal-block proof, v11 material-item proof, and historical v10 particle-registry, v7
 enchantment-registry, and v6 Ether-source reload proofs.
 Native sound playback and Forge's custom sculk frequency remain deferred. The

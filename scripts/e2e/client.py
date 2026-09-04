@@ -1548,8 +1548,12 @@ def verify_harness_artifact_metadata(
                     "E2E harness completed-render mixin config changed unexpectedly"
                 )
             harness_prefix = expected_entry.rsplit("/", 1)[0] + "/"
+            shared_harness_prefix = "dev/theplumteam/etherology/e2e/shared/"
             outside_classes = sorted(
-                name for name in class_entries if not name.startswith(harness_prefix)
+                name
+                for name in class_entries
+                if not name.startswith(harness_prefix)
+                and not name.startswith(shared_harness_prefix)
             )
             if outside_classes:
                 raise E2EError(
@@ -1557,11 +1561,15 @@ def verify_harness_artifact_metadata(
                     f"{outside_classes}"
                 )
             production_prefix = production_class_prefix(configuration)
-            encoded_production_prefix = production_prefix.encode("utf-8")
+            encoded_production_prefixes = (
+                production_prefix.encode("utf-8"),
+                production_prefix.rstrip("/").replace("/", ".").encode("utf-8"),
+            )
             for class_entry in class_entries:
                 if class_entry.startswith(production_prefix):
                     raise E2EError("E2E harness JAR contains production classes")
-                if encoded_production_prefix in archive.read(class_entry):
+                class_bytes = archive.read(class_entry)
+                if any(prefix in class_bytes for prefix in encoded_production_prefixes):
                     raise E2EError(
                         f"E2E harness class {class_entry} links to production classes"
                     )

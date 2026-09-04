@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the bounded Forge 1.20.1 Attrahite block probe in isolated state."""
+"""Prepare the bounded Forge 1.20.1 Slitherite block probe in isolated state."""
 
 from __future__ import annotations
 
@@ -20,6 +20,7 @@ import time
 from typing import BinaryIO
 
 import forge_server_contract_v19 as contract_v19
+import forge_server_contract_v20 as contract_v20
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -34,10 +35,10 @@ PROBE_SOURCE_RELATIVE_PATH = Path(
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
-PROFILE_ID = contract_v19.PROFILE_ID
-SCENARIO_ID = contract_v19.SCENARIO_ID
-TASK_PATH = contract_v19.TASK_PATH
-REPORT_SCHEMA = contract_v19.REPORT_SCHEMA
+PROFILE_ID = contract_v20.PROFILE_ID
+SCENARIO_ID = contract_v20.SCENARIO_ID
+TASK_PATH = contract_v20.TASK_PATH
+REPORT_SCHEMA = contract_v20.REPORT_SCHEMA
 PROFILE_MARKER_NAME = ".etherology-forge-server-e2e-profile.json"
 MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
@@ -194,6 +195,38 @@ ATTRAHITE_ADVANCEMENTS = contract_v19.ATTRAHITE_ADVANCEMENTS
 ATTRAHITE_BLOCKS = contract_v19.ATTRAHITE_BLOCKS
 ATTRAHITE_ASSERTION_NAMES = contract_v19.ATTRAHITE_ASSERTION_NAMES
 ATTRAHITE_ASSERTION_VALUES = contract_v19.ATTRAHITE_ASSERTION_VALUES
+SLITHERITE_BLOCK_REGISTRY_ID = contract_v20.SLITHERITE_BLOCK_REGISTRY_ID
+SLITHERITE_ITEM_REGISTRY_ID = contract_v20.SLITHERITE_ITEM_REGISTRY_ID
+SLITHERITE_BLOCK_ITEM_CLASS = contract_v20.SLITHERITE_BLOCK_ITEM_CLASS
+SLITHERITE_AGGREGATE_STATE_COUNT = contract_v20.SLITHERITE_AGGREGATE_STATE_COUNT
+SLITHERITE_BLOCK_IDS = contract_v20.SLITHERITE_BLOCK_IDS
+SLITHERITE_LOOT_TABLE_IDS = contract_v20.SLITHERITE_LOOT_TABLE_IDS
+SLITHERITE_SELF_DROPS = contract_v20.SLITHERITE_SELF_DROPS
+SLITHERITE_DOUBLE_SLAB_DROPS = contract_v20.SLITHERITE_DOUBLE_SLAB_DROPS
+SLITHERITE_RECIPE_DESCRIPTIONS = contract_v20.SLITHERITE_RECIPE_DESCRIPTIONS
+SLITHERITE_RECIPE_IDS = contract_v20.SLITHERITE_RECIPE_IDS
+SLITHERITE_RECIPES = contract_v20.SLITHERITE_RECIPES
+SLITHERITE_ADVANCEMENT_IDS = contract_v20.SLITHERITE_ADVANCEMENT_IDS
+SLITHERITE_RELATED_RECIPE_DESCRIPTIONS = (
+    contract_v20.SLITHERITE_RELATED_RECIPE_DESCRIPTIONS
+)
+SLITHERITE_RELATED_RECIPE_IDS = contract_v20.SLITHERITE_RELATED_RECIPE_IDS
+SLITHERITE_RELATED_RECIPES = contract_v20.SLITHERITE_RELATED_RECIPES
+SLITHERITE_PROPERTIES = contract_v20.SLITHERITE_PROPERTIES
+SLITHERITE_TAGS = contract_v20.SLITHERITE_TAGS
+SLITHERITE_PLACEMENT_POSITIONS = contract_v20.SLITHERITE_PLACEMENT_POSITIONS
+SLITHERITE_SUPPORT_POSITIONS = contract_v20.SLITHERITE_SUPPORT_POSITIONS
+SLITHERITE_PLACED_IDS = contract_v20.SLITHERITE_PLACED_IDS
+SLITHERITE_PLACED_STATES = contract_v20.SLITHERITE_PLACED_STATES
+SLITHERITE_SUPPORT_IDS = contract_v20.SLITHERITE_SUPPORT_IDS
+SLITHERITE_NATIVE_PLACEMENT_CANONICAL = (
+    contract_v20.SLITHERITE_NATIVE_PLACEMENT_CANONICAL
+)
+SLITHERITE_ASSERTION_NAMES = contract_v20.SLITHERITE_ASSERTION_NAMES
+SLITHERITE_ASSERTION_VALUES = contract_v20.SLITHERITE_ASSERTION_VALUES
+build_slitherite_blocks = contract_v20.build_slitherite_blocks
+NATIVE_RUN_POSTPONED = contract_v20.NATIVE_RUN_POSTPONED
+NATIVE_RUN_POSTPONED_REASON = contract_v20.NATIVE_RUN_POSTPONED_REASON
 FOOD_ITEM_REGISTRY_ID = contract_v19.FOOD_ITEM_REGISTRY_ID
 FOOD_ITEM_ID = contract_v19.FOOD_ITEM_ID
 FOOD_ITEM_IDS = contract_v19.FOOD_ITEM_IDS
@@ -214,8 +247,8 @@ INITIAL_ETHER_SOURCE_ENTRIES = contract_v19.INITIAL_ETHER_SOURCE_ENTRIES
 RELOADED_ETHER_SOURCE_ENTRIES = contract_v19.RELOADED_ETHER_SOURCE_ENTRIES
 canonical_ether_source_entries = contract_v19.canonical_ether_source_entries
 EXPECTED_LIFECYCLE = contract_v19.EXPECTED_LIFECYCLE
-EXPECTED_ASSERTION_NAMES = contract_v19.EXPECTED_ASSERTION_NAMES
-EXPECTED_ASSERTION_VALUES = contract_v19.EXPECTED_ASSERTION_VALUES
+EXPECTED_ASSERTION_NAMES = contract_v20.EXPECTED_ASSERTION_NAMES
+EXPECTED_ASSERTION_VALUES = contract_v20.EXPECTED_ASSERTION_VALUES
 PROBE_LOG_PHASES = contract_v19.PROBE_LOG_PHASES
 SERVER_LOG_TOKENS = contract_v19.SERVER_LOG_TOKENS
 CLIENT_LOG_MARKERS = contract_v19.CLIENT_LOG_MARKERS
@@ -630,12 +663,12 @@ def load_configuration(
     manifest = load_json_object(expected_manifest_path, "dedicated-server profile")
     validate_manifest_shape(manifest)
     if (
-        expected_manifest_path.stat().st_size != contract_v19.PROFILE_MANIFEST_SIZE
+        expected_manifest_path.stat().st_size != contract_v20.PROFILE_MANIFEST_SIZE
         or sha256_file(expected_manifest_path)
-        != contract_v19.PROFILE_MANIFEST_SHA256
+        != contract_v20.PROFILE_MANIFEST_SHA256
     ):
         raise E2EError(
-            "The dedicated-server profile bytes differ from the immutable v19 contract"
+            "The dedicated-server profile bytes differ from the immutable v20 contract"
         )
     properties = parse_gradle_properties(root / "gradle.properties")
     if properties.get("minecraft_version_1_20_1") != "1.20.1":
@@ -1008,6 +1041,7 @@ def provision_profile(
     configuration: ResolvedConfiguration,
     state_root: Path = STATE_ROOT,
 ) -> None:
+    require_native_run_ready()
     require_unsealed_profile(configuration)
     require_unattempted_profile(configuration, state_root)
     ensure_owned_state_roots(state_root)
@@ -1141,6 +1175,8 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
         "languageVersion.set(JavaLanguageVersion.of(serverProbeJavaVersion))",
         "serverProbeRunTask.configure",
         "dependsOn(verifyRegistryFoundationServerProbe)",
+        "blockPostponedSlitheriteV20NativeRun",
+        "forgeServerNativeRunPostponedReason",
         RUN_TOKEN_ENVIRONMENT_VARIABLE,
         "serverProbeSealedArchive",
         "serverProbeRunLock",
@@ -1207,6 +1243,7 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     state_root: Path = STATE_ROOT,
 ) -> tuple[Path, list[str]]:
+    require_native_run_ready()
     require_unsealed_profile(configuration)
     require_unattempted_profile(configuration, state_root)
     verify_runtime(configuration, state_root)
@@ -1221,20 +1258,25 @@ def verify_environment(
     return java_path, command
 
 
+def require_native_run_ready() -> None:
+    if NATIVE_RUN_POSTPONED:
+        raise E2EError(NATIVE_RUN_POSTPONED_REASON)
+
+
 def validate_probe_report(
     report: dict[str, object],
     configuration: ResolvedConfiguration,
 ) -> None:
-    """Validates a probe report through the immutable profile-v19 contract."""
+    """Validates a probe report through the immutable profile-v20 contract."""
     required_mod_ids = require_list(configuration.manifest, "required_mod_ids")
     forbidden_mod_ids = require_list(configuration.manifest, "forbidden_mod_ids")
     try:
-        contract_v19.validate_probe_report(
+        contract_v20.validate_probe_report(
             report,
             required_mod_ids,
             forbidden_mod_ids,
         )
-    except contract_v19.V19ContractError as exception:
+    except contract_v20.V20ContractError as exception:
         raise E2EError(str(exception)) from exception
 
 

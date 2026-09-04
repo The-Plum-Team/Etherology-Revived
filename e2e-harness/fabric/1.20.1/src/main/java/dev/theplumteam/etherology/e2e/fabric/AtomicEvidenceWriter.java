@@ -19,9 +19,16 @@ final class AtomicEvidenceWriter {
     }
 
     static void writeReportThenMarker(EvidenceLayout layout, JsonObject report) throws IOException {
+        writeReportThenMarker(layout.reportsDirectory(), report);
+    }
+
+    static void writeReportThenMarker(
+            Path reportsDirectory,
+            JsonObject report
+    ) throws IOException {
         String reportJson = GSON.toJson(report) + "\n";
-        writeAtomically(layout.reportsDirectory().resolve("report.json"), reportJson);
-        writeAtomically(layout.reportsDirectory().resolve("done.marker"), "complete\n");
+        writeAtomically(reportsDirectory.resolve("report.json"), reportJson);
+        writeAtomically(reportsDirectory.resolve("done.marker"), "complete\n");
     }
 
     private static void writeAtomically(Path target, String content) throws IOException {

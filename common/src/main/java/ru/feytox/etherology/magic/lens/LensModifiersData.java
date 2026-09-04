@@ -2,22 +2,26 @@ package ru.feytox.etherology.magic.lens;
 
 import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import lombok.*;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-@Getter
-@EqualsAndHashCode
-@RequiredArgsConstructor
 public class LensModifiersData {
 
-    public static final Codec<LensModifiersData> CODEC = Codec.unboundedMap(Identifier.CODEC, Codec.INT).xmap(LensModifiersData::new, LensModifiersData::getModifiers);
+    public static final Codec<LensModifiersData> CODEC = Codec.unboundedMap(Identifier.CODEC, Codec.INT)
+            .xmap(LensModifiersData::new, LensModifiersData::getModifiers);
 
-    @NonNull
     protected final Map<Identifier, Integer> modifiers;
+
+    public LensModifiersData(Map<Identifier, Integer> modifiers) {
+        if (modifiers == null) {
+            throw new NullPointerException("modifiers is marked non-null but is null");
+        }
+        this.modifiers = modifiers;
+    }
 
     public static LensModifiersData empty() {
         return new LensModifiersData(new Object2IntOpenHashMap<>());
@@ -37,10 +41,14 @@ public class LensModifiersData {
         return nbt;
     }
 
-    @NonNull
     public static LensModifiersData readNbt(NbtCompound nbt) {
-        val modifiers = nbt.getKeys().stream()
-                .collect(Collectors.toMap(Identifier::new, nbt::getInt, Integer::max, Object2IntOpenHashMap::new));
+        Map<Identifier, Integer> modifiers = nbt.getKeys().stream()
+                .collect(Collectors.toMap(
+                        Identifier::new,
+                        nbt::getInt,
+                        Integer::max,
+                        Object2IntOpenHashMap::new
+                ));
         return new LensModifiersData(modifiers);
     }
 
@@ -48,9 +56,33 @@ public class LensModifiersData {
         return new Mutable(new Object2IntOpenHashMap<>(modifiers));
     }
 
+    public Map<Identifier, Integer> getModifiers() {
+        return modifiers;
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (!(other instanceof LensModifiersData otherData)) return false;
+        if (!otherData.canEqual(this)) return false;
+        return Objects.equals(getModifiers(), otherData.getModifiers());
+    }
+
+    protected boolean canEqual(Object other) {
+        return other instanceof LensModifiersData;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 1;
+        Map<Identifier, Integer> value = getModifiers();
+        result = result * 59 + (value == null ? 43 : value.hashCode());
+        return result;
+    }
+
     public static class Mutable extends LensModifiersData {
 
-        public Mutable(@NonNull Map<Identifier, Integer> modifiers) {
+        public Mutable(Map<Identifier, Integer> modifiers) {
             super(modifiers);
         }
 

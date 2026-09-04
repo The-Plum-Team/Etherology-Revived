@@ -2,10 +2,8 @@ package ru.feytox.etherology.magic.lens;
 
 import com.mojang.serialization.Codec;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import lombok.val;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
-import ru.feytox.etherology.util.misc.EIdentifier;
 
 import java.util.Map;
 
@@ -33,7 +31,7 @@ public record LensModifier(Identifier modifierId) {
     }
 
     private static LensModifier register(String name) {
-        val modifier = new LensModifier(EIdentifier.of(name));
+        LensModifier modifier = new LensModifier(new Identifier("etherology", name));
         MODIFIERS.put(modifier.modifierId, modifier);
         return modifier;
     }

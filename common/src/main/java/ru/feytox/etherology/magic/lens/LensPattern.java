@@ -3,10 +3,6 @@ package ru.feytox.etherology.magic.lens;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.ints.IntArraySet;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.val;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtInt;
@@ -14,10 +10,9 @@ import net.minecraft.nbt.NbtIntArray;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.util.misc.CodecUtil;
 
+import java.util.Objects;
 import java.util.stream.Collectors;
 
-@EqualsAndHashCode
-@RequiredArgsConstructor
 public class LensPattern {
 
     public static final Codec<LensPattern> CODEC = RecordCodecBuilder.create(instance -> instance
@@ -25,10 +20,19 @@ public class LensPattern {
                     CodecUtil.INT_SET.fieldOf("soft_cells").forGetter(pattern -> pattern.softCells)
             ).apply(instance, LensPattern::new));
 
-    @NonNull
     protected final IntArraySet cracks;
-    @NonNull
     protected final IntArraySet softCells;
+
+    public LensPattern(IntArraySet cracks, IntArraySet softCells) {
+        if (cracks == null) {
+            throw new NullPointerException("cracks is marked non-null but is null");
+        }
+        if (softCells == null) {
+            throw new NullPointerException("softCells is marked non-null but is null");
+        }
+        this.cracks = cracks;
+        this.softCells = softCells;
+    }
 
     public static LensPattern empty() {
         return new LensPattern(new IntArraySet(), new IntArraySet());
@@ -53,7 +57,7 @@ public class LensPattern {
     }
 
     public NbtCompound writeNbt() {
-        val nbt = new NbtCompound();
+        NbtCompound nbt = new NbtCompound();
         writeCells(nbt, "cracks", cracks);
         writeCells(nbt, "soft_cells", softCells);
         return nbt;
@@ -88,10 +92,31 @@ public class LensPattern {
         return new Mutable(cracks.clone(), softCells.clone());
     }
 
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (!(other instanceof LensPattern otherPattern)) return false;
+        if (!otherPattern.canEqual(this)) return false;
+        return Objects.equals(cracks, otherPattern.cracks)
+                && Objects.equals(softCells, otherPattern.softCells);
+    }
+
+    protected boolean canEqual(Object other) {
+        return other instanceof LensPattern;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = 1;
+        result = result * 59 + (cracks == null ? 43 : cracks.hashCode());
+        result = result * 59 + (softCells == null ? 43 : softCells.hashCode());
+        return result;
+    }
+
     // TODO: 08.07.2024 add toImmutable again
     public static class Mutable extends LensPattern {
 
-        public Mutable(@NonNull IntArraySet cracks, @NonNull IntArraySet softCells) {
+        public Mutable(IntArraySet cracks, IntArraySet softCells) {
             super(cracks, softCells);
         }
 

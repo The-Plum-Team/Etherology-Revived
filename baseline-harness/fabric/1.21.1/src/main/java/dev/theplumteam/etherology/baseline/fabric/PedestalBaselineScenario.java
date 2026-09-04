@@ -13,6 +13,7 @@ import net.minecraft.block.entity.DispenserBlockEntity;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.TitleScreen;
 import net.minecraft.client.gui.screen.world.DataPackFailureScreen;
+import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.option.Perspective;
 import net.minecraft.client.util.ScreenshotRecorder;
 import net.minecraft.client.util.Window;
@@ -269,6 +270,7 @@ final class PedestalBaselineScenario implements ClientScenario {
         clientTicks++;
         stageClientTicks++;
         try {
+            stabilizeCaptureCamera(client);
             switch (stage) {
                 case WAITING_FOR_TITLE -> tickWaitingForTitle(client);
                 case STARTING_WORLD -> startWorld(client);
@@ -302,7 +304,21 @@ final class PedestalBaselineScenario implements ClientScenario {
                 && stage != Stage.CAPTURING
                 && stageClientTicks >= MAXIMUM_STAGE_CLIENT_TICKS) {
             fail(client, "Timed out in " + stage + " after " + stageClientTicks
-                    + " client ticks");
+                    + " client ticks; capture_phase=" + capturePhase.id()
+                    + "; camera=" + cameraPoseDescription(client));
+        }
+    }
+
+    @Override
+    public void onGameRenderStarting(MinecraftClient client) {
+        if (stage == Stage.COMPLETE) return;
+        try {
+            stabilizeCaptureCamera(client);
+        } catch (RuntimeException exception) {
+            LOGGER.error("Original Pedestal pre-render callback failed", exception);
+            fail(client, "Pre-render callback raised "
+                    + exception.getClass().getSimpleName() + ": "
+                    + exception.getMessage());
         }
     }
 
@@ -519,7 +535,6 @@ final class PedestalBaselineScenario implements ClientScenario {
     private void tickWaitingForRenders(MinecraftClient client) {
         if (!isCaptureStateExact(client)) {
             stableWorldRenders.observe(false);
-            transition(Stage.WAITING_FOR_CLIENT_MIRROR);
         }
     }
 
@@ -1398,6 +1413,25 @@ final class PedestalBaselineScenario implements ClientScenario {
                 client.player.getYaw(),
                 client.player.getPitch()
         );
+    }
+
+    private void stabilizeCaptureCamera(MinecraftClient client) {
+        if ((stage != Stage.WAITING_FOR_CLIENT_MIRROR
+                && stage != Stage.WAITING_FOR_RENDERS)
+                || client.world == null
+                || client.player == null) return;
+        KeyBinding.unpressAll();
+        client.options.setPerspective(Perspective.FIRST_PERSON);
+        client.setCameraEntity(client.player);
+        client.player.updatePositionAndAngles(
+                CAMERA_X,
+                CAMERA_Y,
+                CAMERA_Z,
+                CAMERA_YAW,
+                CAMERA_PITCH
+        );
+        client.player.setVelocity(Vec3d.ZERO);
+        client.player.setOnGround(true);
     }
 
     static boolean isExactCameraPose(

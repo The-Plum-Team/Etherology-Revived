@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import json
 from pathlib import Path
+import shutil
 import sys
 import tempfile
 import unittest
@@ -13,9 +14,9 @@ from unittest import mock
 
 BASELINE_DIRECTORY = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = BASELINE_DIRECTORY.parents[1]
-VERIFIER_PATH = BASELINE_DIRECTORY / "original_pedestal_evidence_v11.py"
+VERIFIER_PATH = BASELINE_DIRECTORY / "original_pedestal_evidence_v12.py"
 VERIFIER_SPECIFICATION = importlib.util.spec_from_file_location(
-    "etherology_original_pedestal_evidence_v11_tested",
+    "etherology_original_pedestal_evidence_v12_tested",
     VERIFIER_PATH,
 )
 if VERIFIER_SPECIFICATION is None or VERIFIER_SPECIFICATION.loader is None:
@@ -370,7 +371,147 @@ def contract_fixture(root: Path) -> tuple[Path, Path, dict[str, object], list[di
     return scenario, world, report_fixture(scenario, artifacts), artifacts
 
 
-class PedestalEvidenceV11Test(unittest.TestCase):
+class PedestalEvidenceV12Test(unittest.TestCase):
+
+    @staticmethod
+    def isolated_archive_configuration(
+        repository: Path,
+    ) -> tuple[object, Path]:
+        source_configuration = client.load_configuration()
+        configuration = client.Configuration(
+            source_configuration.manifest,
+            source_configuration.manifest_path,
+            repository,
+            source_configuration.bundle_path,
+            source_configuration.harness_path,
+            source_configuration.fabric_profile_snapshot_path,
+        )
+        archive = repository / verifier.FRESH_ARCHIVE_RELATIVE_PATH
+        archive.mkdir(parents=True)
+        shutil.copy2(
+            REPOSITORY_ROOT
+            / verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            / "README.md",
+            archive / "README.md",
+        )
+        return configuration, archive
+
+    def test_consumed_v11_diagnostic_archive_is_exactly_pinned(self) -> None:
+        verifier._validate_consumed_v11_history(
+            REPOSITORY_ROOT,
+            verifier.PedestalEvidenceError,
+        )
+
+    def test_consumed_v11_diagnostic_tampering_fails_closed(self) -> None:
+        source = (
+            REPOSITORY_ROOT
+            / "docs/evidence/original-1.21.1/pedestal-v11"
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory)
+            destination = (
+                repository
+                / "docs/evidence/original-1.21.1/pedestal-v11"
+            )
+            destination.parent.mkdir(parents=True)
+            shutil.copytree(source, destination)
+            with (destination / "controller/original-client.log").open("ab") as handle:
+                handle.write(b"tampered")
+            with self.assertRaises(verifier.PedestalEvidenceError):
+                verifier._validate_consumed_v11_history(
+                    repository,
+                    verifier.PedestalEvidenceError,
+                )
+
+    def test_fresh_archive_is_byte_exact_and_rejects_contamination(self) -> None:
+        mutations = (
+            lambda repository, archive: self.flip_readme_byte(archive),
+            lambda repository, archive: (archive / "reports").mkdir(),
+            lambda repository, archive: self.replace_readme_with_symlink(
+                repository,
+                archive,
+            ),
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation.__name__):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    repository = Path(temporary_directory)
+                    _configuration, archive = self.isolated_archive_configuration(
+                        repository
+                    )
+                    verifier.validate_fresh_archive(
+                        repository_root=repository,
+                        archive_path=archive,
+                    )
+                    mutation(repository, archive)
+                    with self.assertRaises(verifier.PedestalEvidenceError):
+                        verifier.validate_fresh_archive(
+                            repository_root=repository,
+                            archive_path=archive,
+                        )
+
+    @staticmethod
+    def flip_readme_byte(archive: Path) -> None:
+        readme = archive / "README.md"
+        content = bytearray(readme.read_bytes())
+        content[0] ^= 1
+        readme.write_bytes(content)
+
+    @staticmethod
+    def replace_readme_with_symlink(repository: Path, archive: Path) -> None:
+        readme = archive / "README.md"
+        foreign = repository / "foreign-readme.md"
+        foreign.write_bytes(readme.read_bytes())
+        readme.unlink()
+        readme.symlink_to(foreign)
+
+    def test_v12_verifier_rejects_the_v11_configuration(self) -> None:
+        configuration = client.load_configuration()
+        v11_manifest = (
+            BASELINE_DIRECTORY
+            / "original-fabric-1.21.1-published-0.1.7-v11.json"
+        )
+        with self.assertRaises(verifier.PedestalEvidenceError):
+            verifier.validate_pinned_contract(
+                repository_root=REPOSITORY_ROOT,
+                manifest_path=v11_manifest,
+                harness_path=configuration.harness_path,
+            )
+        with self.assertRaisesRegex(
+            client.BaselineError,
+            "exact active v12 contract",
+        ):
+            client.verify_pedestal_evidence_verifier_binding(
+                client.load_configuration(v11_manifest)
+            )
+
+    def test_controller_pins_and_describes_the_v12_adapter(self) -> None:
+        configuration = client.load_configuration()
+        descriptor = client.scenario_verifier_descriptor(
+            configuration,
+            "pedestal-baseline",
+        )
+        self.assertEqual(
+            descriptor,
+            {
+                "path": "scripts/baseline/original_pedestal_evidence_v12.py",
+                "size": client.PEDESTAL_EVIDENCE_VERIFIER_SIZE,
+                "sha256": client.PEDESTAL_EVIDENCE_VERIFIER_SHA256,
+            },
+        )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            tampered = Path(temporary_directory) / VERIFIER_PATH.name
+            content = bytearray(VERIFIER_PATH.read_bytes())
+            content[-2] ^= 1
+            tampered.write_bytes(content)
+            with mock.patch.object(
+                client,
+                "PEDESTAL_EVIDENCE_VERIFIER_PATH",
+                tampered,
+            ):
+                with self.assertRaisesRegex(client.BaselineError, "SHA-256"):
+                    client.load_pedestal_evidence_verifier()
 
     def test_pinned_profile_is_unique_fresh_and_immutable(self) -> None:
         configuration = client.load_configuration()
@@ -382,7 +523,7 @@ class PedestalEvidenceV11Test(unittest.TestCase):
             manifest_path=configuration.manifest_path,
             harness_path=configuration.harness_path,
             runtime_path=client.runtime_root(configuration),
-            archive_path=REPOSITORY_ROOT / "docs/evidence/original-1.21.1/pedestal-v11",
+            archive_path=REPOSITORY_ROOT / "docs/evidence/original-1.21.1/pedestal-v12",
             sha256_file=sha256_file,
         )
 
@@ -434,6 +575,57 @@ class PedestalEvidenceV11Test(unittest.TestCase):
             running.assert_not_called()
             resolve_java.assert_not_called()
             generate.assert_not_called()
+
+    def test_check_invokes_the_exact_fresh_archive_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            configuration, _archive = self.isolated_archive_configuration(
+                Path(temporary_directory)
+            )
+            verifier_stub = mock.Mock()
+            verifier_stub.FRESH_ARCHIVE_RELATIVE_PATH = (
+                verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            )
+            verifier_stub.validate_fresh_archive.side_effect = (
+                verifier.validate_fresh_archive
+            )
+            java = Path("/fixture-java")
+            command = [str(java)]
+            with (
+                mock.patch.object(client, "require_capture_harness"),
+                mock.patch.object(client, "verify_reference_bundle"),
+                mock.patch.object(client, "verify_harness_artifact"),
+                mock.patch.object(
+                    client,
+                    "verify_owned_runtime",
+                    return_value=Path(temporary_directory),
+                ),
+                mock.patch.object(client, "verify_installed_game"),
+                mock.patch.object(client, "verify_runtime_lock"),
+                mock.patch.object(client, "verify_staged_reference"),
+                mock.patch.object(
+                    client,
+                    "verify_pedestal_evidence_verifier_binding",
+                    return_value=verifier_stub,
+                ),
+                mock.patch.object(client, "verify_capture_layout"),
+                mock.patch.object(client, "assert_runtime_not_running"),
+                mock.patch.object(client, "resolve_java_21", return_value=java),
+                mock.patch.object(
+                    client,
+                    "generate_launch_command",
+                    return_value=command,
+                ),
+                mock.patch.object(client, "verify_launch_command"),
+            ):
+                self.assertEqual(
+                    client._check_environment_locked(
+                        configuration,
+                        "pedestal-baseline",
+                    ),
+                    (java, command),
+                )
+            verifier_stub.validate_pinned_contract.assert_called_once()
+            verifier_stub.validate_fresh_archive.assert_called_once()
 
     def test_prelaunch_verifier_failure_cannot_reach_the_launch_seal(self) -> None:
         configuration = client.load_configuration()
@@ -510,6 +702,73 @@ class PedestalEvidenceV11Test(unittest.TestCase):
             seal.assert_not_called()
             process.assert_not_called()
             self.assertFalse(client.launch_attempt_path(configuration, root).exists())
+
+    def test_archive_contamination_at_second_gate_prevents_seal_and_process(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory)
+            configuration, archive = self.isolated_archive_configuration(
+                repository
+            )
+            caffeinate = repository / "caffeinate"
+            caffeinate.write_bytes(b"placeholder")
+            verifier_stub = mock.Mock()
+            verifier_stub.FRESH_ARCHIVE_RELATIVE_PATH = (
+                verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            )
+            verifier_stub.validate_fresh_archive.side_effect = (
+                verifier.validate_fresh_archive
+            )
+
+            def contaminate_archive(*_arguments: object) -> dict[str, object]:
+                (archive / "unexpected.txt").write_text(
+                    "contaminated\n",
+                    encoding="utf-8",
+                )
+                return {}
+
+            with (
+                mock.patch.object(client, "CAFFEINATE_PATH", caffeinate),
+                mock.patch.object(
+                    client,
+                    "verify_owned_runtime",
+                    return_value=repository,
+                ),
+                mock.patch.object(client, "verify_installed_game"),
+                mock.patch.object(client, "verify_runtime_lock"),
+                mock.patch.object(client, "verify_staged_reference"),
+                mock.patch.object(
+                    client,
+                    "verify_pedestal_evidence_verifier_binding",
+                    return_value=verifier_stub,
+                ),
+                mock.patch.object(client, "verify_capture_layout"),
+                mock.patch.object(client, "assert_runtime_not_running"),
+                mock.patch.object(
+                    client,
+                    "launch_attempt_descriptor",
+                    side_effect=contaminate_archive,
+                ) as descriptor,
+                mock.patch.object(client, "write_json_exclusive") as seal,
+                mock.patch.object(client.subprocess, "Popen") as process,
+            ):
+                with self.assertRaisesRegex(
+                    client.BaselineError,
+                    "archive inventory changed",
+                ):
+                    client._run_owned_client_locked(
+                        configuration,
+                        "pedestal-baseline",
+                        Path("/java"),
+                        ["java"],
+                    )
+            self.assertEqual(verifier_stub.validate_pinned_contract.call_count, 2)
+            self.assertEqual(verifier_stub.validate_fresh_archive.call_count, 2)
+            descriptor.assert_called_once()
+            seal.assert_not_called()
+            process.assert_not_called()
+            self.assertFalse(client.launch_attempt_path(configuration, repository).exists())
 
     def test_strict_verifier_accepts_the_exact_future_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

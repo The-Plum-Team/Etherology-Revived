@@ -9,5 +9,8 @@ interface ClientScenario {
 
     void onEndClientTick(MinecraftClient client);
 
+    default void onGameRenderStarting(MinecraftClient client) {
+    }
+
     void onGameRenderCompleted();
 }

@@ -1,26 +1,30 @@
 # Repository-owned original Fabric 1.21.1 baseline
 
-`original_client.py` controls one active versioned runtime and no other game
-directory:
+`original_client.py` controls one selected versioned runtime and no other game
+directory. The v11 runtime is consumed and preserved; the next Pedestal launch
+is bound to a separately provisioned v12 runtime:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v11/  # absent until provision
+  etherology-original-fabric-1.21.1-published-0.1.7-v11/  # consumed; never reuse
+  etherology-original-fabric-1.21.1-published-0.1.7-v12/  # active; absent until provision
 ```
 
-The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v11.json`. It pins Minecraft `1.21.1`,
+The active contract is
+`original-fabric-1.21.1-published-0.1.7-v12.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins the separately built,
-client-only v1.4.0 capture harness as the ninth root JAR: `339,617` bytes with
+client-only v1.4.1 capture harness as the ninth root JAR: `340,250` bytes with
 SHA-256
-`09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57`.
+`a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb`.
 The controller recursively
 reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quickskin`),
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v11 manifest is `10,307` bytes with SHA-256
+The v12 manifest is `10,307` bytes with SHA-256
+`bcf54994a6245284292adb4056a22b24c29fdaaec60a90579d2c1eac95c10c6a`.
+The consumed v11 manifest remains immutable at `10,307` bytes with SHA-256
 `34974855dd861c220915dd77ce694d3e5175c97e1c8f6edea0806601947e0cfc`.
 The consumed v10 manifest remains immutable at `10,349` bytes with SHA-256
 `32a96831e39034b704b92a0768639c8d776e6c7612ff2cefa2603cf19eec77d7`.
@@ -81,10 +85,19 @@ does not replace it:
 The harness has no compile dependency or implementation link to Etherology
 classes. Its own artifact validator enforces that separation.
 
-The active v11 contract advances the harness source version to `1.4.0` for the
+The v11 contract advanced the harness source version to `1.4.0` for the
 Pedestal scenario. Its clean build, 47 Java tests, remap, and artifact validator
-passed before its exact bytes were pinned. The v10 v1.3.5 JAR is historical
-evidence and must not be restaged as v11.
+passed before its exact bytes were pinned. Its sole native launch later timed
+out without publishing evidence, so the JAR and contract are diagnostic
+history and must not be restaged. The v10 v1.3.5 JAR remains accepted
+historical evidence.
+
+The active v12 contract advances the harness to `1.4.1`. It preserves the same
+Pedestal semantics and exact camera predicate, clears input after client ticks,
+restores the camera at render start before the framebuffer is drawn, and keeps
+render readiness under one monotonic 6,000-tick watchdog. All 51 Java tests and
+two clean reproducibility builds passed. The exact artifact and manifest bytes
+above are pinned before provisioning.
 
 ### `source-0.1.8`: source and build reference
 
@@ -109,7 +122,7 @@ prove the `source-0.1.8` implementation.
 
 ## Controller lifecycle
 
-The active v11 contract and exact harness artifact are validated with:
+The fresh v12 contract and exact harness are validated with:
 
 ```bash
 python3 -B scripts/baseline/original_client.py validate
@@ -123,8 +136,12 @@ it does not launch Minecraft:
 ```
 
 The build uses Java 21 and pinned Architectury Loom `1.17.480`. The active
-manifest/verifier already bind the exact successful artifact above and mark it
-`implemented`. The runtime remains absent until the explicit `provision` gate.
+manifest/verifier bind the exact successful artifact and mark it `implemented`.
+The controller authenticates the v12 verifier adapter before executing its
+bytes, while that adapter pins the exact fresh evidence-placeholder README.
+The fresh v12 runtime remains absent until the explicit
+`provision` gate. The consumed v11 identity may never pass through this
+lifecycle again.
 
 The remaining lifecycle is deliberately split into distinct gates:
 
@@ -159,12 +176,15 @@ python3 -B scripts/baseline/original_client.py run --scenario pedestal-baseline
   separately hash-pinned harness as the ninth JAR, and writes an artifact-set
   lock. It refuses unexpected files.
 - `check` verifies the marker, installed runtime, bundle, staged inventory,
-  harness, fresh evidence directories, absent scenario world, Java, and exact
-  scenario-bearing command—including the sole game directory, native directory,
-  asset index, and `960x540` logical resolution pair—without launching Minecraft.
+  harness, byte-exact fresh documentation placeholder, fresh runtime evidence
+  directories, absent scenario world, Java, and exact scenario-bearing
+  command—including the sole game directory, native directory, asset index, and
+  `960x540` logical resolution pair—without launching Minecraft.
 - `run` requires one exact tracked scenario and permanently consumes that
   profile's one launch attempt before `Popen`, even if launch subsequently
-  fails. The exclusive seal binds the complete argv, exact pristine profile
+  fails. The fresh documentation placeholder is rechecked at both pre-seal
+  gates. The exclusive seal binds the authenticated v12 verifier adapter, the
+  complete argv, exact pristine profile
   snapshot, minimal repository-owned HOME/TMPDIR environment, complete selected
   JDK image, macOS `caffeinate` executable, hash-pinned launcher generator and
   five-member HTTP dependency chain, both version metadata files, exact ordered
@@ -218,15 +238,15 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active pinned `pedestal-baseline` v11 contract
+## Consumed `pedestal-baseline` v11 timeout diagnostic
 
-The reserved v11 profile has never been provisioned or launched. The scenario
-contract covers all 1,024 Pedestal states, exact registry/data/resource pins,
-native placement and shapes, block-entity inventory/NBT and item/carpet
-interactions, item dispensing from all six directions, carpet dispensing from
-the four horizontal directions, transition drops and stale block-entity
-removal, a forced save, a full disconnect/reopen, and four stable 1920x1080
-captures. It has 74 ordered assertions.
+The v11 scenario contract covers all 1,024 Pedestal states, exact
+registry/data/resource pins, native placement and shapes, block-entity
+inventory/NBT and item/carpet interactions, item dispensing from all six
+directions, carpet dispensing from the four horizontal directions, transition
+drops and stale block-entity removal, a forced save, a full
+disconnect/reopen, and four stable 1920x1080 captures. It has 74 ordered
+assertions.
 
 Carpet dispensing from `UP` and `DOWN` against an empty carpet slot is
 deliberately not executed. Read-only inspection of the hash-pinned published
@@ -239,9 +259,31 @@ the same member pinned inside the reference bundle. Both vertical directions
 are therefore recorded as bytecode-proven, empty-slot, not-executed safety
 guards. A separate occupied-carpet fixture dispenses upward and proves that the
 safe display-slot fallthrough still runs; ordinary-item dispensing also covers
-both vertical directions. See
-`docs/baseline/original-1.21.1/mechanics/pedestal/README.md` and the no-evidence
-placeholder `docs/evidence/original-1.21.1/pedestal-v11/README.md`.
+both vertical directions.
+
+The repository-owned v11 profile consumed its only native launch on
+2026-09-04. It reached a fresh integrated world, then exceeded the exact
+1,800-second controller deadline and returned exit code `2`. The harness
+published no report, completion marker, controller verification, or screenshot,
+so none of the 74 assertions is accepted as runtime evidence.
+
+The prior autosave and final post-timeout player snapshot both record
+`x=-0.6990341339148626;y=121.0;z=-13.862614973527577`, yaw
+`-7.282553195953369`, and pitch `6.941411018371582`, rather than the exact
+contract pose `x=0.5;y=121.0;z=-15.5;yaw=0.0;pitch=10.0`. In the hash-pinned
+v1.4.0 source, a failed exact camera check transitions from
+`WAITING_FOR_RENDERS` to `WAITING_FOR_CLIENT_MIRROR`, and that transition resets
+the per-stage tick counter. The stable displaced pose and outer timeout support
+a camera-readiness-loop diagnosis, but this remains an inference because the
+harness emitted no direct camera telemetry.
+
+The manifest, controller, runtime locks, complete controller log, and both
+player snapshots are hash-bound in the compact diagnostic record at
+`docs/evidence/original-1.21.1/pedestal-v11`. The ignored v11 runtime remains
+preserved and must never be launched again. A fresh v12 identity will make the
+next Pedestal attempt. See
+`docs/baseline/original-1.21.1/mechanics/pedestal/README.md` for the unchanged
+behavior contract.
 
 ## Accepted immutable `slitherite-block-registry` v10 history
 

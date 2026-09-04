@@ -99,7 +99,14 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v11.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v12.json"
+)
+PEDESTAL_EVIDENCE_VERIFIER_PATH = (
+    SCRIPT_DIRECTORY / "original_pedestal_evidence_v12.py"
+)
+PEDESTAL_EVIDENCE_VERIFIER_SIZE = 10_044
+PEDESTAL_EVIDENCE_VERIFIER_SHA256 = (
+    "4b6ceced8ac0e406b43b5cc6514857f0b6a59a084d07117750632238b0266fb4"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -634,6 +641,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v9": "v9",
         "etherology-original-fabric-1.21.1-published-0.1.7-v10": "v10",
         "etherology-original-fabric-1.21.1-published-0.1.7-v11": "v11",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v12": "v12",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -934,6 +942,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v9": "1.3.4",
         "v10": "1.3.5",
         "v11": "1.4.0",
+        "v12": "1.4.1",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -1083,6 +1092,15 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_seed": 4995697409260082224,
         },
         "v11": {
+            "id": "pedestal-baseline",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "pedestal-gallery.png",
+            "world_directory_name": "etherology-original-pedestal-baseline-world",
+            "world_display_name": "Etherology Original 0.1.7 Pedestal",
+            "world_seed": 4995697396257403185,
+        },
+        "v12": {
             "id": "pedestal-baseline",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -1629,6 +1647,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "1.3.4",
                 "1.3.5",
                 "1.4.0",
+                "1.4.1",
             }
             expected_slitherite_class = (
                 "dev/theplumteam/etherology/baseline/fabric/"
@@ -5023,6 +5042,10 @@ def launch_attempt_descriptor(
         "scenario": scenario_id,
         "created_at_unix_ns": time.time_ns(),
         "manifest_sha256": sha256_file(configuration.manifest_path),
+        "scenario_verifier": scenario_verifier_descriptor(
+            configuration,
+            scenario_id,
+        ),
         "artifact_lock": {
             "size": artifact_lock.stat().st_size,
             "sha256": sha256_file(artifact_lock),
@@ -5074,6 +5097,7 @@ def verify_launch_attempt(
             "scenario",
             "created_at_unix_ns",
             "manifest_sha256",
+            "scenario_verifier",
             "artifact_lock",
             "prelaunch_profile",
             "generator",
@@ -5100,6 +5124,13 @@ def verify_launch_attempt(
         or attempt.get("manifest_sha256") != sha256_file(configuration.manifest_path)
     ):
         raise BaselineError("Launch-attempt seal does not describe this exact profile")
+
+    expected_scenario_verifier = scenario_verifier_descriptor(
+        configuration,
+        str(attempt["scenario"]),
+    )
+    if attempt.get("scenario_verifier") != expected_scenario_verifier:
+        raise BaselineError("Launch-attempt scenario verifier changed")
 
     raw_artifact_lock = attempt.get("artifact_lock")
     if not isinstance(raw_artifact_lock, dict):
@@ -6195,9 +6226,15 @@ def verify_slitherite_evidence_verifier_binding(
 
 
 def load_pedestal_evidence_verifier() -> types.ModuleType:
-    verifier_path = SCRIPT_DIRECTORY / "original_pedestal_evidence_v11.py"
+    verifier_path = PEDESTAL_EVIDENCE_VERIFIER_PATH
+    verifier_source = read_exact_file_no_follow(
+        verifier_path,
+        PEDESTAL_EVIDENCE_VERIFIER_SHA256,
+        PEDESTAL_EVIDENCE_VERIFIER_SIZE,
+        "Pedestal v12 evidence verifier",
+    )
     specification = importlib.util.spec_from_file_location(
-        "etherology_original_pedestal_evidence_v11",
+        "etherology_original_pedestal_evidence_v12",
         verifier_path,
     )
     if specification is None or specification.loader is None:
@@ -6207,8 +6244,8 @@ def load_pedestal_evidence_verifier() -> types.ModuleType:
     previous_bytecode_policy = sys.dont_write_bytecode
     sys.dont_write_bytecode = True
     try:
-        specification.loader.exec_module(module)
-    except (OSError, ImportError, RuntimeError) as exception:
+        exec(compile(verifier_source, str(verifier_path), "exec"), module.__dict__)
+    except (OSError, ImportError, RuntimeError, SyntaxError) as exception:
         raise BaselineError(
             f"Cannot initialize Pedestal evidence verifier: {exception}"
         ) from exception
@@ -6241,9 +6278,52 @@ def verify_pedestal_evidence_verifier_binding(
         or len(verifier.EXPECTED_ASSERTION_NAMES) != 74
     ):
         raise BaselineError(
-            "The Pedestal verifier is not bound to the exact active v11 contract"
+            "The Pedestal verifier is not bound to the exact active v12 contract"
         )
     return verifier
+
+
+def validate_pedestal_fresh_archive(
+    configuration: Configuration,
+    verifier: types.ModuleType,
+) -> None:
+    try:
+        verifier.validate_fresh_archive(
+            repository_root=configuration.repository_root,
+            archive_path=(
+                configuration.repository_root
+                / verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            ),
+            sha256_file=sha256_file,
+            error_type=BaselineError,
+        )
+    except BaselineError:
+        raise
+    except Exception as exception:
+        raise BaselineError(
+            f"Original Pedestal fresh-archive verifier failed closed: {exception}"
+        ) from exception
+
+
+def scenario_verifier_descriptor(
+    configuration: Configuration,
+    scenario_id: str,
+) -> dict[str, object] | None:
+    if scenario_id != "pedestal-baseline":
+        return None
+    read_exact_file_no_follow(
+        PEDESTAL_EVIDENCE_VERIFIER_PATH,
+        PEDESTAL_EVIDENCE_VERIFIER_SHA256,
+        PEDESTAL_EVIDENCE_VERIFIER_SIZE,
+        "Pedestal v12 evidence verifier",
+    )
+    return {
+        "path": PEDESTAL_EVIDENCE_VERIFIER_PATH.relative_to(
+            configuration.repository_root
+        ).as_posix(),
+        "size": PEDESTAL_EVIDENCE_VERIFIER_SIZE,
+        "sha256": PEDESTAL_EVIDENCE_VERIFIER_SHA256,
+    }
 
 
 def verify_scenario_prelaunch_contract(
@@ -6261,6 +6341,7 @@ def verify_scenario_prelaunch_contract(
             sha256_file=sha256_file,
             error_type=BaselineError,
         )
+        validate_pedestal_fresh_archive(configuration, verifier)
     except BaselineError:
         raise
     except Exception as exception:
@@ -7166,7 +7247,7 @@ def validate_command() -> int:
             runtime_path=runtime_root(configuration),
             archive_path=(
                 configuration.repository_root
-                / "docs/evidence/original-1.21.1/pedestal-v11"
+                / verifier.FRESH_ARCHIVE_RELATIVE_PATH
             ),
             sha256_file=sha256_file,
             error_type=BaselineError,

@@ -1,8 +1,11 @@
 # Pedestal baseline contract
 
-This directory records the planned native `published-0.1.7` Pedestal baseline.
-The reserved, repository-owned Fabric 1.21.1 profile is v11. It has never been
-provisioned or launched, and no screenshot or runtime evidence is claimed yet.
+This directory records the native `published-0.1.7` Pedestal baseline contract.
+The repository-owned Fabric 1.21.1 v11 profile consumed its sole launch on
+2026-09-04, reached a fresh integrated world, and then exceeded the
+controller's 1,800-second deadline before publishing a report or screenshot.
+V11 is diagnostic history, not accepted runtime evidence. A fresh v12 profile
+is prepared for the next attempt and has not been provisioned or launched.
 
 The dedicated scenario is designed to record:
 
@@ -41,14 +44,29 @@ The harness reaches the original only through registries and ordinary
 Minecraft block/item/inventory/interaction APIs. Dotted original class names
 are observations to compare, not linked implementation types.
 
-Expected screenshot names are:
+The four required screenshot names for a successful fresh run are:
 
 1. `pedestal-gallery.png`
 2. `pedestal-transition-drops.png`
 3. `pedestal-persistence-initial.png`
 4. `pedestal-persistence-reopened.png`
 
-The fresh v1.4.0 harness has passed its clean build, 47 Java tests, remap, and
-artifact validation. The active manifest pins its `339,617` bytes and SHA-256
+The v1.4.0 harness passed its clean build, 47 Java tests, remap, and artifact
+validation. The v11 manifest pins its `339,617` bytes and SHA-256
 `09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57`.
-The v11 runtime remains unprovisioned and has never been launched.
+Its run emitted no direct camera telemetry, but two saved player snapshots
+preserve an identical pose away from the exact camera contract. Source
+inspection shows the render-ready failure returning to the client-mirror stage
+while resetting the per-stage timer, which explains the eventual outer timeout
+as an inference rather than mechanic evidence. The compact diagnostic record is
+[`pedestal-v11`](../../../../evidence/original-1.21.1/pedestal-v11/). The
+ignored v11 runtime remains preserved and must never be launched again.
+
+The v12 v1.4.1 harness preserves the exact 74-assertion contract and camera
+coordinates. It clears input after each client tick, restores the exact player
+pose at `GameRenderer.render` HEAD before the framebuffer is drawn, and no
+longer returns from render readiness to a stage that resets the watchdog. Its
+51 Java tests, remap, artifact validation, and two reproducible clean builds
+passed. Both builds produced a `340,250`-byte JAR with SHA-256
+`a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb`.
+These are static preparation facts, not native mechanic evidence.

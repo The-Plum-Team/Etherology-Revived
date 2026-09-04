@@ -81,6 +81,36 @@ final class PedestalBaselineScenarioBytecodeTest {
         )));
     }
 
+    @Test
+    void captureCameraIsStabilizedAndRenderWaitingCannotResetItsWatchdog()
+            throws IOException {
+        assertTrue(invocations("onEndClientTick").containsAll(Set.of(
+                "stabilizeCaptureCamera",
+                "cameraPoseDescription"
+        )));
+        assertTrue(invocations("onGameRenderStarting").contains(
+                "stabilizeCaptureCamera"
+        ));
+        assertTrue(invocations("stabilizeCaptureCamera").containsAll(Set.of(
+                "unpressAll",
+                "setPerspective",
+                "setCameraEntity",
+                "updatePositionAndAngles",
+                "setVelocity",
+                "setOnGround"
+        )));
+
+        Set<String> renderWaitCalls = invocations("tickWaitingForRenders");
+        assertTrue(renderWaitCalls.containsAll(Set.of(
+                "isCaptureStateExact",
+                "observe"
+        )));
+        assertFalse(renderWaitCalls.contains("transition"));
+
+        String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
+        assertTrue(constants.contains("client ticks; capture_phase="));
+    }
+
     private static Set<String> invocations(String methodName) throws IOException {
         Set<String> names = new HashSet<>();
         new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {

@@ -1,0 +1,167 @@
+{
+  "schema": 1,
+  "kind": "etherology-original-fabric-consumed-run-diagnostic",
+  "accepted": false,
+  "verification_scope": "archived-diagnostic-file-integrity-without-mechanic-acceptance",
+  "reference": {
+    "id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit_binding": "unavailable"
+  },
+  "scenario": "pedestal-baseline",
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v11",
+    "manifest_path": "scripts/baseline/original-fabric-1.21.1-published-0.1.7-v11.json",
+    "manifest_size": 10307,
+    "manifest_sha256": "34974855dd861c220915dd77ce694d3e5175c97e1c8f6edea0806601947e0cfc"
+  },
+  "runtime": {
+    "minecraft": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 21,
+    "scope": "repository-owned-ignored-state",
+    "source_profiles": []
+  },
+  "controller": {
+    "commit": "0bec7ea0245b133dbc8313f56c702d4d60291189",
+    "path": "scripts/baseline/original_client.py",
+    "size": 296401,
+    "sha256": "99ff94484ebe68c8574fd996b132d60828bddb2f4c9692279e7aee19c912f008",
+    "timeout_seconds": 1800,
+    "observed_exit_code": 2,
+    "observed_error": "Original-baseline client exceeded its 1800-second timeout"
+  },
+  "outcome": {
+    "launch_attempt_created_at_unix_ns": 1788528656549503000,
+    "controller_log_started_at_utc": "2026-09-04T13:31:00Z",
+    "last_game_log_record_at_local_time": "2026-09-04T15:31:38+02:00",
+    "world_created": true,
+    "runtime_retained_at_diagnostic_capture": true,
+    "report_published": false,
+    "completion_marker_published": false,
+    "controller_verification_published": false,
+    "screenshot_count": 0,
+    "crash_report_count": 0,
+    "skin_cache_present": false,
+    "diagnosis": {
+      "classification": "source-and-post-timeout-state-inference",
+      "summary": "The exact camera predicate remained false after the player moved away from the contract pose. WAITING_FOR_RENDERS returned to WAITING_FOR_CLIENT_MIRROR, and each transition reset the per-stage timeout, leaving the controller's outer timeout as the terminating bound.",
+      "limitation": "The harness published no report or direct camera telemetry, so this diagnosis is not an accepted native mechanic observation."
+    }
+  },
+  "camera": {
+    "contract": {
+      "x": 0.5,
+      "y": 121.0,
+      "z": -15.5,
+      "yaw": 0.0,
+      "pitch": 10.0,
+      "comparison": "exact"
+    },
+    "persisted_pose": {
+      "x": -0.6990341339148626,
+      "y": 121.0,
+      "z": -13.862614973527577,
+      "yaw": -7.282553195953369,
+      "pitch": 6.941411018371582,
+      "motion": [
+        0.0,
+        -0.0784000015258789,
+        0.0
+      ],
+      "on_ground": true
+    },
+    "snapshots": [
+      "diagnostics/playerdata.dat_old",
+      "diagnostics/playerdata.dat"
+    ],
+    "snapshots_share_pose": true,
+    "only_parsed_snapshot_difference": "warden_spawn_tracker.ticks_since_last_warning"
+  },
+  "artifacts": {
+    "reference_bundle": {
+      "size": 7838299,
+      "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b"
+    },
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    "harness": {
+      "mod_id": "etherology_original_baseline_harness",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.4.0.jar",
+      "version": "1.4.0",
+      "size": 339617,
+      "sha256": "09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57"
+    },
+    "harness_sources": {
+      "commit": "0bec7ea0245b133dbc8313f56c702d4d60291189",
+      "contract": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalBaselineContract.java",
+        "size": 17454,
+        "sha256": "9bf244347a1b0a1d640efc762385f83fb3e713714aee55ef0547030a35d53a84"
+      },
+      "scenario": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalBaselineScenario.java",
+        "size": 163134,
+        "sha256": "8fc7e3afe3e8d3c5218200e05aa113ace3bfcb69ba2f871c634be43896b9386e"
+      },
+      "writer": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalEvidenceWriter.java",
+        "size": 6284,
+        "sha256": "bd1cb0271420bc9fd277dfc026efb15118343ac1ee876e54a784c68f93398e5a"
+      }
+    }
+  },
+  "runtime_bindings": {
+    "profile_marker": {
+      "size": 3110,
+      "sha256": "e4277d79d095973b27d3159cd157bda494a3a44b98940b52f3cfa7ed7551f04a"
+    },
+    "artifact_lock": {
+      "size": 5389,
+      "sha256": "7d69c643ae65bcb004d6369be6018f3f5427ab2f9efc087469506088cd56364a"
+    },
+    "runtime_lock": {
+      "size": 832422,
+      "sha256": "323477c8e6cd9483c85e905d7451c70fb00cefebb424036c85a47c02ff62815b"
+    },
+    "launch_attempt": {
+      "size": 871956,
+      "sha256": "b8f1a528c33187d95208b12aa64b4007dc5f7d9a0113e4de547b4505ccb80196"
+    },
+    "evidence_descriptor": {
+      "size": 972,
+      "sha256": "3a21d76fb983f4aef4e289f2317867c395cc507e7999428a1fc9f90d03f4aa0b"
+    },
+    "game_log": {
+      "size": 13579,
+      "sha256": "51378cbbae8c2a33f8da1ef97285b4f00c8ad0cda1df6f0efdb1eff1a6fed5c2",
+      "archived_separately": false,
+      "relationship": "byte-for-byte suffix of controller/original-client.log after its 428-byte controller header"
+    }
+  },
+  "files": {
+    "controller/original-client.log": {
+      "source_path": "logs/original-client-20260904T133100Z.log",
+      "source_mtime_ns": 1788528698246909209,
+      "size": 14007,
+      "sha256": "d544929d2bcc91e4c4f761ef6893d96521164903bae9c3a317402bf66f5e46c1"
+    },
+    "diagnostics/playerdata.dat": {
+      "source_path": "game/saves/etherology-original-pedestal-baseline-world/playerdata/a3bd49b1-28bb-3566-98ff-dfaa4e32b7a4.dat",
+      "source_mtime_ns": 1788530460124889113,
+      "size": 1211,
+      "sha256": "73b5800ae3ac59d9ffabe2194686b4cc06a9e620c0a28ae215796741a2b929fc"
+    },
+    "diagnostics/playerdata.dat_old": {
+      "source_path": "game/saves/etherology-original-pedestal-baseline-world/playerdata/a3bd49b1-28bb-3566-98ff-dfaa4e32b7a4.dat_old",
+      "source_mtime_ns": 1788530179417239358,
+      "size": 1211,
+      "sha256": "2f0a1410867b864b2ae414bd0e3141de2a5ee6bca4e0bddbb661eb9dfd8dd9b0"
+    }
+  }
+}

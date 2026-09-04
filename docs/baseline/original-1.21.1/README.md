@@ -24,12 +24,14 @@ Biolith, Cardinal Components API, GeckoLib, owo-lib, and Trinkets. Quick Skin,
 Customizable Player Models, Ears, and Architectury are excluded recursively.
 
 The controller creates a new ignored, repository-owned runtime for each
-one-shot capture. The accepted Slitherite v10 runtime remains immutable; the
-active Pedestal v11 runtime path is reserved but absent:
+one-shot capture. The accepted Slitherite v10 runtime remains immutable. The
+Pedestal v11 runtime consumed its only launch and remains preserved; the next
+attempt is bound to a separately provisioned v12 runtime:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v11/  # not provisioned
+  etherology-original-fabric-1.21.1-published-0.1.7-v11/  # consumed; never reuse
+  etherology-original-fabric-1.21.1-published-0.1.7-v12/  # active; absent until provision
 ```
 
 It never consults or mutates a launcher or user profile. The separately built
@@ -43,12 +45,19 @@ client-only v10 capture harness remains pinned in accepted history:
 
 That harness built reproducibly, remapped, and passed pure/artifact tests. The
 consumed v10 runtime subsequently passed provision, stage, check, and its one
-native `slitherite-block-registry` launch. The active Pedestal harness is
-v1.4.0; its clean build and 47 Java tests passed, and its exact JAR is pinned at
+native `slitherite-block-registry` launch. The v11 Pedestal harness is v1.4.0;
+its clean build and 47 Java tests passed, and its exact JAR is pinned at
 `339,617` bytes with SHA-256
 `09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57`.
-The v11 runtime remains absent. The earlier phase-zero runtime proof remains
-under `docs/evidence/original-1.21.1/phase0-smoke-v1`.
+Its native run reached an integrated world but timed out before publishing any
+report or screenshot, so it is not accepted Pedestal evidence. The compact v11
+diagnostic record is under `docs/evidence/original-1.21.1/pedestal-v11`. The
+active v12 v1.4.1 harness passed 51 Java tests and two reproducible clean builds;
+its `340,250`-byte JAR has SHA-256
+`a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb`.
+The v12 runtime remains absent and has never been launched. The
+earlier phase-zero runtime proof remains under
+`docs/evidence/original-1.21.1/phase0-smoke-v1`.
 
 The runtime contract also pins the official Minecraft version JSON, asset
 index, client JAR, Fabric loader profile, and each of the eight Fabric library
@@ -97,16 +106,22 @@ hash-pinned `published-0.1.7` JAR may establish original runtime behaviour.
 
 ## Capture status
 
-The active pinned v11 contract targets `pedestal-baseline` with 74 assertions
-and four planned 1920x1080 captures. It covers placement/shapes, block-entity
+The consumed v11 contract targeted `pedestal-baseline` with 74 assertions and
+four planned 1920x1080 captures. It covers placement/shapes, block-entity
 inventory and NBT, item/carpet interactions, item dispensing in all six
 directions, empty-slot carpet dispensing in the four horizontal directions,
 safe upward occupied-carpet fallthrough, full-target generic item ejection,
 transition drops and retained server/client block-entity removal, and full
 save/disconnect/reopen persistence. Hash-pinned published-bytecode inspection
 anchors the unexecuted empty-slot `UP`/`DOWN` safety guard. Its exact v1.4.0
-harness is built and hash-pinned, but the v11 profile has never been provisioned
-or launched, so no native Pedestal result is claimed. See
+harness is built and hash-pinned. The one v11 launch reached a fresh integrated
+world but exceeded the 1,800-second controller deadline before publishing a
+report, completion marker, verification, or screenshot. Two saved player
+snapshots and the pinned harness flow support a camera-readiness-loop diagnosis,
+but it remains an inference and no native Pedestal result is claimed. V11 must
+never be reused. The fresh v12 profile preserves the 74-assertion contract,
+locks the exact camera before rendering, and uses a monotonic render watchdog;
+it is statically prepared but has not been provisioned or launched. See
 [`pedestal`](mechanics/pedestal/README.md).
 
 The first dedicated original Fabric 1.21.1 harness now implements

@@ -30,6 +30,10 @@ final class ScenarioController {
         scenario.onEndClientTick(client);
     }
 
+    void onGameRenderStarting(MinecraftClient client) {
+        scenario.onGameRenderStarting(client);
+    }
+
     void onGameRenderCompleted() {
         scenario.onGameRenderCompleted();
     }

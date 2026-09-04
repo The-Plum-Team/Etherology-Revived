@@ -11,6 +11,15 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(GameRenderer.class)
 abstract class GameRendererMixin {
 
+    @Inject(method = "render", at = @At("HEAD"))
+    private void etherologyOriginalBaseline$onRenderStarting(
+            RenderTickCounter tickCounter,
+            boolean tick,
+            CallbackInfo callbackInfo
+    ) {
+        OriginalPhaseZeroHarness.onGameRenderStarting();
+    }
+
     @Inject(method = "render", at = @At("TAIL"))
     private void etherologyOriginalBaseline$onRenderCompleted(
             RenderTickCounter tickCounter,

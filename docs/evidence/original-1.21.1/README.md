@@ -4,17 +4,33 @@ This archive preserves native evidence from the separately isolated original
 Etherology runtime. It is the `published-0.1.7` binary reference, not the
 unbound `source-0.1.8` tree.
 
-## `pedestal-v11` — prepared, never run
+## `pedestal-v12` — prepared, never run
 
 The active contract reserves the fresh profile
-`etherology-original-fabric-1.21.1-published-0.1.7-v11` for a native Pedestal
-baseline. Its v1.4.0 harness contract and four-screenshot layout are prepared,
-and the harness has passed its clean build, 47 Java tests, remap, and artifact
-validation. Its exact JAR is pinned, while the profile has never been
-provisioned or launched. Consequently there is no v11 runtime, launch attempt,
-report, screenshot, or accepted archive, and this documentation makes no claim
-of native Pedestal success. See [`pedestal-v11/README.md`](pedestal-v11/README.md)
-for the fail-closed future archive layout.
+`etherology-original-fabric-1.21.1-published-0.1.7-v12` for the next native
+Pedestal baseline. Its v1.4.1 harness preserves the 74 assertions and four
+1920x1080 captures while locking input and the exact camera before rendering
+and keeping the render watchdog monotonic. All 51 Java tests, remap, artifact
+validation, and two reproducible clean builds passed. The profile has not been
+provisioned or launched, so no v12 runtime or native result is claimed. See
+[`pedestal-v12`](pedestal-v12/) for the fail-closed placeholder.
+
+## `pedestal-v11` — consumed timeout diagnostic
+
+The repository-owned profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v11` consumed its sole native
+launch on 2026-09-04. The published `0.1.7` client reached a fresh integrated
+world, but the controller's 1,800-second deadline expired before the v1.4.0
+harness published a report, completion marker, controller verification, or any
+of the four planned screenshots. The controller returned exit code `2`, so v11
+is not accepted evidence and establishes no native Pedestal behavior.
+
+Two saved player snapshots preserve the same pose away from the exact camera
+contract. Together with the hash-pinned harness control flow, that supports a
+camera-readiness-loop diagnosis, but only as an inference because no harness
+telemetry was published. The compact, hash-bound diagnostic record is under
+[`pedestal-v11`](pedestal-v11/). The ignored runtime remains preserved and must
+never be run again. A fresh v12 profile will make the next Pedestal attempt.
 
 ## `phase0-smoke-v1`
 

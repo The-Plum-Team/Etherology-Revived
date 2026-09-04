@@ -58,8 +58,8 @@ TRACKED_MANIFEST_PATH = (
 ACTIVE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v10.json"
 )
-PREPARED_PEDESTAL_MANIFEST_PATH = (
-    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v11.json"
+ACTIVE_PEDESTAL_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v12.json"
 )
 LEGACY_SLITHERITE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
@@ -148,6 +148,7 @@ def harness_jar_bytes(
         "1.3.4",
         "1.3.5",
         "1.4.0",
+        "1.4.1",
     }
     metadata = {
         "schemaVersion": 1,
@@ -711,6 +712,10 @@ def write_launch_attempt_fixture(configuration: object, root: Path) -> Path:
         "scenario": scenario_id,
         "created_at_unix_ns": time.time_ns() - 10_000_000_000,
         "manifest_sha256": client.sha256_file(configuration.manifest_path),
+        "scenario_verifier": client.scenario_verifier_descriptor(
+            configuration,
+            scenario_id,
+        ),
         "artifact_lock": {
             "size": artifact_lock.stat().st_size,
             "sha256": client.sha256_file(artifact_lock),
@@ -1992,7 +1997,7 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertAlmostEqual(mean_delta, 10.064814814814815)
 
     def test_consumed_v10_runtime_remains_exact_when_present(self) -> None:
-        self.assertEqual(client.MANIFEST_PATH, PREPARED_PEDESTAL_MANIFEST_PATH)
+        self.assertEqual(client.MANIFEST_PATH, ACTIVE_PEDESTAL_MANIFEST_PATH)
         self.assertEqual(len(ACTIVE_MANIFEST_PATH.read_bytes()), 10_349)
         self.assertEqual(
             hashlib.sha256(ACTIVE_MANIFEST_PATH.read_bytes()).hexdigest(),
@@ -2956,6 +2961,39 @@ class CaptureContractTests(unittest.TestCase):
             with self.assertRaisesRegex(client.BaselineError, "launch-attempt seal"):
                 client.verify_capture_layout(configuration, root, require_fresh=True)
 
+    def test_launch_attempt_rejects_a_changed_scenario_verifier(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            attempt_path = write_launch_attempt_fixture(configuration, root)
+            attempt = client.load_json_object(attempt_path, "fixture attempt")
+            attempt["scenario_verifier"] = {
+                "path": "forged.py",
+                "size": 1,
+                "sha256": "0" * 64,
+            }
+            write_json(attempt_path, attempt)
+
+            with self.assertRaisesRegex(
+                client.BaselineError,
+                "scenario verifier changed",
+            ):
+                client.verify_launch_attempt(configuration, root)
+
+    def test_launch_attempt_requires_the_scenario_verifier_field(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_root = Path(temporary_directory)
+            configuration, _, _ = reference_fixture(temporary_root)
+            _, root = owned_runtime_fixture(configuration, temporary_root)
+            attempt_path = write_launch_attempt_fixture(configuration, root)
+            attempt = client.load_json_object(attempt_path, "fixture attempt")
+            del attempt["scenario_verifier"]
+            write_json(attempt_path, attempt)
+
+            with self.assertRaisesRegex(client.BaselineError, "unexpected fields"):
+                client.verify_launch_attempt(configuration, root)
+
     def test_linked_capture_directory_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             temporary_root = Path(temporary_directory)
@@ -3834,13 +3872,13 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
                     client.resolve_scenario_id(configuration, scenario)
 
     def test_current_capture_harness_is_exactly_pinned(self) -> None:
-        configuration = client.load_configuration(PREPARED_PEDESTAL_MANIFEST_PATH)
+        configuration = client.load_configuration(ACTIVE_PEDESTAL_MANIFEST_PATH)
         client.require_capture_harness(configuration)
-        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.0")
-        self.assertEqual(client.harness_spec(configuration)["size"], 339_617)
+        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.1")
+        self.assertEqual(client.harness_spec(configuration)["size"], 340_250)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57",
+            "a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:

@@ -121,6 +121,24 @@ val validateHarnessArtifact = tasks.register("validateHarnessArtifact") {
                 "Harness JAR has no Slitherite block-registry scenario"
             }
             check(
+                "dev/theplumteam/etherology/baseline/fabric/" +
+                    "PedestalBaselineScenario.class" in entries,
+            ) {
+                "Harness JAR has no Pedestal baseline scenario"
+            }
+            check(
+                "dev/theplumteam/etherology/baseline/fabric/" +
+                    "PedestalBaselineContract.class" in entries,
+            ) {
+                "Harness JAR has no Pedestal baseline contract"
+            }
+            check(
+                "dev/theplumteam/etherology/baseline/fabric/" +
+                    "PedestalEvidenceWriter.class" in entries,
+            ) {
+                "Harness JAR has no Pedestal exclusive evidence writer"
+            }
+            check(
                 "dev/theplumteam/etherology/baseline/fabric/mixin/GameRendererMixin.class" in
                     entries,
             ) {

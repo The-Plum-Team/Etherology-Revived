@@ -58,6 +58,9 @@ TRACKED_MANIFEST_PATH = (
 ACTIVE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v10.json"
 )
+PREPARED_PEDESTAL_MANIFEST_PATH = (
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v11.json"
+)
 LEGACY_SLITHERITE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
 )
@@ -144,6 +147,7 @@ def harness_jar_bytes(
         "1.3.3",
         "1.3.4",
         "1.3.5",
+        "1.4.0",
     }
     metadata = {
         "schemaVersion": 1,
@@ -1988,7 +1992,7 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertAlmostEqual(mean_delta, 10.064814814814815)
 
     def test_consumed_v10_runtime_remains_exact_when_present(self) -> None:
-        self.assertEqual(client.MANIFEST_PATH, ACTIVE_MANIFEST_PATH)
+        self.assertEqual(client.MANIFEST_PATH, PREPARED_PEDESTAL_MANIFEST_PATH)
         self.assertEqual(len(ACTIVE_MANIFEST_PATH.read_bytes()), 10_349)
         self.assertEqual(
             hashlib.sha256(ACTIVE_MANIFEST_PATH.read_bytes()).hexdigest(),
@@ -2003,7 +2007,7 @@ class TrackedManifestTests(unittest.TestCase):
             manifest["capture"]["scenario"]["id"],
             "slitherite-block-registry",
         )
-        configuration = client.load_configuration()
+        configuration = client.load_configuration(ACTIVE_MANIFEST_PATH)
         self.assertEqual(
             client.profile_descriptor(configuration)["capture"]["screenshot_files"],
             [
@@ -2527,9 +2531,8 @@ class TrackedManifestTests(unittest.TestCase):
         )
 
     def test_tracked_manifest_and_bundle_validate(self) -> None:
-        configuration = client.load_configuration()
+        configuration = client.load_configuration(ACTIVE_MANIFEST_PATH)
         inventory = client.verify_reference_bundle(configuration)
-        client.verify_harness_artifact(configuration)
         self.assertEqual(
             client.profile_spec(configuration)["id"],
             "etherology-original-fabric-1.21.1-published-0.1.7-v10",
@@ -3810,7 +3813,7 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
             )
 
     def test_scenario_requires_exact_allowlist_entry(self) -> None:
-        configuration = client.load_configuration()
+        configuration = client.load_configuration(ACTIVE_MANIFEST_PATH)
         self.assertEqual(
             client.resolve_scenario_id(configuration, "slitherite-block-registry"),
             "slitherite-block-registry",
@@ -3830,14 +3833,14 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
                 with self.assertRaises(client.BaselineError):
                     client.resolve_scenario_id(configuration, scenario)
 
-    def test_capture_harness_is_exactly_pinned(self) -> None:
-        configuration = client.load_configuration()
+    def test_current_capture_harness_is_exactly_pinned(self) -> None:
+        configuration = client.load_configuration(PREPARED_PEDESTAL_MANIFEST_PATH)
         client.require_capture_harness(configuration)
-        self.assertEqual(client.harness_spec(configuration)["version"], "1.3.5")
-        self.assertEqual(client.harness_spec(configuration)["size"], 218_402)
+        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.0")
+        self.assertEqual(client.harness_spec(configuration)["size"], 339_617)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489",
+            "09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:

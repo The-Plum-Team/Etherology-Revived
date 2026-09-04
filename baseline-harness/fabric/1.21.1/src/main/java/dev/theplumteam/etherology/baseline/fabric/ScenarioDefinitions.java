@@ -30,6 +30,7 @@ final class ScenarioDefinitions {
             "Etherology Original 0.1.7 Slitherite Blocks",
             0x455448534c495430L
     );
+    static final ScenarioDefinition PEDESTAL = PedestalBaselineScenario.DEFINITION;
 
     private ScenarioDefinitions() {
     }

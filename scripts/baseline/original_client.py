@@ -99,7 +99,7 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v10.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v11.json"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -633,6 +633,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v8": "v8",
         "etherology-original-fabric-1.21.1-published-0.1.7-v9": "v9",
         "etherology-original-fabric-1.21.1-published-0.1.7-v10": "v10",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v11": "v11",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -932,6 +933,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v8": "1.3.3",
         "v9": "1.3.4",
         "v10": "1.3.5",
+        "v11": "1.4.0",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -951,7 +953,10 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
     ):
         raise BaselineError("The capture harness identity is not the exact pinned harness")
     harness_size = harness.get("size")
-    if type(harness_size) is not int or not 0 < int(harness_size) <= MAXIMUM_DOWNLOAD_SIZE:
+    if (
+        type(harness_size) is not int
+        or not 0 < int(harness_size) <= MAXIMUM_DOWNLOAD_SIZE
+    ):
         raise BaselineError("The capture harness size is invalid")
     validate_sha256(harness.get("sha256"), "capture harness")
 
@@ -1076,6 +1081,15 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             ),
             "world_display_name": "Etherology Original 0.1.7 Slitherite Blocks",
             "world_seed": 4995697409260082224,
+        },
+        "v11": {
+            "id": "pedestal-baseline",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "pedestal-gallery.png",
+            "world_directory_name": "etherology-original-pedestal-baseline-world",
+            "world_display_name": "Etherology Original 0.1.7 Pedestal",
+            "world_seed": 4995697396257403185,
         },
     }
     exact_scenario = exact_scenarios[profile_revision]
@@ -1554,6 +1568,10 @@ def verify_reference_bundle(configuration: Configuration) -> dict[str, set[str]]
 
 def verify_harness_artifact(configuration: Configuration) -> None:
     harness = harness_spec(configuration)
+    if harness.get("status") != "implemented":
+        raise BaselineError(
+            "The original Fabric 1.21.1 capture harness is prepared but unbuilt"
+        )
     verify_exact_file(
         configuration.harness_path,
         str(harness["sha256"]),
@@ -1610,6 +1628,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "1.3.3",
                 "1.3.4",
                 "1.3.5",
+                "1.4.0",
             }
             expected_slitherite_class = (
                 "dev/theplumteam/etherology/baseline/fabric/"
@@ -1618,6 +1637,15 @@ def verify_harness_artifact(configuration: Configuration) -> None:
             expects_slitherite = (
                 scenario_spec(configuration)["id"] == "slitherite-block-registry"
             )
+            pedestal_classes = {
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalBaselineScenario.class",
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalBaselineContract.class",
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalEvidenceWriter.class",
+            }
+            expects_pedestal = scenario_spec(configuration)["id"] == "pedestal-baseline"
             class_entries = {
                 name
                 for name, entry in entries.items()
@@ -1634,6 +1662,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                     expects_slitherite
                     and expected_slitherite_class not in class_entries
                 )
+                or (expects_pedestal and not pedestal_classes.issubset(class_entries))
                 or not class_entries
                 or any(
                     not name.startswith(
@@ -1754,12 +1783,12 @@ def profile_descriptor(configuration: Configuration) -> dict[str, object]:
             "world_directory_name": scenario["world_directory_name"],
         },
     }
-    if scenario["id"] == "slitherite-block-registry":
+    capture_screenshot_files = [
+        path.name for path in screenshot_paths(configuration, Path("."))
+    ]
+    if len(capture_screenshot_files) > 1:
         capture = require_object(descriptor, "capture")
-        capture["screenshot_files"] = [
-            "slitherite-block-registry-initial.png",
-            "slitherite-block-registry-reopened.png",
-        ]
+        capture["screenshot_files"] = capture_screenshot_files
     return descriptor
 
 
@@ -1797,14 +1826,20 @@ def screenshot_path(configuration: Configuration, root: Path) -> Path:
 
 def screenshot_paths(configuration: Configuration, root: Path) -> tuple[Path, ...]:
     scenario = scenario_spec(configuration)
-    file_names = (
-        (
+    if scenario["id"] == "slitherite-block-registry":
+        file_names = (
             "slitherite-block-registry-initial.png",
             "slitherite-block-registry-reopened.png",
         )
-        if scenario["id"] == "slitherite-block-registry"
-        else (str(scenario["screenshot_file"]),)
-    )
+    elif scenario["id"] == "pedestal-baseline":
+        file_names = (
+            "pedestal-gallery.png",
+            "pedestal-transition-drops.png",
+            "pedestal-persistence-initial.png",
+            "pedestal-persistence-reopened.png",
+        )
+    else:
+        file_names = (str(scenario["screenshot_file"]),)
     return tuple(screenshots_directory(configuration, root) / value for value in file_names)
 
 
@@ -1845,12 +1880,12 @@ def evidence_descriptor(configuration: Configuration) -> dict[str, object]:
             "height": framebuffer["height"],
         },
     }
-    if scenario["id"] == "slitherite-block-registry":
+    capture_screenshot_files = [
+        path.name for path in screenshot_paths(configuration, Path("."))
+    ]
+    if len(capture_screenshot_files) > 1:
         scenario_descriptor = require_object(descriptor, "scenario")
-        scenario_descriptor["screenshot_files"] = [
-            "slitherite-block-registry-initial.png",
-            "slitherite-block-registry-reopened.png",
-        ]
+        scenario_descriptor["screenshot_files"] = capture_screenshot_files
     return descriptor
 
 
@@ -3615,6 +3650,7 @@ def remove_owned_staging_directory(
 def provision_profile(
     configuration: Configuration, runtimes_root: Path = RUNTIMES_ROOT
 ) -> bool:
+    require_capture_harness(configuration)
     fabric_profile_content = verify_tracked_fabric_profile_snapshot(configuration)
     verify_reference_bundle(configuration)
     verify_harness_artifact(configuration)
@@ -3954,6 +3990,7 @@ def stage_reference_members(configuration: Configuration) -> bool:
 
 
 def _stage_reference_members_locked(configuration: Configuration) -> bool:
+    require_capture_harness(configuration)
     verify_reference_bundle(configuration)
     verify_harness_artifact(configuration)
     root = verify_owned_runtime(configuration)
@@ -5207,6 +5244,7 @@ def check_environment(
 def _check_environment_locked(
     configuration: Configuration, scenario_id: str | None = None
 ) -> tuple[Path, list[str]]:
+    require_capture_harness(configuration)
     verify_reference_bundle(configuration)
     verify_harness_artifact(configuration)
     root = verify_owned_runtime(configuration)
@@ -5217,6 +5255,7 @@ def _check_environment_locked(
         configuration,
         scenario_id or str(scenario_spec(configuration)["id"]),
     )
+    verify_scenario_prelaunch_contract(configuration, selected_scenario_id)
     verify_capture_layout(configuration, root, require_fresh=True)
     assert_runtime_not_running(configuration, root)
     java_path = resolve_java_21()
@@ -6155,6 +6194,81 @@ def verify_slitherite_evidence_verifier_binding(
     return verifier
 
 
+def load_pedestal_evidence_verifier() -> types.ModuleType:
+    verifier_path = SCRIPT_DIRECTORY / "original_pedestal_evidence_v11.py"
+    specification = importlib.util.spec_from_file_location(
+        "etherology_original_pedestal_evidence_v11",
+        verifier_path,
+    )
+    if specification is None or specification.loader is None:
+        raise BaselineError(f"Cannot load Pedestal evidence verifier: {verifier_path}")
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[specification.name] = module
+    previous_bytecode_policy = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        specification.loader.exec_module(module)
+    except (OSError, ImportError, RuntimeError) as exception:
+        raise BaselineError(
+            f"Cannot initialize Pedestal evidence verifier: {exception}"
+        ) from exception
+    finally:
+        sys.dont_write_bytecode = previous_bytecode_policy
+    return module
+
+
+def verify_pedestal_evidence_verifier_binding(
+    configuration: Configuration,
+) -> types.ModuleType:
+    verifier = load_pedestal_evidence_verifier()
+    harness = harness_spec(configuration)
+    profile = profile_spec(configuration)
+    scenario = scenario_spec(configuration)
+    expected_manifest_path = configuration.manifest_path.relative_to(
+        configuration.repository_root
+    ).as_posix()
+    if (
+        verifier.SCENARIO_ID != scenario["id"]
+        or verifier.PROFILE_ID != profile["id"]
+        or verifier.PROFILE_RELATIVE_PATH != expected_manifest_path
+        or verifier.HARNESS_VERSION != harness["version"]
+        or verifier.HARNESS_STATUS != harness["status"]
+        or verifier.HARNESS_SIZE != harness["size"]
+        or verifier.HARNESS_SHA256 != harness["sha256"]
+        or verifier.INITIAL_SCREENSHOT_FILE != scenario["screenshot_file"]
+        or tuple(verifier.SCREENSHOT_FILES)
+        != tuple(path.name for path in screenshot_paths(configuration, Path(".")))
+        or len(verifier.EXPECTED_ASSERTION_NAMES) != 74
+    ):
+        raise BaselineError(
+            "The Pedestal verifier is not bound to the exact active v11 contract"
+        )
+    return verifier
+
+
+def verify_scenario_prelaunch_contract(
+    configuration: Configuration,
+    scenario_id: str,
+) -> None:
+    if scenario_id != "pedestal-baseline":
+        return
+    verifier = verify_pedestal_evidence_verifier_binding(configuration)
+    try:
+        verifier.validate_pinned_contract(
+            repository_root=configuration.repository_root,
+            manifest_path=configuration.manifest_path,
+            harness_path=configuration.harness_path,
+            sha256_file=sha256_file,
+            error_type=BaselineError,
+        )
+    except BaselineError:
+        raise
+    except Exception as exception:
+        raise BaselineError(
+            f"Original Pedestal prelaunch verifier failed closed: {exception}"
+        ) from exception
+
+
 def verify_scenario_evidence(
     configuration: Configuration, root: Path
 ) -> dict[str, object]:
@@ -6258,6 +6372,83 @@ def verify_scenario_evidence(
             raise BaselineError(
                 "Original Slitherite evidence was not published in seal -> initial -> "
                 "reopened -> report -> completion-marker order"
+            )
+        if attempt.get("created_at_unix_ns") > publication_times[0]:
+            raise BaselineError(
+                "Launch-attempt timestamp is newer than its durable seal"
+            )
+        return verify_game_lifecycle(configuration, root)
+
+    if scenario_id == "pedestal-baseline":
+        etherology = next(
+            member
+            for member in member_specs(configuration)
+            if member["mod_id"] == "etherology"
+        )
+        harness = harness_spec(configuration)
+        expected_artifacts = [
+            {
+                "mod_id": "etherology",
+                "origin_kind": "PATH",
+                "file_name": etherology["file_name"],
+                "size": etherology["size"],
+                "sha256": etherology["sha256"],
+            },
+            {
+                "mod_id": harness["mod_id"],
+                "origin_kind": "PATH",
+                "file_name": harness["file_name"],
+                "size": harness["size"],
+                "sha256": harness["sha256"],
+            },
+        ]
+        verifier = verify_pedestal_evidence_verifier_binding(configuration)
+        try:
+            verifier.validate_evidence(
+                scenario_root=scenario_root(configuration, root),
+                world_path=save_directory(configuration, root),
+                report=report,
+                expected_artifacts=expected_artifacts,
+                decode_png=decode_png,
+                assert_image_is_not_blank=assert_image_is_not_blank,
+                sha256_file=sha256_file,
+                error_type=BaselineError,
+            )
+        except BaselineError:
+            raise
+        except Exception as exception:
+            raise BaselineError(
+                f"Original Pedestal verifier failed closed: {exception}"
+            ) from exception
+
+        marker = completion_marker_path(configuration, root)
+        if marker.is_symlink() or not marker.is_file():
+            raise BaselineError(
+                f"Original-baseline completion marker is missing or linked: {marker}"
+            )
+        expected_marker_content = (
+            "pedestal-baseline:passed\n"
+            f"report_sha256:{sha256_file(report_path(configuration, root))}\n"
+        )
+        if marker.read_text(encoding="utf-8") != expected_marker_content:
+            raise BaselineError(
+                "Original Pedestal completion marker did not report passed"
+            )
+        report_file = report_path(configuration, root)
+        publication_paths = (
+            launch_attempt_path(configuration, root),
+            *screenshot_paths(configuration, root),
+            report_file,
+            marker,
+        )
+        publication_times = tuple(path.stat().st_mtime_ns for path in publication_paths)
+        if not all(
+            earlier < later
+            for earlier, later in zip(publication_times, publication_times[1:])
+        ):
+            raise BaselineError(
+                "Original Pedestal evidence was not published in seal -> four "
+                "screenshots -> report -> completion-marker order"
             )
         if attempt.get("created_at_unix_ns") > publication_times[0]:
             raise BaselineError(
@@ -6636,6 +6827,9 @@ def verify_game_lifecycle(
         "slitherite-block-registry": (
             "Original Slitherite evidence published with status passed:"
         ),
+        "pedestal-baseline": (
+            "Original Pedestal evidence published with status passed:"
+        ),
     }
     scenario_id = str(scenario_spec(configuration)["id"])
     success_marker = success_markers.get(scenario_id)
@@ -6826,6 +7020,7 @@ def _run_owned_client_locked(
     verify_installed_game(configuration, root)
     verify_runtime_lock(configuration, root)
     verify_staged_reference(configuration, root)
+    verify_scenario_prelaunch_contract(configuration, scenario_id)
     verify_capture_layout(configuration, root, require_fresh=True)
     assert_runtime_not_running(configuration, root)
     attempt = launch_attempt_descriptor(
@@ -6835,6 +7030,7 @@ def _run_owned_client_locked(
         java_path,
         command,
     )
+    verify_scenario_prelaunch_contract(configuration, scenario_id)
     try:
         write_json_exclusive(launch_attempt_path(configuration, root), attempt)
     except FileExistsError as exception:
@@ -6956,13 +7152,29 @@ def validate_command() -> int:
     configuration = load_configuration()
     verify_tracked_fabric_profile_snapshot(configuration)
     member_mod_ids = verify_reference_bundle(configuration)
+    scenario_id = str(scenario_spec(configuration)["id"])
+    harness = harness_spec(configuration)
     verify_harness_artifact(configuration)
-    if scenario_spec(configuration)["id"] == "slitherite-block-registry":
+    if scenario_id == "slitherite-block-registry":
         verify_slitherite_evidence_verifier_binding(configuration)
+    if scenario_id == "pedestal-baseline":
+        verifier = verify_pedestal_evidence_verifier_binding(configuration)
+        verifier.validate_fresh_contract(
+            repository_root=configuration.repository_root,
+            manifest_path=configuration.manifest_path,
+            harness_path=configuration.harness_path,
+            runtime_path=runtime_root(configuration),
+            archive_path=(
+                configuration.repository_root
+                / "docs/evidence/original-1.21.1/pedestal-v11"
+            ),
+            sha256_file=sha256_file,
+            error_type=BaselineError,
+        )
     preflight_launcher_import_resolution()
     print(f"Validated profile: {profile_spec(configuration)['id']}")
     print(f"Published bundle SHA-256: {bundle_spec(configuration)['sha256']}")
-    print(f"Harness SHA-256: {harness_spec(configuration)['sha256']}")
+    print(f"Harness SHA-256: {harness['sha256']}")
     fabric_profile = require_object(runtime_spec(configuration), "fabric_profile")
     fabric_snapshot = require_object(fabric_profile, "snapshot")
     print(f"Fabric profile snapshot SHA-256: {fabric_snapshot['sha256']}")
@@ -6973,6 +7185,7 @@ def validate_command() -> int:
 
 def provision_command() -> int:
     configuration = load_configuration()
+    require_capture_harness(configuration)
     created = provision_profile(configuration)
     qualifier = "Provisioned" if created else "Verified"
     print(f"{qualifier} repository-owned runtime: {runtime_root(configuration)}")
@@ -6982,6 +7195,7 @@ def provision_command() -> int:
 
 def stage_command() -> int:
     configuration = load_configuration()
+    require_capture_harness(configuration)
     changed = stage_reference_members(configuration)
     qualifier = "Staged" if changed else "Verified"
     print(f"{qualifier} eight published JARs plus the separately pinned harness")
@@ -6991,6 +7205,7 @@ def stage_command() -> int:
 
 def check_command() -> int:
     configuration = load_configuration()
+    require_capture_harness(configuration)
     scenario_id = str(scenario_spec(configuration)["id"])
     java_path, command = check_environment(configuration, scenario_id)
     runtime = runtime_spec(configuration)

@@ -5,19 +5,24 @@ directory:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v10/
+  etherology-original-fabric-1.21.1-published-0.1.7-v11/  # absent until provision
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v10.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v11.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
-exact eight top-level published JAR members. It also pins a separately built,
-client-only capture harness as a ninth root JAR. The controller recursively
+exact eight top-level published JAR members. It also pins the separately built,
+client-only v1.4.0 capture harness as the ninth root JAR: `339,617` bytes with
+SHA-256
+`09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57`.
+The controller recursively
 reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quickskin`),
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v10 manifest is `10,349` bytes with SHA-256
+The v11 manifest is `10,307` bytes with SHA-256
+`34974855dd861c220915dd77ce694d3e5175c97e1c8f6edea0806601947e0cfc`.
+The consumed v10 manifest remains immutable at `10,349` bytes with SHA-256
 `32a96831e39034b704b92a0768639c8d776e6c7612ff2cefa2603cf19eec77d7`.
 
 Runtime authority is byte-exact as well. The manifest records the official
@@ -61,8 +66,8 @@ The other seven pinned JARs are Fabric API, FabricShieldLib, Biolith, Cardinal
 Components API, GeckoLib, owo-lib, and Trinkets. Their names, sizes, root mod
 IDs, and SHA-256 hashes are authored once in the tracked manifest.
 
-The separately packaged capture harness is not part of the published reference
-and does not replace it:
+The accepted v10 capture harness is not part of the published reference and
+does not replace it:
 
 - Harness JAR:
   `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar`
@@ -75,6 +80,11 @@ and does not replace it:
 
 The harness has no compile dependency or implementation link to Etherology
 classes. Its own artifact validator enforces that separation.
+
+The active v11 contract advances the harness source version to `1.4.0` for the
+Pedestal scenario. Its clean build, 47 Java tests, remap, and artifact validator
+passed before its exact bytes were pinned. The v10 v1.3.5 JAR is historical
+evidence and must not be restaged as v11.
 
 ### `source-0.1.8`: source and build reference
 
@@ -99,19 +109,22 @@ prove the `source-0.1.8` implementation.
 
 ## Controller lifecycle
 
-Build the separately pinned harness first. This compiles/tests/remaps only the
-dedicated baseline project; it does not launch Minecraft:
+The active v11 contract and exact harness artifact are validated with:
+
+```bash
+python3 -B scripts/baseline/original_client.py validate
+```
+
+The dedicated baseline build compiles, tests, remaps, and validates the harness;
+it does not launch Minecraft:
 
 ```bash
 ./gradlew -p baseline-harness/fabric/1.21.1 --no-daemon clean buildHarness
 ```
 
-The build uses Java 21 and pinned Architectury Loom `1.17.480`. Static
-controller validation is then read-only:
-
-```bash
-python3 -B scripts/baseline/original_client.py validate
-```
+The build uses Java 21 and pinned Architectury Loom `1.17.480`. The active
+manifest/verifier already bind the exact successful artifact above and mark it
+`implemented`. The runtime remains absent until the explicit `provision` gate.
 
 The remaining lifecycle is deliberately split into distinct gates:
 
@@ -119,7 +132,7 @@ The remaining lifecycle is deliberately split into distinct gates:
 python3 -B scripts/baseline/original_client.py provision
 python3 -B scripts/baseline/original_client.py stage
 python3 -B scripts/baseline/original_client.py check
-python3 -B scripts/baseline/original_client.py run --scenario slitherite-block-registry
+python3 -B scripts/baseline/original_client.py run --scenario pedestal-baseline
 ```
 
 - `provision` is the controller's explicit dependency-download phase. It
@@ -205,7 +218,32 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active `slitherite-block-registry` v10 contract
+## Active pinned `pedestal-baseline` v11 contract
+
+The reserved v11 profile has never been provisioned or launched. The scenario
+contract covers all 1,024 Pedestal states, exact registry/data/resource pins,
+native placement and shapes, block-entity inventory/NBT and item/carpet
+interactions, item dispensing from all six directions, carpet dispensing from
+the four horizontal directions, transition drops and stale block-entity
+removal, a forced save, a full disconnect/reopen, and four stable 1920x1080
+captures. It has 74 ordered assertions.
+
+Carpet dispensing from `UP` and `DOWN` against an empty carpet slot is
+deliberately not executed. Read-only inspection of the hash-pinned published
+`0.1.7` bytecode confirms that this path stores and decrements the carpet, takes
+the dispenser direction's opposite, and passes it to the Pedestal's
+horizontal-only facing property. The inspected Etherology JAR is `2,743,963`
+bytes with SHA-256
+`38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43`,
+the same member pinned inside the reference bundle. Both vertical directions
+are therefore recorded as bytecode-proven, empty-slot, not-executed safety
+guards. A separate occupied-carpet fixture dispenses upward and proves that the
+safe display-slot fallthrough still runs; ordinary-item dispensing also covers
+both vertical directions. See
+`docs/baseline/original-1.21.1/mechanics/pedestal/README.md` and the no-evidence
+placeholder `docs/evidence/original-1.21.1/pedestal-v11/README.md`.
+
+## Accepted immutable `slitherite-block-registry` v10 history
 
 The fresh v10 profile is dedicated to the published-0.1.7 Slitherite
 family. It validates 17 ordered block/item registry pairs, exact intermediary

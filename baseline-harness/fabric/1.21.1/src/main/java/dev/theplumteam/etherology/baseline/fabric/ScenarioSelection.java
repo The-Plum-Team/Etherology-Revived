@@ -24,6 +24,8 @@ final class ScenarioSelection {
                     new ScenarioController(new AttrahiteBlockRegistryScenario());
             case SlitheriteBlockRegistryScenario.SCENARIO_ID ->
                     new ScenarioController(new SlitheriteBlockRegistryScenario());
+            case PedestalBaselineScenario.SCENARIO_ID ->
+                    new ScenarioController(new PedestalBaselineScenario());
             default -> throw new IllegalStateException("Scenario resolution was not exhaustive");
         };
     }
@@ -33,6 +35,9 @@ final class ScenarioSelection {
                 || ForestLanternScenario.SCENARIO_ID.equals(configuredScenarioId)
                 || AttrahiteBlockRegistryScenario.SCENARIO_ID.equals(configuredScenarioId)
                 || SlitheriteBlockRegistryScenario.SCENARIO_ID.equals(
+                        configuredScenarioId
+                )
+                || PedestalBaselineScenario.SCENARIO_ID.equals(
                         configuredScenarioId
                 )) {
             return configuredScenarioId;
@@ -44,7 +49,8 @@ final class ScenarioSelection {
                         + PhaseZeroScenario.SCENARIO_ID + " or "
                         + ForestLanternScenario.SCENARIO_ID + " or "
                         + AttrahiteBlockRegistryScenario.SCENARIO_ID + " or "
-                        + SlitheriteBlockRegistryScenario.SCENARIO_ID
+                        + SlitheriteBlockRegistryScenario.SCENARIO_ID + " or "
+                        + PedestalBaselineScenario.SCENARIO_ID
         );
     }
 }

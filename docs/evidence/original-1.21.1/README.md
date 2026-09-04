@@ -4,6 +4,18 @@ This archive preserves native evidence from the separately isolated original
 Etherology runtime. It is the `published-0.1.7` binary reference, not the
 unbound `source-0.1.8` tree.
 
+## `pedestal-v11` — prepared, never run
+
+The active contract reserves the fresh profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v11` for a native Pedestal
+baseline. Its v1.4.0 harness contract and four-screenshot layout are prepared,
+and the harness has passed its clean build, 47 Java tests, remap, and artifact
+validation. Its exact JAR is pinned, while the profile has never been
+provisioned or launched. Consequently there is no v11 runtime, launch attempt,
+report, screenshot, or accepted archive, and this documentation makes no claim
+of native Pedestal success. See [`pedestal-v11/README.md`](pedestal-v11/README.md)
+for the fail-closed future archive layout.
+
 ## `phase0-smoke-v1`
 
 The repository-owned profile

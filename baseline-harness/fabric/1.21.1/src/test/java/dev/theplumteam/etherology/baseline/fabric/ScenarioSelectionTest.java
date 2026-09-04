@@ -29,6 +29,12 @@ final class ScenarioSelectionTest {
                         SlitheriteBlockRegistryScenario.SCENARIO_ID
                 )
         );
+        assertEquals(
+                PedestalBaselineScenario.SCENARIO_ID,
+                ScenarioSelection.resolveScenarioId(
+                        PedestalBaselineScenario.SCENARIO_ID
+                )
+        );
     }
 
     @Test

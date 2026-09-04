@@ -14,6 +14,7 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
 import client
+import consumed_history
 import evidence
 import fabric_attrahite_evidence_v29 as historical_attrahite_evidence
 import fabric_attrahite_evidence_v30 as attrahite_evidence
@@ -130,78 +131,8 @@ HISTORICAL_V29_FAILURE_HISTORY = {
 }
 
 
-def validate_consumed_history_files(
-    repository_root: Path,
-    *,
-    label: str,
-    state_relative_path: Path,
-    runtime_relative_path: Path,
-    history: dict[Path, tuple[int, str]],
-) -> tuple[Path, Path] | None:
-    state_root = repository_root / state_relative_path
-    runtime = repository_root / runtime_relative_path
-    controller_logs = state_root / "logs"
-    runtime_parent = state_root / "runtimes"
-    resolved = {
-        repository_root / relative_path: contract
-        for relative_path, contract in history.items()
-    }
-
-    for directory in (state_root, runtime_parent, controller_logs):
-        if directory.is_symlink():
-            raise AssertionError(
-                f"The consumed {label} parent is linked: {directory}"
-            )
-        if directory.exists() and not directory.is_dir():
-            raise AssertionError(
-                f"The consumed {label} parent is not a directory: {directory}"
-            )
-
-    present = tuple(path.exists() or path.is_symlink() for path in resolved)
-    runtime_present = runtime.exists() or runtime.is_symlink()
-    if not runtime_present and not any(present):
-        return None
-
-    intermediate_directories = {state_root, runtime_parent, runtime, controller_logs}
-    history_boundary = state_root.parent
-    for artifact in resolved:
-        directory = artifact.parent
-        while directory != history_boundary:
-            intermediate_directories.add(directory)
-            directory = directory.parent
-    for directory in sorted(
-        intermediate_directories,
-        key=lambda candidate: (len(candidate.parts), str(candidate)),
-    ):
-        if not directory.is_dir():
-            raise AssertionError(
-                f"The consumed {label} parent is missing: {directory}"
-            )
-        if directory.is_symlink():
-            raise AssertionError(
-                f"The consumed {label} parent is linked: {directory}"
-            )
-
-    if not all(present):
-        raise AssertionError(f"The consumed {label} is partial")
-    for path, (expected_size, expected_sha256) in resolved.items():
-        if not path.is_file() or path.is_symlink():
-            raise AssertionError(
-                f"The consumed {label} artifact is missing or linked: {path}"
-            )
-        if path.stat().st_size != expected_size:
-            raise AssertionError(
-                f"The consumed {label} artifact size changed: {path}"
-            )
-        if evidence.sha256_file(path) != expected_sha256:
-            raise AssertionError(
-                f"The consumed {label} artifact bytes changed: {path}"
-            )
-    return state_root, runtime
-
-
 def validate_consumed_v29_failure_history(repository_root: Path) -> None:
-    validate_consumed_history_files(
+    consumed_history.validate_files(
         repository_root,
         label="v29 failure-history",
         state_relative_path=HISTORICAL_V29_STATE_RELATIVE_PATH,
@@ -211,7 +142,7 @@ def validate_consumed_v29_failure_history(repository_root: Path) -> None:
 
 
 def validate_consumed_v30_runtime_history(repository_root: Path) -> None:
-    validated_paths = validate_consumed_history_files(
+    validated_paths = consumed_history.validate_files(
         repository_root,
         label="v30 runtime-history",
         state_relative_path=Path("scripts/e2e/.state"),

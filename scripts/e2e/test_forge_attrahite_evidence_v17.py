@@ -14,6 +14,7 @@ SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
+import consumed_history
 import forge_client
 import forge_evidence
 import forge_attrahite_evidence_v16 as historical_attrahite_evidence
@@ -22,18 +23,88 @@ from test_forge_evidence import rgb_png
 
 
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parent.parent
-HISTORICAL_V16_STATE_RELATIVE_PATH = Path("scripts/e2e/.state")
+STATE_RELATIVE_PATH = Path("scripts/e2e/.state")
 HISTORICAL_V16_RUNTIME_RELATIVE_PATH = (
-    HISTORICAL_V16_STATE_RELATIVE_PATH
+    STATE_RELATIVE_PATH
     / "runtimes/etherology-e2e-forge-1.20.1-v16"
 )
 HISTORICAL_V16_HARNESS_SIZE = 239_915
 HISTORICAL_V16_HARNESS_SHA256 = (
     "ffb21364959114d247dfe04cd90c47ba0e7c24572ec0245d02b3a196536dea15"
 )
+ACCEPTED_V17_RUNTIME_RELATIVE_PATH = (
+    STATE_RELATIVE_PATH / "runtimes/etherology-e2e-forge-1.20.1-v17"
+)
+ACCEPTED_V17_ARCHIVE_RELATIVE_PATH = Path(
+    "docs/evidence/forge-1.20.1/attrahite-block-registry-v17"
+)
+ACCEPTED_V17_ARCHIVE_MANIFEST_SIZE = 2_493
+ACCEPTED_V17_ARCHIVE_MANIFEST_SHA256 = (
+    "cc4450a4b29b26e87b0d287c623772e077cdff085e279798624f882ee3931752"
+)
+ACCEPTED_V17_PRODUCTION_SIZE = 1_311_266
+ACCEPTED_V17_PRODUCTION_SHA256 = (
+    "b2ac29597159c6089a12cfdebd8d8e1c19b9f528cb0b52a29ec829b1c35bc47b"
+)
+ACCEPTED_V17_RUNTIME_HISTORY = {
+    STATE_RELATIVE_PATH / "etherology-e2e-forge-1.20.1-v17-start.attempted": (
+        98,
+        "e673dad567a2c5e720de60acf5d8ebca08ec5ffd7cb94e12b91680a76ef56baa",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH / ".etherology-forge-e2e-profile.json": (
+        1_478,
+        "973fe7fa9185c5eebe1367d9320f3c5ffc127181a4d53629fc3a8c08c98f2b07",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH / "forge-artifact-lock.json": (
+        1_241,
+        "cf6a5047d6fb881b828da902fde361c80969692249927c611db1932fa74ce3e0",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH / "evidence/.etherology-e2e-evidence.json": (
+        413,
+        "3470fef727fbba0a5ecc9a20d3420ee507e006079fca47bc660ab093448fb881",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/report.json": (
+        33_115,
+        "d014611812aa19431339716f91dc963b0c53de04af1987d6ece5dac611c94eb1",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/reports/done.marker": (
+        9,
+        "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/screenshots/attrahite-block-registry-initial.png": (
+        422_839,
+        "1acb9186fa06979535066dafdaea5607458326c1f9414c6f285d5d5983b9753d",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH
+    / "evidence/attrahite-block-registry/screenshots/attrahite-block-registry-reopened.png": (
+        334_984,
+        "865818a3d23bdaf1a30ec54c5374ed6d70bc3171e99237d55ec021ad02feba76",
+    ),
+    STATE_RELATIVE_PATH / "logs/forge-1.20.1-20260904T071059Z.log": (
+        27_871,
+        "231128dcce946fb8e76bb498a74776d9827455edc5d2e2bf684c034acf905154",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH / "game/logs/latest.log": (
+        31_749,
+        "024f4b29684808d1181b0ec2c3a9826966fdac8a1f04dfb9ee5f0865b7c3f7e8",
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH
+    / "game/mods/etherology-forge-e2e-harness.jar": (
+        attrahite_evidence.HARNESS_SIZE,
+        attrahite_evidence.HARNESS_SHA256,
+    ),
+    ACCEPTED_V17_RUNTIME_RELATIVE_PATH
+    / "game/mods/etherology-forge-under-test.jar": (
+        ACCEPTED_V17_PRODUCTION_SIZE,
+        ACCEPTED_V17_PRODUCTION_SHA256,
+    ),
+}
 HISTORICAL_V16_FAILURE_HISTORY = {
     (
-        HISTORICAL_V16_STATE_RELATIVE_PATH
+        STATE_RELATIVE_PATH
         / "etherology-e2e-forge-1.20.1-v16-start.attempted"
     ): (
         98,
@@ -54,7 +125,7 @@ HISTORICAL_V16_FAILURE_HISTORY = {
         "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1",
     ),
     (
-        HISTORICAL_V16_STATE_RELATIVE_PATH
+        STATE_RELATIVE_PATH
         / "logs/forge-1.20.1-20260901T021931Z.log"
     ): (
         24_016,
@@ -75,63 +146,60 @@ HISTORICAL_V16_FAILURE_HISTORY = {
 
 
 def validate_consumed_v16_failure_history(repository_root: Path) -> None:
-    state_root = repository_root / HISTORICAL_V16_STATE_RELATIVE_PATH
-    runtime = repository_root / HISTORICAL_V16_RUNTIME_RELATIVE_PATH
-    controller_logs = state_root / "logs"
-    runtime_parent = state_root / "runtimes"
-    resolved = {
-        repository_root / relative_path: contract
-        for relative_path, contract in HISTORICAL_V16_FAILURE_HISTORY.items()
-    }
+    consumed_history.validate_files(
+        repository_root,
+        label="v16 failure-history",
+        state_relative_path=STATE_RELATIVE_PATH,
+        runtime_relative_path=HISTORICAL_V16_RUNTIME_RELATIVE_PATH,
+        history=HISTORICAL_V16_FAILURE_HISTORY,
+    )
 
-    for directory in (state_root, runtime_parent, controller_logs):
-        if directory.is_symlink():
-            raise AssertionError(
-                f"The consumed v16 failure-history parent is linked: {directory}"
-            )
-        if directory.exists() and not directory.is_dir():
-            raise AssertionError(
-                f"The consumed v16 failure-history parent is not a directory: {directory}"
-            )
 
-    present = tuple(path.exists() or path.is_symlink() for path in resolved)
-    if not any(present):
+def validate_consumed_v17_runtime_history(repository_root: Path) -> None:
+    validated_paths = consumed_history.validate_files(
+        repository_root,
+        label="v17 runtime-history",
+        state_relative_path=STATE_RELATIVE_PATH,
+        runtime_relative_path=ACCEPTED_V17_RUNTIME_RELATIVE_PATH,
+        history=ACCEPTED_V17_RUNTIME_HISTORY,
+    )
+    if validated_paths is None:
         return
-    for directory in (
-        state_root,
-        runtime_parent,
-        controller_logs,
-        runtime,
-        runtime / "evidence",
-        runtime / "evidence/attrahite-block-registry",
-        runtime / "evidence/attrahite-block-registry/reports",
-        runtime / "game",
-        runtime / "game/logs",
-        runtime / "game/mods",
+    state_root, runtime = validated_paths
+    report = forge_evidence.require_json_object(
+        runtime / "evidence/attrahite-block-registry/reports/report.json",
+        "Consumed Forge v17 Attrahite report",
+    )
+    if report.get("status") != "passed" or report.get("passed") is not True:
+        raise AssertionError("The consumed v17 report is not a passing report")
+    if report.get("client_ticks") != 378:
+        raise AssertionError("The consumed v17 report client-tick count changed")
+    assertions = report.get("assertions")
+    if (
+        not isinstance(assertions, list)
+        or len(assertions) != 91
+        or any(
+            not isinstance(item, dict) or item.get("passed") is not True
+            for item in assertions
+        )
     ):
-        if not directory.is_dir():
+        raise AssertionError("The consumed v17 assertion inventory changed")
+    attrahite = report.get("attrahite")
+    if (
+        not isinstance(attrahite, dict)
+        or attrahite.get("persistence_exact") is not True
+        or attrahite.get("reopened_data_exact") is not True
+    ):
+        raise AssertionError("The consumed v17 persistence result changed")
+    for path in (
+        state_root / "logs/forge-1.20.1-20260904T071059Z.log",
+        runtime / "game/logs/latest.log",
+    ):
+        if not path.read_text(encoding="utf-8").rstrip().endswith(
+            "All dimensions are saved"
+        ):
             raise AssertionError(
-                f"The consumed v16 failure-history parent is missing: {directory}"
-            )
-        if directory.is_symlink():
-            raise AssertionError(
-                f"The consumed v16 failure-history parent is linked: {directory}"
-            )
-
-    if not all(present):
-        raise AssertionError("The consumed v16 failure history is partial")
-    for path, (expected_size, expected_sha256) in resolved.items():
-        if not path.is_file() or path.is_symlink():
-            raise AssertionError(
-                f"The consumed v16 failure-history artifact is missing or linked: {path}"
-            )
-        if path.stat().st_size != expected_size:
-            raise AssertionError(
-                f"The consumed v16 failure-history artifact size changed: {path}"
-            )
-        if forge_evidence.sha256_file(path) != expected_sha256:
-            raise AssertionError(
-                f"The consumed v16 failure-history artifact bytes changed: {path}"
+                f"The consumed v17 log did not shut down cleanly: {path}"
             )
 
 
@@ -447,6 +515,37 @@ class ActiveProfileTests(unittest.TestCase):
             (SCRIPT_DIRECTORY / "forge-1.20.1-profile-v17.json").read_bytes(),
         )
 
+    def test_accepted_v17_archive_is_byte_exact_and_self_contained(self) -> None:
+        archive = REPOSITORY_ROOT / ACCEPTED_V17_ARCHIVE_RELATIVE_PATH
+        manifest = archive / attrahite_evidence.ARCHIVE_MANIFEST_NAME
+        self.assertEqual(
+            manifest.stat().st_size,
+            ACCEPTED_V17_ARCHIVE_MANIFEST_SIZE,
+        )
+        self.assertEqual(
+            forge_evidence.sha256_file(manifest),
+            ACCEPTED_V17_ARCHIVE_MANIFEST_SHA256,
+        )
+        summary = attrahite_evidence.validate_archived_evidence(archive)
+        self.assertEqual(summary.profile_id, attrahite_evidence.PROFILE_ID)
+        self.assertEqual(summary.assertion_count, 91)
+        self.assertEqual(summary.screenshot_count, 2)
+        self.assertEqual(
+            summary.reopen_changed_pixel_ratio,
+            0.2507860725308642,
+        )
+        self.assertEqual(
+            summary.production_sha256,
+            ACCEPTED_V17_PRODUCTION_SHA256,
+        )
+        self.assertEqual(
+            summary.harness_sha256,
+            attrahite_evidence.HARNESS_SHA256,
+        )
+
+    def test_consumed_v17_runtime_history_remains_exact_when_present(self) -> None:
+        validate_consumed_v17_runtime_history(REPOSITORY_ROOT)
+
     def test_capture_lock_inventory_is_exact_without_object_order_semantics(
         self,
     ) -> None:
@@ -618,43 +717,36 @@ class ActiveProfileTests(unittest.TestCase):
     def test_consumed_v15_startup_failure_remains_byte_exact_when_present(
         self,
     ) -> None:
+        runtime_relative_path = (
+            STATE_RELATIVE_PATH
+            / "runtimes/etherology-e2e-forge-1.20.1-v15"
+        )
         expected = {
-            "scripts/e2e/.state/etherology-e2e-forge-1.20.1-v15-start.attempted": (
+            STATE_RELATIVE_PATH
+            / "etherology-e2e-forge-1.20.1-v15-start.attempted": (
                 98,
                 "4158b59e30bd99e6d82e845e1d0bd7e73c29b97f895c0cc1dd25f37be1f03394",
             ),
-            "scripts/e2e/.state/logs/forge-1.20.1-20260901T014800Z.log": (
+            STATE_RELATIVE_PATH / "logs/forge-1.20.1-20260901T014800Z.log": (
                 22_197,
                 "28d8a09b311286cb7234aae931c37d317798db946a95286babdd0269151be769",
             ),
-            (
-                "scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v15/"
-                "game/logs/latest.log"
-            ): (
+            runtime_relative_path / "game/logs/latest.log": (
                 22_405,
                 "719885a86267fcb80fb7f8217a15cb3e78d564f06738c3448f22bfd5044c36b2",
             ),
         }
-        resolved = {
-            REPOSITORY_ROOT / relative_path: contract
-            for relative_path, contract in expected.items()
-        }
-        present = tuple(path.exists() for path in resolved)
-        if not any(present):
-            return
-        self.assertTrue(all(present), "The consumed v15 startup-failure history is partial")
-        for path, (expected_size, expected_sha256) in resolved.items():
-            with self.subTest(path=path):
-                self.assertTrue(path.is_file())
-                self.assertFalse(path.is_symlink())
-            self.assertEqual(expected_size, path.stat().st_size)
-            self.assertEqual(expected_sha256, forge_evidence.sha256_file(path))
-
-        scenario_root = (
-            REPOSITORY_ROOT
-            / "scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v15/"
-            "evidence/attrahite-block-registry"
+        validated_paths = consumed_history.validate_files(
+            REPOSITORY_ROOT,
+            label="v15 startup-failure history",
+            state_relative_path=STATE_RELATIVE_PATH,
+            runtime_relative_path=runtime_relative_path,
+            history=expected,
         )
+        if validated_paths is None:
+            return
+        _, runtime = validated_paths
+        scenario_root = runtime / "evidence/attrahite-block-registry"
         for directory_name in ("reports", "screenshots"):
             directory = scenario_root / directory_name
             with self.subTest(directory=directory):
@@ -695,33 +787,67 @@ class ActiveProfileTests(unittest.TestCase):
     ) -> None:
         validate_consumed_v16_failure_history(REPOSITORY_ROOT)
 
-    def test_consumed_v16_history_rejects_dangling_leaf_symlinks(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            repository_root = Path(temporary_directory)
-            missing_targets = repository_root / "missing-targets"
-            for index, relative_path in enumerate(HISTORICAL_V16_FAILURE_HISTORY):
-                artifact = repository_root / relative_path
-                artifact.parent.mkdir(parents=True, exist_ok=True)
-                artifact.symlink_to(missing_targets / str(index))
-
-            with self.assertRaisesRegex(AssertionError, "missing or linked"):
-                validate_consumed_v16_failure_history(repository_root)
-
-    def test_consumed_v16_history_rejects_linked_parent_components(self) -> None:
-        for parent_name in ("runtimes", "logs"):
-            with self.subTest(parent_name=parent_name):
+    def test_consumed_histories_reject_dangling_leaf_symlinks(self) -> None:
+        cases = (
+            (
+                "v16",
+                HISTORICAL_V16_FAILURE_HISTORY,
+                validate_consumed_v16_failure_history,
+            ),
+            (
+                "v17",
+                ACCEPTED_V17_RUNTIME_HISTORY,
+                validate_consumed_v17_runtime_history,
+            ),
+        )
+        for label, history, validator in cases:
+            with self.subTest(label=label):
                 with tempfile.TemporaryDirectory() as temporary_directory:
                     repository_root = Path(temporary_directory)
-                    state_root = (
-                        repository_root / HISTORICAL_V16_STATE_RELATIVE_PATH
-                    )
-                    state_root.mkdir(parents=True)
-                    linked_target = repository_root / f"linked-{parent_name}"
-                    linked_target.mkdir()
-                    (state_root / parent_name).symlink_to(linked_target)
+                    missing_targets = repository_root / "missing-targets"
+                    for index, relative_path in enumerate(history):
+                        artifact = repository_root / relative_path
+                        artifact.parent.mkdir(parents=True, exist_ok=True)
+                        artifact.symlink_to(missing_targets / str(index))
 
-                    with self.assertRaisesRegex(AssertionError, "parent is linked"):
-                        validate_consumed_v16_failure_history(repository_root)
+                    with self.assertRaisesRegex(AssertionError, "missing or linked"):
+                        validator(repository_root)
+
+    def test_consumed_histories_reject_linked_parent_components(self) -> None:
+        validators = (
+            ("v16", validate_consumed_v16_failure_history),
+            ("v17", validate_consumed_v17_runtime_history),
+        )
+        for label, validator in validators:
+            for parent_name in ("runtimes", "logs"):
+                with self.subTest(label=label, parent_name=parent_name):
+                    with tempfile.TemporaryDirectory() as temporary_directory:
+                        repository_root = Path(temporary_directory)
+                        state_root = (
+                            repository_root / STATE_RELATIVE_PATH
+                        )
+                        state_root.mkdir(parents=True)
+                        linked_target = repository_root / f"linked-{parent_name}"
+                        linked_target.mkdir()
+                        (state_root / parent_name).symlink_to(linked_target)
+
+                        with self.assertRaisesRegex(
+                            AssertionError,
+                            "parent is linked",
+                        ):
+                            validator(repository_root)
+
+    def test_consumed_history_rejects_artifacts_outside_state_root(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository_root = Path(temporary_directory)
+            with self.assertRaisesRegex(AssertionError, "escapes its state root"):
+                consumed_history.validate_files(
+                    repository_root,
+                    label="fixture",
+                    state_relative_path=STATE_RELATIVE_PATH,
+                    runtime_relative_path=ACCEPTED_V17_RUNTIME_RELATIVE_PATH,
+                    history={Path("outside.log"): (0, "0" * 64)},
+                )
 
     def test_consumed_v16_failure_fingerprint_is_preserved_when_present(
         self,
@@ -1096,6 +1222,22 @@ class ArchiveContractTests(unittest.TestCase):
         self.assertEqual(91, summary.assertion_count)
         self.assertEqual(2, summary.screenshot_count)
         self.assertEqual(attrahite_evidence.HARNESS_SHA256, summary.harness_sha256)
+
+    def test_archive_artifact_inventory_ignores_object_order_only(self) -> None:
+        manifest_path = self.archive_root / attrahite_evidence.ARCHIVE_MANIFEST_NAME
+        manifest = build_archive_manifest(self.archive_root, self.report)
+        artifacts = manifest["artifacts"]
+        manifest["artifacts"] = {
+            role: artifacts[role]
+            for role in reversed(tuple(artifacts))
+        }
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        attrahite_evidence.validate_archived_evidence(self.archive_root)
+
+        manifest["artifacts"]["foreign"] = {}
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        with self.assertRaises(forge_client.E2EError):
+            attrahite_evidence.validate_archived_evidence(self.archive_root)
 
     def test_rejects_payload_manifest_and_harness_pin_tampering(self) -> None:
         manifest_path = self.archive_root / attrahite_evidence.ARCHIVE_MANIFEST_NAME

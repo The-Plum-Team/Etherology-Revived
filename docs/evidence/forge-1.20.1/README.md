@@ -5,6 +5,73 @@ clients and a dedicated server on the baseline Mac. Every run used a new
 repository-owned profile under `scripts/e2e/.state/`; none read, modified, or
 derived data from an external launcher profile.
 
+## Current Attrahite packaged client (v17)
+
+The one-shot `etherology-e2e-forge-1.20.1-v17` profile ran the packaged
+`attrahite-block-registry` scenario in a fresh integrated world. The report
+passed all 91 assertions in 378 client ticks, force-saved, disconnected,
+reopened the world, and published two unedited native 1920x1080 composed
+framebuffers. Provisioning and launch consulted no external game profile.
+
+![Forge 1.20.1 Attrahite gallery](attrahite-block-registry-v17/screenshots/attrahite-block-registry-initial.png)
+
+- Profile manifest: `3,702` bytes, SHA-256
+  `00475fd4af5741119b44b3ca70484e967ee0b7a8c51fdc222ebdde3e2bf0ba58`
+- Minecraft: `1.20.1`; Forge: `47.4.9`; runtime Java: `17`
+- Production JAR: `1,311,266` bytes, SHA-256
+  `b2ac29597159c6089a12cfdebd8d8e1c19b9f528cb0b52a29ec829b1c35bc47b`
+- Harness JAR: `244,324` bytes, SHA-256
+  `9921ec314c9aa411ca1c2f9632faa1a9e05a60b62589d12a416c228bc85170b8`
+- Report status: `passed`; assertions: `91` passed, `0` failed
+- Reopened whole-frame changed-pixel ratio: `0.250786`
+- Reopened structural-change ratio: `0.001778`
+- Gallery mean luminance: `159.441135` initial, `160.264757` reopened
+- Gallery median luminance: `164` initial, `165` reopened
+- Gallery dark-pixel ratio: `0.000485` in both captures
+
+The verifier proves the exact four block/item registrations, runtime classes,
+default states, valid unique non-negative default-state network IDs, canonical
+resources, block/item tags, four loot tables, nine recipes and advancements,
+native `BlockItem` placement, plain, Silk Touch, and seeded Fortune III loot,
+and exact structural/data persistence after reopen. Before the first fixture
+mutation, 20 consecutive client ticks proved all four arena chunks loaded, an
+empty terrain-build queue, an idle lighting provider, all four light columns
+enabled, and all six future SKY samples at 15. Both captures then held exact
+camera, mirror, lighting, and render readiness for 120 composed frames.
+
+The whole-frame delta comes from moving clouds and background shading. Direct
+pixel decoding confirms all four gallery columns remain in the same positions:
+the structural delta and gallery-lighting metrics remain within their strict
+limits, and no missing-texture pixels occur.
+
+Frozen file digests:
+
+- `attrahite-block-registry-v17/archive-manifest.json`:
+  `cc4450a4b29b26e87b0d287c623772e077cdff085e279798624f882ee3931752`
+- `attrahite-block-registry-v17/reports/report.json`:
+  `d014611812aa19431339716f91dc963b0c53de04af1987d6ece5dac611c94eb1`
+- `attrahite-block-registry-v17/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `attrahite-block-registry-v17/screenshots/attrahite-block-registry-initial.png`:
+  `1acb9186fa06979535066dafdaea5607458326c1f9414c6f285d5d5983b9753d`
+- `attrahite-block-registry-v17/screenshots/attrahite-block-registry-reopened.png`:
+  `865818a3d23bdaf1a30ec54c5374ed6d70bc3171e99237d55ec021ad02feba76`
+
+Repeat the archive-only check with:
+
+```bash
+python3 -B scripts/e2e/forge_attrahite_evidence_v17.py \
+  --archive docs/evidence/forge-1.20.1/attrahite-block-registry-v17
+./gradlew \
+  :forge:1.20.1:validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity \
+  --no-daemon --console=plain
+```
+
+This is a bounded block-family, loot, recipe, rendering, and persistence proof;
+it does not establish natural Attrahite generation. The v17 identity is
+permanently consumed and must not be provisioned, staged, checked, or launched
+again.
+
 ## Forest Lantern dedicated server (v16)
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v16`
@@ -1018,11 +1085,13 @@ requires those current-artifact gates, probe isolation checks, and archive
 integrity. Each proof covers a distinct boundary; this archive proves its
 capture-time observations and payload integrity, not identity with later builds.
 
-The canonical Attrahite resource remains Fabric-only because its items are not
-ported. The synthetic table proves the shared condition and serializer, not
-Attrahite gameplay or drop parity. Native sound playback, Forge's unsupported
-custom sculk frequency, the full authoritative registry spine, and the broader
-gameplay/native E2E matrix remain deferred. The Fabric `v21` Phase 0 archive
+At the time of this historical v4 capture, the canonical Attrahite resource and
+items were still Fabric-only. Its synthetic table proves only the shared
+condition and serializer; the current Forge server-v19 and packaged-client-v17
+archives above now provide bounded Attrahite gameplay and drop parity. Native
+sound playback, Forge's unsupported custom sculk frequency, the full
+authoritative registry spine, and the broader gameplay/native E2E matrix remain
+deferred. The Fabric `v21` Phase 0 archive
 exercises the packaged client artifact at the shared material-item checkpoint,
 but its 42 baseline assertions do not directly test the 14 material IDs or
 their gameplay consumers. It predates the metal-block rebuild and is not

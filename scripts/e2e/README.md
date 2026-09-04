@@ -395,19 +395,20 @@ The Forge lane is a separate repository-owned profile described by
 `forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
-an external launcher profile. The active launch contract is the fresh isolated
+an external launcher profile. The tracked launch contract is the consumed
 `etherology-e2e-forge-1.20.1-v17` profile. Its exact ordered scenarios are
 `ethereal-storage`, `ethereal-channel`, `forest-lantern`, and
-`attrahite-block-registry`; selection defaults to storage. v17 is preparation
-for one native Attrahite attempt and is not accepted evidence until that run,
-strict stopped-live verification, archive sealing, and archive verification all
-succeed. v13 passed the native Forest Lantern capture with 69 of 69 assertions,
-seven unedited 1920x1080 framebuffers, and a minimum transition ratio of
-`0.008954`; its accepted archive is
-`docs/evidence/forge-1.20.1/forest-lantern-v13`. The v13 identity is permanently
-consumed and must not be provisioned, staged, checked, or launched again. The
-v12 identity is also permanently
-consumed by its one native Forest Lantern diagnostic: the report reached the
+`attrahite-block-registry`; selection defaults to storage. v17 passed the native
+Attrahite capture with 91 of 91 assertions, two unedited 1920x1080
+framebuffers, strict stopped-live verification, archive sealing, and
+archive-only verification. Its accepted archive is
+`docs/evidence/forge-1.20.1/attrahite-block-registry-v17`. v13 passed the native
+Forest Lantern capture with 69 of 69 assertions, seven unedited 1920x1080
+framebuffers, and a minimum transition ratio of `0.008954`; its accepted
+archive is `docs/evidence/forge-1.20.1/forest-lantern-v13`. The v13 identity is
+permanently consumed and must not be provisioned, staged, checked, or launched
+again. The v12 identity is also permanently consumed by its one native Forest
+Lantern diagnostic: the report reached the
 prepared scenario with 69 assertions, but only 12 passed and 57 cascaded from
 one harness false negative before any screenshot. Production Forge registration
 was correct; the probe queried the deprecated `RenderLayers` map and observed
@@ -431,8 +432,8 @@ The launcher-created runtime marker also records the tracked profile manifest's
 repository path, exact byte size, and SHA-256. Every readiness and launch action
 recomputes that descriptor and rejects a mismatched marker.
 
-The following is the prepared one-shot v17 workflow. Only the repository-owned
-v17 identity may use it; no historical identity may be reused:
+The following is the historical one-shot v17 workflow. It is retained only as
+provenance and must not be executed again; no consumed identity may be reused:
 
 ```bash
 python3 -B scripts/e2e/forge_client.py validate
@@ -454,7 +455,7 @@ python3 -B scripts/e2e/forge_client.py status
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. It is never removed
 and blocks another provision, stage, check, or start for v17, including after an
-early launch failure. All consumed v11-v16 identities must never be relaunched.
+early launch failure. All consumed v11-v17 identities must never be relaunched.
 `status` remains available; `stop` and `stop-all-owned`
 are abort-only recovery commands, not part of successful capture publication.
 
@@ -499,6 +500,44 @@ python3 -B scripts/e2e/forge_channel_evidence.py --scenario ethereal-channel
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
 python3 -B scripts/e2e/forge_attrahite_evidence_v17.py --live
 ```
+
+The accepted v17 publication validated the stopped live capture, copied only
+the report, completion marker, and two PNGs while preserving modification
+times, sealed them against that stopped owned capture, and validated the frozen
+archive. These commands are provenance and must not be replayed against v17:
+
+```bash
+python3 -B scripts/e2e/forge_attrahite_evidence_v17.py --live
+/bin/mkdir docs/evidence/forge-1.20.1/attrahite-block-registry-v17
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v17/evidence/attrahite-block-registry/. \
+  docs/evidence/forge-1.20.1/attrahite-block-registry-v17/
+python3 -B scripts/e2e/forge_attrahite_evidence_v17.py \
+  --create-archive-manifest docs/evidence/forge-1.20.1/attrahite-block-registry-v17 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v17 \
+  --profile-manifest scripts/e2e/forge-1.20.1-profile.json
+```
+
+Archive-only verification remains repeatable:
+
+```bash
+python3 -B scripts/e2e/forge_attrahite_evidence_v17.py \
+  --archive docs/evidence/forge-1.20.1/attrahite-block-registry-v17
+./gradlew \
+  :forge:1.20.1:validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity \
+  --no-daemon --console=plain
+```
+
+The production-JAR SHA-256 is
+`b2ac29597159c6089a12cfdebd8d8e1c19b9f528cb0b52a29ec829b1c35bc47b`,
+the harness-JAR SHA-256 is
+`9921ec314c9aa411ca1c2f9632faa1a9e05a60b62589d12a416c228bc85170b8`,
+and the archive-manifest SHA-256 is
+`cc4450a4b29b26e87b0d287c623772e077cdff085e279798624f882ee3931752`.
+The whole-frame reopen delta is `0.250786`, driven by moving clouds; the
+fixture-region structural delta is `0.001778`, mean gallery luminance changes
+from `159.441135` to `160.264757`, median luminance changes from `164` to `165`,
+and the dark-pixel ratio remains `0.000485`.
 
 The accepted v13 publication validated the stopped live capture, copied only
 the report, completion marker, and seven PNGs while preserving modification

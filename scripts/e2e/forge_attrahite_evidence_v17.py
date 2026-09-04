@@ -1593,7 +1593,10 @@ def validate_archive_manifest(
         capture_metadata.get("sha256"), "Forge Attrahite capture metadata"
     )
     artifacts = manifest.get("artifacts")
-    if not isinstance(artifacts, dict) or tuple(artifacts) != ("production", "harness"):
+    if not isinstance(artifacts, dict) or set(artifacts) != {
+        "production",
+        "harness",
+    }:
         raise forge_client.E2EError("Forge Attrahite archive artifacts changed")
     validated_artifacts: dict[str, dict[str, object]] = {}
     for role, mod_id, file_name in EXPECTED_ARTIFACTS:

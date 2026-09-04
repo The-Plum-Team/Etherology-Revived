@@ -8684,6 +8684,7 @@ if (minecraftVersion == "1.20.1") {
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
                 rootProject.file("scripts/e2e/test_forge_evidence.py"),
+                rootProject.file("scripts/e2e/consumed_history.py"),
                 rootProject.file("release/release-matrix.json"),
                 rootProject.file("gradle.properties"),
                 rootProject.file("forge/build.gradle.kts"),
@@ -8729,6 +8730,67 @@ if (minecraftVersion == "1.20.1") {
                         "etherology-forge-e2e-harness.jar",
                 ),
             ).withPropertyName("forgeAttrahiteClientV16FailureHistory").optional()
+            inputs.files(
+                rootProject.file(
+                    "scripts/e2e/.state/" +
+                        "etherology-e2e-forge-1.20.1-v17-start.attempted",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/" +
+                        ".etherology-forge-e2e-profile.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/forge-artifact-lock.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/evidence/" +
+                        ".etherology-e2e-evidence.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/evidence/" +
+                        "attrahite-block-registry/reports/report.json",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/evidence/" +
+                        "attrahite-block-registry/reports/done.marker",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/evidence/" +
+                        "attrahite-block-registry/screenshots/" +
+                        "attrahite-block-registry-initial.png",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/evidence/" +
+                        "attrahite-block-registry/screenshots/" +
+                        "attrahite-block-registry-reopened.png",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/logs/forge-1.20.1-20260904T071059Z.log",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/game/logs/latest.log",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/game/mods/" +
+                        "etherology-forge-e2e-harness.jar",
+                ),
+                rootProject.file(
+                    "scripts/e2e/.state/runtimes/" +
+                        "etherology-e2e-forge-1.20.1-v17/game/mods/" +
+                        "etherology-forge-under-test.jar",
+                ),
+            ).withPropertyName("forgeAttrahiteClientV17AcceptedHistory").optional()
+            inputs.dir(forgeAttrahiteClientEvidenceArchive)
+                .withPropertyName("forgeAttrahiteClientEvidenceArchiveSafetyFixture")
             inputs.files(
                 rootProject.fileTree("src/main/generated/assets/etherology") {
                     include("blockstates/attrahite*.json")

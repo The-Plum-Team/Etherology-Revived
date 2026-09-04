@@ -566,6 +566,7 @@ if (minecraftVersion == "1.20.1") {
                 rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v28.py"),
                 rootProject.file("scripts/e2e/fabric_attrahite_evidence_v29.py"),
                 rootProject.file("scripts/e2e/test_fabric_attrahite_evidence_v29.py"),
+                rootProject.file("scripts/e2e/consumed_history.py"),
                 fabricEvidenceLibrary,
                 fabricEvidenceTestLibrary,
                 fabricActiveProfile,

@@ -1,0 +1,59 @@
+{
+  "completion_marker": {
+    "path": "evidence/pedestal-baseline/reports/done.marker",
+    "sha256": "fb3a4390514a1798e92659f149e7818ac2000e67e3124cc4481b9e34c5ca1bb4",
+    "size": 104
+  },
+  "controller_log": {
+    "path": "logs/original-client-20260904T165916Z.log",
+    "sha256": "4b335c6d1a14bdb011c95529845579a932a2a82f0fbbc618f5ad094089323b54",
+    "size": 27978
+  },
+  "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea",
+  "launch_attempt": {
+    "path": "launch-attempt.json",
+    "sha256": "5c072d7dae820771451d821ba7cc72d20061101c5acb1d68c1c5365eece48e6e",
+    "size": 872152
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache": {
+      "file_count": 0,
+      "files": [],
+      "path": "assets/skins",
+      "present": false,
+      "total_size": 0
+    }
+  },
+  "profile_id": "etherology-original-fabric-1.21.1-published-0.1.7-v14",
+  "scenario": "pedestal-baseline",
+  "scenario_report": {
+    "path": "evidence/pedestal-baseline/reports/report.json",
+    "sha256": "3058822170d3c6c54da297cedfbb431629c27cbd65c632e43cdeca88777769ef",
+    "size": 62888
+  },
+  "schema": 1,
+  "screenshots": [
+    {
+      "path": "evidence/pedestal-baseline/screenshots/pedestal-gallery.png",
+      "sha256": "57ede348fbb2131c711dae36a7347f3d2d11e5ed83ed3a326b33f5848046f7fb",
+      "size": 662227
+    },
+    {
+      "path": "evidence/pedestal-baseline/screenshots/pedestal-transition-drops.png",
+      "sha256": "a6a7b744f39b947451605a460c1905e516daaf00ca32e94ab6d0aea59845e65e",
+      "size": 376553
+    },
+    {
+      "path": "evidence/pedestal-baseline/screenshots/pedestal-persistence-initial.png",
+      "sha256": "dd9118fb86e700a6df2260fb9fbb9de0c6b9d6587315847dbed25300e1ad05e0",
+      "size": 328701
+    },
+    {
+      "path": "evidence/pedestal-baseline/screenshots/pedestal-persistence-reopened.png",
+      "sha256": "188df9d988d69f36d09fb75a6409731c863f0c0e764bfe05e3f71f291b5a02ff",
+      "size": 260613
+    }
+  ],
+  "status": "passed",
+  "verified_at_unix_ns": 1788541296488271000
+}

@@ -3884,6 +3884,94 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
             "9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6",
         )
 
+    def test_consumed_pedestal_archive_verifier_is_exactly_bound(self) -> None:
+        configuration = client.load_configuration(ACTIVE_PEDESTAL_MANIFEST_PATH)
+        verifier = client.verify_pedestal_archive_verifier_binding(configuration)
+        self.assertEqual(client.PEDESTAL_ARCHIVE_VERIFIER_SIZE, 53_734)
+        self.assertEqual(
+            client.PEDESTAL_ARCHIVE_VERIFIER_SHA256,
+            "d376756df89c2c229487493f725e64bbeccbfb916c219af5831a2d3311ed83b3",
+        )
+        self.assertEqual(
+            verifier.PROFILE_ID,
+            client.profile_spec(configuration)["id"],
+        )
+        self.assertEqual(verifier.LAUNCH_VERIFIER_SIZE, 42_963)
+        self.assertEqual(
+            verifier.LAUNCH_VERIFIER_SHA256,
+            client.PEDESTAL_EVIDENCE_VERIFIER_SHA256,
+        )
+
+    def test_consumed_pedestal_profile_rejects_mutation_before_staging(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory) / "consumed-runtime"
+            runtime.mkdir()
+            configuration = mock.Mock()
+            with (
+                mock.patch.object(
+                    client,
+                    "scenario_spec",
+                    return_value={"id": "pedestal-baseline"},
+                ),
+                mock.patch.object(
+                    client,
+                    "verify_pedestal_evidence_verifier_binding",
+                    return_value=mock.Mock(),
+                ),
+                mock.patch.object(client, "runtime_root", return_value=runtime),
+                mock.patch.object(
+                    client,
+                    "validate_pedestal_fresh_archive",
+                ) as fresh_archive,
+                self.assertRaisesRegex(client.BaselineError, "must never"),
+            ):
+                client.reject_consumed_pedestal_mutation(configuration)
+            fresh_archive.assert_not_called()
+
+    def test_pedestal_profile_state_accepts_archive_without_local_runtime(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory)
+            archive = repository / "accepted-archive"
+            archive.mkdir()
+            (archive / "archive-manifest.json").write_text(
+                "{}\n",
+                encoding="utf-8",
+            )
+            runtime = repository / "absent-runtime"
+            configuration = mock.Mock()
+            configuration.repository_root = repository
+            configuration.manifest_path = repository / "profile.json"
+            configuration.harness_path = repository / "harness.jar"
+            launch_verifier = mock.Mock()
+            launch_verifier.FRESH_ARCHIVE_RELATIVE_PATH = "accepted-archive"
+            archive_verifier = mock.Mock()
+            archive_verifier.ARCHIVE_RELATIVE_PATH = "accepted-archive"
+            summary = mock.Mock(assertion_count=74, screenshot_count=4)
+            archive_verifier.validate_archive.return_value = summary
+            with (
+                mock.patch.object(
+                    client,
+                    "verify_pedestal_evidence_verifier_binding",
+                    return_value=launch_verifier,
+                ),
+                mock.patch.object(
+                    client,
+                    "verify_pedestal_archive_verifier_binding",
+                    return_value=archive_verifier,
+                ),
+                mock.patch.object(client, "runtime_root", return_value=runtime),
+            ):
+                state, actual_summary = client.validate_pedestal_profile_state(
+                    configuration
+                )
+            self.assertEqual(state, "consumed")
+            self.assertIs(actual_summary, summary)
+            archive_verifier.validate_archive.assert_called_once()
+            archive_verifier.validate_consumed_runtime.assert_not_called()
+            launch_verifier.validate_fresh_contract.assert_not_called()
+
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:
         manifest = json.loads(TRACKED_MANIFEST_PATH.read_text(encoding="utf-8"))
         manifest["capture"]["harness"]["path"] = "/tmp/foreign.jar"

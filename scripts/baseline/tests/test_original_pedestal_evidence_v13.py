@@ -15,6 +15,39 @@ from unittest import mock
 BASELINE_DIRECTORY = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = BASELINE_DIRECTORY.parents[1]
 VERIFIER_PATH = BASELINE_DIRECTORY / "original_pedestal_evidence_v13.py"
+FRESH_ARCHIVE_README = """# Pedestal v14 evidence contract — fresh, not launched
+
+This directory is the exclusive evidence target for the repository-owned
+`etherology-original-fabric-1.21.1-published-0.1.7-v14` profile. It is a fresh
+lane: the runtime has not been provisioned or launched, and this README is the
+only permitted prelaunch entry.
+
+The v1.4.3 harness retains the 74-assertion Pedestal contract, four native
+1920×1080 captures, one explicit vanilla scheduled dispenser tick per fixture,
+and the bounded stage and failed-shutdown behavior prepared for v13. It keeps
+the authoritative server drop assertions, exact client block-state snapshot,
+and all five client stale-block-entity and replacement-air checks for the
+transition phase.
+
+V13 proved all five client transition checks but timed out because capture
+readiness additionally demanded exact equality between a transient client item-
+entity snapshot and the already-proven server drop snapshot. The retained v13
+artifacts do not record the client map, so the reason for that mismatch remains
+unknown. V14 removes only that transient equality from pass/fail readiness. It
+records the expected and observed client drop maps at mirror readiness and
+immediately before capture, explicit booleans proving that both checkpoints
+were actually observed, and whether each observation equals the server map.
+The equality results remain diagnostic data that cannot affect the 74
+assertion outcomes.
+
+Before the one allowed native launch, the v14 verifier must prove the immutable
+v11, v12, and v13 consumed-run diagnostic archives, the exact v14 manifest,
+harness, contract sources, this README-only target, and the absence of the v14
+runtime. After a successful run this placeholder will be replaced by the
+verified report, four screenshots, world evidence, and archive manifest. No
+result from v11, v12, or v13 is accepted as Pedestal behavior evidence, and no
+consumed profile may ever be launched again.
+"""
 VERIFIER_SPECIFICATION = importlib.util.spec_from_file_location(
     "etherology_original_pedestal_evidence_v13_tested",
     VERIFIER_PATH,
@@ -73,11 +106,68 @@ class PedestalEvidenceV13Test(unittest.TestCase):
 
     @staticmethod
     def copy_fresh_archive(repository: Path) -> Path:
-        source = REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
         destination = repository / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source, destination)
+        destination.mkdir(parents=True)
+        (destination / "README.md").write_text(
+            FRESH_ARCHIVE_README,
+            encoding="utf-8",
+        )
         return destination
+
+    @classmethod
+    def copy_active_prelaunch_contract(
+        cls,
+        repository: Path,
+    ) -> tuple[Path, Path, Path, Path]:
+        cls.copy_consumed_histories(repository)
+        for relative_path in (
+            active_verifier._base.LEGACY_V10_RELATIVE_PATH,
+            active_verifier._V13_PROFILE_RELATIVE_PATH,
+            active_verifier._V13_VERIFIER_RELATIVE_PATH,
+            active_verifier.PROFILE_RELATIVE_PATH,
+            (
+                "baseline-harness/fabric/1.21.1/src/main/java/"
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalBaselineContract.java"
+            ),
+            (
+                "baseline-harness/fabric/1.21.1/src/main/java/"
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalBaselineScenario.java"
+            ),
+            (
+                "baseline-harness/fabric/1.21.1/src/main/java/"
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalEvidenceWriter.java"
+            ),
+            "baseline-harness/fabric/1.21.1/gradle.properties",
+        ):
+            source = REPOSITORY_ROOT / relative_path
+            destination = repository / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+
+        v13_archive_source = (
+            REPOSITORY_ROOT / active_verifier._V13_DIAGNOSTIC_RELATIVE_PATH
+        )
+        v13_archive_destination = (
+            repository / active_verifier._V13_DIAGNOSTIC_RELATIVE_PATH
+        )
+        v13_archive_destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copytree(v13_archive_source, v13_archive_destination)
+
+        harness_relative_path = (
+            Path("baseline-harness/fabric/1.21.1/build/libs")
+            / active_verifier.HARNESS_FILE
+        )
+        harness_path = repository / harness_relative_path
+        harness_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPOSITORY_ROOT / harness_relative_path, harness_path)
+
+        manifest_path = repository / active_verifier.PROFILE_RELATIVE_PATH
+        runtime_path = repository / active_verifier.ACTIVE_RUNTIME_RELATIVE_PATH
+        archive_path = cls.copy_fresh_archive(repository)
+        return manifest_path, harness_path, runtime_path, archive_path
 
     @staticmethod
     def repin_manifest(archive: Path) -> dict[str, tuple[int, str]]:
@@ -521,54 +611,55 @@ class PedestalEvidenceV13Test(unittest.TestCase):
             REPOSITORY_ROOT,
             active_verifier.PedestalEvidenceError,
         )
-        active_verifier.validate_fresh_contract(
-            repository_root=REPOSITORY_ROOT,
-            manifest_path=configuration.manifest_path,
-            harness_path=configuration.harness_path,
-            runtime_path=client.runtime_root(configuration),
-            archive_path=(
-                REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
-            ),
-            sha256_file=sha256_file,
-        )
-
-    def test_fresh_contract_rejects_reusing_the_consumed_v13_runtime(self) -> None:
-        harness = (
-            REPOSITORY_ROOT
-            / "baseline-harness/fabric/1.21.1/build/libs"
-            / active_verifier.HARNESS_FILE
-        )
-        manifest = REPOSITORY_ROOT / active_verifier.PROFILE_RELATIVE_PATH
-        archive = REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
-        active_runtime = (
-            REPOSITORY_ROOT / active_verifier.ACTIVE_RUNTIME_RELATIVE_PATH
-        )
-        self.assertFalse(active_runtime.exists() or active_runtime.is_symlink())
-        active_verifier.validate_fresh_contract(
-            repository_root=REPOSITORY_ROOT,
-            manifest_path=manifest,
-            harness_path=harness,
-            runtime_path=active_runtime,
-            archive_path=archive,
-            sha256_file=sha256_file,
-        )
-        consumed_runtime = (
-            REPOSITORY_ROOT
-            / "scripts/baseline/.state/runtimes"
-            / active_verifier._V13_PROFILE_ID
-        )
-        with self.assertRaisesRegex(
-            active_verifier.PedestalEvidenceError,
-            "active runtime path is not the fresh Pedestal v14 lane",
-        ):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory).resolve()
+            manifest, harness, runtime, archive = (
+                self.copy_active_prelaunch_contract(repository)
+            )
+            self.assertFalse(runtime.exists() or runtime.is_symlink())
             active_verifier.validate_fresh_contract(
-                repository_root=REPOSITORY_ROOT,
+                repository_root=repository,
                 manifest_path=manifest,
                 harness_path=harness,
-                runtime_path=consumed_runtime,
+                runtime_path=runtime,
                 archive_path=archive,
                 sha256_file=sha256_file,
             )
+
+    def test_fresh_contract_rejects_reusing_the_consumed_v13_runtime(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory).resolve()
+            manifest, harness, active_runtime, archive = (
+                self.copy_active_prelaunch_contract(repository)
+            )
+            self.assertFalse(
+                active_runtime.exists() or active_runtime.is_symlink()
+            )
+            active_verifier.validate_fresh_contract(
+                repository_root=repository,
+                manifest_path=manifest,
+                harness_path=harness,
+                runtime_path=active_runtime,
+                archive_path=archive,
+                sha256_file=sha256_file,
+            )
+            consumed_runtime = (
+                repository
+                / "scripts/baseline/.state/runtimes"
+                / active_verifier._V13_PROFILE_ID
+            )
+            with self.assertRaisesRegex(
+                active_verifier.PedestalEvidenceError,
+                "active runtime path is not the fresh Pedestal v14 lane",
+            ):
+                active_verifier.validate_fresh_contract(
+                    repository_root=repository,
+                    manifest_path=manifest,
+                    harness_path=harness,
+                    runtime_path=consumed_runtime,
+                    archive_path=archive,
+                    sha256_file=sha256_file,
+                )
 
     def test_validate_evidence_delegates_all_semantics_after_history_gates(
         self,

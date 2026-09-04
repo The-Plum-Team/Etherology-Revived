@@ -108,6 +108,13 @@ PEDESTAL_EVIDENCE_VERIFIER_SIZE = 42_963
 PEDESTAL_EVIDENCE_VERIFIER_SHA256 = (
     "8f4775e95f2eea7595c53197f2032d4379c22efbcb046a2bfc44d4148c92a819"
 )
+PEDESTAL_ARCHIVE_VERIFIER_PATH = (
+    SCRIPT_DIRECTORY / "original_pedestal_archive_v14.py"
+)
+PEDESTAL_ARCHIVE_VERIFIER_SIZE = 53_734
+PEDESTAL_ARCHIVE_VERIFIER_SHA256 = (
+    "d376756df89c2c229487493f725e64bbeccbfb916c219af5831a2d3311ed83b3"
+)
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
 PINNED_FABRIC_LIBRARY_CACHE_DIRECTORY = "pinned-fabric-libraries"
@@ -6308,6 +6315,67 @@ def verify_pedestal_evidence_verifier_binding(
     return verifier
 
 
+def load_pedestal_archive_verifier() -> types.ModuleType:
+    verifier_path = PEDESTAL_ARCHIVE_VERIFIER_PATH
+    verifier_source = read_exact_file_no_follow(
+        verifier_path,
+        PEDESTAL_ARCHIVE_VERIFIER_SHA256,
+        PEDESTAL_ARCHIVE_VERIFIER_SIZE,
+        "Pedestal v14 accepted-archive verifier",
+    )
+    specification = importlib.util.spec_from_file_location(
+        "etherology_original_pedestal_archive_v14",
+        verifier_path,
+    )
+    if specification is None or specification.loader is None:
+        raise BaselineError(
+            f"Cannot load Pedestal accepted-archive verifier: {verifier_path}"
+        )
+    module = importlib.util.module_from_spec(specification)
+    sys.modules[specification.name] = module
+    previous_bytecode_policy = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        exec(compile(verifier_source, str(verifier_path), "exec"), module.__dict__)
+    except (OSError, ImportError, RuntimeError, SyntaxError) as exception:
+        raise BaselineError(
+            f"Cannot initialize Pedestal accepted-archive verifier: {exception}"
+        ) from exception
+    finally:
+        sys.dont_write_bytecode = previous_bytecode_policy
+    return module
+
+
+def verify_pedestal_archive_verifier_binding(
+    configuration: Configuration,
+) -> types.ModuleType:
+    verifier = load_pedestal_archive_verifier()
+    harness = harness_spec(configuration)
+    profile = profile_spec(configuration)
+    scenario = scenario_spec(configuration)
+    expected_manifest_path = configuration.manifest_path.relative_to(
+        configuration.repository_root
+    ).as_posix()
+    if (
+        verifier.SCENARIO_ID != scenario["id"]
+        or verifier.PROFILE_ID != profile["id"]
+        or verifier.PROFILE_RELATIVE_PATH != expected_manifest_path
+        or verifier.ARCHIVE_RELATIVE_PATH
+        != "docs/evidence/original-1.21.1/pedestal-v14"
+        or verifier.HARNESS_FILE != harness["file_name"]
+        or verifier.HARNESS_SIZE != harness["size"]
+        or verifier.HARNESS_SHA256 != harness["sha256"]
+        or verifier.LAUNCH_VERIFIER_SIZE != PEDESTAL_EVIDENCE_VERIFIER_SIZE
+        or verifier.LAUNCH_VERIFIER_SHA256
+        != PEDESTAL_EVIDENCE_VERIFIER_SHA256
+    ):
+        raise BaselineError(
+            "The Pedestal archive verifier is not bound to the exact consumed "
+            "v14 contract"
+        )
+    return verifier
+
+
 def validate_pedestal_fresh_archive(
     configuration: Configuration,
     verifier: types.ModuleType,
@@ -6328,6 +6396,86 @@ def validate_pedestal_fresh_archive(
         raise BaselineError(
             f"Original Pedestal fresh-archive verifier failed closed: {exception}"
         ) from exception
+
+
+def pedestal_archive_path(
+    configuration: Configuration,
+    verifier: types.ModuleType,
+) -> Path:
+    return configuration.repository_root / verifier.ARCHIVE_RELATIVE_PATH
+
+
+def reject_consumed_pedestal_mutation(configuration: Configuration) -> None:
+    if scenario_spec(configuration)["id"] != "pedestal-baseline":
+        return
+    verifier = verify_pedestal_evidence_verifier_binding(configuration)
+    runtime = runtime_root(configuration)
+    if runtime.exists() or runtime.is_symlink():
+        raise BaselineError(
+            "The Pedestal v14 profile is consumed and must never be provisioned, "
+            "staged, checked, or launched again"
+        )
+    try:
+        validate_pedestal_fresh_archive(configuration, verifier)
+    except BaselineError as exception:
+        raise BaselineError(
+            "The Pedestal v14 archive is consumed or contaminated; this one-shot "
+            "profile must never be mutated or launched again"
+        ) from exception
+
+
+def validate_pedestal_profile_state(
+    configuration: Configuration,
+) -> tuple[str, object | None]:
+    launch_verifier = verify_pedestal_evidence_verifier_binding(configuration)
+    runtime = runtime_root(configuration)
+    fresh_archive = (
+        configuration.repository_root
+        / launch_verifier.FRESH_ARCHIVE_RELATIVE_PATH
+    )
+    archive_manifest = fresh_archive / "archive-manifest.json"
+    consumed = (
+        runtime.exists()
+        or runtime.is_symlink()
+        or archive_manifest.exists()
+        or archive_manifest.is_symlink()
+    )
+    if not consumed:
+        launch_verifier.validate_fresh_contract(
+            repository_root=configuration.repository_root,
+            manifest_path=configuration.manifest_path,
+            harness_path=configuration.harness_path,
+            runtime_path=runtime,
+            archive_path=fresh_archive,
+            sha256_file=sha256_file,
+            error_type=BaselineError,
+        )
+        return "fresh", None
+
+    archive_verifier = verify_pedestal_archive_verifier_binding(configuration)
+    archive = pedestal_archive_path(configuration, archive_verifier)
+    summary = archive_verifier.validate_archive(
+        repository_root=configuration.repository_root,
+        archive_path=archive,
+        manifest_path=configuration.manifest_path,
+        harness_path=configuration.harness_path,
+        decode_png=decode_png,
+        assert_image_is_not_blank=assert_image_is_not_blank,
+        sha256_file=sha256_file,
+        error_type=BaselineError,
+    )
+    if runtime.exists() or runtime.is_symlink():
+        owned_runtime = verify_owned_runtime(configuration)
+        with acquire_runtime_lifecycle_lock(configuration, owned_runtime):
+            assert_runtime_not_running(configuration, owned_runtime)
+            archive_verifier.validate_consumed_runtime(
+                repository_root=configuration.repository_root,
+                runtime_path=owned_runtime,
+                archive_path=archive,
+                sha256_file=sha256_file,
+                error_type=BaselineError,
+            )
+    return "consumed", summary
 
 
 def scenario_verifier_descriptor(
@@ -7380,19 +7528,11 @@ def validate_command() -> int:
     verify_harness_artifact(configuration)
     if scenario_id == "slitherite-block-registry":
         verify_slitherite_evidence_verifier_binding(configuration)
+    pedestal_state: str | None = None
+    pedestal_summary: object | None = None
     if scenario_id == "pedestal-baseline":
-        verifier = verify_pedestal_evidence_verifier_binding(configuration)
-        verifier.validate_fresh_contract(
-            repository_root=configuration.repository_root,
-            manifest_path=configuration.manifest_path,
-            harness_path=configuration.harness_path,
-            runtime_path=runtime_root(configuration),
-            archive_path=(
-                configuration.repository_root
-                / verifier.FRESH_ARCHIVE_RELATIVE_PATH
-            ),
-            sha256_file=sha256_file,
-            error_type=BaselineError,
+        pedestal_state, pedestal_summary = validate_pedestal_profile_state(
+            configuration
         )
     preflight_launcher_import_resolution()
     print(f"Validated profile: {profile_spec(configuration)['id']}")
@@ -7402,6 +7542,18 @@ def validate_command() -> int:
     fabric_snapshot = require_object(fabric_profile, "snapshot")
     print(f"Fabric profile snapshot SHA-256: {fabric_snapshot['sha256']}")
     print(f"Pinned top-level JAR members: {len(member_mod_ids)}")
+    if pedestal_state == "fresh":
+        print("Pedestal v14 one-shot state: fresh and launchable")
+    elif pedestal_state == "consumed":
+        print(
+            "Pedestal v14 one-shot state: accepted, consumed, and permanently "
+            "non-launchable"
+        )
+        print(
+            "Archived Pedestal assertions/screenshots: "
+            f"{pedestal_summary.assertion_count} assertions / "
+            f"{pedestal_summary.screenshot_count} screenshots"
+        )
     print("External game profiles consulted: 0")
     return 0
 
@@ -7409,6 +7561,7 @@ def validate_command() -> int:
 def provision_command() -> int:
     configuration = load_configuration()
     require_capture_harness(configuration)
+    reject_consumed_pedestal_mutation(configuration)
     created = provision_profile(configuration)
     qualifier = "Provisioned" if created else "Verified"
     print(f"{qualifier} repository-owned runtime: {runtime_root(configuration)}")
@@ -7419,6 +7572,7 @@ def provision_command() -> int:
 def stage_command() -> int:
     configuration = load_configuration()
     require_capture_harness(configuration)
+    reject_consumed_pedestal_mutation(configuration)
     changed = stage_reference_members(configuration)
     qualifier = "Staged" if changed else "Verified"
     print(f"{qualifier} eight published JARs plus the separately pinned harness")
@@ -7429,6 +7583,7 @@ def stage_command() -> int:
 def check_command() -> int:
     configuration = load_configuration()
     require_capture_harness(configuration)
+    reject_consumed_pedestal_mutation(configuration)
     scenario_id = str(scenario_spec(configuration)["id"])
     java_path, command = check_environment(configuration, scenario_id)
     runtime = runtime_spec(configuration)
@@ -7448,6 +7603,7 @@ def run_command(configured_scenario_id: str | None) -> int:
     configuration = load_configuration()
     scenario_id = resolve_scenario_id(configuration, configured_scenario_id)
     require_capture_harness(configuration)
+    reject_consumed_pedestal_mutation(configuration)
     java_path, command = check_environment(configuration, scenario_id)
     return run_owned_client(configuration, scenario_id, java_path, command)
 

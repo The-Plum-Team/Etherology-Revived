@@ -1,0 +1,255 @@
+{
+  "schema": 1,
+  "kind": "etherology-original-fabric-baseline-evidence",
+  "accepted": true,
+  "verification_scope": "archive-integrity-plus-captured-controller-verification-and-selected-world-proof",
+  "reference": {
+    "id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit_binding": "unavailable"
+  },
+  "scenario": "pedestal-baseline",
+  "archive_policy": {
+    "exact_relative_paths": [
+      "README.md",
+      "archive-manifest.json",
+      "controller/original-client.log",
+      "controller/verification.json",
+      "reports/done.marker",
+      "reports/report.json",
+      "screenshots/pedestal-gallery.png",
+      "screenshots/pedestal-persistence-initial.png",
+      "screenshots/pedestal-persistence-reopened.png",
+      "screenshots/pedestal-transition-drops.png",
+      "world-proof/entities/r.-1.0.mca",
+      "world-proof/entities/r.0.0.mca",
+      "world-proof/level.dat",
+      "world-proof/region/r.-1.0.mca",
+      "world-proof/region/r.0.0.mca",
+      "world-proof/session.lock"
+    ],
+    "symlinks_allowed": false,
+    "copied_runtime_artifacts_are_byte_for_byte": true
+  },
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v14",
+    "manifest_path": "scripts/baseline/original-fabric-1.21.1-published-0.1.7-v14.json",
+    "manifest_size": 10307,
+    "manifest_sha256": "ddee58342b8a0e6c45bea375247243be5cc20bfa1680ef28f0d9ab5c72518962"
+  },
+  "runtime": {
+    "minecraft": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 21,
+    "capture_kind": "minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080,
+    "source_profiles": [],
+    "preserved_path": "scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v14",
+    "must_never_run_again": true
+  },
+  "controller": {
+    "commit": "b43bec345696e7d84db832bdd4a8ca2830ff1bd2",
+    "path": "scripts/baseline/original_client.py",
+    "size_at_capture": 303990,
+    "sha256_at_capture": "3d9fcb2e06fb8e581122b9dda99fd0e2c6509df0b527eaff7e4feed11b108e3b",
+    "timeout_seconds": 1800,
+    "native_process_exit_observed": true,
+    "controller_process_exit_observed": true,
+    "process_group_forcibly_terminated": false,
+    "observed_exit_code": 0,
+    "clean_shutdown": true,
+    "controller_verification_published": true
+  },
+  "launch_verifier": {
+    "path": "scripts/baseline/original_pedestal_evidence_v14.py",
+    "size": 42963,
+    "sha256": "8f4775e95f2eea7595c53197f2032d4379c22efbcb046a2bfc44d4148c92a819",
+    "immutable_after_launch": true
+  },
+  "publication": {
+    "scenario_report": "reports/report.json",
+    "completion_marker": "reports/done.marker",
+    "controller_verification": "controller/verification.json",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "controller/original-client.log": 1788541284714884677,
+      "controller/verification.json": 1788541297192314680,
+      "reports/done.marker": 1788541284504385985,
+      "reports/report.json": 1788541284503790562,
+      "screenshots/pedestal-gallery.png": 1788541179607574693,
+      "screenshots/pedestal-persistence-initial.png": 1788541189595644992,
+      "screenshots/pedestal-persistence-reopened.png": 1788541284476320832,
+      "screenshots/pedestal-transition-drops.png": 1788541186403334596,
+      "world-proof/entities/r.-1.0.mca": 1788541284696224465,
+      "world-proof/entities/r.0.0.mca": 1788541284737527769,
+      "world-proof/level.dat": 1788541284714256920,
+      "world-proof/region/r.-1.0.mca": 1788541284729668388,
+      "world-proof/region/r.0.0.mca": 1788541284718742471,
+      "world-proof/session.lock": 1788541190954804970
+    }
+  },
+  "artifacts": {
+    "reference_bundle": {
+      "size": 7838299,
+      "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b"
+    },
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    "harness": {
+      "mod_id": "etherology_original_baseline_harness",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.4.3.jar",
+      "version": "1.4.3",
+      "size": 340723,
+      "sha256": "9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6"
+    }
+  },
+  "runtime_bindings": {
+    "artifact_lock": {
+      "size": 5389,
+      "sha256": "3db2fa827c525d0ececb4a48e58bc20f83f1c9411e451639183d257e233c74fa"
+    },
+    "runtime_lock": {
+      "size": 832422,
+      "sha256": "c5fb88d35b67b55a71f61981eb9efa1313028d00b529ec6c5a2a1efb0291e09a"
+    },
+    "launch_attempt": {
+      "size": 872152,
+      "sha256": "5c072d7dae820771451d821ba7cc72d20061101c5acb1d68c1c5365eece48e6e",
+      "mtime_ns": 1788541154277924606
+    },
+    "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea"
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache_present": false,
+    "skin_cache_file_count": 0,
+    "skin_cache_total_size": 0
+  },
+  "result": {
+    "report_schema": 4,
+    "report_status": "passed",
+    "report_passed": true,
+    "client_ticks": 2297,
+    "lifecycle_failure": "",
+    "assertion_count": 74,
+    "assertions_true": 74,
+    "assertions_false": 0,
+    "screenshot_count": 4,
+    "completed_render_count_per_capture": 120,
+    "forced_save": true,
+    "full_restart": true,
+    "persistence_exact": true,
+    "authoritative_server_drops": {
+      "minecraft:blue_carpet": 1,
+      "minecraft:diamond": 1,
+      "minecraft:emerald": 1,
+      "minecraft:red_carpet": 1
+    },
+    "client_drop_mirror_ready_recorded": true,
+    "client_drop_mirror_ready_exact": true,
+    "client_drop_capture_recorded": true,
+    "client_drop_capture_exact": true,
+    "vertical_carpet_safety_limitation": "hash-pinned-published-0.1.7-bytecode-not-executed-safety-guard: empty-carpet-slot vertical direction reaches the horizontal-only facing property"
+  },
+  "visual_comparison": {
+    "material_pixel_delta_threshold": 24,
+    "maximum_persistence_material_changed_pixel_ratio": 0.15,
+    "persistence_material_changed_pixel_ratio": 0.001283275462962963
+  },
+  "world_proof": {
+    "path": "world-proof",
+    "source": "game/saves/etherology-original-pedestal-baseline-world",
+    "save_directory": "etherology-original-pedestal-baseline-world",
+    "fixture_regions": [
+      "region/r.-1.0.mca",
+      "region/r.0.0.mca"
+    ],
+    "exact_relative_paths": [
+      "entities/r.-1.0.mca",
+      "entities/r.0.0.mca",
+      "level.dat",
+      "region/r.-1.0.mca",
+      "region/r.0.0.mca",
+      "session.lock"
+    ],
+    "file_count": 6,
+    "total_size": 8546775,
+    "descriptor_algorithm": "sha256(sorted(path + NUL + decimal_size + NUL + sha256 + LF))",
+    "descriptor_sha256": "6f4b541d8024d4a3dbad41a980d65d94ab91dbaf3ea42224247e6f824b781f1a"
+  },
+  "controller_log_provenance": {
+    "native_latest_log_size": 27550,
+    "native_latest_log_sha256": "98fe5f52140cee0ca9a0ac573c899abf1f5d0480cdb012b2c066174a38a0d790",
+    "controller_prefix_size": 428,
+    "controller_prefix_sha256": "5139918d9e12a1ef07391204ad059a79226f8d5fa0f5ccd18469e74a2d1c3097",
+    "native_latest_log_is_exact_controller_suffix": true
+  },
+  "files": {
+    "README.md": {
+      "size": 3310,
+      "sha256": "7f08d419905d597ba084ba99a53446964a490919ebf3038525dcc7dbe2f31f83"
+    },
+    "controller/original-client.log": {
+      "size": 27978,
+      "sha256": "4b335c6d1a14bdb011c95529845579a932a2a82f0fbbc618f5ad094089323b54"
+    },
+    "controller/verification.json": {
+      "size": 2044,
+      "sha256": "8d0303a44eac13ea2aab3843ced6b00b7be5586809849b8a789403fea4e64cbf"
+    },
+    "reports/done.marker": {
+      "size": 104,
+      "sha256": "fb3a4390514a1798e92659f149e7818ac2000e67e3124cc4481b9e34c5ca1bb4"
+    },
+    "reports/report.json": {
+      "size": 62888,
+      "sha256": "3058822170d3c6c54da297cedfbb431629c27cbd65c632e43cdeca88777769ef"
+    },
+    "screenshots/pedestal-gallery.png": {
+      "size": 662227,
+      "sha256": "57ede348fbb2131c711dae36a7347f3d2d11e5ed83ed3a326b33f5848046f7fb"
+    },
+    "screenshots/pedestal-persistence-initial.png": {
+      "size": 328701,
+      "sha256": "dd9118fb86e700a6df2260fb9fbb9de0c6b9d6587315847dbed25300e1ad05e0"
+    },
+    "screenshots/pedestal-persistence-reopened.png": {
+      "size": 260613,
+      "sha256": "188df9d988d69f36d09fb75a6409731c863f0c0e764bfe05e3f71f291b5a02ff"
+    },
+    "screenshots/pedestal-transition-drops.png": {
+      "size": 376553,
+      "sha256": "a6a7b744f39b947451605a460c1905e516daaf00ca32e94ab6d0aea59845e65e"
+    },
+    "world-proof/entities/r.-1.0.mca": {
+      "size": 32768,
+      "sha256": "f7ca287d28293c30491cf66b94064dd2ff5a615fdf8f9e674575f91b83d23fc8"
+    },
+    "world-proof/entities/r.0.0.mca": {
+      "size": 61440,
+      "sha256": "b14f16abc63d4969e0c832cb1f9fcb21967ab531a94eb17492087e8d115aedfe"
+    },
+    "world-proof/level.dat": {
+      "size": 2516,
+      "sha256": "93aa2446c8c539c8292cd5850ff05d273858068c94bdcc1493fcbd0d77393a68"
+    },
+    "world-proof/region/r.-1.0.mca": {
+      "size": 3899392,
+      "sha256": "0f3cc412c3bcceff8f716c90cee48ddcf55b328752cf22d5f988e98af0b3a19d"
+    },
+    "world-proof/region/r.0.0.mca": {
+      "size": 4550656,
+      "sha256": "e2bb02174806d4f4bebf6e599b8e2d26da37c5bdd3996599aeb60f6a13565254"
+    },
+    "world-proof/session.lock": {
+      "size": 3,
+      "sha256": "51643361c79ecaef25a8de802de24f570ba25d9c2df1d22d94fade11b4f466cc"
+    }
+  }
+}

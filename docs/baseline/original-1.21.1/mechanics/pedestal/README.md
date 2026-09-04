@@ -8,9 +8,11 @@ V11 is diagnostic history, not accepted runtime evidence. The fresh v12
 profile later consumed its own sole launch and also failed closed; it is
 separate diagnostic history and cannot be reused. The v13 profile then
 consumed its sole launch and failed closed after its gallery capture; it also
-remains diagnostic history and cannot be reused. The v14 profile and v1.4.3
-harness are prepared, but its fresh runtime remains absent and has never been
-launched.
+remains diagnostic history and cannot be reused. The separate v14 profile then
+consumed its sole launch and completed normally. Its schema-4 report passed all
+74 ordered assertions and its immutable
+[`pedestal-v14`](../../../../evidence/original-1.21.1/pedestal-v14/) archive is
+the accepted native Pedestal baseline. None of the four profiles may be reused.
 
 The dedicated scenario is designed to record:
 
@@ -49,12 +51,13 @@ The harness reaches the original only through registries and ordinary
 Minecraft block/item/inventory/interaction APIs. Dotted original class names
 are observations to compare, not linked implementation types.
 
-The four required screenshot names for a successful fresh run are:
+The accepted run published these four unedited 1920x1080 framebuffers after
+120 stable completed renders each:
 
-1. `pedestal-gallery.png`
-2. `pedestal-transition-drops.png`
-3. `pedestal-persistence-initial.png`
-4. `pedestal-persistence-reopened.png`
+1. [`pedestal-gallery.png`](../../../../evidence/original-1.21.1/pedestal-v14/screenshots/pedestal-gallery.png)
+2. [`pedestal-transition-drops.png`](../../../../evidence/original-1.21.1/pedestal-v14/screenshots/pedestal-transition-drops.png)
+3. [`pedestal-persistence-initial.png`](../../../../evidence/original-1.21.1/pedestal-v14/screenshots/pedestal-persistence-initial.png)
+4. [`pedestal-persistence-reopened.png`](../../../../evidence/original-1.21.1/pedestal-v14/screenshots/pedestal-persistence-reopened.png)
 
 The v1.4.0 harness passed its clean build, 47 Java tests, remap, and artifact
 validation. The v11 manifest pins its `339,617` bytes and SHA-256
@@ -116,12 +119,26 @@ preserved v13 runtime must never be launched again.
 V13 proved the five exact client transition block/block-entity predicates, but
 capture readiness also required a transient client item-entity drop map to
 equal the already-authoritative server drop map. The archive does not record
-the transient client map, so the mismatch's cause remains unknown. V14 changes
+the transient client map, so the mismatch's cause remains unknown. V14 changed
 only that equality to diagnostic data recorded at mirror readiness and before
 capture. Authoritative server drop assertions, the exact client block-state
 snapshot, all five client stale-block-entity/removal and replacement-air
-checks, and the complete 74-assertion contract remain mandatory. The v14
+checks, and the complete 74-assertion contract remained mandatory. The v14
 v1.4.3 harness passed 51 Java tests and two reproducible clean builds. Both
 builds produced a `340,723`-byte JAR with SHA-256
 `9a329ff219f4403c8880597ed851a73843c74adf81ac4b5561b6708cf82129b6`.
-The v14 runtime is absent and has never been launched.
+
+The sole v14 native launch completed the gallery, transition/drop, initial
+persistence, and reopened-persistence phases in 2,297 client ticks. The
+schema-4 report passed 74 of 74 assertions, the client shut down cleanly, and a
+full disconnect plus integrated-server restart preserved the exact Pedestal
+state and inventory. At both mirror readiness and pre-capture, the diagnostic
+client item-entity map exactly contained one blue carpet, diamond, emerald, and
+red carpet, matching the authoritative server drops. This exact v14 success
+does not establish why the consumed v13 attempt stalled.
+
+The report, completion marker, controller log and verification, four captures,
+and selected saved-world proof are preserved byte-for-byte under
+[`docs/evidence/original-1.21.1/pedestal-v14`](../../../../evidence/original-1.21.1/pedestal-v14/).
+The ignored v14 runtime remains preserved for integrity verification only and
+must never be launched again.

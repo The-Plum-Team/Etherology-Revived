@@ -1,0 +1,278 @@
+Etherology repository-owned original Fabric 1.21.1 client
+profile_id=etherology-original-fabric-1.21.1-published-0.1.7-v14
+scenario=pedestal-baseline
+game_directory=/Users/neb/Documents/github/Etherology Revived/scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v14/game
+java=/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home/bin/java
+authentication=deterministic-offline-identity
+
+[18:59:18] [main/INFO]: Loading Minecraft 1.21.1 with Fabric Loader 0.17.3
+[18:59:18] [main/INFO]: Fabric is preparing JARs on first launch, this may take a few seconds...
+[18:59:18] [main/INFO]: Loading 77 mods:
+	- biolith 3.0.14
+	- cardinal-components 6.1.3
+	   |-- cardinal-components-base 6.1.3
+	   |-- cardinal-components-block 6.1.3
+	   |-- cardinal-components-chunk 6.1.3
+	   |-- cardinal-components-entity 6.1.3
+	   |-- cardinal-components-item 6.1.3
+	   |-- cardinal-components-level 6.1.3
+	   |-- cardinal-components-scoreboard 6.1.3
+	   \-- cardinal-components-world 6.1.3
+	- etherology 1.21-0.1.7
+	   |-- mixinsquared 0.2.0-beta.6
+	   \-- mm 2.3
+	- etherology_original_baseline_harness 1.4.3
+	- fabric-api 0.110.0+1.21.1
+	   |-- fabric-api-base 0.4.42+6573ed8c19
+	   |-- fabric-api-lookup-api-v1 1.6.70+b559734419
+	   |-- fabric-biome-api-v1 13.0.30+be1ed2d719
+	   |-- fabric-block-api-v1 1.0.22+0af3f5a719
+	   |-- fabric-block-view-api-v2 1.0.10+6573ed8c19
+	   |-- fabric-blockrenderlayer-v1 1.1.52+0af3f5a719
+	   |-- fabric-client-tags-api-v1 1.1.15+6573ed8c19
+	   |-- fabric-command-api-v1 1.2.49+f71b366f19
+	   |-- fabric-command-api-v2 2.2.28+6ced4dd919
+	   |-- fabric-commands-v0 0.2.66+df3654b319
+	   |-- fabric-content-registries-v0 8.0.18+b559734419
+	   |-- fabric-convention-tags-v1 2.1.2+7f945d5b19
+	   |-- fabric-convention-tags-v2 2.9.2+e60e56d419
+	   |-- fabric-crash-report-info-v1 0.2.29+0af3f5a719
+	   |-- fabric-data-attachment-api-v1 1.4.0+da19b51a19
+	   |-- fabric-data-generation-api-v1 20.2.24+16c4ae2519
+	   |-- fabric-dimensions-v1 4.0.0+6fc22b9919
+	   |-- fabric-entity-events-v1 1.7.0+2122d82819
+	   |-- fabric-events-interaction-v0 0.7.13+ba9dae0619
+	   |-- fabric-game-rule-api-v1 1.0.53+6ced4dd919
+	   |-- fabric-item-api-v1 11.1.1+d5debaed19
+	   |-- fabric-item-group-api-v1 4.1.6+6823f7cd19
+	   |-- fabric-key-binding-api-v1 1.0.47+0af3f5a719
+	   |-- fabric-keybindings-v0 0.2.45+df3654b319
+	   |-- fabric-lifecycle-events-v1 2.5.0+01d9a51c19
+	   |-- fabric-loot-api-v2 3.0.15+3f89f5a519
+	   |-- fabric-loot-api-v3 1.0.3+3f89f5a519
+	   |-- fabric-message-api-v1 6.0.13+6573ed8c19
+	   |-- fabric-model-loading-api-v1 2.0.0+fe474d6b19
+	   |-- fabric-networking-api-v1 4.3.0+c7469b2119
+	   |-- fabric-object-builder-api-v1 15.2.1+40875a9319
+	   |-- fabric-particles-v1 4.0.2+6573ed8c19
+	   |-- fabric-recipe-api-v1 5.0.13+6508971219
+	   |-- fabric-registry-sync-v0 5.2.0+34f5d91419
+	   |-- fabric-renderer-api-v1 3.4.0+c705a49c19
+	   |-- fabric-renderer-indigo 1.7.0+c705a49c19
+	   |-- fabric-renderer-registries-v1 3.2.68+df3654b319
+	   |-- fabric-rendering-data-attachment-v1 0.3.48+73761d2e19
+	   |-- fabric-rendering-fluids-v1 3.1.6+1daea21519
+	   |-- fabric-rendering-v0 1.1.71+df3654b319
+	   |-- fabric-rendering-v1 5.0.5+df16efd019
+	   |-- fabric-resource-conditions-api-v1 4.3.0+8dc279b119
+	   |-- fabric-resource-loader-v0 1.3.1+5b5275af19
+	   |-- fabric-screen-api-v1 2.0.25+8b68f1c719
+	   |-- fabric-screen-handler-api-v1 1.3.88+b559734419
+	   |-- fabric-sound-api-v1 1.0.23+6573ed8c19
+	   |-- fabric-transfer-api-v1 5.4.2+95bead5f19
+	   \-- fabric-transitive-access-wideners-v1 6.2.0+45b9699719
+	- fabricloader 0.17.3
+	   \-- mixinextras 0.5.0
+	- fabricshieldlib 1.7.2-1.21.1
+	   |-- midnightlib 1.5.8
+	   \-- mm 2.3
+	- geckolib 4.9.2
+	- java 21
+	- minecraft 1.21.1
+	- owo 0.13.0-alpha.15+1.21
+	   |-- blue_endless_jankson 1.2.2
+	   |-- io_wispforest_endec 0.1.5.1
+	   |-- io_wispforest_endec_gson 0.1.3.1
+	   |-- io_wispforest_endec_jankson 0.1.3.1
+	   \-- io_wispforest_endec_netty 0.1.2
+	- trinkets 3.10.0
+[18:59:18] [main/INFO]: SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/Users/neb/Documents/github/Etherology%20Revived/scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v14/launcher/libraries/net/fabricmc/sponge-mixin/0.16.5+mixin.0.8.7/sponge-mixin-0.16.5+mixin.0.8.7.jar Service=Knot/Fabric Env=CLIENT
+[18:59:18] [main/INFO]: Compatibility level set to JAVA_17
+[18:59:18] [main/INFO]: Compatibility level set to JAVA_21
+[18:59:18] [main/WARN]: Reference map 'geckolib.refmap.json' for geckolib.mixins.json could not be read. If this is a development environment you can ignore this message
+[18:59:19] [main/WARN]: Error loading class: xyz/nucleoid/server/translations/impl/language/LanguageReader (java.lang.ClassNotFoundException: xyz/nucleoid/server/translations/impl/language/LanguageReader)
+[18:59:19] [main/WARN]: @Mixin target xyz.nucleoid.server.translations.impl.language.LanguageReader was not found owo.mixins.json:extension.json5.LanguageReaderMixin from mod owo
+[18:59:19] [main/WARN]: Error loading class: xyz/nucleoid/server/translations/impl/language/SystemDelegatedLanguage (java.lang.ClassNotFoundException: xyz/nucleoid/server/translations/impl/language/SystemDelegatedLanguage)
+[18:59:19] [main/WARN]: Error loading class: org/jetbrains/annotations/ApiStatus$Internal (java.lang.ClassNotFoundException: org/jetbrains/annotations/ApiStatus$Internal)
+[18:59:19] [main/INFO]: Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.0).
+[18:59:19] [Datafixer Bootstrap/INFO]: 226 Datafixer optimizations took 86 milliseconds
+[18:59:21] [Render thread/INFO]: Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[18:59:21] [Render thread/INFO]: Setting user: EtherologyE2E
+[18:59:21] [Render thread/INFO]: Biolith for Fabric is initializing...
+[18:59:22] [Download-2/ERROR]: Failed to fetch user properties
+com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
+	at knot/com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:59) ~[authlib-6.0.54.jar:?]
+	at knot/com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:150) ~[authlib-6.0.54.jar:?]
+	at knot/net.minecraft.class_310.method_55608(class_310.java:458) ~[client-intermediary.jar:?]
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+Caused by: com.mojang.authlib.exceptions.MinecraftClientHttpException: Status: 401
+	at knot/com.mojang.authlib.minecraft.client.MinecraftClient.readInputStream(MinecraftClient.java:100) ~[authlib-6.0.54.jar:?]
+	at knot/com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:57) ~[authlib-6.0.54.jar:?]
+	at knot/com.mojang.authlib.yggdrasil.YggdrasilUserApiService.fetchProperties(YggdrasilUserApiService.java:121) ~[authlib-6.0.54.jar:?]
+	... 5 more
+[18:59:23] [Render thread/INFO]: Fabric Shield Lib Initialized!
+[18:59:23] [Render thread/INFO]: Definitely not up to no good
+[18:59:23] [Render thread/INFO]: idwtialsimmoedm - I didn't want to install a library so I made my own enchantment descriptions mod
+[18:59:23] [Render thread/INFO]: [Indigo] Registering Indigo renderer!
+[18:59:23] [Render thread/INFO]: Backend library: LWJGL version 3.3.3-snapshot
+[18:59:23] [Render thread/WARN]: Removed resource pack biolith from options because it is no longer compatible
+[18:59:24] [Render thread/INFO]: Reloading ResourceManager: vanilla, fabric, biolith, cardinal-components, cardinal-components-base, cardinal-components-block, cardinal-components-chunk, cardinal-components-entity, cardinal-components-item, cardinal-components-level, cardinal-components-scoreboard, cardinal-components-world, etherology, fabric-api, fabric-api-base, fabric-api-lookup-api-v1, fabric-biome-api-v1, fabric-block-api-v1, fabric-block-view-api-v2, fabric-blockrenderlayer-v1, fabric-client-tags-api-v1, fabric-command-api-v1, fabric-command-api-v2, fabric-commands-v0, fabric-content-registries-v0, fabric-convention-tags-v1, fabric-convention-tags-v2, fabric-crash-report-info-v1, fabric-data-attachment-api-v1, fabric-data-generation-api-v1, fabric-dimensions-v1, fabric-entity-events-v1, fabric-events-interaction-v0, fabric-game-rule-api-v1, fabric-item-api-v1, fabric-item-group-api-v1, fabric-key-binding-api-v1, fabric-keybindings-v0, fabric-lifecycle-events-v1, fabric-loot-api-v2, fabric-loot-api-v3, fabric-message-api-v1, fabric-model-loading-api-v1, fabric-networking-api-v1, fabric-object-builder-api-v1, fabric-particles-v1, fabric-recipe-api-v1, fabric-registry-sync-v0, fabric-renderer-api-v1, fabric-renderer-indigo, fabric-renderer-registries-v1, fabric-rendering-data-attachment-v1, fabric-rendering-fluids-v1, fabric-rendering-v0, fabric-rendering-v1, fabric-resource-conditions-api-v1, fabric-resource-loader-v0, fabric-screen-api-v1, fabric-screen-handler-api-v1, fabric-sound-api-v1, fabric-transfer-api-v1, fabric-transitive-access-wideners-v1, fabricloader, fabricshieldlib, midnightlib, mm, owo, trinkets
+[18:59:24] [Worker-Main-13/INFO]: Found unifont_all_no_pua-15.1.05.hex, loading
+[18:59:24] [Worker-Main-4/INFO]: Found unifont_jp_patch-15.1.05.hex, loading
+[18:59:27] [Render thread/WARN]: Missing sound for event: minecraft:item.goat_horn.play
+[18:59:27] [Render thread/WARN]: Missing sound for event: minecraft:entity.goat.screaming.horn_break
+[18:59:28] [Render thread/INFO]: OpenAL initialized on device Altavoces del MacBook Pro
+[18:59:28] [Render thread/INFO]: Sound engine started
+[18:59:28] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/blocks.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/signs.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/shield_patterns.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 512x512x4 minecraft:textures/atlas/banner_patterns.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 1024x1024x4 minecraft:textures/atlas/armor_trims.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 256x256x4 minecraft:textures/atlas/chest.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 128x64x4 minecraft:textures/atlas/decorated_pot.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/shulker_boxes.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 512x256x4 minecraft:textures/atlas/beds.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 512x512x0 minecraft:textures/atlas/particles.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 512x256x0 minecraft:textures/atlas/paintings.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 256x128x0 minecraft:textures/atlas/mob_effects.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 64x64x0 minecraft:textures/atlas/map_decorations.png-atlas
+[18:59:28] [Render thread/INFO]: Created: 1024x512x0 minecraft:textures/atlas/gui.png-atlas
+[18:59:28] [Render thread/WARN]: Shader rendertype_entity_translucent_emissive could not find sampler named Sampler2 in the specified shader program.
+[18:59:28] [IO-Worker-1/INFO]: Could not authorize you against Realms server: java.lang.RuntimeException: Failed to parse into SignedJWT: offline-etherology-original-baseline
+[18:59:28] [IO-Worker-1/ERROR]: Couldn't connect to realms
+net.minecraft.class_4355: Realms authentication error with message 'java.lang.RuntimeException: Failed to parse into SignedJWT: offline-etherology-original-baseline'
+	at knot/net.minecraft.class_4341.method_20998(class_4341.java:447) ~[client-intermediary.jar:?]
+	at knot/net.minecraft.class_4341.method_21027(class_4341.java:232) ~[client-intermediary.jar:?]
+	at knot/net.minecraft.class_8647.method_52627(class_8647.java:51) ~[client-intermediary.jar:?]
+	at java.base/java.util.concurrent.CompletableFuture$AsyncSupply.run(CompletableFuture.java:1768) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144) ~[?:?]
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642) ~[?:?]
+	at java.base/java.lang.Thread.run(Thread.java:1583) [?:?]
+[18:59:30] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_TITLE; to=STARTING_WORLD; phase=gallery; client_ticks=120; stage_ticks=120
+[18:59:30] [Render thread/INFO]: Found new data pack etherology, loading it automatically
+[18:59:30] [Render thread/INFO]: Found new data pack fabric, loading it automatically
+[18:59:30] [Render thread/INFO]: Found new data pack fabric-convention-tags-v2, loading it automatically
+[18:59:30] [Render thread/INFO]: Found new data pack fabricshieldlib, loading it automatically
+[18:59:30] [Render thread/INFO]: Found new data pack trinkets, loading it automatically
+[18:59:31] [Render thread/INFO]: Loaded 1437 recipes
+[18:59:31] [Render thread/INFO]: Loaded 1515 advancements
+[18:59:31] [Render thread/INFO]: Applied 222 biome modifications to 64 of 65 new biomes in 55.30 ms
+[18:59:31] [Server thread/INFO]: Starting integrated minecraft server version 1.21.1
+[18:59:31] [Server thread/INFO]: Generating keypair
+[18:59:33] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[18:59:33] [Render thread/INFO]: Preparing spawn area: 2%
+[18:59:33] [Render thread/INFO]: Preparing spawn area: 2%
+[18:59:34] [Render thread/INFO]: Preparing spawn area: 51%
+[18:59:34] [Render thread/INFO]: Time elapsed: 1302 ms
+[18:59:34] [Server thread/INFO]: Changing view distance to 12, from 10
+[18:59:34] [Server thread/INFO]: Changing simulation distance to 10, from 0
+[18:59:34] [Render thread/INFO]: Pedestal stage transition: from=STARTING_WORLD; to=WAITING_FOR_WORLD; phase=gallery; client_ticks=121; stage_ticks=1
+[18:59:35] [Server thread/INFO]: EtherologyE2E[local:E:8ba0524c] logged in with entity id 7 at (22.5, 78.0, -57.5)
+[18:59:35] [Server thread/INFO]: EtherologyE2E joined the game
+[18:59:35] [Render thread/INFO]: Loaded 2 advancements
+[18:59:35] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_WORLD; to=WAITING_FOR_INITIAL_SETUP; phase=gallery; client_ticks=135; stage_ticks=14
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=item; direction=down; position=class_2338{x=-14, y=124, z=14}; chunk=[-1, 0]; before=minecraft:amethyst_shardx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=item; direction=down; position=class_2338{x=-14, y=124, z=14}; after=minecraft:amethyst_shardx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=item; direction=up; position=class_2338{x=-11, y=124, z=14}; chunk=[-1, 0]; before=minecraft:amethyst_shardx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=item; direction=up; position=class_2338{x=-11, y=124, z=14}; after=minecraft:amethyst_shardx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=item; direction=north; position=class_2338{x=-8, y=124, z=14}; chunk=[-1, 0]; before=minecraft:amethyst_shardx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=item; direction=north; position=class_2338{x=-8, y=124, z=14}; after=minecraft:amethyst_shardx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=item; direction=south; position=class_2338{x=-5, y=124, z=14}; chunk=[-1, 0]; before=minecraft:amethyst_shardx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=item; direction=south; position=class_2338{x=-5, y=124, z=14}; after=minecraft:amethyst_shardx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=item; direction=west; position=class_2338{x=-2, y=124, z=14}; chunk=[-1, 0]; before=minecraft:amethyst_shardx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=item; direction=west; position=class_2338{x=-2, y=124, z=14}; after=minecraft:amethyst_shardx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=item; direction=east; position=class_2338{x=1, y=124, z=14}; chunk=[0, 0]; before=minecraft:amethyst_shardx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=item; direction=east; position=class_2338{x=1, y=124, z=14}; after=minecraft:amethyst_shardx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=carpet; direction=north; position=class_2338{x=-8, y=122, z=10}; chunk=[-1, 0]; before=minecraft:purple_carpetx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=carpet; direction=north; position=class_2338{x=-8, y=122, z=10}; after=minecraft:purple_carpetx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=carpet; direction=south; position=class_2338{x=-3, y=122, z=10}; chunk=[-1, 0]; before=minecraft:purple_carpetx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=carpet; direction=south; position=class_2338{x=-3, y=122, z=10}; after=minecraft:purple_carpetx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=carpet; direction=west; position=class_2338{x=2, y=122, z=10}; chunk=[0, 0]; before=minecraft:purple_carpetx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=carpet; direction=west; position=class_2338{x=2, y=122, z=10}; after=minecraft:purple_carpetx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=carpet; direction=east; position=class_2338{x=7, y=122, z=10}; chunk=[0, 0]; before=minecraft:purple_carpetx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=carpet; direction=east; position=class_2338{x=7, y=122, z=10}; after=minecraft:purple_carpetx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=occupied-carpet-display; direction=up; position=class_2338{x=-15, y=121, z=5}; chunk=[-1, 0]; before=minecraft:purple_carpetx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=occupied-carpet-display; direction=up; position=class_2338{x=-15, y=121, z=5}; after=minecraft:purple_carpetx1
+[18:59:36] [Server thread/INFO]: Invoking one native dispenser tick: kind=full-target-fallback; direction=west; position=class_2338{x=15, y=121, z=5}; chunk=[0, 0]; before=minecraft:arrowx2
+[18:59:36] [Server thread/INFO]: Completed one native dispenser tick: kind=full-target-fallback; direction=west; position=class_2338{x=15, y=121, z=5}; after=minecraft:arrowx1
+[18:59:36] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_INITIAL_SETUP; to=WAITING_FOR_DISPENSERS; phase=gallery; client_ticks=156; stage_ticks=21
+[18:59:36] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_DISPENSERS; to=WAITING_FOR_SCENE_SETUP; phase=gallery; client_ticks=161; stage_ticks=5
+[18:59:36] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_SCENE_SETUP; to=WAITING_FOR_CLIENT_MIRROR; phase=gallery; client_ticks=162; stage_ticks=1
+[18:59:37] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_CLIENT_MIRROR; to=WAITING_FOR_RENDERS; phase=gallery; client_ticks=182; stage_ticks=20
+[18:59:39] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RENDERS; to=CAPTURING; phase=gallery; client_ticks=223; stage_ticks=41
+[18:59:39] [Render thread/INFO]: Pedestal stage transition: from=CAPTURING; to=WAITING_FOR_TRANSITION_PRECONDITION; phase=gallery; client_ticks=225; stage_ticks=2
+[18:59:40] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_TRANSITION_PRECONDITION; to=WAITING_FOR_SCENE_SETUP; phase=transition-drops; client_ticks=245; stage_ticks=20
+[18:59:40] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_SCENE_SETUP; to=WAITING_FOR_CLIENT_MIRROR; phase=transition-drops; client_ticks=246; stage_ticks=1
+[18:59:40] [Render thread/INFO]: Transition client drop diagnostic: checkpoint=mirror-ready; expected=minecraft:blue_carpetx1+minecraft:diamondx1+minecraft:emeraldx1+minecraft:red_carpetx1; actual=minecraft:blue_carpetx1+minecraft:diamondx1+minecraft:emeraldx1+minecraft:red_carpetx1; exact=true
+[18:59:41] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_CLIENT_MIRROR; to=WAITING_FOR_RENDERS; phase=transition-drops; client_ticks=266; stage_ticks=20
+[18:59:46] [Render thread/INFO]: Transition client drop diagnostic: checkpoint=capture; expected=minecraft:blue_carpetx1+minecraft:diamondx1+minecraft:emeraldx1+minecraft:red_carpetx1; actual=minecraft:blue_carpetx1+minecraft:diamondx1+minecraft:emeraldx1+minecraft:red_carpetx1; exact=true
+[18:59:46] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RENDERS; to=CAPTURING; phase=transition-drops; client_ticks=359; stage_ticks=93
+[18:59:46] [Render thread/INFO]: Pedestal stage transition: from=CAPTURING; to=WAITING_FOR_SCENE_SETUP; phase=persistence-initial; client_ticks=361; stage_ticks=2
+[18:59:46] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_SCENE_SETUP; to=WAITING_FOR_CLIENT_MIRROR; phase=persistence-initial; client_ticks=362; stage_ticks=1
+[18:59:47] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_CLIENT_MIRROR; to=WAITING_FOR_RENDERS; phase=persistence-initial; client_ticks=382; stage_ticks=20
+[18:59:49] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RENDERS; to=CAPTURING; phase=persistence-initial; client_ticks=423; stage_ticks=41
+[18:59:49] [Render thread/INFO]: Pedestal stage transition: from=CAPTURING; to=SAVING_WORLD; phase=persistence-initial; client_ticks=425; stage_ticks=2
+[18:59:49] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:overworld
+[18:59:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:the_end
+[18:59:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:the_nether
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (etherology-original-pedestal-baseline-world): All chunks are saved
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[18:59:50] [Render thread/INFO]: Pedestal stage transition: from=SAVING_WORLD; to=DISCONNECTING; phase=persistence-initial; client_ticks=435; stage_ticks=10
+[18:59:50] [Server thread/INFO]: EtherologyE2E lost connection: Disconnected
+[18:59:50] [Server thread/INFO]: EtherologyE2E left the game
+[18:59:50] [Server thread/INFO]: Stopping singleplayer server as player logged out
+[18:59:50] [Server thread/INFO]: Stopping server
+[18:59:50] [Server thread/INFO]: Saving players
+[18:59:50] [Server thread/INFO]: Saving worlds
+[18:59:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:overworld
+[18:59:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:the_end
+[18:59:50] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:the_nether
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (etherology-original-pedestal-baseline-world): All chunks are saved
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[18:59:50] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved
+[18:59:50] [Render thread/INFO]: Pedestal stage transition: from=DISCONNECTING; to=WAITING_FOR_RESTART_TITLE; phase=persistence-initial; client_ticks=436; stage_ticks=1
+[18:59:50] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RESTART_TITLE; to=RESTARTING_WORLD; phase=persistence-initial; client_ticks=437; stage_ticks=1
+[18:59:50] [Render thread/INFO]: Found new data pack etherology, loading it automatically
+[18:59:50] [Render thread/INFO]: Found new data pack fabric, loading it automatically
+[18:59:50] [Render thread/INFO]: Found new data pack fabric-convention-tags-v2, loading it automatically
+[18:59:50] [Render thread/INFO]: Found new data pack fabricshieldlib, loading it automatically
+[18:59:50] [Render thread/INFO]: Found new data pack trinkets, loading it automatically
+[18:59:51] [Render thread/INFO]: Loaded 1437 recipes
+[18:59:51] [Render thread/INFO]: Loaded 1515 advancements
+[18:59:51] [Render thread/INFO]: Applied 222 biome modifications to 64 of 65 new biomes in 1.011 ms
+[18:59:51] [Server thread/INFO]: Starting integrated minecraft server version 1.21.1
+[18:59:51] [Server thread/INFO]: Generating keypair
+[18:59:52] [Server thread/INFO]: Preparing start region for dimension minecraft:overworld
+[18:59:52] [Render thread/INFO]: Preparing spawn area: 0%
+[18:59:52] [Render thread/INFO]: Time elapsed: 72 ms
+[18:59:52] [Server thread/INFO]: Changing view distance to 12, from 10
+[18:59:52] [Server thread/INFO]: Changing simulation distance to 10, from 0
+[18:59:52] [Render thread/INFO]: Pedestal stage transition: from=RESTARTING_WORLD; to=WAITING_FOR_RESTART_WORLD; phase=persistence-initial; client_ticks=438; stage_ticks=1
+[18:59:52] [Server thread/INFO]: EtherologyE2E[local:E:53690ce0] logged in with entity id 466 at (0.5, 121.0, -15.5)
+[18:59:52] [Server thread/INFO]: EtherologyE2E joined the game
+[18:59:52] [Render thread/INFO]: Loaded 2 advancements
+[18:59:52] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RESTART_WORLD; to=WAITING_FOR_RESTART_INSPECTION; phase=persistence-initial; client_ticks=459; stage_ticks=21
+[18:59:52] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RESTART_INSPECTION; to=WAITING_FOR_CLIENT_MIRROR; phase=persistence-reopened; client_ticks=461; stage_ticks=2
+[19:00:47] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_CLIENT_MIRROR; to=WAITING_FOR_RENDERS; phase=persistence-reopened; client_ticks=1566; stage_ticks=1105
+[19:01:24] [Render thread/INFO]: Pedestal stage transition: from=WAITING_FOR_RENDERS; to=CAPTURING; phase=persistence-reopened; client_ticks=2295; stage_ticks=729
+[19:01:24] [Render thread/INFO]: Original Pedestal evidence published with status passed: /Users/neb/Documents/github/Etherology Revived/scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v14/evidence/pedestal-baseline
+[19:01:24] [Render thread/INFO]: Stopping!
+[19:01:24] [Server thread/INFO]: EtherologyE2E lost connection: Disconnected
+[19:01:24] [Server thread/INFO]: EtherologyE2E left the game
+[19:01:24] [Server thread/INFO]: Stopping singleplayer server as player logged out
+[19:01:24] [Server thread/INFO]: Stopping server
+[19:01:24] [Server thread/INFO]: Saving players
+[19:01:24] [Server thread/INFO]: Saving worlds
+[19:01:24] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:overworld
+[19:01:24] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:the_end
+[19:01:24] [Server thread/INFO]: Saving chunks for level 'ServerLevel[Etherology Original 0.1.7 Pedestal]'/minecraft:the_nether
+[19:01:24] [Server thread/INFO]: ThreadedAnvilChunkStorage (etherology-original-pedestal-baseline-world): All chunks are saved
+[19:01:24] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[19:01:24] [Server thread/INFO]: ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[19:01:24] [Server thread/INFO]: ThreadedAnvilChunkStorage: All dimensions are saved

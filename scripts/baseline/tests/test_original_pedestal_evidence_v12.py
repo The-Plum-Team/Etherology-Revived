@@ -15,6 +15,39 @@ from unittest import mock
 BASELINE_DIRECTORY = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = BASELINE_DIRECTORY.parents[1]
 VERIFIER_PATH = BASELINE_DIRECTORY / "original_pedestal_evidence_v12.py"
+FRESH_ARCHIVE_README = """# Pedestal v14 evidence contract — fresh, not launched
+
+This directory is the exclusive evidence target for the repository-owned
+`etherology-original-fabric-1.21.1-published-0.1.7-v14` profile. It is a fresh
+lane: the runtime has not been provisioned or launched, and this README is the
+only permitted prelaunch entry.
+
+The v1.4.3 harness retains the 74-assertion Pedestal contract, four native
+1920×1080 captures, one explicit vanilla scheduled dispenser tick per fixture,
+and the bounded stage and failed-shutdown behavior prepared for v13. It keeps
+the authoritative server drop assertions, exact client block-state snapshot,
+and all five client stale-block-entity and replacement-air checks for the
+transition phase.
+
+V13 proved all five client transition checks but timed out because capture
+readiness additionally demanded exact equality between a transient client item-
+entity snapshot and the already-proven server drop snapshot. The retained v13
+artifacts do not record the client map, so the reason for that mismatch remains
+unknown. V14 removes only that transient equality from pass/fail readiness. It
+records the expected and observed client drop maps at mirror readiness and
+immediately before capture, explicit booleans proving that both checkpoints
+were actually observed, and whether each observation equals the server map.
+The equality results remain diagnostic data that cannot affect the 74
+assertion outcomes.
+
+Before the one allowed native launch, the v14 verifier must prove the immutable
+v11, v12, and v13 consumed-run diagnostic archives, the exact v14 manifest,
+harness, contract sources, this README-only target, and the absence of the v14
+runtime. After a successful run this placeholder will be replaced by the
+verified report, four screenshots, world evidence, and archive manifest. No
+result from v11, v12, or v13 is accepted as Pedestal behavior evidence, and no
+consumed profile may ever be launched again.
+"""
 VERIFIER_SPECIFICATION = importlib.util.spec_from_file_location(
     "etherology_original_pedestal_evidence_v12_tested",
     VERIFIER_PATH,
@@ -375,6 +408,74 @@ def contract_fixture(root: Path) -> tuple[Path, Path, dict[str, object], list[di
 class PedestalEvidenceV12Test(unittest.TestCase):
 
     @staticmethod
+    def copy_fresh_archive(repository: Path) -> Path:
+        archive = repository / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
+        archive.mkdir(parents=True)
+        (archive / "README.md").write_text(
+            FRESH_ARCHIVE_README,
+            encoding="utf-8",
+        )
+        return archive
+
+    @classmethod
+    def copy_active_prelaunch_contract(
+        cls,
+        repository: Path,
+    ) -> tuple[Path, Path, Path, Path]:
+        for relative_path in (
+            active_verifier._base.LEGACY_V10_RELATIVE_PATH,
+            active_verifier._V11_PROFILE_RELATIVE_PATH,
+            active_verifier._V12_PROFILE_RELATIVE_PATH,
+            active_verifier._V12_VERIFIER_RELATIVE_PATH,
+            active_verifier._V13_PROFILE_RELATIVE_PATH,
+            active_verifier._V13_VERIFIER_RELATIVE_PATH,
+            active_verifier.PROFILE_RELATIVE_PATH,
+            (
+                "baseline-harness/fabric/1.21.1/src/main/java/"
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalBaselineContract.java"
+            ),
+            (
+                "baseline-harness/fabric/1.21.1/src/main/java/"
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalBaselineScenario.java"
+            ),
+            (
+                "baseline-harness/fabric/1.21.1/src/main/java/"
+                "dev/theplumteam/etherology/baseline/fabric/"
+                "PedestalEvidenceWriter.java"
+            ),
+            "baseline-harness/fabric/1.21.1/gradle.properties",
+        ):
+            source = REPOSITORY_ROOT / relative_path
+            destination = repository / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, destination)
+
+        for relative_path in (
+            active_verifier._V11_DIAGNOSTIC_RELATIVE_PATH,
+            active_verifier._V12_DIAGNOSTIC_RELATIVE_PATH,
+            active_verifier._V13_DIAGNOSTIC_RELATIVE_PATH,
+        ):
+            source = REPOSITORY_ROOT / relative_path
+            destination = repository / relative_path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(source, destination)
+
+        harness_relative_path = (
+            Path("baseline-harness/fabric/1.21.1/build/libs")
+            / active_verifier.HARNESS_FILE
+        )
+        harness_path = repository / harness_relative_path
+        harness_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(REPOSITORY_ROOT / harness_relative_path, harness_path)
+
+        manifest_path = repository / active_verifier.PROFILE_RELATIVE_PATH
+        runtime_path = repository / active_verifier.ACTIVE_RUNTIME_RELATIVE_PATH
+        archive_path = cls.copy_fresh_archive(repository)
+        return manifest_path, harness_path, runtime_path, archive_path
+
+    @staticmethod
     def isolated_archive_configuration(
         repository: Path,
     ) -> tuple[object, Path]:
@@ -387,14 +488,7 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             source_configuration.harness_path,
             source_configuration.fabric_profile_snapshot_path,
         )
-        archive = repository / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
-        archive.mkdir(parents=True)
-        shutil.copy2(
-            REPOSITORY_ROOT
-            / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
-            / "README.md",
-            archive / "README.md",
-        )
+        archive = PedestalEvidenceV12Test.copy_fresh_archive(repository)
         return configuration, archive
 
     def test_consumed_v11_diagnostic_archive_is_exactly_pinned(self) -> None:
@@ -552,16 +646,20 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             REPOSITORY_ROOT,
             active_verifier.PedestalEvidenceError,
         )
-        active_verifier.validate_fresh_contract(
-            repository_root=REPOSITORY_ROOT,
-            manifest_path=configuration.manifest_path,
-            harness_path=configuration.harness_path,
-            runtime_path=client.runtime_root(configuration),
-            archive_path=(
-                REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
-            ),
-            sha256_file=sha256_file,
-        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            repository = Path(temporary_directory).resolve()
+            manifest, harness, runtime, archive = (
+                self.copy_active_prelaunch_contract(repository)
+            )
+            self.assertFalse(runtime.exists() or runtime.is_symlink())
+            active_verifier.validate_fresh_contract(
+                repository_root=repository,
+                manifest_path=manifest,
+                harness_path=harness,
+                runtime_path=runtime,
+                archive_path=archive,
+                sha256_file=sha256_file,
+            )
 
     def test_implemented_harness_opens_the_lifecycle_gate(self) -> None:
         configuration = client.load_configuration()

@@ -1,0 +1,1481 @@
+{
+  "schema": 3,
+  "reference_id": "published-0.1.7",
+  "scenario": "slitherite-block-registry",
+  "lane": "fabric-1.21.1-original",
+  "status": "passed",
+  "passed": true,
+  "client_ticks": 665,
+  "lifecycle_failure": "",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "registry:block:etherology:slitherite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:slitherite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:slitherite",
+      "passed": true,
+      "expected": "net.minecraft.class_2248",
+      "actual": "net.minecraft.class_2248"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:slitherite",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:slitherite",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:slitherite",
+      "passed": true,
+      "expected": "{}",
+      "actual": "{}"
+    },
+    {
+      "name": "state_count:etherology:slitherite",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "default_state_network_id:etherology:slitherite",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27144"
+    },
+    {
+      "name": "registry:block:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "net.minecraft.class_2510",
+      "actual": "net.minecraft.class_2510"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "{shape\u003dstraight, facing\u003dnorth, half\u003dbottom, waterlogged\u003dfalse}",
+      "actual": "{facing\u003dnorth, half\u003dbottom, shape\u003dstraight, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "80",
+      "actual": "80"
+    },
+    {
+      "name": "default_state_network_id:etherology:slitherite_stairs",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27156"
+    },
+    {
+      "name": "registry:block:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "net.minecraft.class_2482",
+      "actual": "net.minecraft.class_2482"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "{waterlogged\u003dfalse, type\u003dbottom}",
+      "actual": "{type\u003dbottom, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "6",
+      "actual": "6"
+    },
+    {
+      "name": "default_state_network_id:etherology:slitherite_slab",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27228"
+    },
+    {
+      "name": "registry:block:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "net.minecraft.class_2544",
+      "actual": "net.minecraft.class_2544"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "{south\u003dnone, waterlogged\u003dfalse, up\u003dtrue, west\u003dnone, east\u003dnone, north\u003dnone}",
+      "actual": "{east\u003dnone, north\u003dnone, south\u003dnone, up\u003dtrue, waterlogged\u003dfalse, west\u003dnone}"
+    },
+    {
+      "name": "state_count:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "324",
+      "actual": "324"
+    },
+    {
+      "name": "default_state_network_id:etherology:slitherite_wall",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27234"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "net.minecraft.class_2248",
+      "actual": "net.minecraft.class_2248"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "{}",
+      "actual": "{}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27555"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "net.minecraft.class_2510",
+      "actual": "net.minecraft.class_2510"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "{shape\u003dstraight, facing\u003dnorth, half\u003dbottom, waterlogged\u003dfalse}",
+      "actual": "{facing\u003dnorth, half\u003dbottom, shape\u003dstraight, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "80",
+      "actual": "80"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_stairs",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27567"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "net.minecraft.class_2482",
+      "actual": "net.minecraft.class_2482"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "{waterlogged\u003dfalse, type\u003dbottom}",
+      "actual": "{type\u003dbottom, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "6",
+      "actual": "6"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_slab",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27639"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "net.minecraft.class_2544",
+      "actual": "net.minecraft.class_2544"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "{south\u003dnone, waterlogged\u003dfalse, up\u003dtrue, west\u003dnone, east\u003dnone, north\u003dnone}",
+      "actual": "{east\u003dnone, north\u003dnone, south\u003dnone, up\u003dtrue, waterlogged\u003dfalse, west\u003dnone}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "324",
+      "actual": "324"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_wall",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27645"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "net.minecraft.class_2269",
+      "actual": "net.minecraft.class_2269"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "{facing\u003dnorth, powered\u003dfalse, face\u003dwall}",
+      "actual": "{face\u003dwall, facing\u003dnorth, powered\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "24",
+      "actual": "24"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_button",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27975"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "net.minecraft.class_2440",
+      "actual": "net.minecraft.class_2440"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "{powered\u003dfalse}",
+      "actual": "{powered\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "2",
+      "actual": "2"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_pressure_plate",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27991"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "net.minecraft.class_2248",
+      "actual": "net.minecraft.class_2248"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "{}",
+      "actual": "{}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_bricks",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "27992"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "net.minecraft.class_2510",
+      "actual": "net.minecraft.class_2510"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "{shape\u003dstraight, facing\u003dnorth, half\u003dbottom, waterlogged\u003dfalse}",
+      "actual": "{facing\u003dnorth, half\u003dbottom, shape\u003dstraight, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "80",
+      "actual": "80"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_brick_stairs",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "28004"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "net.minecraft.class_2482",
+      "actual": "net.minecraft.class_2482"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "{waterlogged\u003dfalse, type\u003dbottom}",
+      "actual": "{type\u003dbottom, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "6",
+      "actual": "6"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_brick_slab",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "28076"
+    },
+    {
+      "name": "registry:block:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "net.minecraft.class_2544",
+      "actual": "net.minecraft.class_2544"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "{south\u003dnone, waterlogged\u003dfalse, up\u003dtrue, west\u003dnone, east\u003dnone, north\u003dnone}",
+      "actual": "{east\u003dnone, north\u003dnone, south\u003dnone, up\u003dtrue, waterlogged\u003dfalse, west\u003dnone}"
+    },
+    {
+      "name": "state_count:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "324",
+      "actual": "324"
+    },
+    {
+      "name": "default_state_network_id:etherology:polished_slitherite_brick_wall",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "28082"
+    },
+    {
+      "name": "registry:block:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "net.minecraft.class_2248",
+      "actual": "net.minecraft.class_2248"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "{}",
+      "actual": "{}"
+    },
+    {
+      "name": "state_count:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "default_state_network_id:etherology:chiseled_polished_slitherite",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "28403"
+    },
+    {
+      "name": "registry:block:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "net.minecraft.class_2248",
+      "actual": "net.minecraft.class_2248"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "{}",
+      "actual": "{}"
+    },
+    {
+      "name": "state_count:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "default_state_network_id:etherology:chiseled_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "28404"
+    },
+    {
+      "name": "registry:block:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "runtime:block_class:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "net.minecraft.class_2248",
+      "actual": "net.minecraft.class_2248"
+    },
+    {
+      "name": "runtime:block_item_class:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "net.minecraft.class_1747",
+      "actual": "net.minecraft.class_1747"
+    },
+    {
+      "name": "block_item_mapping:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "default_state:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "{}",
+      "actual": "{}"
+    },
+    {
+      "name": "state_count:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "1",
+      "actual": "1"
+    },
+    {
+      "name": "default_state_network_id:etherology:cracked_polished_slitherite_bricks",
+      "passed": true,
+      "expected": "non-negative",
+      "actual": "28405"
+    },
+    {
+      "name": "slitherite_canonical_resources_exact",
+      "passed": true,
+      "expected": "[minecraft:texts/splashes.txt, etherology:blockstates/slitherite.json, etherology:blockstates/slitherite_stairs.json, etherology:blockstates/slitherite_slab.json, etherology:blockstates/slitherite_wall.json, etherology:blockstates/polished_slitherite.json, etherology:blockstates/polished_slitherite_stairs.json, etherology:blockstates/polished_slitherite_slab.json, etherology:blockstates/polished_slitherite_wall.json, etherology:blockstates/polished_slitherite_button.json, etherology:blockstates/polished_slitherite_pressure_plate.json, etherology:blockstates/polished_slitherite_bricks.json, etherology:blockstates/polished_slitherite_brick_stairs.json, etherology:blockstates/polished_slitherite_brick_slab.json, etherology:blockstates/polished_slitherite_brick_wall.json, etherology:blockstates/chiseled_polished_slitherite.json, etherology:blockstates/chiseled_polished_slitherite_bricks.json, etherology:blockstates/cracked_polished_slitherite_bricks.json, etherology:models/block/chiseled_polished_slitherite.json, etherology:models/block/chiseled_polished_slitherite_bricks.json, etherology:models/block/cracked_polished_slitherite_bricks.json, etherology:models/block/polished_slitherite.json, etherology:models/block/polished_slitherite_brick_slab.json, etherology:models/block/polished_slitherite_brick_slab_top.json, etherology:models/block/polished_slitherite_brick_stairs.json, etherology:models/block/polished_slitherite_brick_stairs_inner.json, etherology:models/block/polished_slitherite_brick_stairs_outer.json, etherology:models/block/polished_slitherite_brick_wall_inventory.json, etherology:models/block/polished_slitherite_brick_wall_post.json, etherology:models/block/polished_slitherite_brick_wall_side.json, etherology:models/block/polished_slitherite_brick_wall_side_tall.json, etherology:models/block/polished_slitherite_bricks.json, etherology:models/block/polished_slitherite_button.json, etherology:models/block/polished_slitherite_button_inventory.json, etherology:models/block/polished_slitherite_button_pressed.json, etherology:models/block/polished_slitherite_pressure_plate.json, etherology:models/block/polished_slitherite_pressure_plate_down.json, etherology:models/block/polished_slitherite_slab.json, etherology:models/block/polished_slitherite_slab_top.json, etherology:models/block/polished_slitherite_stairs.json, etherology:models/block/polished_slitherite_stairs_inner.json, etherology:models/block/polished_slitherite_stairs_outer.json, etherology:models/block/polished_slitherite_wall_inventory.json, etherology:models/block/polished_slitherite_wall_post.json, etherology:models/block/polished_slitherite_wall_side.json, etherology:models/block/polished_slitherite_wall_side_tall.json, etherology:models/block/slitherite.json, etherology:models/block/slitherite_slab.json, etherology:models/block/slitherite_slab_top.json, etherology:models/block/slitherite_stairs.json, etherology:models/block/slitherite_stairs_inner.json, etherology:models/block/slitherite_stairs_outer.json, etherology:models/block/slitherite_wall_inventory.json, etherology:models/block/slitherite_wall_post.json, etherology:models/block/slitherite_wall_side.json, etherology:models/block/slitherite_wall_side_tall.json, etherology:models/item/slitherite.json, etherology:models/item/slitherite_stairs.json, etherology:models/item/slitherite_slab.json, etherology:models/item/slitherite_wall.json, etherology:models/item/polished_slitherite.json, etherology:models/item/polished_slitherite_stairs.json, etherology:models/item/polished_slitherite_slab.json, etherology:models/item/polished_slitherite_wall.json, etherology:models/item/polished_slitherite_button.json, etherology:models/item/polished_slitherite_pressure_plate.json, etherology:models/item/polished_slitherite_bricks.json, etherology:models/item/polished_slitherite_brick_stairs.json, etherology:models/item/polished_slitherite_brick_slab.json, etherology:models/item/polished_slitherite_brick_wall.json, etherology:models/item/chiseled_polished_slitherite.json, etherology:models/item/chiseled_polished_slitherite_bricks.json, etherology:models/item/cracked_polished_slitherite_bricks.json, etherology:textures/block/chiseled_polished_slitherite.png, etherology:textures/block/chiseled_polished_slitherite_bricks_side.png, etherology:textures/block/chiseled_polished_slitherite_bricks_top.png, etherology:textures/block/cracked_polished_slitherite_bricks.png, etherology:textures/block/polished_slitherite.png, etherology:textures/block/polished_slitherite_bricks.png, etherology:textures/block/slitherite.png]",
+      "actual": "[minecraft:texts/splashes.txt, etherology:blockstates/slitherite.json, etherology:blockstates/slitherite_stairs.json, etherology:blockstates/slitherite_slab.json, etherology:blockstates/slitherite_wall.json, etherology:blockstates/polished_slitherite.json, etherology:blockstates/polished_slitherite_stairs.json, etherology:blockstates/polished_slitherite_slab.json, etherology:blockstates/polished_slitherite_wall.json, etherology:blockstates/polished_slitherite_button.json, etherology:blockstates/polished_slitherite_pressure_plate.json, etherology:blockstates/polished_slitherite_bricks.json, etherology:blockstates/polished_slitherite_brick_stairs.json, etherology:blockstates/polished_slitherite_brick_slab.json, etherology:blockstates/polished_slitherite_brick_wall.json, etherology:blockstates/chiseled_polished_slitherite.json, etherology:blockstates/chiseled_polished_slitherite_bricks.json, etherology:blockstates/cracked_polished_slitherite_bricks.json, etherology:models/block/chiseled_polished_slitherite.json, etherology:models/block/chiseled_polished_slitherite_bricks.json, etherology:models/block/cracked_polished_slitherite_bricks.json, etherology:models/block/polished_slitherite.json, etherology:models/block/polished_slitherite_brick_slab.json, etherology:models/block/polished_slitherite_brick_slab_top.json, etherology:models/block/polished_slitherite_brick_stairs.json, etherology:models/block/polished_slitherite_brick_stairs_inner.json, etherology:models/block/polished_slitherite_brick_stairs_outer.json, etherology:models/block/polished_slitherite_brick_wall_inventory.json, etherology:models/block/polished_slitherite_brick_wall_post.json, etherology:models/block/polished_slitherite_brick_wall_side.json, etherology:models/block/polished_slitherite_brick_wall_side_tall.json, etherology:models/block/polished_slitherite_bricks.json, etherology:models/block/polished_slitherite_button.json, etherology:models/block/polished_slitherite_button_inventory.json, etherology:models/block/polished_slitherite_button_pressed.json, etherology:models/block/polished_slitherite_pressure_plate.json, etherology:models/block/polished_slitherite_pressure_plate_down.json, etherology:models/block/polished_slitherite_slab.json, etherology:models/block/polished_slitherite_slab_top.json, etherology:models/block/polished_slitherite_stairs.json, etherology:models/block/polished_slitherite_stairs_inner.json, etherology:models/block/polished_slitherite_stairs_outer.json, etherology:models/block/polished_slitherite_wall_inventory.json, etherology:models/block/polished_slitherite_wall_post.json, etherology:models/block/polished_slitherite_wall_side.json, etherology:models/block/polished_slitherite_wall_side_tall.json, etherology:models/block/slitherite.json, etherology:models/block/slitherite_slab.json, etherology:models/block/slitherite_slab_top.json, etherology:models/block/slitherite_stairs.json, etherology:models/block/slitherite_stairs_inner.json, etherology:models/block/slitherite_stairs_outer.json, etherology:models/block/slitherite_wall_inventory.json, etherology:models/block/slitherite_wall_post.json, etherology:models/block/slitherite_wall_side.json, etherology:models/block/slitherite_wall_side_tall.json, etherology:models/item/slitherite.json, etherology:models/item/slitherite_stairs.json, etherology:models/item/slitherite_slab.json, etherology:models/item/slitherite_wall.json, etherology:models/item/polished_slitherite.json, etherology:models/item/polished_slitherite_stairs.json, etherology:models/item/polished_slitherite_slab.json, etherology:models/item/polished_slitherite_wall.json, etherology:models/item/polished_slitherite_button.json, etherology:models/item/polished_slitherite_pressure_plate.json, etherology:models/item/polished_slitherite_bricks.json, etherology:models/item/polished_slitherite_brick_stairs.json, etherology:models/item/polished_slitherite_brick_slab.json, etherology:models/item/polished_slitherite_brick_wall.json, etherology:models/item/chiseled_polished_slitherite.json, etherology:models/item/chiseled_polished_slitherite_bricks.json, etherology:models/item/cracked_polished_slitherite_bricks.json, etherology:textures/block/chiseled_polished_slitherite.png, etherology:textures/block/chiseled_polished_slitherite_bricks_side.png, etherology:textures/block/chiseled_polished_slitherite_bricks_top.png, etherology:textures/block/cracked_polished_slitherite_bricks.png, etherology:textures/block/polished_slitherite.png, etherology:textures/block/polished_slitherite_bricks.png, etherology:textures/block/slitherite.png]"
+    },
+    {
+      "name": "slitherite_state_network_ids_exact",
+      "passed": true,
+      "expected": "1262 unique non-negative raw ids",
+      "actual": "1262 unique non-negative raw ids"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "packaged_root_jar:etherology_original_baseline_harness",
+      "passed": true,
+      "expected": "one regular root JAR",
+      "actual": "one regular root JAR"
+    },
+    {
+      "name": "integrated_world_joined",
+      "passed": true,
+      "expected": "running server and connected client",
+      "actual": "joined"
+    },
+    {
+      "name": "client_arena_chunks_loaded_before_setup",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "client_arena_light_payloads_applied_before_setup",
+      "passed": true,
+      "expected": "20 consecutive ticks: twelve chunks loaded; chunk update queue empty; lighting provider idle; twelve enabled columns; sky\u003d[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]",
+      "actual": "20 consecutive ticks: twelve chunks loaded; chunk update queue empty; lighting provider idle; twelve enabled columns; sky\u003d[15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]"
+    },
+    {
+      "name": "server_arena_chunks_loaded",
+      "passed": true,
+      "expected": "twelve full chunks",
+      "actual": "true"
+    },
+    {
+      "name": "tag:mineable/pickaxe",
+      "passed": true,
+      "expected": "[etherology:slitherite, etherology:slitherite_stairs, etherology:slitherite_slab, etherology:slitherite_wall, etherology:polished_slitherite, etherology:polished_slitherite_stairs, etherology:polished_slitherite_slab, etherology:polished_slitherite_wall, etherology:polished_slitherite_button, etherology:polished_slitherite_pressure_plate, etherology:polished_slitherite_bricks, etherology:polished_slitherite_brick_stairs, etherology:polished_slitherite_brick_slab, etherology:polished_slitherite_brick_wall, etherology:chiseled_polished_slitherite, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks]",
+      "actual": "[etherology:slitherite, etherology:slitherite_stairs, etherology:slitherite_slab, etherology:slitherite_wall, etherology:polished_slitherite, etherology:polished_slitherite_stairs, etherology:polished_slitherite_slab, etherology:polished_slitherite_wall, etherology:polished_slitherite_button, etherology:polished_slitherite_pressure_plate, etherology:polished_slitherite_bricks, etherology:polished_slitherite_brick_stairs, etherology:polished_slitherite_brick_slab, etherology:polished_slitherite_brick_wall, etherology:chiseled_polished_slitherite, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks]"
+    },
+    {
+      "name": "tag:needs_stone_tool",
+      "passed": true,
+      "expected": "[]",
+      "actual": "[]"
+    },
+    {
+      "name": "tag:block/slabs",
+      "passed": true,
+      "expected": "[etherology:slitherite_slab, etherology:polished_slitherite_slab, etherology:polished_slitherite_brick_slab]",
+      "actual": "[etherology:slitherite_slab, etherology:polished_slitherite_slab, etherology:polished_slitherite_brick_slab]"
+    },
+    {
+      "name": "tag:item/slabs",
+      "passed": true,
+      "expected": "[etherology:slitherite_slab, etherology:polished_slitherite_slab, etherology:polished_slitherite_brick_slab]",
+      "actual": "[etherology:slitherite_slab, etherology:polished_slitherite_slab, etherology:polished_slitherite_brick_slab]"
+    },
+    {
+      "name": "tag:block/stairs",
+      "passed": true,
+      "expected": "[etherology:slitherite_stairs, etherology:polished_slitherite_stairs, etherology:polished_slitherite_brick_stairs]",
+      "actual": "[etherology:slitherite_stairs, etherology:polished_slitherite_stairs, etherology:polished_slitherite_brick_stairs]"
+    },
+    {
+      "name": "tag:item/stairs",
+      "passed": true,
+      "expected": "[etherology:slitherite_stairs, etherology:polished_slitherite_stairs, etherology:polished_slitherite_brick_stairs]",
+      "actual": "[etherology:slitherite_stairs, etherology:polished_slitherite_stairs, etherology:polished_slitherite_brick_stairs]"
+    },
+    {
+      "name": "tag:block/walls",
+      "passed": true,
+      "expected": "[etherology:slitherite_wall, etherology:polished_slitherite_wall, etherology:polished_slitherite_brick_wall]",
+      "actual": "[etherology:slitherite_wall, etherology:polished_slitherite_wall, etherology:polished_slitherite_brick_wall]"
+    },
+    {
+      "name": "tag:item/walls",
+      "passed": true,
+      "expected": "[etherology:slitherite_wall, etherology:polished_slitherite_wall, etherology:polished_slitherite_brick_wall]",
+      "actual": "[etherology:slitherite_wall, etherology:polished_slitherite_wall, etherology:polished_slitherite_brick_wall]"
+    },
+    {
+      "name": "tag:block/stone_bricks",
+      "passed": true,
+      "expected": "[etherology:polished_slitherite_bricks, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks]",
+      "actual": "[etherology:polished_slitherite_bricks, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks]"
+    },
+    {
+      "name": "tag:block/stone_pressure_plates",
+      "passed": true,
+      "expected": "[etherology:polished_slitherite_pressure_plate]",
+      "actual": "[etherology:polished_slitherite_pressure_plate]"
+    },
+    {
+      "name": "tag:item/buttons",
+      "passed": true,
+      "expected": "[]",
+      "actual": "[]"
+    },
+    {
+      "name": "slitherite_loot_tables_exact",
+      "passed": true,
+      "expected": "[etherology:blocks/chiseled_polished_slitherite, etherology:blocks/chiseled_polished_slitherite_bricks, etherology:blocks/cracked_polished_slitherite_bricks, etherology:blocks/polished_slitherite, etherology:blocks/polished_slitherite_brick_slab, etherology:blocks/polished_slitherite_brick_stairs, etherology:blocks/polished_slitherite_brick_wall, etherology:blocks/polished_slitherite_bricks, etherology:blocks/polished_slitherite_button, etherology:blocks/polished_slitherite_pressure_plate, etherology:blocks/polished_slitherite_slab, etherology:blocks/polished_slitherite_stairs, etherology:blocks/polished_slitherite_wall, etherology:blocks/slitherite, etherology:blocks/slitherite_slab, etherology:blocks/slitherite_stairs, etherology:blocks/slitherite_wall]",
+      "actual": "[etherology:blocks/chiseled_polished_slitherite, etherology:blocks/chiseled_polished_slitherite_bricks, etherology:blocks/cracked_polished_slitherite_bricks, etherology:blocks/polished_slitherite, etherology:blocks/polished_slitherite_brick_slab, etherology:blocks/polished_slitherite_brick_stairs, etherology:blocks/polished_slitherite_brick_wall, etherology:blocks/polished_slitherite_bricks, etherology:blocks/polished_slitherite_button, etherology:blocks/polished_slitherite_pressure_plate, etherology:blocks/polished_slitherite_slab, etherology:blocks/polished_slitherite_stairs, etherology:blocks/polished_slitherite_wall, etherology:blocks/slitherite, etherology:blocks/slitherite_slab, etherology:blocks/slitherite_stairs, etherology:blocks/slitherite_wall]"
+    },
+    {
+      "name": "slitherite_self_drops_exact",
+      "passed": true,
+      "expected": "{etherology:chiseled_polished_slitherite\u003detherology:chiseled_polished_slitheritex1, etherology:chiseled_polished_slitherite_bricks\u003detherology:chiseled_polished_slitherite_bricksx1, etherology:cracked_polished_slitherite_bricks\u003detherology:cracked_polished_slitherite_bricksx1, etherology:polished_slitherite\u003detherology:polished_slitheritex1, etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slabx1, etherology:polished_slitherite_brick_stairs\u003detherology:polished_slitherite_brick_stairsx1, etherology:polished_slitherite_brick_wall\u003detherology:polished_slitherite_brick_wallx1, etherology:polished_slitherite_bricks\u003detherology:polished_slitherite_bricksx1, etherology:polished_slitherite_button\u003detherology:polished_slitherite_buttonx1, etherology:polished_slitherite_pressure_plate\u003detherology:polished_slitherite_pressure_platex1, etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slabx1, etherology:polished_slitherite_stairs\u003detherology:polished_slitherite_stairsx1, etherology:polished_slitherite_wall\u003detherology:polished_slitherite_wallx1, etherology:slitherite\u003detherology:slitheritex1, etherology:slitherite_slab\u003detherology:slitherite_slabx1, etherology:slitherite_stairs\u003detherology:slitherite_stairsx1, etherology:slitherite_wall\u003detherology:slitherite_wallx1}",
+      "actual": "{etherology:chiseled_polished_slitherite\u003detherology:chiseled_polished_slitheritex1, etherology:chiseled_polished_slitherite_bricks\u003detherology:chiseled_polished_slitherite_bricksx1, etherology:cracked_polished_slitherite_bricks\u003detherology:cracked_polished_slitherite_bricksx1, etherology:polished_slitherite\u003detherology:polished_slitheritex1, etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slabx1, etherology:polished_slitherite_brick_stairs\u003detherology:polished_slitherite_brick_stairsx1, etherology:polished_slitherite_brick_wall\u003detherology:polished_slitherite_brick_wallx1, etherology:polished_slitherite_bricks\u003detherology:polished_slitherite_bricksx1, etherology:polished_slitherite_button\u003detherology:polished_slitherite_buttonx1, etherology:polished_slitherite_pressure_plate\u003detherology:polished_slitherite_pressure_platex1, etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slabx1, etherology:polished_slitherite_stairs\u003detherology:polished_slitherite_stairsx1, etherology:polished_slitherite_wall\u003detherology:polished_slitherite_wallx1, etherology:slitherite\u003detherology:slitheritex1, etherology:slitherite_slab\u003detherology:slitherite_slabx1, etherology:slitherite_stairs\u003detherology:slitherite_stairsx1, etherology:slitherite_wall\u003detherology:slitherite_wallx1}"
+    },
+    {
+      "name": "slitherite_double_slab_drops_x1_exact",
+      "passed": true,
+      "expected": "{etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slabx1, etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slabx1, etherology:slitherite_slab\u003detherology:slitherite_slabx1}",
+      "actual": "{etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slabx1, etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slabx1, etherology:slitherite_slab\u003detherology:slitherite_slabx1}"
+    },
+    {
+      "name": "slitherite_owned_recipes_exact",
+      "passed": true,
+      "expected": "[etherology:chiseled_polished_slitherite\u003dminecraft:crafting-\u003eetherology:chiseled_polished_slitheritex1, etherology:chiseled_polished_slitherite_bricks\u003dminecraft:crafting-\u003eetherology:chiseled_polished_slitherite_bricksx1, etherology:chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:chiseled_polished_slitherite_bricksx1, etherology:chiseled_polished_slitherite_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:chiseled_polished_slitheritex1, etherology:cracked_polished_slitherite_bricks\u003dminecraft:smelting-\u003eetherology:cracked_polished_slitherite_bricksx1, etherology:polished_slitherite\u003dminecraft:crafting-\u003eetherology:polished_slitheritex4, etherology:polished_slitherite_brick_slab\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_slabx6, etherology:polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_slabx2, etherology:polished_slitherite_brick_stairs\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_stairsx4, etherology:polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_stairsx1, etherology:polished_slitherite_brick_wall\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_wallx6, etherology:polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_wallx1, etherology:polished_slitherite_bricks\u003dminecraft:crafting-\u003eetherology:polished_slitherite_bricksx4, etherology:polished_slitherite_bricks_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_bricksx1, etherology:polished_slitherite_button\u003dminecraft:crafting-\u003eetherology:polished_slitherite_buttonx1, etherology:polished_slitherite_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitheritex1, etherology:polished_slitherite_pressure_plate\u003dminecraft:crafting-\u003eetherology:polished_slitherite_pressure_platex1, etherology:polished_slitherite_slab\u003dminecraft:crafting-\u003eetherology:polished_slitherite_slabx6, etherology:polished_slitherite_slab_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_slabx2, etherology:polished_slitherite_stairs\u003dminecraft:crafting-\u003eetherology:polished_slitherite_stairsx4, etherology:polished_slitherite_stairs_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_stairsx1, etherology:polished_slitherite_wall\u003dminecraft:crafting-\u003eetherology:polished_slitherite_wallx6, etherology:polished_slitherite_wall_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_wallx1, etherology:slitherite_slab\u003dminecraft:crafting-\u003eetherology:slitherite_slabx6, etherology:slitherite_slab_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_slabx2, etherology:slitherite_stairs\u003dminecraft:crafting-\u003eetherology:slitherite_stairsx4, etherology:slitherite_stairs_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_stairsx1, etherology:slitherite_wall\u003dminecraft:crafting-\u003eetherology:slitherite_wallx6, etherology:slitherite_wall_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_wallx1]",
+      "actual": "[etherology:chiseled_polished_slitherite\u003dminecraft:crafting-\u003eetherology:chiseled_polished_slitheritex1, etherology:chiseled_polished_slitherite_bricks\u003dminecraft:crafting-\u003eetherology:chiseled_polished_slitherite_bricksx1, etherology:chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:chiseled_polished_slitherite_bricksx1, etherology:chiseled_polished_slitherite_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:chiseled_polished_slitheritex1, etherology:cracked_polished_slitherite_bricks\u003dminecraft:smelting-\u003eetherology:cracked_polished_slitherite_bricksx1, etherology:polished_slitherite\u003dminecraft:crafting-\u003eetherology:polished_slitheritex4, etherology:polished_slitherite_brick_slab\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_slabx6, etherology:polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_slabx2, etherology:polished_slitherite_brick_stairs\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_stairsx4, etherology:polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_stairsx1, etherology:polished_slitherite_brick_wall\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_wallx6, etherology:polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_wallx1, etherology:polished_slitherite_bricks\u003dminecraft:crafting-\u003eetherology:polished_slitherite_bricksx4, etherology:polished_slitherite_bricks_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_bricksx1, etherology:polished_slitherite_button\u003dminecraft:crafting-\u003eetherology:polished_slitherite_buttonx1, etherology:polished_slitherite_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitheritex1, etherology:polished_slitherite_pressure_plate\u003dminecraft:crafting-\u003eetherology:polished_slitherite_pressure_platex1, etherology:polished_slitherite_slab\u003dminecraft:crafting-\u003eetherology:polished_slitherite_slabx6, etherology:polished_slitherite_slab_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_slabx2, etherology:polished_slitherite_stairs\u003dminecraft:crafting-\u003eetherology:polished_slitherite_stairsx4, etherology:polished_slitherite_stairs_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_stairsx1, etherology:polished_slitherite_wall\u003dminecraft:crafting-\u003eetherology:polished_slitherite_wallx6, etherology:polished_slitherite_wall_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_wallx1, etherology:slitherite_slab\u003dminecraft:crafting-\u003eetherology:slitherite_slabx6, etherology:slitherite_slab_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_slabx2, etherology:slitherite_stairs\u003dminecraft:crafting-\u003eetherology:slitherite_stairsx4, etherology:slitherite_stairs_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_stairsx1, etherology:slitherite_wall\u003dminecraft:crafting-\u003eetherology:slitherite_wallx6, etherology:slitherite_wall_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_wallx1]"
+    },
+    {
+      "name": "slitherite_owned_advancements_exact",
+      "passed": true,
+      "expected": "[etherology:recipes/building_blocks/chiseled_polished_slitherite, etherology:recipes/building_blocks/chiseled_polished_slitherite_bricks, etherology:recipes/building_blocks/chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting, etherology:recipes/building_blocks/chiseled_polished_slitherite_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/cracked_polished_slitherite_bricks, etherology:recipes/building_blocks/polished_slitherite, etherology:recipes/building_blocks/polished_slitherite_brick_slab, etherology:recipes/building_blocks/polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting, etherology:recipes/building_blocks/polished_slitherite_brick_stairs, etherology:recipes/building_blocks/polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting, etherology:recipes/building_blocks/polished_slitherite_bricks, etherology:recipes/building_blocks/polished_slitherite_bricks_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/polished_slitherite_from_slitherite_stonecutting, etherology:recipes/building_blocks/polished_slitherite_slab, etherology:recipes/building_blocks/polished_slitherite_slab_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/polished_slitherite_stairs, etherology:recipes/building_blocks/polished_slitherite_stairs_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/slitherite_slab, etherology:recipes/building_blocks/slitherite_slab_from_slitherite_stonecutting, etherology:recipes/building_blocks/slitherite_stairs, etherology:recipes/building_blocks/slitherite_stairs_from_slitherite_stonecutting, etherology:recipes/decorations/polished_slitherite_brick_wall, etherology:recipes/decorations/polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting, etherology:recipes/decorations/polished_slitherite_wall, etherology:recipes/decorations/polished_slitherite_wall_from_polished_slitherite_stonecutting, etherology:recipes/decorations/slitherite_wall, etherology:recipes/decorations/slitherite_wall_from_slitherite_stonecutting, etherology:recipes/redstone/polished_slitherite_button, etherology:recipes/redstone/polished_slitherite_pressure_plate]",
+      "actual": "[etherology:recipes/building_blocks/chiseled_polished_slitherite, etherology:recipes/building_blocks/chiseled_polished_slitherite_bricks, etherology:recipes/building_blocks/chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting, etherology:recipes/building_blocks/chiseled_polished_slitherite_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/cracked_polished_slitherite_bricks, etherology:recipes/building_blocks/polished_slitherite, etherology:recipes/building_blocks/polished_slitherite_brick_slab, etherology:recipes/building_blocks/polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting, etherology:recipes/building_blocks/polished_slitherite_brick_stairs, etherology:recipes/building_blocks/polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting, etherology:recipes/building_blocks/polished_slitherite_bricks, etherology:recipes/building_blocks/polished_slitherite_bricks_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/polished_slitherite_from_slitherite_stonecutting, etherology:recipes/building_blocks/polished_slitherite_slab, etherology:recipes/building_blocks/polished_slitherite_slab_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/polished_slitherite_stairs, etherology:recipes/building_blocks/polished_slitherite_stairs_from_polished_slitherite_stonecutting, etherology:recipes/building_blocks/slitherite_slab, etherology:recipes/building_blocks/slitherite_slab_from_slitherite_stonecutting, etherology:recipes/building_blocks/slitherite_stairs, etherology:recipes/building_blocks/slitherite_stairs_from_slitherite_stonecutting, etherology:recipes/decorations/polished_slitherite_brick_wall, etherology:recipes/decorations/polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting, etherology:recipes/decorations/polished_slitherite_wall, etherology:recipes/decorations/polished_slitherite_wall_from_polished_slitherite_stonecutting, etherology:recipes/decorations/slitherite_wall, etherology:recipes/decorations/slitherite_wall_from_slitherite_stonecutting, etherology:recipes/redstone/polished_slitherite_button, etherology:recipes/redstone/polished_slitherite_pressure_plate]"
+    },
+    {
+      "name": "slitherite_related_recipes_recorded_not_owned",
+      "passed": true,
+      "expected": "[etherology:comparator\u003dminecraft:crafting-\u003eminecraft:comparatorx1, etherology:repeater\u003dminecraft:crafting-\u003eminecraft:repeaterx1, etherology:stonecutter\u003dminecraft:crafting-\u003eminecraft:stonecutterx1, etherology:pedestal\u003dminecraft:crafting-\u003eetherology:pedestalx2, etherology:unadjusted_lens\u003detherology:alchemy_recipe-\u003eetherology:unadjusted_lensx1]",
+      "actual": "[etherology:comparator\u003dminecraft:crafting-\u003eminecraft:comparatorx1, etherology:repeater\u003dminecraft:crafting-\u003eminecraft:repeaterx1, etherology:stonecutter\u003dminecraft:crafting-\u003eminecraft:stonecutterx1, etherology:pedestal\u003dminecraft:crafting-\u003eetherology:pedestalx2, etherology:unadjusted_lens\u003detherology:alchemy_recipe-\u003eetherology:unadjusted_lensx1]"
+    },
+    {
+      "name": "direct_block_item_placements_exact",
+      "passed": true,
+      "expected": "17 accepted 1-\u003e0 BlockItem placements bound to registered blocks",
+      "actual": "etherology:slitherite\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite, placedState\u003detherology:slitherite];etherology:slitherite_stairs\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite_stairs, placedState\u003detherology:slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]];etherology:slitherite_slab\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite_slab, placedState\u003detherology:slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]];etherology:slitherite_wall\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite_wall, placedState\u003detherology:slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]];etherology:polished_slitherite\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite, placedState\u003detherology:polished_slitherite];etherology:polished_slitherite_stairs\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_stairs, placedState\u003detherology:polished_slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]];etherology:polished_slitherite_slab\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_slab, placedState\u003detherology:polished_slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]];etherology:polished_slitherite_wall\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_wall, placedState\u003detherology:polished_slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]];etherology:polished_slitherite_button\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_button, placedState\u003detherology:polished_slitherite_button[face\u003dwall,facing\u003dnorth,powered\u003dfalse]];etherology:polished_slitherite_pressure_plate\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_pressure_plate, placedState\u003detherology:polished_slitherite_pressure_plate[powered\u003dfalse]];etherology:polished_slitherite_bricks\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_bricks, placedState\u003detherology:polished_slitherite_bricks];etherology:polished_slitherite_brick_stairs\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_brick_stairs, placedState\u003detherology:polished_slitherite_brick_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]];etherology:polished_slitherite_brick_slab\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_brick_slab, placedState\u003detherology:polished_slitherite_brick_slab[type\u003dbottom,waterlogged\u003dfalse]];etherology:polished_slitherite_brick_wall\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_brick_wall, placedState\u003detherology:polished_slitherite_brick_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]];etherology:chiseled_polished_slitherite\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:chiseled_polished_slitherite, placedState\u003detherology:chiseled_polished_slitherite];etherology:chiseled_polished_slitherite_bricks\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:chiseled_polished_slitherite_bricks, placedState\u003detherology:chiseled_polished_slitherite_bricks];etherology:cracked_polished_slitherite_bricks\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:cracked_polished_slitherite_bricks, placedState\u003detherology:cracked_polished_slitherite_bricks]"
+    },
+    {
+      "name": "slitherite_button_pulse_reset_exact",
+      "passed": true,
+      "expected": "powered\u003dtrue;scheduled\u003dtrue;elapsed\u003e\u003d20;reset\u003dtrue",
+      "actual": "powered\u003dtrue;scheduled\u003dtrue;elapsed\u003d27;reset\u003dtrue"
+    },
+    {
+      "name": "slitherite_pressure_plate_entities_exact",
+      "passed": true,
+      "expected": "item\u003dfalse;living\u003dtrue;reset\u003dtrue",
+      "actual": "item\u003dfalse;living\u003dtrue;reset\u003dtrue"
+    },
+    {
+      "name": "initial_server_fixture_exact",
+      "passed": true,
+      "expected": "17 exact Slitherite states on deterministic supports",
+      "actual": "etherology:slitherite\u003detherology:slitherite|support\u003dminecraft:polished_andesite;etherology:slitherite_stairs\u003detherology:slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:slitherite_slab\u003detherology:slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:slitherite_wall\u003detherology:slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite\u003detherology:polished_slitherite|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_stairs\u003detherology:polished_slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_wall\u003detherology:polished_slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_button\u003detherology:polished_slitherite_button[face\u003dwall,facing\u003dnorth,powered\u003dfalse]|support\u003dminecraft:smooth_stone;etherology:polished_slitherite_pressure_plate\u003detherology:polished_slitherite_pressure_plate[powered\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_bricks\u003detherology:polished_slitherite_bricks|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_stairs\u003detherology:polished_slitherite_brick_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_wall\u003detherology:polished_slitherite_brick_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:chiseled_polished_slitherite\u003detherology:chiseled_polished_slitherite|support\u003dminecraft:polished_andesite;etherology:chiseled_polished_slitherite_bricks\u003detherology:chiseled_polished_slitherite_bricks|support\u003dminecraft:polished_andesite;etherology:cracked_polished_slitherite_bricks\u003detherology:cracked_polished_slitherite_bricks|support\u003dminecraft:polished_andesite"
+    },
+    {
+      "name": "live_world_identity",
+      "passed": true,
+      "expected": "Etherology Original 0.1.7 Slitherite Blocks;4995697409260082224;minecraft:overworld",
+      "actual": "Etherology Original 0.1.7 Slitherite Blocks;4995697409260082224;minecraft:overworld"
+    },
+    {
+      "name": "forced_world_save",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "restart_fixture_persistence_exact",
+      "passed": true,
+      "expected": "saved snapshot equals reopened snapshot",
+      "actual": "exact"
+    },
+    {
+      "name": "restart_loaded_data_exact",
+      "passed": true,
+      "expected": "same registry, tags, loot, recipes, and advancements",
+      "actual": "exact"
+    },
+    {
+      "name": "capture_mirror_exact:initial",
+      "passed": true,
+      "expected": "client snapshot equals server snapshot",
+      "actual": "exact"
+    },
+    {
+      "name": "capture_render_ready:initial",
+      "passed": true,
+      "expected": "terrain and all 17 fixtures rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_lighting_ready:initial",
+      "passed": true,
+      "expected": "20 fresh paired local server/client samples;sky\u003d15;block\u003d14;globalPending\u003ddiagnostic-only",
+      "actual": "stableClientTicks\u003d20;clientPending\u003dfalse;client:sky\u003d[0,121,-15\u003d15,-8,123,2\u003d15,-6,123,2\u003d15,-4,123,2\u003d15,-2,123,2\u003d15,0,123,2\u003d15,2,123,2\u003d15,4,123,2\u003d15,6,123,2\u003d15,8,123,2\u003d15,-7,123,6\u003d15,-5,123,6\u003d15,-3,123,6\u003d15,-1,123,6\u003d15,1,123,6\u003d15,3,123,6\u003d15,5,123,6\u003d15,7,123,6\u003d15];block\u003d[0,121,-15\u003d14,0,121,-8\u003d14];serverGeneration\u003d20;server:sky\u003d[0,121,-15\u003d15,-8,123,2\u003d15,-6,123,2\u003d15,-4,123,2\u003d15,-2,123,2\u003d15,0,123,2\u003d15,2,123,2\u003d15,4,123,2\u003d15,6,123,2\u003d15,8,123,2\u003d15,-7,123,6\u003d15,-5,123,6\u003d15,-3,123,6\u003d15,-1,123,6\u003d15,1,123,6\u003d15,3,123,6\u003d15,5,123,6\u003d15,7,123,6\u003d15];block\u003d[0,121,-15\u003d14,0,121,-8\u003d14]"
+    },
+    {
+      "name": "capture_camera_exact:initial",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-14.5;yaw\u003d0.0;pitch\u003d8.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-14.5;yaw\u003d0.0;pitch\u003d8.0;on_ground\u003dtrue"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:initial",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:initial",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:initial",
+      "passed": true,
+      "expected": "one non-empty unedited 1920x1080 framebuffer PNG",
+      "actual": "508418 bytes, sha256\u003d57c867a7591b0593a17c71091c0d27b2d16720350623d4c5a71fc56298ad4872"
+    },
+    {
+      "name": "capture_mirror_exact:reopened",
+      "passed": true,
+      "expected": "client snapshot equals server snapshot",
+      "actual": "exact"
+    },
+    {
+      "name": "capture_render_ready:reopened",
+      "passed": true,
+      "expected": "terrain and all 17 fixtures rendering-ready",
+      "actual": "ready"
+    },
+    {
+      "name": "capture_lighting_ready:reopened",
+      "passed": true,
+      "expected": "20 fresh paired local server/client samples;sky\u003d15;block\u003d14;globalPending\u003ddiagnostic-only",
+      "actual": "stableClientTicks\u003d20;clientPending\u003dfalse;client:sky\u003d[0,121,-15\u003d15,-8,123,2\u003d15,-6,123,2\u003d15,-4,123,2\u003d15,-2,123,2\u003d15,0,123,2\u003d15,2,123,2\u003d15,4,123,2\u003d15,6,123,2\u003d15,8,123,2\u003d15,-7,123,6\u003d15,-5,123,6\u003d15,-3,123,6\u003d15,-1,123,6\u003d15,1,123,6\u003d15,3,123,6\u003d15,5,123,6\u003d15,7,123,6\u003d15];block\u003d[0,121,-15\u003d14,0,121,-8\u003d14];serverGeneration\u003d40;server:sky\u003d[0,121,-15\u003d15,-8,123,2\u003d15,-6,123,2\u003d15,-4,123,2\u003d15,-2,123,2\u003d15,0,123,2\u003d15,2,123,2\u003d15,4,123,2\u003d15,6,123,2\u003d15,8,123,2\u003d15,-7,123,6\u003d15,-5,123,6\u003d15,-3,123,6\u003d15,-1,123,6\u003d15,1,123,6\u003d15,3,123,6\u003d15,5,123,6\u003d15,7,123,6\u003d15];block\u003d[0,121,-15\u003d14,0,121,-8\u003d14]"
+    },
+    {
+      "name": "capture_camera_exact:reopened",
+      "passed": true,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-14.5;yaw\u003d0.0;pitch\u003d8.0;on_ground\u003dtrue;tolerance\u003d1.0E-4",
+      "actual": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-14.5;yaw\u003d0.0;pitch\u003d8.0;on_ground\u003dtrue"
+    },
+    {
+      "name": "capture_consecutive_stable_renders:reopened",
+      "passed": true,
+      "expected": "120",
+      "actual": "120"
+    },
+    {
+      "name": "capture_framebuffer_dimensions:reopened",
+      "passed": true,
+      "expected": "1920x1080",
+      "actual": "1920x1080"
+    },
+    {
+      "name": "native_screenshot_written:reopened",
+      "passed": true,
+      "expected": "one non-empty unedited 1920x1080 framebuffer PNG",
+      "actual": "400052 bytes, sha256\u003d450fc61f3bd9d385229cfa4dfb645b49c56660b5c17a600a6b7946402b7c9053"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-original-slitherite-block-registry-world",
+      "actual": "etherology-original-slitherite-block-registry-world"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-original-slitherite-block-registry-world",
+    "display_name": "Etherology Original 0.1.7 Slitherite Blocks",
+    "seed": 4995697409260082224,
+    "dimension": "minecraft:overworld",
+    "integrated": true,
+    "reopened": true
+  },
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    {
+      "mod_id": "etherology_original_baseline_harness",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar",
+      "size": 218402,
+      "sha256": "09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489"
+    }
+  ],
+  "screenshots": [
+    {
+      "step": "initial",
+      "file": "screenshots/slitherite-block-registry-initial.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 508418,
+      "sha256": "57c867a7591b0593a17c71091c0d27b2d16720350623d4c5a71fc56298ad4872",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "reopened",
+      "file": "screenshots/slitherite-block-registry-reopened.png",
+      "width": 1920,
+      "height": 1080,
+      "size": 400052,
+      "sha256": "450fc61f3bd9d385229cfa4dfb645b49c56660b5c17a600a6b7946402b7c9053",
+      "completed_render_count": 120,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    }
+  ],
+  "slitherite": {
+    "block_ids": [
+      "etherology:slitherite",
+      "etherology:slitherite_stairs",
+      "etherology:slitherite_slab",
+      "etherology:slitherite_wall",
+      "etherology:polished_slitherite",
+      "etherology:polished_slitherite_stairs",
+      "etherology:polished_slitherite_slab",
+      "etherology:polished_slitherite_wall",
+      "etherology:polished_slitherite_button",
+      "etherology:polished_slitherite_pressure_plate",
+      "etherology:polished_slitherite_bricks",
+      "etherology:polished_slitherite_brick_stairs",
+      "etherology:polished_slitherite_brick_slab",
+      "etherology:polished_slitherite_brick_wall",
+      "etherology:chiseled_polished_slitherite",
+      "etherology:chiseled_polished_slitherite_bricks",
+      "etherology:cracked_polished_slitherite_bricks"
+    ],
+    "registry": [
+      "etherology:slitherite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,default_raw_id:27144,raw_ids:1",
+      "etherology:slitherite_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, half\u003dbottom, shape\u003dstraight, waterlogged\u003dfalse},states:80,default_raw_id:27156,raw_ids:80",
+      "etherology:slitherite_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,default_raw_id:27228,raw_ids:6",
+      "etherology:slitherite_wall\u003dblock_class:net.minecraft.class_2544,item_class:net.minecraft.class_1747,default:{east\u003dnone, north\u003dnone, south\u003dnone, up\u003dtrue, waterlogged\u003dfalse, west\u003dnone},states:324,default_raw_id:27234,raw_ids:324",
+      "etherology:polished_slitherite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,default_raw_id:27555,raw_ids:1",
+      "etherology:polished_slitherite_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, half\u003dbottom, shape\u003dstraight, waterlogged\u003dfalse},states:80,default_raw_id:27567,raw_ids:80",
+      "etherology:polished_slitherite_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,default_raw_id:27639,raw_ids:6",
+      "etherology:polished_slitherite_wall\u003dblock_class:net.minecraft.class_2544,item_class:net.minecraft.class_1747,default:{east\u003dnone, north\u003dnone, south\u003dnone, up\u003dtrue, waterlogged\u003dfalse, west\u003dnone},states:324,default_raw_id:27645,raw_ids:324",
+      "etherology:polished_slitherite_button\u003dblock_class:net.minecraft.class_2269,item_class:net.minecraft.class_1747,default:{face\u003dwall, facing\u003dnorth, powered\u003dfalse},states:24,default_raw_id:27975,raw_ids:24",
+      "etherology:polished_slitherite_pressure_plate\u003dblock_class:net.minecraft.class_2440,item_class:net.minecraft.class_1747,default:{powered\u003dfalse},states:2,default_raw_id:27991,raw_ids:2",
+      "etherology:polished_slitherite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,default_raw_id:27992,raw_ids:1",
+      "etherology:polished_slitherite_brick_stairs\u003dblock_class:net.minecraft.class_2510,item_class:net.minecraft.class_1747,default:{facing\u003dnorth, half\u003dbottom, shape\u003dstraight, waterlogged\u003dfalse},states:80,default_raw_id:28004,raw_ids:80",
+      "etherology:polished_slitherite_brick_slab\u003dblock_class:net.minecraft.class_2482,item_class:net.minecraft.class_1747,default:{type\u003dbottom, waterlogged\u003dfalse},states:6,default_raw_id:28076,raw_ids:6",
+      "etherology:polished_slitherite_brick_wall\u003dblock_class:net.minecraft.class_2544,item_class:net.minecraft.class_1747,default:{east\u003dnone, north\u003dnone, south\u003dnone, up\u003dtrue, waterlogged\u003dfalse, west\u003dnone},states:324,default_raw_id:28082,raw_ids:324",
+      "etherology:chiseled_polished_slitherite\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,default_raw_id:28403,raw_ids:1",
+      "etherology:chiseled_polished_slitherite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,default_raw_id:28404,raw_ids:1",
+      "etherology:cracked_polished_slitherite_bricks\u003dblock_class:net.minecraft.class_2248,item_class:net.minecraft.class_1747,default:{},states:1,default_raw_id:28405,raw_ids:1"
+    ],
+    "aggregate_state_count": 1262,
+    "canonical_resources": [
+      "minecraft:texts/splashes.txt",
+      "etherology:blockstates/slitherite.json",
+      "etherology:blockstates/slitherite_stairs.json",
+      "etherology:blockstates/slitherite_slab.json",
+      "etherology:blockstates/slitherite_wall.json",
+      "etherology:blockstates/polished_slitherite.json",
+      "etherology:blockstates/polished_slitherite_stairs.json",
+      "etherology:blockstates/polished_slitherite_slab.json",
+      "etherology:blockstates/polished_slitherite_wall.json",
+      "etherology:blockstates/polished_slitherite_button.json",
+      "etherology:blockstates/polished_slitherite_pressure_plate.json",
+      "etherology:blockstates/polished_slitherite_bricks.json",
+      "etherology:blockstates/polished_slitherite_brick_stairs.json",
+      "etherology:blockstates/polished_slitherite_brick_slab.json",
+      "etherology:blockstates/polished_slitherite_brick_wall.json",
+      "etherology:blockstates/chiseled_polished_slitherite.json",
+      "etherology:blockstates/chiseled_polished_slitherite_bricks.json",
+      "etherology:blockstates/cracked_polished_slitherite_bricks.json",
+      "etherology:models/block/chiseled_polished_slitherite.json",
+      "etherology:models/block/chiseled_polished_slitherite_bricks.json",
+      "etherology:models/block/cracked_polished_slitherite_bricks.json",
+      "etherology:models/block/polished_slitherite.json",
+      "etherology:models/block/polished_slitherite_brick_slab.json",
+      "etherology:models/block/polished_slitherite_brick_slab_top.json",
+      "etherology:models/block/polished_slitherite_brick_stairs.json",
+      "etherology:models/block/polished_slitherite_brick_stairs_inner.json",
+      "etherology:models/block/polished_slitherite_brick_stairs_outer.json",
+      "etherology:models/block/polished_slitherite_brick_wall_inventory.json",
+      "etherology:models/block/polished_slitherite_brick_wall_post.json",
+      "etherology:models/block/polished_slitherite_brick_wall_side.json",
+      "etherology:models/block/polished_slitherite_brick_wall_side_tall.json",
+      "etherology:models/block/polished_slitherite_bricks.json",
+      "etherology:models/block/polished_slitherite_button.json",
+      "etherology:models/block/polished_slitherite_button_inventory.json",
+      "etherology:models/block/polished_slitherite_button_pressed.json",
+      "etherology:models/block/polished_slitherite_pressure_plate.json",
+      "etherology:models/block/polished_slitherite_pressure_plate_down.json",
+      "etherology:models/block/polished_slitherite_slab.json",
+      "etherology:models/block/polished_slitherite_slab_top.json",
+      "etherology:models/block/polished_slitherite_stairs.json",
+      "etherology:models/block/polished_slitherite_stairs_inner.json",
+      "etherology:models/block/polished_slitherite_stairs_outer.json",
+      "etherology:models/block/polished_slitherite_wall_inventory.json",
+      "etherology:models/block/polished_slitherite_wall_post.json",
+      "etherology:models/block/polished_slitherite_wall_side.json",
+      "etherology:models/block/polished_slitherite_wall_side_tall.json",
+      "etherology:models/block/slitherite.json",
+      "etherology:models/block/slitherite_slab.json",
+      "etherology:models/block/slitherite_slab_top.json",
+      "etherology:models/block/slitherite_stairs.json",
+      "etherology:models/block/slitherite_stairs_inner.json",
+      "etherology:models/block/slitherite_stairs_outer.json",
+      "etherology:models/block/slitherite_wall_inventory.json",
+      "etherology:models/block/slitherite_wall_post.json",
+      "etherology:models/block/slitherite_wall_side.json",
+      "etherology:models/block/slitherite_wall_side_tall.json",
+      "etherology:models/item/slitherite.json",
+      "etherology:models/item/slitherite_stairs.json",
+      "etherology:models/item/slitherite_slab.json",
+      "etherology:models/item/slitherite_wall.json",
+      "etherology:models/item/polished_slitherite.json",
+      "etherology:models/item/polished_slitherite_stairs.json",
+      "etherology:models/item/polished_slitherite_slab.json",
+      "etherology:models/item/polished_slitherite_wall.json",
+      "etherology:models/item/polished_slitherite_button.json",
+      "etherology:models/item/polished_slitherite_pressure_plate.json",
+      "etherology:models/item/polished_slitherite_bricks.json",
+      "etherology:models/item/polished_slitherite_brick_stairs.json",
+      "etherology:models/item/polished_slitherite_brick_slab.json",
+      "etherology:models/item/polished_slitherite_brick_wall.json",
+      "etherology:models/item/chiseled_polished_slitherite.json",
+      "etherology:models/item/chiseled_polished_slitherite_bricks.json",
+      "etherology:models/item/cracked_polished_slitherite_bricks.json",
+      "etherology:textures/block/chiseled_polished_slitherite.png",
+      "etherology:textures/block/chiseled_polished_slitherite_bricks_side.png",
+      "etherology:textures/block/chiseled_polished_slitherite_bricks_top.png",
+      "etherology:textures/block/cracked_polished_slitherite_bricks.png",
+      "etherology:textures/block/polished_slitherite.png",
+      "etherology:textures/block/polished_slitherite_bricks.png",
+      "etherology:textures/block/slitherite.png"
+    ],
+    "tags": [
+      "mineable/pickaxe\u003d[etherology:slitherite, etherology:slitherite_stairs, etherology:slitherite_slab, etherology:slitherite_wall, etherology:polished_slitherite, etherology:polished_slitherite_stairs, etherology:polished_slitherite_slab, etherology:polished_slitherite_wall, etherology:polished_slitherite_button, etherology:polished_slitherite_pressure_plate, etherology:polished_slitherite_bricks, etherology:polished_slitherite_brick_stairs, etherology:polished_slitherite_brick_slab, etherology:polished_slitherite_brick_wall, etherology:chiseled_polished_slitherite, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks]",
+      "needs_stone_tool\u003d[]",
+      "block/slabs\u003d[etherology:slitherite_slab, etherology:polished_slitherite_slab, etherology:polished_slitherite_brick_slab]",
+      "item/slabs\u003d[etherology:slitherite_slab, etherology:polished_slitherite_slab, etherology:polished_slitherite_brick_slab]",
+      "block/stairs\u003d[etherology:slitherite_stairs, etherology:polished_slitherite_stairs, etherology:polished_slitherite_brick_stairs]",
+      "item/stairs\u003d[etherology:slitherite_stairs, etherology:polished_slitherite_stairs, etherology:polished_slitherite_brick_stairs]",
+      "block/walls\u003d[etherology:slitherite_wall, etherology:polished_slitherite_wall, etherology:polished_slitherite_brick_wall]",
+      "item/walls\u003d[etherology:slitherite_wall, etherology:polished_slitherite_wall, etherology:polished_slitherite_brick_wall]",
+      "block/stone_bricks\u003d[etherology:polished_slitherite_bricks, etherology:chiseled_polished_slitherite_bricks, etherology:cracked_polished_slitherite_bricks]",
+      "block/stone_pressure_plates\u003d[etherology:polished_slitherite_pressure_plate]",
+      "item/buttons\u003d[]"
+    ],
+    "loot_tables": [
+      "etherology:blocks/chiseled_polished_slitherite",
+      "etherology:blocks/chiseled_polished_slitherite_bricks",
+      "etherology:blocks/cracked_polished_slitherite_bricks",
+      "etherology:blocks/polished_slitherite",
+      "etherology:blocks/polished_slitherite_brick_slab",
+      "etherology:blocks/polished_slitherite_brick_stairs",
+      "etherology:blocks/polished_slitherite_brick_wall",
+      "etherology:blocks/polished_slitherite_bricks",
+      "etherology:blocks/polished_slitherite_button",
+      "etherology:blocks/polished_slitherite_pressure_plate",
+      "etherology:blocks/polished_slitherite_slab",
+      "etherology:blocks/polished_slitherite_stairs",
+      "etherology:blocks/polished_slitherite_wall",
+      "etherology:blocks/slitherite",
+      "etherology:blocks/slitherite_slab",
+      "etherology:blocks/slitherite_stairs",
+      "etherology:blocks/slitherite_wall"
+    ],
+    "self_drops": {
+      "etherology:chiseled_polished_slitherite": "etherology:chiseled_polished_slitheritex1",
+      "etherology:chiseled_polished_slitherite_bricks": "etherology:chiseled_polished_slitherite_bricksx1",
+      "etherology:cracked_polished_slitherite_bricks": "etherology:cracked_polished_slitherite_bricksx1",
+      "etherology:polished_slitherite": "etherology:polished_slitheritex1",
+      "etherology:polished_slitherite_brick_slab": "etherology:polished_slitherite_brick_slabx1",
+      "etherology:polished_slitherite_brick_stairs": "etherology:polished_slitherite_brick_stairsx1",
+      "etherology:polished_slitherite_brick_wall": "etherology:polished_slitherite_brick_wallx1",
+      "etherology:polished_slitherite_bricks": "etherology:polished_slitherite_bricksx1",
+      "etherology:polished_slitherite_button": "etherology:polished_slitherite_buttonx1",
+      "etherology:polished_slitherite_pressure_plate": "etherology:polished_slitherite_pressure_platex1",
+      "etherology:polished_slitherite_slab": "etherology:polished_slitherite_slabx1",
+      "etherology:polished_slitherite_stairs": "etherology:polished_slitherite_stairsx1",
+      "etherology:polished_slitherite_wall": "etherology:polished_slitherite_wallx1",
+      "etherology:slitherite": "etherology:slitheritex1",
+      "etherology:slitherite_slab": "etherology:slitherite_slabx1",
+      "etherology:slitherite_stairs": "etherology:slitherite_stairsx1",
+      "etherology:slitherite_wall": "etherology:slitherite_wallx1"
+    },
+    "double_slab_drops": {
+      "etherology:polished_slitherite_brick_slab": "etherology:polished_slitherite_brick_slabx1",
+      "etherology:polished_slitherite_slab": "etherology:polished_slitherite_slabx1",
+      "etherology:slitherite_slab": "etherology:slitherite_slabx1"
+    },
+    "owned_recipes": [
+      "etherology:chiseled_polished_slitherite\u003dminecraft:crafting-\u003eetherology:chiseled_polished_slitheritex1",
+      "etherology:chiseled_polished_slitherite_bricks\u003dminecraft:crafting-\u003eetherology:chiseled_polished_slitherite_bricksx1",
+      "etherology:chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:chiseled_polished_slitherite_bricksx1",
+      "etherology:chiseled_polished_slitherite_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:chiseled_polished_slitheritex1",
+      "etherology:cracked_polished_slitherite_bricks\u003dminecraft:smelting-\u003eetherology:cracked_polished_slitherite_bricksx1",
+      "etherology:polished_slitherite\u003dminecraft:crafting-\u003eetherology:polished_slitheritex4",
+      "etherology:polished_slitherite_brick_slab\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_slabx6",
+      "etherology:polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_slabx2",
+      "etherology:polished_slitherite_brick_stairs\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_stairsx4",
+      "etherology:polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_stairsx1",
+      "etherology:polished_slitherite_brick_wall\u003dminecraft:crafting-\u003eetherology:polished_slitherite_brick_wallx6",
+      "etherology:polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_brick_wallx1",
+      "etherology:polished_slitherite_bricks\u003dminecraft:crafting-\u003eetherology:polished_slitherite_bricksx4",
+      "etherology:polished_slitherite_bricks_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_bricksx1",
+      "etherology:polished_slitherite_button\u003dminecraft:crafting-\u003eetherology:polished_slitherite_buttonx1",
+      "etherology:polished_slitherite_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitheritex1",
+      "etherology:polished_slitherite_pressure_plate\u003dminecraft:crafting-\u003eetherology:polished_slitherite_pressure_platex1",
+      "etherology:polished_slitherite_slab\u003dminecraft:crafting-\u003eetherology:polished_slitherite_slabx6",
+      "etherology:polished_slitherite_slab_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_slabx2",
+      "etherology:polished_slitherite_stairs\u003dminecraft:crafting-\u003eetherology:polished_slitherite_stairsx4",
+      "etherology:polished_slitherite_stairs_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_stairsx1",
+      "etherology:polished_slitherite_wall\u003dminecraft:crafting-\u003eetherology:polished_slitherite_wallx6",
+      "etherology:polished_slitherite_wall_from_polished_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:polished_slitherite_wallx1",
+      "etherology:slitherite_slab\u003dminecraft:crafting-\u003eetherology:slitherite_slabx6",
+      "etherology:slitherite_slab_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_slabx2",
+      "etherology:slitherite_stairs\u003dminecraft:crafting-\u003eetherology:slitherite_stairsx4",
+      "etherology:slitherite_stairs_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_stairsx1",
+      "etherology:slitherite_wall\u003dminecraft:crafting-\u003eetherology:slitherite_wallx6",
+      "etherology:slitherite_wall_from_slitherite_stonecutting\u003dminecraft:stonecutting-\u003eetherology:slitherite_wallx1"
+    ],
+    "owned_advancements": [
+      "etherology:recipes/building_blocks/chiseled_polished_slitherite",
+      "etherology:recipes/building_blocks/chiseled_polished_slitherite_bricks",
+      "etherology:recipes/building_blocks/chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting",
+      "etherology:recipes/building_blocks/chiseled_polished_slitherite_from_polished_slitherite_stonecutting",
+      "etherology:recipes/building_blocks/cracked_polished_slitherite_bricks",
+      "etherology:recipes/building_blocks/polished_slitherite",
+      "etherology:recipes/building_blocks/polished_slitherite_brick_slab",
+      "etherology:recipes/building_blocks/polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting",
+      "etherology:recipes/building_blocks/polished_slitherite_brick_stairs",
+      "etherology:recipes/building_blocks/polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting",
+      "etherology:recipes/building_blocks/polished_slitherite_bricks",
+      "etherology:recipes/building_blocks/polished_slitherite_bricks_from_polished_slitherite_stonecutting",
+      "etherology:recipes/building_blocks/polished_slitherite_from_slitherite_stonecutting",
+      "etherology:recipes/building_blocks/polished_slitherite_slab",
+      "etherology:recipes/building_blocks/polished_slitherite_slab_from_polished_slitherite_stonecutting",
+      "etherology:recipes/building_blocks/polished_slitherite_stairs",
+      "etherology:recipes/building_blocks/polished_slitherite_stairs_from_polished_slitherite_stonecutting",
+      "etherology:recipes/building_blocks/slitherite_slab",
+      "etherology:recipes/building_blocks/slitherite_slab_from_slitherite_stonecutting",
+      "etherology:recipes/building_blocks/slitherite_stairs",
+      "etherology:recipes/building_blocks/slitherite_stairs_from_slitherite_stonecutting",
+      "etherology:recipes/decorations/polished_slitherite_brick_wall",
+      "etherology:recipes/decorations/polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting",
+      "etherology:recipes/decorations/polished_slitherite_wall",
+      "etherology:recipes/decorations/polished_slitherite_wall_from_polished_slitherite_stonecutting",
+      "etherology:recipes/decorations/slitherite_wall",
+      "etherology:recipes/decorations/slitherite_wall_from_slitherite_stonecutting",
+      "etherology:recipes/redstone/polished_slitherite_button",
+      "etherology:recipes/redstone/polished_slitherite_pressure_plate"
+    ],
+    "related_recipes_recorded_not_owned": [
+      "etherology:comparator\u003dminecraft:crafting-\u003eminecraft:comparatorx1",
+      "etherology:repeater\u003dminecraft:crafting-\u003eminecraft:repeaterx1",
+      "etherology:stonecutter\u003dminecraft:crafting-\u003eminecraft:stonecutterx1",
+      "etherology:pedestal\u003dminecraft:crafting-\u003eetherology:pedestalx2",
+      "etherology:unadjusted_lens\u003detherology:alchemy_recipe-\u003eetherology:unadjusted_lensx1"
+    ],
+    "placements": "etherology:slitherite\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite, placedState\u003detherology:slitherite];etherology:slitherite_stairs\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite_stairs, placedState\u003detherology:slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]];etherology:slitherite_slab\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite_slab, placedState\u003detherology:slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]];etherology:slitherite_wall\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:slitherite_wall, placedState\u003detherology:slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]];etherology:polished_slitherite\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite, placedState\u003detherology:polished_slitherite];etherology:polished_slitherite_stairs\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_stairs, placedState\u003detherology:polished_slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]];etherology:polished_slitherite_slab\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_slab, placedState\u003detherology:polished_slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]];etherology:polished_slitherite_wall\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_wall, placedState\u003detherology:polished_slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]];etherology:polished_slitherite_button\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_button, placedState\u003detherology:polished_slitherite_button[face\u003dwall,facing\u003dnorth,powered\u003dfalse]];etherology:polished_slitherite_pressure_plate\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_pressure_plate, placedState\u003detherology:polished_slitherite_pressure_plate[powered\u003dfalse]];etherology:polished_slitherite_bricks\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_bricks, placedState\u003detherology:polished_slitherite_bricks];etherology:polished_slitherite_brick_stairs\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_brick_stairs, placedState\u003detherology:polished_slitherite_brick_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]];etherology:polished_slitherite_brick_slab\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_brick_slab, placedState\u003detherology:polished_slitherite_brick_slab[type\u003dbottom,waterlogged\u003dfalse]];etherology:polished_slitherite_brick_wall\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:polished_slitherite_brick_wall, placedState\u003detherology:polished_slitherite_brick_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]];etherology:chiseled_polished_slitherite\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:chiseled_polished_slitherite, placedState\u003detherology:chiseled_polished_slitherite];etherology:chiseled_polished_slitherite_bricks\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:chiseled_polished_slitherite_bricks, placedState\u003detherology:chiseled_polished_slitherite_bricks];etherology:cracked_polished_slitherite_bricks\u003dPlacementEvidence[actionResult\u003dCONSUME, accepted\u003dtrue, beforeCount\u003d1, afterCount\u003d0, blockItemMapping\u003dtrue, placedId\u003detherology:cracked_polished_slitherite_bricks, placedState\u003detherology:cracked_polished_slitherite_bricks]",
+    "button_behavior": "powered\u003dtrue;scheduled\u003dtrue;elapsed\u003d27;reset\u003dtrue",
+    "pressure_plate_behavior": "item\u003dfalse;living\u003dtrue;reset\u003dtrue",
+    "initial_snapshot": "etherology:slitherite\u003detherology:slitherite|support\u003dminecraft:polished_andesite;etherology:slitherite_stairs\u003detherology:slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:slitherite_slab\u003detherology:slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:slitherite_wall\u003detherology:slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite\u003detherology:polished_slitherite|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_stairs\u003detherology:polished_slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_wall\u003detherology:polished_slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_button\u003detherology:polished_slitherite_button[face\u003dwall,facing\u003dnorth,powered\u003dfalse]|support\u003dminecraft:smooth_stone;etherology:polished_slitherite_pressure_plate\u003detherology:polished_slitherite_pressure_plate[powered\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_bricks\u003detherology:polished_slitherite_bricks|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_stairs\u003detherology:polished_slitherite_brick_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_wall\u003detherology:polished_slitherite_brick_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:chiseled_polished_slitherite\u003detherology:chiseled_polished_slitherite|support\u003dminecraft:polished_andesite;etherology:chiseled_polished_slitherite_bricks\u003detherology:chiseled_polished_slitherite_bricks|support\u003dminecraft:polished_andesite;etherology:cracked_polished_slitherite_bricks\u003detherology:cracked_polished_slitherite_bricks|support\u003dminecraft:polished_andesite",
+    "reopened_snapshot": "etherology:slitherite\u003detherology:slitherite|support\u003dminecraft:polished_andesite;etherology:slitherite_stairs\u003detherology:slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:slitherite_slab\u003detherology:slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:slitherite_wall\u003detherology:slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite\u003detherology:polished_slitherite|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_stairs\u003detherology:polished_slitherite_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_slab\u003detherology:polished_slitherite_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_wall\u003detherology:polished_slitherite_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_button\u003detherology:polished_slitherite_button[face\u003dwall,facing\u003dnorth,powered\u003dfalse]|support\u003dminecraft:smooth_stone;etherology:polished_slitherite_pressure_plate\u003detherology:polished_slitherite_pressure_plate[powered\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_bricks\u003detherology:polished_slitherite_bricks|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_stairs\u003detherology:polished_slitherite_brick_stairs[facing\u003dnorth,half\u003dbottom,shape\u003dstraight,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_slab\u003detherology:polished_slitherite_brick_slab[type\u003dbottom,waterlogged\u003dfalse]|support\u003dminecraft:polished_andesite;etherology:polished_slitherite_brick_wall\u003detherology:polished_slitherite_brick_wall[east\u003dnone,north\u003dnone,south\u003dnone,up\u003dtrue,waterlogged\u003dfalse,west\u003dnone]|support\u003dminecraft:polished_andesite;etherology:chiseled_polished_slitherite\u003detherology:chiseled_polished_slitherite|support\u003dminecraft:polished_andesite;etherology:chiseled_polished_slitherite_bricks\u003detherology:chiseled_polished_slitherite_bricks|support\u003dminecraft:polished_andesite;etherology:cracked_polished_slitherite_bricks\u003detherology:cracked_polished_slitherite_bricks|support\u003dminecraft:polished_andesite",
+    "persistence_exact": true,
+    "reopened_data_exact": true,
+    "required_stable_renders": 120,
+    "pre_setup_lighting": {
+      "stable_client_ticks": 20,
+      "arena_chunks": [
+        "-2,-2",
+        "-2,-1",
+        "-2,0",
+        "-1,-2",
+        "-1,-1",
+        "-1,0",
+        "0,-2",
+        "0,-1",
+        "0,0",
+        "1,-2",
+        "1,-1",
+        "1,0"
+      ],
+      "arena_chunks_loaded": true,
+      "chunk_updaters_empty": true,
+      "pending": false,
+      "enabled_columns": [
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true,
+        true
+      ],
+      "sky": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ]
+    },
+    "required_lighting_ready_client_ticks": 20
+  }
+}

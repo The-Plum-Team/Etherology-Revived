@@ -103,6 +103,13 @@ TRACKED_ATTRAHITE_EVIDENCE_ARCHIVE = (
     / "original-1.21.1"
     / "attrahite-block-registry-v4"
 )
+TRACKED_SLITHERITE_EVIDENCE_ARCHIVE = (
+    BASELINE_DIRECTORY.parents[1]
+    / "docs"
+    / "evidence"
+    / "original-1.21.1"
+    / "slitherite-block-registry-v10"
+)
 ATTRAHITE_EVIDENCE_ARCHIVE_DIRECTORY_NAME = "attrahite-block-registry-v4"
 
 
@@ -1980,7 +1987,7 @@ class TrackedManifestTests(unittest.TestCase):
         self.assertAlmostEqual(material_ratio, 0.07192033179012346)
         self.assertAlmostEqual(mean_delta, 10.064814814814815)
 
-    def test_active_v10_profile_is_fresh_and_has_no_runtime_or_archive(self) -> None:
+    def test_consumed_v10_runtime_remains_exact_when_present(self) -> None:
         self.assertEqual(client.MANIFEST_PATH, ACTIVE_MANIFEST_PATH)
         self.assertEqual(len(ACTIVE_MANIFEST_PATH.read_bytes()), 10_349)
         self.assertEqual(
@@ -2005,25 +2012,89 @@ class TrackedManifestTests(unittest.TestCase):
             ],
         )
         runtime_root = BASELINE_DIRECTORY / ".state" / "runtimes" / profile_id
-        for path in (
-            runtime_root,
-            runtime_root / "launch-attempt.json",
-            runtime_root / "evidence",
-            runtime_root / "game" / "saves" / (
-                "etherology-original-slitherite-block-registry-world"
+        if not runtime_root.exists() and not runtime_root.is_symlink():
+            return
+        scenario = runtime_root / "evidence" / "slitherite-block-registry"
+        expected = {
+            runtime_root / ".etherology-original-profile.json": (
+                3_084,
+                "7836994f6d5490295935f6ae0dac28b9ebacf55c83d4426397847e1a86c76acb",
             ),
-        ):
-            self.assertFalse(path.exists())
-            self.assertFalse(path.is_symlink())
-        archive = (
-            BASELINE_DIRECTORY.parents[1]
-            / "docs"
-            / "evidence"
-            / "original-1.21.1"
-            / "slitherite-block-registry-v10"
+            runtime_root / "artifact-lock.json": (
+                5_389,
+                "b6d362938cdbf49b230ae32ca8e4ec295a49d42ce3156993d6c1bd3d40b57165",
+            ),
+            runtime_root / "runtime-lock.json": (
+                832_422,
+                "83fe4449505bd41424e522063066c4e7cf0f125d5325f5ea52dfca7959e21cb0",
+            ),
+            runtime_root / "launch-attempt.json": (
+                871_972,
+                "889a56501dc9f833e7fed4835155e375d0007b93a828f0e7ff3db3a3cf061b00",
+            ),
+            runtime_root / "evidence" / ".etherology-original-evidence.json": (
+                955,
+                "b42c062d900759a7efedbd58284162b5082cee30c5176452331d90c06d438f20",
+            ),
+            scenario / "reports" / "report.json": (
+                107_767,
+                "a6930bfa7d37849dbd90c9f790c6a8dbf39d6a5d84af69432d2e449983f5af11",
+            ),
+            scenario / "reports" / "done.marker": (
+                112,
+                "3ae45821c13a58b707eb0cb8f3dc74815ae5632eaee0419414d9d599d194fbee",
+            ),
+            scenario / "screenshots" / (
+                "slitherite-block-registry-initial.png"
+            ): (
+                508_418,
+                "57c867a7591b0593a17c71091c0d27b2d16720350623d4c5a71fc56298ad4872",
+            ),
+            scenario / "screenshots" / (
+                "slitherite-block-registry-reopened.png"
+            ): (
+                400_052,
+                "450fc61f3bd9d385229cfa4dfb645b49c56660b5c17a600a6b7946402b7c9053",
+            ),
+            runtime_root / "logs" / (
+                "original-client-20260904T063425Z.log"
+            ): (
+                18_962,
+                "1a28123e01302746052194a8ac31fe8f9a662eb2b72d1407295bfb8566e7bf89",
+            ),
+            runtime_root / "logs" / (
+                "original-client-20260904T063425Z-verification.json"
+            ): (
+                1_696,
+                "dcb520fbfcb365098497d9e5c541b639d8667bfc4acef1fa62bc2e724f413e54",
+            ),
+            runtime_root / "game" / "logs" / "latest.log": (
+                18_526,
+                "29c973d804b24d772dacb6d030880d65404a9871ad790896f3d41692671611ae",
+            ),
+            runtime_root / "game" / "mods" / (
+                "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar"
+            ): (
+                218_402,
+                "09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489",
+            ),
+        }
+        for path, (size, sha256) in expected.items():
+            with self.subTest(path=path):
+                self.assertTrue(path.is_file())
+                self.assertFalse(path.is_symlink())
+                self.assertEqual(size, path.stat().st_size)
+                self.assertEqual(sha256, client.sha256_file(path))
+
+        report = client.load_json_object(
+            scenario / "reports" / "report.json",
+            "Consumed v10 Slitherite report",
         )
-        self.assertFalse(archive.exists())
-        self.assertFalse(archive.is_symlink())
+        self.assertEqual(report["status"], "passed")
+        self.assertIs(report["passed"], True)
+        self.assertEqual(report["client_ticks"], 665)
+        self.assertEqual(len(report["assertions"]), 185)
+        self.assertTrue(all(item["passed"] is True for item in report["assertions"]))
 
     def test_tracked_original_evidence_archive_is_exact(self) -> None:
         archive_manifest = client.load_json_object(
@@ -2265,6 +2336,194 @@ class TrackedManifestTests(unittest.TestCase):
         )
         self.assertFalse(
             archive_manifest["mutable_launcher_outputs"]["skin_cache_present"]
+        )
+
+    def test_tracked_original_slitherite_archive_is_exact(self) -> None:
+        archive_manifest_path = (
+            TRACKED_SLITHERITE_EVIDENCE_ARCHIVE / "archive-manifest.json"
+        )
+        client.verify_exact_file(
+            archive_manifest_path,
+            "3f15633bb5a724ad8253b6417603d8443dcb79dbbb944d7070f141ec8887e6e5",
+            4_298,
+            "Tracked original Slitherite evidence archive manifest",
+        )
+        archive_manifest = client.load_json_object(
+            archive_manifest_path,
+            "Tracked original Slitherite evidence archive manifest",
+        )
+        self.assertEqual(
+            archive_manifest["kind"],
+            "etherology-original-fabric-baseline-evidence",
+        )
+        self.assertEqual(archive_manifest["scenario"], "slitherite-block-registry")
+        self.assertEqual(archive_manifest["assertion_count"], 185)
+        self.assertEqual(archive_manifest["screenshot_count"], 2)
+        self.assertEqual(
+            archive_manifest["profile"]["id"],
+            "etherology-original-fabric-1.21.1-published-0.1.7-v10",
+        )
+        client.verify_exact_file(
+            ACTIVE_MANIFEST_PATH,
+            archive_manifest["profile"]["manifest_sha256"],
+            archive_manifest["profile"]["manifest_size"],
+            "Tracked original Slitherite profile manifest",
+        )
+        self.assertEqual(
+            archive_manifest["controller"],
+            {
+                "commit": "da51065613c74595725009ce97673248bb759ae4",
+                "path": "scripts/baseline/original_client.py",
+                "size": 287_569,
+                "sha256": (
+                    "50164cab93fa5a25643d34d34b73702a52f47b1aa4598243ccaf83e624db7bb7"
+                ),
+            },
+        )
+        self.assertEqual(
+            archive_manifest["visual_comparison"],
+            {
+                "material_pixel_delta_threshold": 24,
+                "maximum_material_changed_pixel_ratio": 0.15,
+                "material_changed_pixel_ratio": 0.0013903356481481481,
+                "maximum_mean_max_channel_delta": 16.0,
+                "mean_max_channel_delta": 6.280166859567902,
+            },
+        )
+        self.assertFalse(
+            archive_manifest["mutable_launcher_outputs"]["skin_cache_present"]
+        )
+        archived_files = archive_manifest["files"]
+        self.assertEqual(
+            set(archived_files),
+            {
+                "reports/report.json",
+                "reports/done.marker",
+                "screenshots/slitherite-block-registry-initial.png",
+                "screenshots/slitherite-block-registry-reopened.png",
+                "controller/original-client.log",
+                "controller/verification.json",
+            },
+        )
+        capture_times = archive_manifest["publication"]["capture_mtime_ns"]
+        for relative_name, pinned in archived_files.items():
+            relative_path = PurePosixPath(relative_name)
+            self.assertFalse(relative_path.is_absolute())
+            self.assertNotIn("..", relative_path.parts)
+            path = TRACKED_SLITHERITE_EVIDENCE_ARCHIVE / Path(
+                *relative_path.parts
+            )
+            client.verify_exact_file(
+                path,
+                pinned["sha256"],
+                pinned["size"],
+                f"Tracked original Slitherite archive file {relative_name}",
+            )
+            self.assertEqual(path.stat().st_mtime_ns, capture_times[relative_name])
+
+        report = client.load_json_object(
+            TRACKED_SLITHERITE_EVIDENCE_ARCHIVE / "reports" / "report.json",
+            "Tracked original Slitherite scenario report",
+        )
+        self.assertEqual(report["status"], "passed")
+        self.assertIs(report["passed"], True)
+        self.assertEqual(report["reference_id"], "published-0.1.7")
+        self.assertEqual(report["scenario"], "slitherite-block-registry")
+        self.assertEqual(report["client_ticks"], 665)
+        self.assertEqual(report["lifecycle_failure"], "")
+        self.assertEqual(len(report["assertions"]), 185)
+        self.assertTrue(all(value["passed"] is True for value in report["assertions"]))
+        self.assertIs(report["slitherite"]["persistence_exact"], True)
+        self.assertIs(report["slitherite"]["reopened_data_exact"], True)
+        self.assertEqual(
+            report["slitherite"]["button_behavior"],
+            "powered=true;scheduled=true;elapsed=27;reset=true",
+        )
+        self.assertEqual(
+            report["slitherite"]["pressure_plate_behavior"],
+            "item=false;living=true;reset=true",
+        )
+
+        initial = (
+            TRACKED_SLITHERITE_EVIDENCE_ARCHIVE
+            / "screenshots"
+            / "slitherite-block-registry-initial.png"
+        )
+        reopened = (
+            TRACKED_SLITHERITE_EVIDENCE_ARCHIVE
+            / "screenshots"
+            / "slitherite-block-registry-reopened.png"
+        )
+        self.assertEqual(client.png_dimensions(initial), (1920, 1080))
+        self.assertEqual(client.png_dimensions(reopened), (1920, 1080))
+        material_ratio, mean_delta = (
+            slitherite_evidence_fixture.verifier.visual_drift_statistics(
+                client.decode_png(initial),
+                client.decode_png(reopened),
+                slitherite_evidence_fixture.verifier.SlitheriteEvidenceError,
+            )
+        )
+        self.assertAlmostEqual(material_ratio, 0.0013903356481481481)
+        self.assertAlmostEqual(mean_delta, 6.280166859567902)
+        marker = (
+            TRACKED_SLITHERITE_EVIDENCE_ARCHIVE / "reports" / "done.marker"
+        ).read_text(encoding="ascii")
+        self.assertEqual(
+            marker,
+            "slitherite-block-registry:passed\n"
+            f"report_sha256:{archived_files['reports/report.json']['sha256']}\n",
+        )
+        verification = client.load_json_object(
+            TRACKED_SLITHERITE_EVIDENCE_ARCHIVE
+            / "controller"
+            / "verification.json",
+            "Tracked original Slitherite controller verification",
+        )
+        self.assertEqual(verification["status"], "passed")
+        self.assertEqual(verification["scenario"], "slitherite-block-registry")
+        self.assertEqual(
+            verification["scenario_report"]["sha256"],
+            archived_files["reports/report.json"]["sha256"],
+        )
+        self.assertEqual(
+            [item["sha256"] for item in verification["screenshots"]],
+            [
+                archived_files[
+                    "screenshots/slitherite-block-registry-initial.png"
+                ]["sha256"],
+                archived_files[
+                    "screenshots/slitherite-block-registry-reopened.png"
+                ]["sha256"],
+            ],
+        )
+        self.assertTrue(
+            (
+                TRACKED_SLITHERITE_EVIDENCE_ARCHIVE
+                / "controller"
+                / "original-client.log"
+            )
+            .read_text(encoding="utf-8")
+            .rstrip()
+            .endswith("All dimensions are saved")
+        )
+        mechanics_image = (
+            BASELINE_DIRECTORY.parents[1]
+            / "docs"
+            / "baseline"
+            / "original-1.21.1"
+            / "mechanics"
+            / "materials-and-building-blocks"
+            / "original-0.1.7-slitherite-gallery.png"
+        )
+        client.verify_exact_file(
+            mechanics_image,
+            archived_files[
+                "screenshots/slitherite-block-registry-initial.png"
+            ]["sha256"],
+            archived_files[
+                "screenshots/slitherite-block-registry-initial.png"
+            ]["size"],
+            "Original Slitherite mechanics gallery",
         )
 
     def test_tracked_manifest_and_bundle_validate(self) -> None:

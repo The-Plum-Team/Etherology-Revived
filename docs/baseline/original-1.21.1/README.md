@@ -23,26 +23,28 @@ The bundle pins eight top-level published JARs: Etherology, Fabric API, FabricSh
 Biolith, Cardinal Components API, GeckoLib, owo-lib, and Trinkets. Quick Skin,
 Customizable Player Models, Ears, and Architectury are excluded recursively.
 
-The new controller owns only this ignored runtime:
+The controller creates a new ignored, repository-owned runtime for each
+one-shot capture. The accepted Slitherite runtime is:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v1/
+  etherology-original-fabric-1.21.1-published-0.1.7-v10/
 ```
 
 It never consults or mutates a launcher or user profile. The separately built
-client-only capture harness is pinned as a ninth staged root JAR:
+client-only capture harness is pinned as a ninth staged root JAR for the active
+contract:
 
-- JAR: `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.0.0.jar`
-- Size: `47,349` bytes
+- JAR: `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar`
+- Size: `218,402` bytes
 - SHA-256:
-  `5554034a7535b9f324d38cb4c2c79721a8c45f507aac6e450f5d807787506d24`
+  `09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489`
 - Exact Etherology dependency: `=1.21-0.1.7`
 
-The harness has built, remapped, and passed pure/artifact tests. The owned
-runtime subsequently passed provision, stage, check, and its one native
-`phase0-smoke` launch through the new controller. The frozen runtime proof is
-stored under `docs/evidence/original-1.21.1/phase0-smoke-v1`.
+The harness has built reproducibly, remapped, and passed pure/artifact tests.
+The current owned runtime subsequently passed provision, stage, check, and its
+one native `slitherite-block-registry` launch. The earlier phase-zero runtime
+proof remains under `docs/evidence/original-1.21.1/phase0-smoke-v1`.
 
 The runtime contract also pins the official Minecraft version JSON, asset
 index, client JAR, Fabric loader profile, and each of the eight Fabric library
@@ -122,7 +124,7 @@ contract, nonblank decoded PNG, report/marker digest and publication order,
 nonempty `level.dat`, `session.lock`, exact `region/r.0.0.mca`, game log, empty
 crash-report inventory, and clean shutdown. Its writable HOME, temporary state,
 runtime, logs, and evidence all remain below the one repository-owned
-`.state/runtimes/...-v1` directory.
+selected `.state/runtimes/...-vN` directory.
 
 Minecraft's `assets/skins` subtree is the one explicit mutable launcher output:
 it must be absent before launch, is excluded from the immutable input hash, and
@@ -166,6 +168,17 @@ Its immutable evidence is under
 [`attrahite-block-registry-v4`](../../evidence/original-1.21.1/attrahite-block-registry-v4),
 and the mechanic-level visual record is under
 [`materials-and-building-blocks`](mechanics/materials-and-building-blocks/README.md).
+
+The fresh v10 capture accepts the complete original Slitherite block family
+with 185 ordered assertions and two unedited 1920x1080 framebuffers. It covers
+17 block/item pairs, exact classes and state space, canonical assets, tags,
+loot, recipes and advancements, real placements, native button and pressure
+plate behavior, and exact structural/data persistence after reopening. Its
+immutable evidence is under
+[`slitherite-block-registry-v10`](../../evidence/original-1.21.1/slitherite-block-registry-v10),
+with the visual record in the same
+[`materials-and-building-blocks`](mechanics/materials-and-building-blocks/README.md)
+mechanic folder.
 
 ## Historical static gallery overview
 

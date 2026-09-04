@@ -256,7 +256,7 @@ failing camera movement, large lighting shifts, or changed fixture regions.
 The profile also writes `renderClouds:false` so moving clouds cannot perturb the
 otherwise fixed capture.
 
-Expected evidence, once the one authorized run is eventually performed, is:
+The one authorized v10 run produced:
 
 ```text
 scripts/baseline/.state/runtimes/
@@ -267,9 +267,13 @@ scripts/baseline/.state/runtimes/
                    slitherite-block-registry-reopened.png}
 ```
 
-At preparation time v10 has no runtime, launch-attempt seal, evidence, or
-archive. Provisioning and launching it are deliberately outside this change.
-The v1-v9 manifests and their historical evidence remain immutable.
+The run completed in 665 client ticks with all 185 assertions passing. Both
+screenshots passed the independent visual bounds with a `0.001390` material
+ratio and `6.280167` mean maximum-channel delta, and both logs end at
+`All dimensions are saved`. The ignored consumed runtime remains preserved and
+must never be launched again. Its accepted immutable payload is archived at
+`docs/evidence/original-1.21.1/slitherite-block-registry-v10`; the v1-v9
+manifests and their historical evidence remain immutable.
 
 ### Consumed v5 preflight failure
 

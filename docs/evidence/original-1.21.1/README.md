@@ -105,3 +105,41 @@ saved-world persistence. It does not establish natural ore generation.
 - [`archive-manifest.json`](attrahite-block-registry-v4/archive-manifest.json):
   hashes, capture times, controller identity, runtime locks, and artifact
   provenance
+
+## `slitherite-block-registry-v10`
+
+The fresh repository-owned profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v10` completed its sole
+native run on 2026-09-04 at 08:35 Europe/Madrid. The controller accepted all
+185 ordered assertions, two unedited 1920x1080 framebuffer captures, exact
+save/disconnect/reopen persistence, clean client shutdown, immutable launcher
+inputs, and report-before-marker publication. Provisioning and launch consulted
+zero external game profiles, and the mutable skin cache remained absent.
+
+![Original 0.1.7 Slitherite gallery](slitherite-block-registry-v10/screenshots/slitherite-block-registry-initial.png)
+
+The gallery contains the complete 17-member Slitherite decorative family. The
+machine record additionally proves exact registries, runtime classes, default
+states and all 1,262 state network IDs; canonical visual resources; block and
+item tags; loot; recipes and advancements; real `BlockItem` placement; the
+polished button pulse/reset; item-versus-living pressure-plate behavior; and
+structural/data equality after reopening the saved world. The initial and
+reopened frames have a `0.001390` material-change ratio at the declared
+maximum-channel delta threshold of 24 and a `6.280167` mean maximum-channel
+delta.
+
+- Initial screenshot SHA-256:
+  `57c867a7591b0593a17c71091c0d27b2d16720350623d4c5a71fc56298ad4872`
+- Reopened screenshot SHA-256:
+  `450fc61f3bd9d385229cfa4dfb645b49c56660b5c17a600a6b7946402b7c9053`
+- [`report.json`](slitherite-block-registry-v10/reports/report.json): exact
+  185-assertion record
+- [`done.marker`](slitherite-block-registry-v10/reports/done.marker):
+  report-hash-bound final publication marker
+- [`verification.json`](slitherite-block-registry-v10/controller/verification.json):
+  controller verification record
+- [`original-client.log`](slitherite-block-registry-v10/controller/original-client.log):
+  complete native client log
+- [`archive-manifest.json`](slitherite-block-registry-v10/archive-manifest.json):
+  hashes, capture times, controller identity, runtime locks, artifact
+  provenance, and declared visual-drift bounds

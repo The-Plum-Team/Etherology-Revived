@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "kind": "etherology-original-fabric-baseline-evidence",
+  "verification_scope": "archive-integrity-plus-captured-controller-verification",
+  "reference": {
+    "id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit_binding": "unavailable"
+  },
+  "scenario": "slitherite-block-registry",
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v10",
+    "manifest_path": "scripts/baseline/original-fabric-1.21.1-published-0.1.7-v10.json",
+    "manifest_size": 10349,
+    "manifest_sha256": "32a96831e39034b704b92a0768639c8d776e6c7612ff2cefa2603cf19eec77d7"
+  },
+  "runtime": {
+    "minecraft": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 21,
+    "capture_kind": "minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "controller": {
+    "commit": "da51065613c74595725009ce97673248bb759ae4",
+    "path": "scripts/baseline/original_client.py",
+    "size": 287569,
+    "sha256": "50164cab93fa5a25643d34d34b73702a52f47b1aa4598243ccaf83e624db7bb7"
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "controller_verification": "controller/verification.json",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788503713629316202,
+      "reports/done.marker": 1788503713629838124,
+      "screenshots/slitherite-block-registry-initial.png": 1788503707518063860,
+      "screenshots/slitherite-block-registry-reopened.png": 1788503713607723119,
+      "controller/original-client.log": 1788503713937581997,
+      "controller/verification.json": 1788503723235157872
+    }
+  },
+  "artifacts": {
+    "reference_bundle": {
+      "size": 7838299,
+      "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b"
+    },
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    "harness": {
+      "mod_id": "etherology_original_baseline_harness",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar",
+      "size": 218402,
+      "sha256": "09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489"
+    }
+  },
+  "runtime_bindings": {
+    "artifact_lock": {
+      "size": 5389,
+      "sha256": "b6d362938cdbf49b230ae32ca8e4ec295a49d42ce3156993d6c1bd3d40b57165"
+    },
+    "runtime_lock": {
+      "size": 832422,
+      "sha256": "83fe4449505bd41424e522063066c4e7cf0f125d5325f5ea52dfca7959e21cb0"
+    },
+    "launch_attempt": {
+      "size": 871972,
+      "sha256": "889a56501dc9f833e7fed4835155e375d0007b93a828f0e7ff3db3a3cf061b00"
+    },
+    "immutable_launcher_files_sha256": "99d997c41f549bd9750c61f0815346851a8664d01b7bd5c2a54a6252853ce4ea"
+  },
+  "mutable_launcher_outputs": {
+    "skin_cache_present": false,
+    "skin_cache_file_count": 0,
+    "skin_cache_total_size": 0
+  },
+  "visual_comparison": {
+    "material_pixel_delta_threshold": 24,
+    "maximum_material_changed_pixel_ratio": 0.15,
+    "material_changed_pixel_ratio": 0.0013903356481481481,
+    "maximum_mean_max_channel_delta": 16.0,
+    "mean_max_channel_delta": 6.280166859567902
+  },
+  "assertion_count": 185,
+  "screenshot_count": 2,
+  "files": {
+    "reports/report.json": {
+      "size": 107767,
+      "sha256": "a6930bfa7d37849dbd90c9f790c6a8dbf39d6a5d84af69432d2e449983f5af11"
+    },
+    "reports/done.marker": {
+      "size": 112,
+      "sha256": "3ae45821c13a58b707eb0cb8f3dc74815ae5632eaee0419414d9d599d194fbee"
+    },
+    "screenshots/slitherite-block-registry-initial.png": {
+      "size": 508418,
+      "sha256": "57c867a7591b0593a17c71091c0d27b2d16720350623d4c5a71fc56298ad4872"
+    },
+    "screenshots/slitherite-block-registry-reopened.png": {
+      "size": 400052,
+      "sha256": "450fc61f3bd9d385229cfa4dfb645b49c56660b5c17a600a6b7946402b7c9053"
+    },
+    "controller/original-client.log": {
+      "size": 18962,
+      "sha256": "1a28123e01302746052194a8ac31fe8f9a662eb2b72d1407295bfb8566e7bf89"
+    },
+    "controller/verification.json": {
+      "size": 1696,
+      "sha256": "dcb520fbfcb365098497d9e5c541b639d8667bfc4acef1fa62bc2e724f413e54"
+    }
+  }
+}

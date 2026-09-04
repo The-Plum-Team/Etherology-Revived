@@ -13,9 +13,9 @@ Build, test, remap, and inspect the harness without launching Minecraft:
 Expected remapped artifact:
 
 ```text
-build/libs/Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.4.jar
+build/libs/Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar
 size:   218402 bytes
-sha256: 65835ee5a44dc0461c2de701992a69ed3d6465cd37c39bc87c91cef5625953f6
+sha256: 09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489
 ```
 
 The artifact metadata requires exact Minecraft `1.21.1`, Fabric Loader

@@ -5,11 +5,11 @@ directory:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v9/
+  etherology-original-fabric-1.21.1-published-0.1.7-v10/
 ```
 
 The tracked contract is
-`original-fabric-1.21.1-published-0.1.7-v9.json`. It pins Minecraft `1.21.1`,
+`original-fabric-1.21.1-published-0.1.7-v10.json`. It pins Minecraft `1.21.1`,
 Fabric Loader `0.17.3`, Java `21`, the reference bundle's outer hash, and the
 exact eight top-level published JAR members. It also pins a separately built,
 client-only capture harness as a ninth root JAR. The controller recursively
@@ -17,8 +17,8 @@ reads Fabric metadata, rejects any unlisted JAR, and rejects Quick Skin (`quicks
 Customizable Player Models (`cpm`), Ears (`ears`), and Architectury
 (`architectury`), including jar-in-jar copies.
 
-The v9 manifest is `10,321` bytes with SHA-256
-`4655f6e0322555b57da2666333d2f846d4ebd137e37dcf6217970b709330e7dd`.
+The v10 manifest is `10,349` bytes with SHA-256
+`32a96831e39034b704b92a0768639c8d776e6c7612ff2cefa2603cf19eec77d7`.
 
 Runtime authority is byte-exact as well. The manifest records the official
 Minecraft version JSON, asset index, client JAR, a tracked official Fabric
@@ -65,10 +65,10 @@ The separately packaged capture harness is not part of the published reference
 and does not replace it:
 
 - Harness JAR:
-  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.4.jar`
+  `Etherology-Original-E2E-Harness-Fabric-1.21.1-1.3.5.jar`
 - Harness size: `218,402` bytes
 - Harness SHA-256:
-  `65835ee5a44dc0461c2de701992a69ed3d6465cd37c39bc87c91cef5625953f6`
+  `09e309f188da473b6038e35af4d1a7ed43409c0185c830e42dba506bfecb8489`
 - Harness mod id: `etherology_original_baseline_harness`
 - Environment: client only
 - Exact dependency: `etherology=1.21-0.1.7`
@@ -205,9 +205,9 @@ unresolved for this version JSON. Command generation requires exactly one of
 each and replaces them with fixed offline literals before the complete argv is
 validated or sealed.
 
-## Active `slitherite-block-registry` v9 contract
+## Active `slitherite-block-registry` v10 contract
 
-The fresh v9 profile is dedicated to the published-0.1.7 Slitherite
+The fresh v10 profile is dedicated to the published-0.1.7 Slitherite
 family. It validates 17 ordered block/item registry pairs, exact intermediary
 runtime classes and default states, 1,262 state network IDs, 79 Etherology
 visual assets plus one vanilla sentinel, grouped block/item tags, 17 self-drop
@@ -246,23 +246,30 @@ server/client light samples (sky 15 and block 14), terrain/fixture readiness,
 and 120 consecutive completed renders. Global lighting-provider pending state
 is diagnostic only; timeout reports retain the last local samples and counters.
 The strict controller independently rejects dark images by mean-luminance and
-dark-pixel bounds and compares both the reopened structure and framebuffer
-pixels.
+dark-pixel bounds and compares both the reopened structure and framebuffer.
+Exact camera, fixture, save/reopen data, dimensions, screenshot hashes, and
+report fields remain mandatory. The visual comparison treats a pixel as
+materially different only when its maximum RGB-channel delta exceeds 24, then
+requires at most a 0.15 materially changed-pixel ratio and a mean maximum-channel
+delta no greater than 16. This admits low-amplitude renderer noise while still
+failing camera movement, large lighting shifts, or changed fixture regions.
+The profile also writes `renderClouds:false` so moving clouds cannot perturb the
+otherwise fixed capture.
 
 Expected evidence, once the one authorized run is eventually performed, is:
 
 ```text
 scripts/baseline/.state/runtimes/
-  etherology-original-fabric-1.21.1-published-0.1.7-v9/
+  etherology-original-fabric-1.21.1-published-0.1.7-v10/
     evidence/slitherite-block-registry/
       reports/{report.json,done.marker}
       screenshots/{slitherite-block-registry-initial.png,
                    slitherite-block-registry-reopened.png}
 ```
 
-At preparation time v9 has no runtime, launch-attempt seal, evidence, or
+At preparation time v10 has no runtime, launch-attempt seal, evidence, or
 archive. Provisioning and launching it are deliberately outside this change.
-The v1-v8 manifests and their historical evidence remain immutable.
+The v1-v9 manifests and their historical evidence remain immutable.
 
 ### Consumed v5 preflight failure
 
@@ -455,6 +462,45 @@ marker, controller log, and game log are respectively pinned as:
 Both preserved logs reach `All dimensions are saved`; v8 therefore has normal
 all-dimension shutdown proof even though the controller correctly rejected the
 missing screenshots and failed report.
+
+### Consumed v9 exact-pixel comparator rejection
+
+The one v9 launch was consumed on 2026-09-01. The native harness completed the
+full scenario in 1,329 client ticks: all 185 assertions passed, the pre-setup
+gate held for 20 consecutive ticks with all 12 chunks loaded and all 18 SKY
+samples at 15, the button pulsed and reset after 27 ticks, the item was ignored
+by the pressure plate while the living probe powered it, and both structural
+and loaded-data persistence were exact after disconnect/reopen. Both logs end
+at `All dimensions are saved`.
+
+The controller nevertheless rejected the run because the v9 comparator counted
+every non-identical RGB triplet. It measured an exact changed-pixel ratio of
+`0.876089`, above its `0.35` limit, even though the two fixed-camera frames have
+only `10.064815` mean maximum-channel delta and just `0.071920` of pixels exceed
+a maximum-channel delta of 24. The screenshots and report remain diagnostic
+history; there is no accepted v9 archive and they are not retroactively judged
+under the v10 contract.
+
+The v9 contract is pinned as follows:
+
+- Manifest: `10,321` bytes,
+  `4655f6e0322555b57da2666333d2f846d4ebd137e37dcf6217970b709330e7dd`
+- Verifier: `48,897` bytes,
+  `8d8846fb7cee40d3744d27aba8519199d6f26cf14006f7752b6af357d541860c`
+- Verifier tests: `21,199` bytes,
+  `8e5600903cd2b04185039414e0d5c6a508bc42630b2de285ae1eca4c7e50508e`
+- Harness: `218,402` bytes,
+  `65835ee5a44dc0461c2de701992a69ed3d6465cd37c39bc87c91cef5625953f6`
+
+The initial screenshot is `637,559` bytes with SHA-256
+`71d23a656f28cb2d316ea08b720decaa88a6e98e409058a2103922d336224d59`;
+the reopened screenshot is `484,629` bytes with SHA-256
+`23107962a5e14b5ef21187b79621583cec581d954fe88519aa94c40af135e6c0`.
+The passed report is `107,768` bytes with SHA-256
+`c1f5093386b4581c87154c84b24a5d5dfe07769bed39c49f455825fa4cdb463a`.
+The v10 lane keeps every behavioral gate, disables clouds, and replaces only
+the oversensitive exact-triplet comparison with the two bounded visual-drift
+metrics described above.
 
 ## Historical `phase0-smoke` contract
 

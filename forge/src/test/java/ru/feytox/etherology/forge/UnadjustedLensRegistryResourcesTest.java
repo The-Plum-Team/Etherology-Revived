@@ -41,6 +41,8 @@ final class UnadjustedLensRegistryResourcesTest {
             CLASS_PREFIX + "registry/item/SharedLensItems.class";
     private static final String SHARED_LENS_ITEMS_OWNER =
             CLASS_PREFIX + "registry/item/SharedLensItems";
+    private static final String SHARED_ALCHEMY_RECIPES_OWNER =
+            CLASS_PREFIX + "registry/misc/SharedAlchemyRecipes";
     private static final String SHARED_DEFERRED_REGISTER_OWNER =
             CLASS_PREFIX + "registry/SharedDeferredRegister";
     private static final String REGISTRY_SUPPLIER_OWNER =
@@ -245,10 +247,7 @@ final class UnadjustedLensRegistryResourcesTest {
                 String toolRegistration = CLASS_PREFIX
                         + "registry/item/SharedToolItems#register()V";
                 String lensRegistration = SHARED_LENS_ITEMS_OWNER + "#register()V";
-                String successor = artifact.fabricApplication()
-                        ? LEGACY_ITEMS_OWNER + "#registerItems()V"
-                        : CLASS_PREFIX
-                                + "registry/block/SharedBlockEntities#register()V";
+                String successor = SHARED_ALCHEMY_RECIPES_OWNER + "#register()V";
                 int lensIndex = calls.indexOf(lensRegistration);
 
                 assertTrue(lensIndex > 0, artifact.description());
@@ -368,7 +367,7 @@ final class UnadjustedLensRegistryResourcesTest {
     }
 
     @Test
-    void alchemyRecipeRemainsExactAndFabricOnlyUntilForgeRegistersItsType()
+    void bothLoaderApplicationsPackageTheExactAlchemyRecipe()
             throws IOException {
         Path root = requiredPath("etherology.unadjustedLens.repositoryRoot");
         Path recipe = root.resolve(
@@ -380,17 +379,7 @@ final class UnadjustedLensRegistryResourcesTest {
 
         for (Artifact artifact : artifacts()) {
             try (JarFile jar = artifact.open()) {
-                JarEntry entry = jar.getJarEntry(RECIPE_ENTRY);
-                if (artifact.fabricApplication()) {
-                    assertNotNull(entry, artifact.description());
-                    assertArrayEquals(
-                            Files.readAllBytes(recipe),
-                            jar.getInputStream(entry).readAllBytes(),
-                            artifact.description()
-                    );
-                } else {
-                    assertEquals(null, entry, artifact.description());
-                }
+                assertResource(artifact, jar, RECIPE_ENTRY, recipe);
             }
         }
     }

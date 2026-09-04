@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
@@ -12,7 +12,7 @@ import signal
 import subprocess
 import sys
 import time
-from typing import BinaryIO, Mapping, Sequence
+from typing import BinaryIO, Callable, Mapping, Sequence
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -21,9 +21,12 @@ if str(BASELINE_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(BASELINE_DIRECTORY))
 
 from macos_memory_guard import (  # noqa: E402
+    FOUR_GIB_CLIENT_MEMORY_POLICY,
     MAXIMUM_TELEMETRY_SIZE_BYTES,
     MacOsProcessMemorySampler,
     MemoryDecision,
+    MemoryPolicy,
+    MemorySample,
     MemorySamplingError,
     MemorySamplingUnavailable,
     OwnedJavaMemoryGuard,
@@ -33,6 +36,7 @@ from macos_memory_guard import (  # noqa: E402
 
 
 EXPECTED_MAXIMUM_MEMORY_MB = 4096
+MEBIBYTE_BYTES = 1024 * 1024
 JAVA_OPTION_ENVIRONMENT_VARIABLES = (
     "JAVA_TOOL_OPTIONS",
     "JDK_JAVA_OPTIONS",
@@ -79,6 +83,17 @@ class GuardedJavaLaunch:
         }
 
 
+@dataclass(frozen=True)
+class GuardedJavaMonitor:
+    """Carries a monitor attached to an already-bound owned Java process."""
+
+    process: subprocess.Popen[bytes]
+    target: OwnedJavaProcess
+    telemetry_path: Path
+    readiness_path: Path
+    group_anchor: OwnedJavaProcess | None = None
+
+
 def verify_java_launch_contract(
     command: Sequence[str],
     java_path: Path,
@@ -97,14 +112,79 @@ def verify_java_launch_contract(
         raise GuardedJavaError(
             "The native E2E command does not use the resolved Java executable"
         )
-    maximum_heap_arguments = [
-        argument for argument in command if argument.startswith("-Xmx")
-    ]
-    if maximum_heap_arguments != [f"-Xmx{EXPECTED_MAXIMUM_MEMORY_MB}M"]:
-        raise GuardedJavaError(
-            "The native E2E command must contain exactly one -Xmx4096M argument"
-        )
+    verify_exact_java_heap_arguments(
+        command,
+        EXPECTED_MAXIMUM_MEMORY_MB,
+        f"-Xmx{EXPECTED_MAXIMUM_MEMORY_MB}M",
+    )
     verify_java_option_environment(environment)
+
+
+def verify_exact_java_heap_arguments(
+    arguments: Sequence[str],
+    maximum_memory_mb: int,
+    exact_argument: str,
+) -> None:
+    """Requires one exact ``-Xmx`` spelling for a declared MiB heap."""
+
+    if type(maximum_memory_mb) is not int or maximum_memory_mb <= 0:
+        raise GuardedJavaError("The Java maximum-memory value must be positive MiB")
+    if (
+        not isinstance(exact_argument, str)
+        or exact_argument not in (
+            f"-Xmx{maximum_memory_mb}M",
+            f"-Xmx{maximum_memory_mb}m",
+        )
+    ):
+        raise GuardedJavaError(
+            "The exact Java heap argument does not match its declared MiB value"
+        )
+    if any(not isinstance(argument, str) for argument in arguments):
+        raise GuardedJavaError("The Java argument inventory is invalid")
+    maximum_heap_arguments = [
+        argument for argument in arguments if argument.startswith("-Xmx")
+    ]
+    if maximum_heap_arguments != [exact_argument]:
+        raise GuardedJavaError(
+            "The Java arguments must contain exactly one "
+            f"{exact_argument} argument"
+        )
+
+
+def memory_policy_for_maximum_heap(maximum_memory_mb: int) -> MemoryPolicy:
+    """Returns the shared physical-footprint policy for one exact heap limit."""
+
+    if type(maximum_memory_mb) is not int or maximum_memory_mb <= 0:
+        raise GuardedJavaError("The Java maximum-memory value must be positive MiB")
+    heap_limit_bytes = maximum_memory_mb * MEBIBYTE_BYTES
+    if heap_limit_bytes >= FOUR_GIB_CLIENT_MEMORY_POLICY.warning_phys_footprint_bytes:
+        raise GuardedJavaError(
+            "The Java heap limit must remain below the physical-memory warning"
+        )
+    return replace(
+        FOUR_GIB_CLIENT_MEMORY_POLICY,
+        heap_limit_bytes=heap_limit_bytes,
+    )
+
+
+def memory_policy_payload(maximum_memory_mb: int) -> dict[str, int]:
+    """Returns the exact serialized policy expected from the monitor."""
+
+    policy = memory_policy_for_maximum_heap(maximum_memory_mb)
+    return {
+        "heap_limit_bytes": policy.heap_limit_bytes,
+        "warning_phys_footprint_bytes": policy.warning_phys_footprint_bytes,
+        "hard_phys_footprint_bytes": policy.hard_phys_footprint_bytes,
+        "emergency_phys_footprint_bytes": policy.emergency_phys_footprint_bytes,
+        "sample_interval_nanoseconds": policy.sample_interval_nanoseconds,
+        "maximum_sample_gap_nanoseconds": policy.maximum_sample_gap_nanoseconds,
+        "hard_window_sample_count": policy.hard_window_sample_count,
+        "hard_required_high_sample_count": policy.hard_required_high_sample_count,
+        "hard_final_high_sample_count": policy.hard_final_high_sample_count,
+        "emergency_final_high_sample_count": (
+            policy.emergency_final_high_sample_count
+        ),
+    }
 
 
 def verify_java_option_environment(environment: Mapping[str, str]) -> None:
@@ -167,6 +247,35 @@ def owned_java_process_from_state(state: Mapping[str, object]) -> OwnedJavaProce
         ) from exception
 
 
+def memory_guard_group_anchor_from_state(
+    state: Mapping[str, object],
+) -> OwnedJavaProcess | None:
+    """Returns the optional exact leader that owns a shared guarded process group."""
+
+    raw_anchor = state.get("memory_guard_group_anchor")
+    if raw_anchor is None:
+        return None
+    if not isinstance(raw_anchor, dict) or set(raw_anchor) != {
+        "pid",
+        "process_group_id",
+        "proc_start_abstime",
+        "expected_executable",
+    }:
+        raise GuardedJavaError("The memory guard group anchor is invalid")
+    try:
+        anchor = OwnedJavaProcess(
+            pid=raw_anchor["pid"],
+            process_group_id=raw_anchor["process_group_id"],
+            proc_start_abstime=raw_anchor["proc_start_abstime"],
+            expected_executable=raw_anchor["expected_executable"],
+        )
+    except (TypeError, ValueError) as exception:
+        raise GuardedJavaError("The memory guard group anchor is invalid") from exception
+    if anchor.pid != anchor.process_group_id:
+        raise GuardedJavaError("The memory guard group anchor is not its PGID leader")
+    return anchor
+
+
 def verify_guard_state_paths(
     state: Mapping[str, object], runtime_directory: Path
 ) -> tuple[Path, Path]:
@@ -200,13 +309,16 @@ def verify_guard_state_paths(
             "The memory guard telemetry does not match controller state"
         )
     readiness = _load_readiness(expected_readiness)
-    expected_readiness_payload = {
+    expected_readiness_payload: dict[str, object] = {
         "schema": 1,
         "status": "ready",
         "monitor_pid": state.get("memory_guard_pid"),
         "target": _target_payload(target),
         "telemetry": str(expected_telemetry),
     }
+    group_anchor = memory_guard_group_anchor_from_state(state)
+    if group_anchor is not None:
+        expected_readiness_payload["group_anchor"] = _target_payload(group_anchor)
     if readiness != expected_readiness_payload:
         raise GuardedJavaError(
             "The memory guard readiness record does not match controller state"
@@ -238,12 +350,42 @@ def memory_guard_process_matches(state: Mapping[str, object]) -> bool:
     except (OSError, subprocess.TimeoutExpired):
         return False
     command = completed.stdout
-    return (
+    base_matches = (
         completed.returncode == 0
         and str(Path(__file__).resolve()) in command
         and MONITOR_ACTION in command
         and f"--pid {target_pid}" in command
+        and f"--process-group-id {state.get('process_group_id')}" in command
         and f"--proc-start-abstime {state.get('proc_start_abstime')}" in command
+        and f"--expected-executable {state.get('expected_executable')}" in command
+        and f"--telemetry {state.get('memory_guard_telemetry')}" in command
+        and f"--readiness {state.get('memory_guard_readiness')}" in command
+    )
+    if not base_matches:
+        return False
+    maximum_memory_mb = state.get("memory_guard_maximum_memory_mb")
+    if (
+        maximum_memory_mb is not None
+        and (
+            type(maximum_memory_mb) is not int
+            or f"--maximum-memory-mb {maximum_memory_mb}" not in command
+        )
+    ):
+        return False
+    try:
+        group_anchor = memory_guard_group_anchor_from_state(state)
+    except GuardedJavaError:
+        return False
+    if group_anchor is None:
+        return "--group-anchor-pid" not in command
+    return all(
+        argument in command
+        for argument in (
+            f"--group-anchor-pid {group_anchor.pid}",
+            f"--group-anchor-process-group-id {group_anchor.process_group_id}",
+            f"--group-anchor-proc-start-abstime {group_anchor.proc_start_abstime}",
+            f"--group-anchor-expected-executable {group_anchor.expected_executable}",
+        )
     )
 
 
@@ -278,6 +420,16 @@ def memory_guard_is_enforcing(state: Mapping[str, object]) -> bool:
         or payload.get("target") != _target_payload(target)
     ):
         return False
+    expected_maximum_memory_mb = state.get("memory_guard_maximum_memory_mb")
+    if expected_maximum_memory_mb is not None:
+        if type(expected_maximum_memory_mb) is not int:
+            return False
+        try:
+            expected_policy = memory_policy_payload(expected_maximum_memory_mb)
+        except GuardedJavaError:
+            return False
+        if payload.get("policy") != expected_policy:
+            return False
     guard_state = payload.get("state")
     records = payload.get("records")
     if (
@@ -345,21 +497,13 @@ def start_guarded_java(
             close_fds=True,
         )
         target = _bind_spawned_java(java_process, java_path, sampler)
-        monitor_process = subprocess.Popen(
-            _monitor_command(target, telemetry_path, readiness_path),
-            cwd=runtime_directory,
-            stdin=subprocess.DEVNULL,
-            stdout=log_handle,
-            stderr=subprocess.STDOUT,
-            start_new_session=True,
-            close_fds=True,
-        )
-        _wait_for_monitor_readiness(
-            monitor_process,
+        monitor = start_guarded_java_monitor(
             target,
-            telemetry_path,
-            readiness_path,
+            maximum_memory_mb,
+            runtime_directory,
+            log_handle,
         )
+        monitor_process = monitor.process
         caffeinate_process = subprocess.Popen(
             [str(caffeinate_path), "-dimsu", "-w", str(target.pid)],
             cwd=working_directory,
@@ -403,6 +547,99 @@ def start_guarded_java(
         raise
 
 
+def start_guarded_java_monitor(
+    target: OwnedJavaProcess,
+    maximum_memory_mb: int,
+    runtime_directory: Path,
+    log_handle: BinaryIO,
+    *,
+    group_anchor: OwnedJavaProcess | None = None,
+    process_started: Callable[[subprocess.Popen[bytes]], None] | None = None,
+) -> GuardedJavaMonitor:
+    """Starts an authoritative monitor for one already-bound Java target."""
+
+    memory_policy_for_maximum_heap(maximum_memory_mb)
+    telemetry_path, readiness_path = guard_runtime_paths(runtime_directory)
+    for path in (telemetry_path, readiness_path):
+        if path.exists() or path.is_symlink():
+            raise GuardedJavaError(
+                f"Refusing to replace an existing memory guard artifact: {path}"
+            )
+    current_pid = os.getpid()
+    current_process_group_id = os.getpgrp()
+    target_shares_current_group = (
+        target.process_group_id == current_process_group_id
+    )
+    if target_shares_current_group:
+        if (
+            group_anchor is None
+            or group_anchor.pid != current_pid
+            or group_anchor.pid != group_anchor.process_group_id
+            or group_anchor.process_group_id != current_process_group_id
+            or target.pid == group_anchor.pid
+        ):
+            raise GuardedJavaError(
+                "The guarded Java target shares the controller process group "
+                "without its exact live leader anchor"
+            )
+    elif group_anchor is not None:
+        raise GuardedJavaError(
+            "A memory guard group anchor is valid only for a shared target group"
+        )
+    monitor_process: subprocess.Popen[bytes] | None = None
+    try:
+        monitor_process = subprocess.Popen(
+            _monitor_command(
+                target,
+                maximum_memory_mb,
+                telemetry_path,
+                readiness_path,
+                group_anchor,
+            ),
+            cwd=runtime_directory,
+            stdin=subprocess.DEVNULL,
+            stdout=log_handle,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            close_fds=True,
+        )
+        if process_started is not None:
+            process_started(monitor_process)
+        _wait_for_monitor_readiness(
+            monitor_process,
+            target,
+            telemetry_path,
+            readiness_path,
+            group_anchor,
+        )
+        if monitor_process.poll() is not None:
+            raise GuardedJavaError(
+                "The Java memory guard exited before monitor handoff completed"
+            )
+        return GuardedJavaMonitor(
+            process=monitor_process,
+            target=target,
+            telemetry_path=telemetry_path,
+            readiness_path=readiness_path,
+            group_anchor=group_anchor,
+        )
+    except BaseException:
+        _terminate_spawned_auxiliary(monitor_process)
+        raise
+
+
+def stop_guarded_java_monitor(monitor: GuardedJavaMonitor) -> None:
+    """Stops one monitor created by :func:`start_guarded_java_monitor`."""
+
+    _terminate_spawned_auxiliary(monitor.process)
+
+
+def stop_spawned_auxiliary(process: subprocess.Popen[bytes] | None) -> None:
+    """Stops one directly spawned auxiliary without signaling a process group."""
+
+    _terminate_spawned_auxiliary(process)
+
+
 def stop_guarded_java_launch(launch: GuardedJavaLaunch) -> bool:
     """Stops a just-created launch without signaling any unverified process."""
 
@@ -415,75 +652,142 @@ def stop_guarded_java_launch(launch: GuardedJavaLaunch) -> bool:
 def stop_owned_java_process(
     target: OwnedJavaProcess,
     *,
+    owned_process_group_id: int | None = None,
     timeout_seconds: float = STOP_TIMEOUT_SECONDS,
+    sampler: MacOsProcessMemorySampler | None = None,
 ) -> bool:
-    """Stops only a revalidated Java process whose PID owns its dedicated group."""
+    """Stops a revalidated Java target's explicitly owned dedicated group."""
 
-    sampler = MacOsProcessMemorySampler.native()
-    return _stop_owned_java_process(target, sampler, timeout_seconds)
+    selected_sampler = sampler or MacOsProcessMemorySampler.native()
+    process_group_id = (
+        target.pid
+        if owned_process_group_id is None
+        else owned_process_group_id
+    )
+    return _stop_owned_java_process(
+        target,
+        selected_sampler,
+        process_group_id,
+        timeout_seconds,
+    )
 
 
 def _stop_owned_java_process(
     target: OwnedJavaProcess,
     sampler: MacOsProcessMemorySampler,
+    owned_process_group_id: int,
     timeout_seconds: float,
 ) -> bool:
-    if target.process_group_id != target.pid:
-        raise GuardedJavaError("The guarded Java target does not own a dedicated PGID")
+    if (
+        type(owned_process_group_id) is not int
+        or owned_process_group_id <= 0
+        or target.process_group_id != owned_process_group_id
+    ):
+        raise GuardedJavaError(
+            "The guarded Java target is not in the recorded dedicated PGID"
+        )
+    if (
+        target.pid == os.getpid()
+        or owned_process_group_id == os.getpgrp()
+    ):
+        raise GuardedJavaError(
+            "Refusing to signal the memory guard's own process group"
+        )
     if sampler.revalidate(target) != target:
         raise GuardedJavaError(
             "The guarded Java identity changed; refusing to signal its process group"
         )
     try:
-        os.killpg(target.process_group_id, signal.SIGTERM)
+        os.killpg(owned_process_group_id, signal.SIGTERM)
     except ProcessLookupError:
-        return _confirm_target_missing(sampler, target, False)
+        return _confirm_target_and_group_missing(
+            sampler,
+            target,
+            owned_process_group_id,
+            False,
+        )
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         status = sampler.sample(target, time.monotonic_ns()).status
         if status is SampleStatus.MISSING:
-            return False
+            if not _process_group_exists(owned_process_group_id):
+                return False
+            time.sleep(0.1)
+            continue
         if status is not SampleStatus.AVAILABLE:
             raise GuardedJavaError(
                 "The guarded Java identity could not be confirmed after SIGTERM"
             )
         time.sleep(0.1)
     if sampler.revalidate(target) != target:
-        return _confirm_target_missing(sampler, target, False)
+        return _confirm_target_and_group_missing(
+            sampler,
+            target,
+            owned_process_group_id,
+            False,
+        )
     try:
-        os.killpg(target.process_group_id, signal.SIGKILL)
+        os.killpg(owned_process_group_id, signal.SIGKILL)
     except ProcessLookupError:
-        return _confirm_target_missing(sampler, target, True)
+        return _confirm_target_and_group_missing(
+            sampler,
+            target,
+            owned_process_group_id,
+            True,
+        )
     kill_deadline = time.monotonic() + 2.0
     while time.monotonic() < kill_deadline:
         status = sampler.sample(target, time.monotonic_ns()).status
-        if status is SampleStatus.MISSING:
+        if (
+            status is SampleStatus.MISSING
+            and not _process_group_exists(owned_process_group_id)
+        ):
             return True
-        if status is not SampleStatus.AVAILABLE:
+        if status not in (SampleStatus.AVAILABLE, SampleStatus.MISSING):
             raise GuardedJavaError(
                 "The guarded Java identity could not be confirmed after SIGKILL"
             )
         time.sleep(0.05)
-    raise GuardedJavaError("The guarded Java process remained live after SIGKILL")
+    raise GuardedJavaError(
+        "The guarded Java launch group remained live after SIGKILL"
+    )
 
 
-def _confirm_target_missing(
+def _confirm_target_and_group_missing(
     sampler: MacOsProcessMemorySampler,
     target: OwnedJavaProcess,
+    owned_process_group_id: int,
     forced: bool,
 ) -> bool:
     status = sampler.sample(target, time.monotonic_ns()).status
-    if status is SampleStatus.MISSING:
+    if (
+        status is SampleStatus.MISSING
+        and not _process_group_exists(owned_process_group_id)
+    ):
         return forced
     raise GuardedJavaError(
-        "The guarded Java process could not be confirmed absent after signaling"
+        "The guarded Java launch group could not be confirmed absent after signaling"
     )
+
+
+def _process_group_exists(process_group_id: int) -> bool:
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError as exception:
+        raise GuardedJavaError(
+            "Cannot verify the owned Java launch process group"
+        ) from exception
+    return True
 
 
 def monitor_owned_java(
     target: OwnedJavaProcess,
     telemetry_path: Path,
     readiness_path: Path,
+    maximum_memory_mb: int = EXPECTED_MAXIMUM_MEMORY_MB,
+    group_anchor: OwnedJavaProcess | None = None,
 ) -> int:
     """Monitors the exact Java identity until it exits or identity safety is lost."""
 
@@ -493,6 +797,16 @@ def monitor_owned_java(
         raise GuardedJavaError(
             "The Java identity could not be revalidated before monitoring"
         )
+    if group_anchor is not None:
+        if (
+            group_anchor.pid != group_anchor.process_group_id
+            or group_anchor.process_group_id != target.process_group_id
+            or group_anchor.pid == target.pid
+            or sampler.revalidate(group_anchor) != group_anchor
+        ):
+            raise GuardedJavaError(
+                "The Java memory guard group anchor could not be revalidated"
+            )
 
     guard = OwnedJavaMemoryGuard(
         target,
@@ -502,7 +816,10 @@ def monitor_owned_java(
             guarded_target,
             decision,
             sampler,
+            target.process_group_id,
+            group_anchor,
         ),
+        policy=memory_policy_for_maximum_heap(maximum_memory_mb),
     )
     initial_result = guard.poll()
     _write_telemetry(telemetry_path, guard.telemetry_json_bytes())
@@ -510,16 +827,16 @@ def monitor_owned_java(
         raise GuardedJavaError(
             "The initial authoritative Java memory sample was unavailable"
         )
-    _write_json_exclusive(
-        readiness_path,
-        {
-            "schema": 1,
-            "status": "ready",
-            "monitor_pid": os.getpid(),
-            "target": _target_payload(target),
-            "telemetry": str(telemetry_path),
-        },
-    )
+    readiness_payload: dict[str, object] = {
+        "schema": 1,
+        "status": "ready",
+        "monitor_pid": os.getpid(),
+        "target": _target_payload(target),
+        "telemetry": str(telemetry_path),
+    }
+    if group_anchor is not None:
+        readiness_payload["group_anchor"] = _target_payload(group_anchor)
+    _write_json_exclusive(readiness_path, readiness_payload)
 
     last_persisted_at = time.monotonic_ns()
     previous_decision = initial_result.decision
@@ -586,10 +903,12 @@ def _bind_spawned_java(
 
 def _monitor_command(
     target: OwnedJavaProcess,
+    maximum_memory_mb: int,
     telemetry_path: Path,
     readiness_path: Path,
+    group_anchor: OwnedJavaProcess | None = None,
 ) -> list[str]:
-    return [
+    command = [
         sys.executable,
         "-B",
         str(Path(__file__).resolve()),
@@ -602,11 +921,27 @@ def _monitor_command(
         str(target.proc_start_abstime),
         "--expected-executable",
         target.expected_executable,
+        "--maximum-memory-mb",
+        str(maximum_memory_mb),
         "--telemetry",
         str(telemetry_path),
         "--readiness",
         str(readiness_path),
     ]
+    if group_anchor is not None:
+        command.extend(
+            [
+                "--group-anchor-pid",
+                str(group_anchor.pid),
+                "--group-anchor-process-group-id",
+                str(group_anchor.process_group_id),
+                "--group-anchor-proc-start-abstime",
+                str(group_anchor.proc_start_abstime),
+                "--group-anchor-expected-executable",
+                group_anchor.expected_executable,
+            ]
+        )
+    return command
 
 
 def _wait_for_monitor_readiness(
@@ -614,6 +949,7 @@ def _wait_for_monitor_readiness(
     target: OwnedJavaProcess,
     telemetry_path: Path,
     readiness_path: Path,
+    group_anchor: OwnedJavaProcess | None = None,
 ) -> None:
     deadline = time.monotonic() + READINESS_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
@@ -626,6 +962,8 @@ def _wait_for_monitor_readiness(
                 "target": _target_payload(target),
                 "telemetry": str(telemetry_path),
             }
+            if group_anchor is not None:
+                expected["group_anchor"] = _target_payload(group_anchor)
             if payload != expected:
                 raise GuardedJavaError(
                     "The Java memory guard readiness record does not match its launch"
@@ -686,9 +1024,10 @@ def _target_payload(target: OwnedJavaProcess) -> dict[str, object]:
 
 
 def _write_telemetry(path: Path, content: bytes) -> None:
-    if len(content) > MAXIMUM_TELEMETRY_SIZE_BYTES:
+    terminated_content = content if content.endswith(b"\n") else content + b"\n"
+    if len(terminated_content) > MAXIMUM_TELEMETRY_SIZE_BYTES:
         raise GuardedJavaError("The memory guard telemetry exceeded its size bound")
-    _write_bytes_atomic(path, content)
+    _write_bytes_atomic(path, terminated_content)
 
 
 def _write_bytes_atomic(path: Path, content: bytes) -> None:
@@ -723,10 +1062,114 @@ def _stop_for_memory_decision(
     target: OwnedJavaProcess,
     decision: MemoryDecision,
     sampler: MacOsProcessMemorySampler,
+    owned_process_group_id: int,
+    group_anchor: OwnedJavaProcess | None = None,
 ) -> None:
     if decision not in (MemoryDecision.HARD, MemoryDecision.EMERGENCY):
         raise GuardedJavaError("The memory guard requested an invalid stop decision")
-    _stop_owned_java_process(target, sampler, STOP_TIMEOUT_SECONDS)
+    if group_anchor is not None:
+        _stop_anchored_java_process(
+            target,
+            group_anchor,
+            decision,
+            sampler,
+        )
+        return
+    _stop_owned_java_process(
+        target,
+        sampler,
+        owned_process_group_id,
+        STOP_TIMEOUT_SECONDS,
+    )
+
+
+def _stop_anchored_java_process(
+    target: OwnedJavaProcess,
+    group_anchor: OwnedJavaProcess,
+    decision: MemoryDecision,
+    sampler: MacOsProcessMemorySampler,
+) -> None:
+    """Stops a shared group only while its exact leader anchor remains live."""
+
+    process_group_id = group_anchor.process_group_id
+    if (
+        group_anchor.pid != process_group_id
+        or target.process_group_id != process_group_id
+        or target.pid == group_anchor.pid
+    ):
+        raise GuardedJavaError("The guarded Java process-group anchor is invalid")
+    if (
+        sampler.revalidate(group_anchor) != group_anchor
+        or sampler.revalidate(target) != target
+    ):
+        raise GuardedJavaError(
+            "The guarded Java process-group anchor or target changed before stopping"
+        )
+    selected_signal = (
+        signal.SIGKILL
+        if decision is MemoryDecision.EMERGENCY
+        else signal.SIGTERM
+    )
+    try:
+        os.killpg(process_group_id, selected_signal)
+    except ProcessLookupError as exception:
+        raise GuardedJavaError(
+            "The anchored Java process group vanished before memory enforcement"
+        ) from exception
+
+    deadline = time.monotonic() + (
+        2.0 if selected_signal == signal.SIGKILL else STOP_TIMEOUT_SECONDS
+    )
+    while time.monotonic() < deadline:
+        target_status = sampler.sample(target, time.monotonic_ns()).status
+        if selected_signal == signal.SIGTERM:
+            if (
+                target_status is SampleStatus.MISSING
+                and sampler.revalidate(group_anchor) == group_anchor
+            ):
+                return
+        elif (
+            target_status is SampleStatus.MISSING
+            and sampler.revalidate(group_anchor) is None
+            and not _process_group_exists(process_group_id)
+        ):
+            return
+        if target_status not in (SampleStatus.AVAILABLE, SampleStatus.MISSING):
+            raise GuardedJavaError(
+                "The anchored Java identity became unverifiable during enforcement"
+            )
+        time.sleep(0.05)
+
+    if selected_signal == signal.SIGKILL:
+        raise GuardedJavaError(
+            "The emergency-stopped anchored Java group remained live after SIGKILL"
+        )
+    if (
+        sampler.revalidate(group_anchor) != group_anchor
+        or sampler.revalidate(target) != target
+    ):
+        raise GuardedJavaError(
+            "The anchored Java target changed before memory-stop escalation"
+        )
+    try:
+        os.killpg(process_group_id, signal.SIGKILL)
+    except ProcessLookupError as exception:
+        raise GuardedJavaError(
+            "The anchored Java group vanished before memory-stop escalation"
+        ) from exception
+    kill_deadline = time.monotonic() + 2.0
+    while time.monotonic() < kill_deadline:
+        if (
+            sampler.sample(target, time.monotonic_ns()).status
+            is SampleStatus.MISSING
+            and sampler.revalidate(group_anchor) is None
+            and not _process_group_exists(process_group_id)
+        ):
+            return
+        time.sleep(0.05)
+    raise GuardedJavaError(
+        "The anchored Java group remained live after memory-stop escalation"
+    )
 
 
 def _print_decision_transition(decision: MemoryDecision) -> None:
@@ -769,7 +1212,12 @@ def _terminate_spawned_auxiliary(
         process.wait(timeout=2.0)
     except subprocess.TimeoutExpired:
         process.kill()
-        process.wait(timeout=2.0)
+        try:
+            process.wait(timeout=2.0)
+        except subprocess.TimeoutExpired as exception:
+            raise GuardedJavaError(
+                "A spawned Java lifecycle helper remained live after SIGKILL"
+            ) from exception
 
 
 def _terminate_new_java_process_group(
@@ -834,8 +1282,17 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument("--process-group-id", required=True, type=int)
     parser.add_argument("--proc-start-abstime", required=True, type=int)
     parser.add_argument("--expected-executable", required=True)
+    parser.add_argument(
+        "--maximum-memory-mb",
+        default=EXPECTED_MAXIMUM_MEMORY_MB,
+        type=int,
+    )
     parser.add_argument("--telemetry", required=True, type=Path)
     parser.add_argument("--readiness", required=True, type=Path)
+    parser.add_argument("--group-anchor-pid", type=int)
+    parser.add_argument("--group-anchor-process-group-id", type=int)
+    parser.add_argument("--group-anchor-proc-start-abstime", type=int)
+    parser.add_argument("--group-anchor-expected-executable")
     return parser.parse_args()
 
 
@@ -849,11 +1306,37 @@ def main() -> int:
         proc_start_abstime=arguments.proc_start_abstime,
         expected_executable=arguments.expected_executable,
     )
+    raw_group_anchor = (
+        arguments.group_anchor_pid,
+        arguments.group_anchor_process_group_id,
+        arguments.group_anchor_proc_start_abstime,
+        arguments.group_anchor_expected_executable,
+    )
+    if any(value is not None for value in raw_group_anchor) and not all(
+        value is not None for value in raw_group_anchor
+    ):
+        print(
+            "Etherology Java memory guard failed: incomplete group anchor",
+            file=sys.stderr,
+        )
+        return 2
+    group_anchor = (
+        OwnedJavaProcess(
+            pid=arguments.group_anchor_pid,
+            process_group_id=arguments.group_anchor_process_group_id,
+            proc_start_abstime=arguments.group_anchor_proc_start_abstime,
+            expected_executable=arguments.group_anchor_expected_executable,
+        )
+        if all(value is not None for value in raw_group_anchor)
+        else None
+    )
     try:
         return monitor_owned_java(
             target,
             arguments.telemetry,
             arguments.readiness,
+            arguments.maximum_memory_mb,
+            group_anchor,
         )
     except (
         GuardedJavaError,

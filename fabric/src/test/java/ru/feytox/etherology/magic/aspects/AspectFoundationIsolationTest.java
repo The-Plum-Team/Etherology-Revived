@@ -22,7 +22,14 @@ final class AspectFoundationIsolationTest {
     private static final List<String> SHARED_CLASSES = List.of(
             "ru/feytox/etherology/magic/aspects/Aspect.class",
             "ru/feytox/etherology/magic/aspects/EtherologyAspect.class",
-            "ru/feytox/etherology/magic/aspects/AspectContainer.class"
+            "ru/feytox/etherology/magic/aspects/AspectContainer.class",
+            "ru/feytox/etherology/magic/aspects/AspectContainerId.class",
+            "ru/feytox/etherology/magic/aspects/AspectContainerType.class",
+            "ru/feytox/etherology/magic/aspects/AspectEntry.class",
+            "ru/feytox/etherology/magic/aspects/AspectRegistryPart.class",
+            "ru/feytox/etherology/magic/aspects/RevelationAspectProvider.class",
+            "ru/feytox/etherology/data/aspects/AspectsLoader.class",
+            "ru/feytox/etherology/registry/misc/SharedAspectRegistries.class"
     );
     private static final String ALCHEMY_SERIALIZER =
             "ru/feytox/etherology/recipes/alchemy/AlchemyRecipeSerializer.class";

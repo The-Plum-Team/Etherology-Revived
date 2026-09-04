@@ -106,6 +106,8 @@ final class SharedMetalRegistryBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/block/SharedSlitheriteBlocks"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/block/SharedPedestalBlocks"
+                                + "#register()V",
                         ITEM_OWNER + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedForestLanternBlockItems"
                                 + "#register()V",
@@ -113,10 +115,12 @@ final class SharedMetalRegistryBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedSlitheriteBlockItems"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/item/SharedPedestalBlockItems"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V"
                 ),
-                invocations.subList(0, 11)
+                invocations.subList(0, 13)
         );
     }
 

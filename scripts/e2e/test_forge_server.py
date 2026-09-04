@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -28,6 +29,7 @@ def temporary_repository():
             "gradle.properties",
             "forge/build.gradle.kts",
             forge_server.PROBE_SOURCE_RELATIVE_PATH.as_posix(),
+            forge_server.MEMORY_HANDOFF_SOURCE_RELATIVE_PATH.as_posix(),
             "scripts/e2e/forge-server-1.20.1-profile.json",
             "gradlew",
         ):
@@ -652,6 +654,42 @@ class ConfigurationTests(unittest.TestCase):
             with self.assertRaisesRegex(forge_server.E2EError, "contracts differ"):
                 forge_server.verify_probe_source_lifecycle(configuration)
 
+    def test_server_probe_memory_handoff_source_is_pinned(self) -> None:
+        configuration = forge_server.load_configuration()
+
+        forge_server.verify_memory_handoff_source(configuration)
+
+    def test_incomplete_server_memory_handoff_source_is_rejected(self) -> None:
+        with temporary_repository() as (root, manifest_path):
+            handoff_path = root / forge_server.MEMORY_HANDOFF_SOURCE_RELATIVE_PATH
+            content = handoff_path.read_text(encoding="utf-8")
+            handoff_path.write_text(
+                content.replace("ProcessHandle.current()", "ProcessHandle.allProcesses()"),
+                encoding="utf-8",
+            )
+            configuration = load_temporary_configuration(root, manifest_path)
+
+            with self.assertRaisesRegex(forge_server.E2EError, "incomplete"):
+                forge_server.verify_memory_handoff_source(configuration)
+
+    def test_gradle_heap_spelling_drift_is_rejected(self) -> None:
+        with temporary_repository() as (root, manifest_path):
+            build_path = root / "forge/build.gradle.kts"
+            content = build_path.read_text(encoding="utf-8")
+            build_path.write_text(
+                content.replace(
+                    'jvmArguments.add("-Xmx${serverProbeLaunch.getValue('
+                    '"maximum_memory_mb")}m")',
+                    'jvmArguments.add("-Xmx${serverProbeLaunch.getValue('
+                    '"maximum_memory_mb")}M")',
+                ),
+                encoding="utf-8",
+            )
+            configuration = load_temporary_configuration(root, manifest_path)
+
+            with self.assertRaisesRegex(forge_server.E2EError, "incomplete"):
+                forge_server.verify_gradle_probe_definition(configuration)
+
 
 class ConsumedV18HistoryTests(unittest.TestCase):
     def test_exact_failed_report_retains_305_of_310_and_clean_shutdown(self) -> None:
@@ -993,6 +1031,37 @@ class RuntimeIsolationTests(unittest.TestCase):
 
 
 class CommandTests(unittest.TestCase):
+    def test_java_version_probe_has_a_tiny_explicit_heap_cap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            java_path = Path(temporary_directory).resolve() / "java"
+            java_path.write_bytes(b"not executed")
+            java_path.chmod(0o700)
+            completed = subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="java.specification.version = 21\n",
+            )
+            with mock.patch.object(
+                forge_server.subprocess,
+                "run",
+                return_value=completed,
+            ) as run:
+                self.assertEqual(21, forge_server.java_major_version(java_path))
+
+            run.assert_called_once_with(
+                [
+                    str(java_path),
+                    "-Xmx64M",
+                    "-XshowSettings:properties",
+                    "-version",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+
     def test_command_uses_host_jdk_and_exact_task_without_override(self) -> None:
         configuration = forge_server.load_configuration()
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -1010,8 +1079,10 @@ class CommandTests(unittest.TestCase):
 
         self.assertEqual(forge_server.TASK_PATH, command[-1])
         self.assertEqual(1, command.count(forge_server.TASK_PATH))
-        self.assertEqual("-dimsu", command[1])
+        self.assertEqual(str(configuration.repository_root / "gradlew"), command[0])
         self.assertIn("--no-parallel", command)
+        self.assertNotIn("-dimsu", command)
+        self.assertNotIn(str(caffeinate), command)
         self.assertFalse(any(argument.startswith("-P") for argument in command))
         self.assertNotIn("Quick-Skin", " ".join(command))
 
@@ -1030,6 +1101,23 @@ class CommandTests(unittest.TestCase):
                 self.assertRaisesRegex(forge_server.E2EError, "JDK 21"),
             ):
                 forge_server.build_gradle_command(configuration, java, caffeinate)
+
+    def test_java_option_injection_is_rejected_before_any_java_probe(self) -> None:
+        configuration = forge_server.load_configuration()
+        for variable_name in (
+            "JAVA_TOOL_OPTIONS",
+            "JDK_JAVA_OPTIONS",
+            "_JAVA_OPTIONS",
+        ):
+            with (
+                self.subTest(variable_name=variable_name),
+                mock.patch.dict(os.environ, {variable_name: ""}, clear=True),
+                mock.patch.object(forge_server, "resolve_gradle_java") as resolve_java,
+                self.assertRaisesRegex(forge_server.E2EError, variable_name),
+            ):
+                forge_server.verify_environment(configuration)
+
+            resolve_java.assert_not_called()
 
 
 class ProbeReportTests(unittest.TestCase):
@@ -1879,6 +1967,607 @@ class FakeProcess:
         return self.exit_code
 
 
+SERVER_LAUNCH_PROCESS_ID = 43210
+SERVER_JAVA_PROCESS_ID = 54321
+SERVER_RUN_TOKEN = "a" * 64
+SERVER_TARGET = forge_server.macos_guarded_java.OwnedJavaProcess(
+    pid=SERVER_JAVA_PROCESS_ID,
+    process_group_id=SERVER_LAUNCH_PROCESS_ID,
+    proc_start_abstime=987654321,
+    expected_executable="/test/jdk17/bin/java",
+)
+
+
+def valid_memory_handoff() -> dict[str, object]:
+    return {
+        "schema": 1,
+        "run_token": SERVER_RUN_TOKEN,
+        "pid": SERVER_JAVA_PROCESS_ID,
+        "executable": SERVER_TARGET.expected_executable,
+        "java_feature": 17,
+        "maximum_heap_bytes": 2048 * 1024 * 1024,
+        "maximum_heap_arguments": ["-Xmx2048m"],
+    }
+
+
+def write_memory_handoff(
+    runtime: Path,
+    payload: dict[str, object] | None = None,
+) -> Path:
+    handoff_path, _acknowledgement_path = forge_server.server_memory_handoff_paths(
+        runtime
+    )
+    handoff_path.write_text(
+        json.dumps(valid_memory_handoff() if payload is None else payload) + "\n",
+        encoding="utf-8",
+    )
+    return handoff_path
+
+
+def fake_server_guard(
+    runtime: Path,
+    *,
+    monitor_alive: bool = True,
+) -> forge_server.ServerJavaGuard:
+    telemetry_path = runtime / "memory-guard-telemetry.json"
+    readiness_path = runtime / ".memory-guard-ready.json"
+    monitor_process = FakeProcess(0, timeout=monitor_alive)
+    monitor_process.pid = 60001
+    monitor = forge_server.macos_guarded_java.GuardedJavaMonitor(
+        process=monitor_process,
+        target=SERVER_TARGET,
+        telemetry_path=telemetry_path,
+        readiness_path=readiness_path,
+    )
+    caffeinate_process = FakeProcess(0, timeout=True)
+    caffeinate_process.pid = 60002
+    handoff_path, acknowledgement_path = forge_server.server_memory_handoff_paths(
+        runtime
+    )
+    return forge_server.ServerJavaGuard(
+        target=SERVER_TARGET,
+        monitor=monitor,
+        caffeinate_process=caffeinate_process,
+        handoff_path=handoff_path,
+        acknowledgement_path=acknowledgement_path,
+    )
+
+
+class ServerJavaHandoffTests(unittest.TestCase):
+    def test_exact_handoff_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            handoff_path = write_memory_handoff(runtime)
+
+            self.assertEqual(
+                (SERVER_JAVA_PROCESS_ID, SERVER_TARGET.expected_executable),
+                forge_server.validate_server_java_handoff(
+                    handoff_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    SERVER_LAUNCH_PROCESS_ID,
+                ),
+            )
+
+    def test_identity_heap_and_field_drift_are_rejected(self) -> None:
+        mutations = {
+            "boolean schema": lambda value: value.__setitem__("schema", True),
+            "wrong token": lambda value: value.__setitem__("run_token", "b" * 64),
+            "boolean pid": lambda value: value.__setitem__("pid", True),
+            "wrapper pid": lambda value: value.__setitem__(
+                "pid", SERVER_LAUNCH_PROCESS_ID
+            ),
+            "relative executable": lambda value: value.__setitem__(
+                "executable", "bin/java"
+            ),
+            "wrong Java": lambda value: value.__setitem__("java_feature", 21),
+            "boolean Java": lambda value: value.__setitem__("java_feature", True),
+            "wrong heap": lambda value: value.__setitem__(
+                "maximum_heap_bytes", 4096 * 1024 * 1024
+            ),
+            "boolean heap": lambda value: value.__setitem__(
+                "maximum_heap_bytes", True
+            ),
+            "normalized heap spelling": lambda value: value.__setitem__(
+                "maximum_heap_arguments", ["-Xmx2048M"]
+            ),
+            "duplicate heap": lambda value: value.__setitem__(
+                "maximum_heap_arguments", ["-Xmx2048m", "-Xmx2048m"]
+            ),
+            "extra field": lambda value: value.__setitem__("other", 1),
+        }
+        for description, mutation in mutations.items():
+            with self.subTest(description=description), tempfile.TemporaryDirectory() as temporary:
+                runtime = Path(temporary).resolve()
+                handoff = valid_memory_handoff()
+                mutation(handoff)
+                handoff_path = write_memory_handoff(runtime, handoff)
+
+                with self.assertRaises(forge_server.E2EError):
+                    forge_server.validate_server_java_handoff(
+                        handoff_path,
+                        runtime,
+                        SERVER_RUN_TOKEN,
+                        SERVER_LAUNCH_PROCESS_ID,
+                    )
+
+    def test_symlinked_and_oversized_handoffs_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            runtime = root / "runtime"
+            runtime.mkdir()
+            foreign = root / "foreign.json"
+            foreign.write_text(json.dumps(valid_memory_handoff()), encoding="utf-8")
+            handoff_path, _acknowledgement = forge_server.server_memory_handoff_paths(
+                runtime
+            )
+            handoff_path.symlink_to(foreign)
+
+            with self.assertRaisesRegex(forge_server.E2EError, "symlink"):
+                forge_server.validate_server_java_handoff(
+                    handoff_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    SERVER_LAUNCH_PROCESS_ID,
+                )
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            handoff_path, _acknowledgement = forge_server.server_memory_handoff_paths(
+                runtime
+            )
+            handoff_path.write_bytes(
+                b"x" * (forge_server.MAXIMUM_MEMORY_HANDOFF_SIZE + 1)
+            )
+            with self.assertRaisesRegex(forge_server.E2EError, "invalid size"):
+                forge_server.validate_server_java_handoff(
+                    handoff_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    SERVER_LAUNCH_PROCESS_ID,
+                )
+
+    def test_wait_binds_only_the_java_child_in_the_owned_launch_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            output_path = runtime / "gradle.log"
+            output_path.write_bytes(b"")
+            write_memory_handoff(runtime)
+            process = FakeProcess(timeout=True)
+            sampler = mock.Mock()
+            sampler.bind.return_value = SERVER_TARGET
+            with mock.patch.object(
+                forge_server.os,
+                "getpgid",
+                return_value=SERVER_LAUNCH_PROCESS_ID,
+            ):
+                target = forge_server.wait_for_server_java_handoff(
+                    process,
+                    output_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    sampler,
+                    time.monotonic() + 1.0,
+                )
+
+            self.assertEqual(SERVER_TARGET, target)
+            sampler.bind.assert_called_once_with(
+                SERVER_JAVA_PROCESS_ID,
+                SERVER_LAUNCH_PROCESS_ID,
+                SERVER_TARGET.expected_executable,
+            )
+
+    def test_wait_rejects_a_java_pid_outside_the_owned_launch_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            output_path = runtime / "gradle.log"
+            output_path.write_bytes(b"")
+            write_memory_handoff(runtime)
+            process = FakeProcess(timeout=True)
+            sampler = mock.Mock()
+            with (
+                mock.patch.object(
+                    forge_server.os,
+                    "getpgid",
+                    return_value=SERVER_LAUNCH_PROCESS_ID + 1,
+                ),
+                self.assertRaisesRegex(forge_server.E2EError, "outside"),
+            ):
+                forge_server.wait_for_server_java_handoff(
+                    process,
+                    output_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    sampler,
+                    time.monotonic() + 1.0,
+                )
+
+            sampler.bind.assert_not_called()
+
+    def test_wait_fails_closed_when_no_handoff_arrives(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            output_path = runtime / "gradle.log"
+            output_path.write_bytes(b"")
+            process = FakeProcess(timeout=True)
+            with (
+                mock.patch.object(
+                    forge_server,
+                    "MEMORY_HANDOFF_TIMEOUT_SECONDS",
+                    0.0,
+                ),
+                self.assertRaisesRegex(forge_server.E2EError, "Timed out"),
+            ):
+                forge_server.wait_for_server_java_handoff(
+                    process,
+                    output_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    mock.Mock(),
+                    time.monotonic() + 1.0,
+                )
+
+
+class ServerJavaGuardStartTests(unittest.TestCase):
+    def test_monitor_and_caffeinate_are_live_before_acknowledgement(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            output_path = runtime / "gradle.log"
+            output_path.write_bytes(b"")
+            caffeinate_path = runtime / "caffeinate"
+            caffeinate_path.write_bytes(b"")
+            process = FakeProcess(timeout=True)
+            monitor_guard = fake_server_guard(runtime).monitor
+            assert monitor_guard is not None
+            caffeinate_process = FakeProcess(timeout=True)
+            events: list[str] = []
+
+            def start_monitor(*_args: object, **_kwargs: object) -> object:
+                events.append("monitor")
+                return monitor_guard
+
+            def start_caffeinate(*_args: object, **_kwargs: object) -> object:
+                events.append("caffeinate")
+                return caffeinate_process
+
+            real_write = forge_server.write_bytes_exclusive
+
+            def write_acknowledgement(path: Path, content: bytes) -> None:
+                events.append("acknowledgement")
+                real_write(path, content)
+
+            with (
+                mock.patch.object(
+                    forge_server,
+                    "wait_for_server_java_handoff",
+                    return_value=SERVER_TARGET,
+                ),
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "start_guarded_java_monitor",
+                    side_effect=start_monitor,
+                ),
+                mock.patch.object(
+                    forge_server.subprocess,
+                    "Popen",
+                    side_effect=start_caffeinate,
+                ) as popen,
+                mock.patch.object(
+                    forge_server,
+                    "write_bytes_exclusive",
+                    side_effect=write_acknowledgement,
+                ),
+            ):
+                guard = forge_server.start_server_java_guard(
+                    process,
+                    output_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    mock.Mock(),
+                    time.monotonic() + 1.0,
+                    runtime,
+                    mock.Mock(),
+                    caffeinate_path,
+                )
+
+            self.assertEqual(
+                ["monitor", "caffeinate", "acknowledgement"],
+                events,
+            )
+            self.assertEqual(SERVER_TARGET, guard.target)
+            self.assertEqual(
+                f"token={SERVER_RUN_TOKEN}\n",
+                guard.acknowledgement_path.read_text(encoding="ascii"),
+            )
+            self.assertEqual(
+                [
+                    str(caffeinate_path),
+                    "-dimsu",
+                    "-w",
+                    str(SERVER_JAVA_PROCESS_ID),
+                ],
+                popen.call_args.args[0],
+            )
+
+    def test_failed_post_monitor_handoff_retains_partial_guard(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            output_path = runtime / "gradle.log"
+            output_path.write_bytes(b"")
+            caffeinate_path = runtime / "caffeinate"
+            caffeinate_path.write_bytes(b"")
+            process = FakeProcess(timeout=True)
+            monitor_guard = fake_server_guard(runtime).monitor
+            assert monitor_guard is not None
+            with (
+                mock.patch.object(
+                    forge_server,
+                    "wait_for_server_java_handoff",
+                    return_value=SERVER_TARGET,
+                ),
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "start_guarded_java_monitor",
+                    return_value=monitor_guard,
+                ),
+                mock.patch.object(
+                    forge_server.subprocess,
+                    "Popen",
+                    side_effect=OSError("caffeinate failed"),
+                ),
+                self.assertRaises(forge_server.ServerGuardStartError) as raised,
+            ):
+                forge_server.start_server_java_guard(
+                    process,
+                    output_path,
+                    runtime,
+                    SERVER_RUN_TOKEN,
+                    mock.Mock(),
+                    time.monotonic() + 1.0,
+                    runtime,
+                    mock.Mock(),
+                    caffeinate_path,
+                )
+
+            self.assertEqual(SERVER_TARGET, raised.exception.server_guard.target)
+            self.assertIs(monitor_guard, raised.exception.server_guard.monitor)
+            self.assertIsNone(raised.exception.server_guard.caffeinate_process)
+            self.assertIsNone(monitor_guard.process.poll())
+
+
+class ServerGuardHealthTests(unittest.TestCase):
+    def test_current_live_monitor_needs_no_secondary_sample(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            guard = fake_server_guard(Path(temporary_directory).resolve())
+            sampler = mock.Mock()
+            with mock.patch.object(
+                forge_server.macos_guarded_java,
+                "memory_guard_is_enforcing",
+                return_value=True,
+            ) as guard_health:
+                forge_server.verify_server_guard_is_enforcing(guard, sampler)
+
+            sampler.sample.assert_not_called()
+            state = guard_health.call_args.args[0]
+            self.assertEqual(
+                forge_server.SERVER_MAXIMUM_MEMORY_MB,
+                state["memory_guard_maximum_memory_mb"],
+            )
+
+    def test_live_java_with_dead_or_stale_monitor_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            guard = fake_server_guard(
+                Path(temporary_directory).resolve(),
+                monitor_alive=False,
+            )
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.AVAILABLE
+            )
+            with (
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "memory_guard_is_enforcing",
+                    return_value=False,
+                ),
+                self.assertRaisesRegex(forge_server.E2EError, "lost"),
+            ):
+                forge_server.verify_server_guard_is_enforcing(guard, sampler)
+
+    def test_monitor_exit_after_exact_target_disappears_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            guard = fake_server_guard(
+                Path(temporary_directory).resolve(),
+                monitor_alive=False,
+            )
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.MISSING
+            )
+            with mock.patch.object(
+                forge_server.macos_guarded_java,
+                "memory_guard_is_enforcing",
+                return_value=False,
+            ):
+                forge_server.verify_server_guard_is_enforcing(guard, sampler)
+
+    def test_identity_drift_during_monitor_failure_is_not_treated_as_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            guard = fake_server_guard(
+                Path(temporary_directory).resolve(),
+                monitor_alive=False,
+            )
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.IDENTITY_DRIFT
+            )
+            with (
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "memory_guard_is_enforcing",
+                    return_value=False,
+                ),
+                self.assertRaisesRegex(forge_server.E2EError, "identity-drift"),
+            ):
+                forge_server.verify_server_guard_is_enforcing(guard, sampler)
+
+    def test_target_exit_allows_gradle_to_finish_its_clean_wait(self) -> None:
+        class FinishingGradleProcess:
+            pid = SERVER_LAUNCH_PROCESS_ID
+
+            def __init__(self) -> None:
+                self.wait_count = 0
+
+            def poll(self) -> int | None:
+                return None if self.wait_count == 0 else 0
+
+            def wait(self, timeout: float | None = None) -> int:
+                self.wait_count += 1
+                return 0
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            output_path = runtime / "gradle.log"
+            output_path.write_bytes(b"")
+            guard = fake_server_guard(runtime, monitor_alive=False)
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.MISSING
+            )
+            process = FinishingGradleProcess()
+            with mock.patch.object(
+                forge_server.macos_guarded_java,
+                "memory_guard_is_enforcing",
+                return_value=False,
+            ):
+                exit_code = forge_server.wait_for_bounded_process(
+                    process,
+                    output_path,
+                    run_deadline=time.monotonic() + 1.0,
+                    server_guard=guard,
+                    sampler=sampler,
+                )
+
+            self.assertEqual(0, exit_code)
+            self.assertEqual(1, process.wait_count)
+
+    def test_clean_exit_requires_target_and_launch_group_both_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            guard = fake_server_guard(
+                Path(temporary_directory).resolve(),
+                monitor_alive=False,
+            )
+            process = FakeProcess(exit_code=0)
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.MISSING
+            )
+            with mock.patch.object(
+                forge_server,
+                "process_group_exists",
+                return_value=False,
+            ):
+                forge_server.require_guarded_server_stopped(
+                    process,
+                    guard,
+                    sampler,
+                )
+
+    def test_exact_server_heap_bytes_match_the_xmx2048m_semantics(self) -> None:
+        self.assertEqual(2_147_483_648, forge_server.SERVER_MAXIMUM_HEAP_BYTES)
+        self.assertEqual("-Xmx2048m", forge_server.SERVER_MAXIMUM_HEAP_ARGUMENT)
+        source = (
+            forge_server.REPOSITORY_ROOT
+            / forge_server.MEMORY_HANDOFF_SOURCE_RELATIVE_PATH
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "maximumHeapBytes != EXACT_MAXIMUM_HEAP_BYTES",
+            source,
+        )
+
+
+class ServerLaunchCleanupTests(unittest.TestCase):
+    def test_live_exact_server_stops_only_its_recorded_launch_group(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            guard = fake_server_guard(runtime)
+            process = FakeProcess(timeout=True)
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.AVAILABLE
+            )
+            process.wait = mock.Mock(return_value=0)
+            with (
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "stop_owned_java_process",
+                ) as stop_java,
+                mock.patch.object(forge_server, "require_guarded_server_stopped"),
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "stop_spawned_auxiliary",
+                ) as stop_auxiliary,
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "stop_guarded_java_monitor",
+                ) as stop_monitor,
+            ):
+                forge_server.cleanup_server_launch(process, guard, sampler)
+
+            stop_java.assert_called_once_with(
+                SERVER_TARGET,
+                owned_process_group_id=SERVER_LAUNCH_PROCESS_ID,
+                timeout_seconds=forge_server.PROCESS_STOP_TIMEOUT_SECONDS,
+                sampler=sampler,
+            )
+            stop_auxiliary.assert_called_once_with(guard.caffeinate_process)
+            stop_monitor.assert_called_once_with(guard.monitor)
+
+    def test_identity_uncertainty_never_signals_or_stops_the_monitor(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            guard = fake_server_guard(Path(temporary_directory).resolve())
+            process = FakeProcess(timeout=True)
+            sampler = mock.Mock()
+            sampler.sample.return_value = mock.Mock(
+                status=forge_server.macos_guarded_java.SampleStatus.IDENTITY_DRIFT
+            )
+            with (
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "stop_owned_java_process",
+                ) as stop_java,
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "stop_spawned_auxiliary",
+                ) as stop_auxiliary,
+                mock.patch.object(
+                    forge_server.macos_guarded_java,
+                    "stop_guarded_java_monitor",
+                ) as stop_monitor,
+                self.assertRaisesRegex(forge_server.E2EError, "uncertain"),
+            ):
+                forge_server.cleanup_server_launch(process, guard, sampler)
+
+            stop_java.assert_not_called()
+            stop_auxiliary.assert_not_called()
+            stop_monitor.assert_not_called()
+
+    def test_wrong_gradle_group_never_receives_a_signal(self) -> None:
+        process = FakeProcess(timeout=True)
+        with (
+            mock.patch.object(
+                forge_server.os,
+                "getpgid",
+                return_value=process.pid + 1,
+            ),
+            mock.patch.object(forge_server.os, "killpg") as kill_group,
+            self.assertRaisesRegex(forge_server.E2EError, "no longer owns"),
+        ):
+            forge_server.stop_process_group(process)
+
+        kill_group.assert_not_called()
+
+
 class ExecutionTests(unittest.TestCase):
     def setUp(self) -> None:
         self.native_run_guard = mock.patch.object(
@@ -1894,8 +2583,36 @@ class ExecutionTests(unittest.TestCase):
         self.state_context = tempfile.TemporaryDirectory()
         self.state_root = Path(self.state_context.name).resolve() / ".state"
         forge_server.provision_profile(self.configuration, self.state_root)
+        self.sampler = mock.Mock()
+        self.server_guard = mock.Mock()
+        self.execution_patchers = (
+            mock.patch.object(
+                forge_server.macos_guarded_java.MacOsProcessMemorySampler,
+                "native",
+                return_value=self.sampler,
+            ),
+            mock.patch.object(forge_server, "verify_owned_gradle_process_group"),
+            mock.patch.object(
+                forge_server,
+                "start_server_java_guard",
+                return_value=self.server_guard,
+            ),
+            mock.patch.object(forge_server, "verify_server_guard_is_enforcing"),
+            mock.patch.object(forge_server, "require_guarded_server_stopped"),
+            mock.patch.object(forge_server, "cleanup_server_launch"),
+        )
+        (
+            self.native_sampler,
+            self.verify_launch_group,
+            self.start_server_guard,
+            self.verify_guard_health,
+            self.require_server_stopped,
+            self.cleanup_launch,
+        ) = tuple(patcher.start() for patcher in self.execution_patchers)
 
     def tearDown(self) -> None:
+        for patcher in reversed(self.execution_patchers):
+            patcher.stop()
         self.state_context.cleanup()
         self.repository_context.__exit__(None, None, None)
         self.native_run_guard.stop()
@@ -1941,8 +2658,14 @@ class ExecutionTests(unittest.TestCase):
 
     def test_zero_exit_validates_and_publishes_done_last(self) -> None:
         launch: dict[str, object] = {}
+        launch_events: list[str] = []
+
+        def create_sampler() -> object:
+            launch_events.append("sampler")
+            return self.sampler
 
         def fake_popen(*_args: object, **kwargs: object) -> FakeProcess:
+            launch_events.append("gradle")
             launch.update(kwargs)
             launch["run_lock"] = forge_server.run_lock_path(
                 self.configuration,
@@ -1950,6 +2673,8 @@ class ExecutionTests(unittest.TestCase):
             ).read_text(encoding="utf-8")
             self.publish_probe_outputs(kwargs["stdout"])
             return FakeProcess()
+
+        self.native_sampler.side_effect = create_sampler
 
         with (
             mock.patch.object(
@@ -1970,10 +2695,31 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(subprocess.DEVNULL, launch["stdin"])
         self.assertEqual(subprocess.STDOUT, launch["stderr"])
         self.assertEqual("/jdk21", launch["env"]["JAVA_HOME"])
+        self.assertEqual(["sampler", "gradle"], launch_events)
         run_token = launch["env"][forge_server.RUN_TOKEN_ENVIRONMENT_VARIABLE]
         self.assertRegex(run_token, r"^[0-9a-f]{64}$")
         self.assertRegex(launch["run_lock"], r"^pid=[1-9][0-9]*\n")
         self.assertIn(f"token={run_token}\n", launch["run_lock"])
+        runtime = forge_server.runtime_root(self.configuration, self.state_root)
+        handoff_path, acknowledgement_path = forge_server.server_memory_handoff_paths(
+            runtime
+        )
+        self.assertEqual(
+            str(handoff_path),
+            launch["env"][forge_server.MEMORY_HANDOFF_ENVIRONMENT_VARIABLE],
+        )
+        self.assertEqual(
+            str(acknowledgement_path),
+            launch["env"][
+                forge_server.MEMORY_ACKNOWLEDGEMENT_ENVIRONMENT_VARIABLE
+            ],
+        )
+        self.start_server_guard.assert_called_once()
+        self.cleanup_launch.assert_called_once_with(
+            mock.ANY,
+            self.server_guard,
+            self.sampler,
+        )
         self.assertEqual(
             forge_server.COMPLETION_MARKER_CONTENT,
             (scenario / "reports/done.marker").read_bytes(),
@@ -2042,13 +2788,16 @@ class ExecutionTests(unittest.TestCase):
                 return_value=(Path("/jdk21/bin/java"), ["caffeinate", "gradle"]),
             ),
             mock.patch.object(forge_server.subprocess, "Popen", return_value=process),
-            mock.patch.object(forge_server, "stop_process_group") as stop_process,
             mock.patch.object(forge_server, "RUN_TIMEOUT_SECONDS", 0),
             self.assertRaisesRegex(forge_server.E2EError, "timed out"),
         ):
             forge_server.execute_probe(self.configuration, self.state_root)
 
-        stop_process.assert_called_with(process)
+        self.cleanup_launch.assert_called_once_with(
+            process,
+            self.server_guard,
+            self.sampler,
+        )
         runtime = forge_server.runtime_root(self.configuration, self.state_root)
         self.assertFalse(
             forge_server.evidence_path(
@@ -2068,12 +2817,15 @@ class ExecutionTests(unittest.TestCase):
                 return_value=(Path("/jdk21/bin/java"), ["caffeinate", "gradle"]),
             ),
             mock.patch.object(forge_server.subprocess, "Popen", return_value=process),
-            mock.patch.object(forge_server, "stop_process_group") as stop_process,
             self.assertRaisesRegex(forge_server.E2EError, "interrupted"),
         ):
             forge_server.execute_probe(self.configuration, self.state_root)
 
-        stop_process.assert_called_once_with(process)
+        self.cleanup_launch.assert_called_once_with(
+            process,
+            self.server_guard,
+            self.sampler,
+        )
         self.assert_launch_attempt_is_exact()
 
     def test_process_output_limit_is_enforced_while_process_is_running(self) -> None:
@@ -2090,13 +2842,16 @@ class ExecutionTests(unittest.TestCase):
                 return_value=(Path("/jdk21/bin/java"), ["caffeinate", "gradle"]),
             ),
             mock.patch.object(forge_server.subprocess, "Popen", side_effect=fake_popen),
-            mock.patch.object(forge_server, "stop_process_group") as stop_process,
             mock.patch.object(forge_server, "MAXIMUM_PROCESS_LOG_SIZE", 8),
             self.assertRaisesRegex(forge_server.E2EError, "during execution"),
         ):
             forge_server.execute_probe(self.configuration, self.state_root)
 
-        stop_process.assert_called_once_with(process)
+        self.cleanup_launch.assert_called_once_with(
+            process,
+            self.server_guard,
+            self.sampler,
+        )
         runtime = forge_server.runtime_root(self.configuration, self.state_root)
         self.assertFalse(
             forge_server.evidence_path(
@@ -2195,6 +2950,107 @@ class ExecutionTests(unittest.TestCase):
         self.assertFalse(
             forge_server.run_lock_path(self.configuration, self.state_root).exists()
         )
+
+    def test_sampler_preflight_failure_spawns_nothing_and_consumes_no_attempt(
+        self,
+    ) -> None:
+        self.native_sampler.side_effect = (
+            forge_server.macos_guarded_java.MemorySamplingUnavailable(
+                "libproc unavailable"
+            )
+        )
+        with (
+            mock.patch.object(
+                forge_server,
+                "verify_environment",
+                return_value=(Path("/jdk21/bin/java"), ["gradle"]),
+            ),
+            mock.patch.object(forge_server.subprocess, "Popen") as popen,
+            self.assertRaisesRegex(forge_server.E2EError, "sampling is unavailable"),
+        ):
+            forge_server.execute_probe(self.configuration, self.state_root)
+
+        popen.assert_not_called()
+        self.cleanup_launch.assert_not_called()
+        self.assertFalse(
+            forge_server.run_attempt_path(
+                self.configuration,
+                self.state_root,
+            ).exists()
+        )
+        self.assertFalse(
+            forge_server.run_lock_path(
+                self.configuration,
+                self.state_root,
+            ).exists()
+        )
+
+    def test_cleanup_uncertainty_retains_lock_and_bounded_process_log(self) -> None:
+        process = FakeProcess(timeout=True)
+        self.cleanup_launch.side_effect = forge_server.E2EError(
+            "identity drift"
+        )
+        with (
+            mock.patch.object(
+                forge_server,
+                "verify_environment",
+                return_value=(Path("/jdk21/bin/java"), ["gradle"]),
+            ),
+            mock.patch.object(forge_server.subprocess, "Popen", return_value=process),
+            mock.patch.object(forge_server, "RUN_TIMEOUT_SECONDS", 0),
+            self.assertRaisesRegex(forge_server.E2EError, "lock.*retained"),
+        ):
+            forge_server.execute_probe(self.configuration, self.state_root)
+
+        lock_path = forge_server.run_lock_path(
+            self.configuration,
+            self.state_root,
+        )
+        runtime = forge_server.runtime_root(self.configuration, self.state_root)
+        retained_logs = list(runtime.glob(".forge-server-gradle.*.log"))
+        self.assertTrue(lock_path.is_file())
+        self.assertEqual(1, len(retained_logs))
+        self.assertLessEqual(
+            retained_logs[0].stat().st_size,
+            forge_server.MAXIMUM_PROCESS_LOG_SIZE,
+        )
+        self.assert_launch_attempt_is_exact()
+
+    def test_partial_guard_identity_is_used_for_failure_cleanup(self) -> None:
+        process = FakeProcess(timeout=True)
+        partial_guard = mock.Mock()
+        self.start_server_guard.side_effect = forge_server.ServerGuardStartError(
+            "caffeinate failed",
+            partial_guard,
+        )
+        with (
+            mock.patch.object(
+                forge_server,
+                "verify_environment",
+                return_value=(Path("/jdk21/bin/java"), ["gradle"]),
+            ),
+            mock.patch.object(forge_server.subprocess, "Popen", return_value=process),
+            self.assertRaisesRegex(
+                forge_server.ServerGuardStartError,
+                "caffeinate failed",
+            ),
+        ):
+            forge_server.execute_probe(self.configuration, self.state_root)
+
+        self.cleanup_launch.assert_called_once_with(
+            process,
+            partial_guard,
+            self.sampler,
+        )
+        self.assertFalse(
+            forge_server.run_lock_path(
+                self.configuration,
+                self.state_root,
+            ).exists()
+        )
+        runtime = forge_server.runtime_root(self.configuration, self.state_root)
+        self.assertEqual([], list(runtime.glob(".forge-server-gradle.*.log")))
+        self.assert_launch_attempt_is_exact()
 
 
 if __name__ == "__main__":

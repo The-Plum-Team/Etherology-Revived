@@ -4026,6 +4026,42 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
 
 
 class CommandAndProcessSafetyTests(unittest.TestCase):
+    def test_java_version_probe_has_a_tiny_explicit_heap_cap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            java_path = Path(temporary_directory).resolve() / "java"
+            java_path.write_bytes(b"not executed")
+            java_path.chmod(0o700)
+            completed = subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="java.specification.version = 21\n",
+            )
+            with mock.patch.object(
+                client.subprocess,
+                "run",
+                return_value=completed,
+            ) as run:
+                self.assertEqual(21, client.java_major_version(java_path))
+
+            run.assert_called_once_with(
+                [
+                    str(java_path),
+                    "-Xmx64M",
+                    "-XshowSettings:properties",
+                    "-version",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=20,
+                check=False,
+                env={
+                    "LANG": "C",
+                    "LC_ALL": "C",
+                    "PATH": "/usr/bin:/bin:/usr/sbin:/sbin",
+                },
+            )
+
     def command_fixture(
         self, configuration: object, temporary_root: Path, scenario: str | None
     ) -> tuple[list[str], Path, Path]:

@@ -74,12 +74,14 @@ public class EBlocks {
             BlockEntityType.Builder.create(BrewingCauldronBlockEntity::new, BREWING_CAULDRON).build(null)
     );
 
-    public static final PedestalBlock PEDESTAL_BLOCK = (PedestalBlock) new PedestalBlock().registerAll();
-    public static final BlockEntityType<PedestalBlockEntity> PEDESTAL_BLOCK_ENTITY = Registry.register(
-            Registries.BLOCK_ENTITY_TYPE,
-            EIdentifier.of("pedestal_block_entity"),
-            BlockEntityType.Builder.create(PedestalBlockEntity::new, PEDESTAL_BLOCK).build(null)
-    );
+    public static final PedestalBlock PEDESTAL_BLOCK =
+            SharedPedestalBlocks.PEDESTAL.get();
+    public static final BlockEntityType<PedestalBlockEntity> PEDESTAL_BLOCK_ENTITY =
+            SharedPedestalBlockEntities.PEDESTAL.get();
+
+    static {
+        AutoBlockLootTable.markAsAuto(PEDESTAL_BLOCK, null);
+    }
 
     public static final SedimentaryStone SEDIMENTARY_STONE = (SedimentaryStone) registerSedimentaryBlock(SealType.EMPTY, EssenceLevel.EMPTY);
     public static final Block[] SEDIMENTARY_STONES = registerSedimentaryStones();

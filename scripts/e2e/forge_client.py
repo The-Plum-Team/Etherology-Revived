@@ -13,6 +13,8 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import signal
+import socket
+import stat
 import subprocess
 import sys
 import tempfile
@@ -25,10 +27,17 @@ import urllib.request
 import uuid
 import zipfile
 
+import forge_slitherite_run_contract_v18 as slitherite_run_contract
+import java_installer_supervisor as installer_supervisor
+import macos_guarded_java
 from macos_guarded_java import (
     GuardedJavaError,
+    MacOsProcessMemorySampler,
+    MemorySample,
+    OwnedJavaProcess,
     memory_guard_is_enforcing,
     memory_guard_process_matches,
+    memory_policy_payload,
     owned_java_process_from_state,
     start_guarded_java,
     stop_guarded_java_launch,
@@ -58,68 +67,220 @@ EXPECTED_ARTIFACT_TASKS = {
     "harness": ":forge:1.20.1:remapE2eHarnessJar",
 }
 EXPECTED_DEPENDENCY_MOD_IDS = {"architectury", "geckolib"}
-EXPECTED_PRODUCTION_DATA_ENTRIES = {
-    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_slab.json",
-    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
-    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_stairs.json",
-    "data/etherology/advancements/recipes/building_blocks/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
-    "data/etherology/advancements/recipes/building_blocks/attrahite_bricks.json",
-    "data/etherology/advancements/recipes/food/forest_lantern_crumb.json",
-    "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
-    "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_smoking.json",
-    "data/etherology/advancements/recipes/misc/attrahite_brick.json",
-    "data/etherology/advancements/recipes/misc/azel_ingot.json",
-    "data/etherology/advancements/recipes/misc/azel_ingot_from_blasting.json",
-    "data/etherology/advancements/recipes/misc/leather.json",
-    "data/etherology/advancements/recipes/misc/raw_azel.json",
-    "data/etherology/ether_sources/default.json",
-    "data/etherology/loot_tables/blocks/attrahite.json",
-    "data/etherology/loot_tables/blocks/attrahite_brick_slab.json",
-    "data/etherology/loot_tables/blocks/attrahite_brick_stairs.json",
-    "data/etherology/loot_tables/blocks/attrahite_bricks.json",
-    "data/etherology/loot_tables/blocks/azel_block.json",
-    "data/etherology/loot_tables/blocks/ebony_block.json",
-    "data/etherology/loot_tables/blocks/ethereal_storage.json",
-    "data/etherology/loot_tables/blocks/ethril_block.json",
-    "data/etherology/loot_tables/blocks/forest_lantern.json",
-    "data/etherology/recipes/attrahite_brick.json",
-    "data/etherology/recipes/attrahite_brick_slab.json",
-    "data/etherology/recipes/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
-    "data/etherology/recipes/attrahite_brick_stairs.json",
-    "data/etherology/recipes/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
-    "data/etherology/recipes/attrahite_bricks.json",
-    "data/etherology/recipes/azel_block.json",
-    "data/etherology/recipes/azel_ingot.json",
-    "data/etherology/recipes/azel_ingot_from_azel_block.json",
-    "data/etherology/recipes/azel_ingot_from_blasting.json",
-    "data/etherology/recipes/ebony_block.json",
-    "data/etherology/recipes/ebony_ingot_from_ebony_block.json",
-    "data/etherology/recipes/ethril_block.json",
-    "data/etherology/recipes/ethril_ingot_from_ethril_block.json",
-    "data/etherology/recipes/forest_lantern_crumb.json",
-    "data/etherology/recipes/forest_lantern_crumb_from_campfire.json",
-    "data/etherology/recipes/forest_lantern_crumb_from_smoking.json",
-    "data/etherology/recipes/leather.json",
-    "data/etherology/recipes/raw_azel.json",
-    "data/etherology/tags/blocks/peach_logs.json",
-    "data/minecraft/tags/blocks/beacon_base_blocks.json",
-    "data/minecraft/tags/blocks/mineable/hoe.json",
-    "data/minecraft/tags/blocks/mineable/pickaxe.json",
-    "data/minecraft/tags/blocks/needs_iron_tool.json",
-    "data/minecraft/tags/blocks/needs_stone_tool.json",
-    "data/minecraft/tags/blocks/slabs.json",
-    "data/minecraft/tags/blocks/stairs.json",
-    "data/minecraft/tags/enchantment/non_treasure.json",
-    "data/minecraft/tags/game_events/vibrations.json",
-    "data/minecraft/tags/game_events/warden_can_listen.json",
-    "data/minecraft/tags/items/slabs.json",
-    "data/minecraft/tags/items/stairs.json",
-}
+EXPECTED_FOUNDATION_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/ether_sources/default.json",
+        "data/etherology/etherology/aspects/etherology.json",
+        "data/etherology/etherology/aspects/vanilla.json",
+        "data/etherology/loot_tables/blocks/ethereal_storage.json",
+    }
+)
+EXPECTED_METAL_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/loot_tables/blocks/azel_block.json",
+        "data/etherology/loot_tables/blocks/ebony_block.json",
+        "data/etherology/loot_tables/blocks/ethril_block.json",
+        "data/etherology/recipes/azel_block.json",
+        "data/etherology/recipes/azel_ingot_from_azel_block.json",
+        "data/etherology/recipes/ebony_block.json",
+        "data/etherology/recipes/ebony_ingot_from_ebony_block.json",
+        "data/etherology/recipes/ethril_block.json",
+        "data/etherology/recipes/ethril_ingot_from_ethril_block.json",
+    }
+)
+EXPECTED_FOREST_LANTERN_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/advancements/recipes/food/forest_lantern_crumb.json",
+        "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_campfire.json",
+        "data/etherology/advancements/recipes/food/forest_lantern_crumb_from_smoking.json",
+        "data/etherology/advancements/recipes/misc/leather.json",
+        "data/etherology/loot_tables/blocks/forest_lantern.json",
+        "data/etherology/recipes/forest_lantern_crumb.json",
+        "data/etherology/recipes/forest_lantern_crumb_from_campfire.json",
+        "data/etherology/recipes/forest_lantern_crumb_from_smoking.json",
+        "data/etherology/recipes/leather.json",
+    }
+)
+EXPECTED_ATTRAHITE_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/advancements/recipes/building_blocks/attrahite_brick_slab.json",
+        "data/etherology/advancements/recipes/building_blocks/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/attrahite_brick_stairs.json",
+        "data/etherology/advancements/recipes/building_blocks/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/attrahite_bricks.json",
+        "data/etherology/advancements/recipes/misc/attrahite_brick.json",
+        "data/etherology/advancements/recipes/misc/azel_ingot.json",
+        "data/etherology/advancements/recipes/misc/azel_ingot_from_blasting.json",
+        "data/etherology/advancements/recipes/misc/raw_azel.json",
+        "data/etherology/loot_tables/blocks/attrahite.json",
+        "data/etherology/loot_tables/blocks/attrahite_brick_slab.json",
+        "data/etherology/loot_tables/blocks/attrahite_brick_stairs.json",
+        "data/etherology/loot_tables/blocks/attrahite_bricks.json",
+        "data/etherology/recipes/attrahite_brick.json",
+        "data/etherology/recipes/attrahite_brick_slab.json",
+        "data/etherology/recipes/attrahite_brick_slab_from_attrahite_bricks_stonecutting.json",
+        "data/etherology/recipes/attrahite_brick_stairs.json",
+        "data/etherology/recipes/attrahite_brick_stairs_from_attrahite_bricks_stonecutting.json",
+        "data/etherology/recipes/attrahite_bricks.json",
+        "data/etherology/recipes/azel_ingot.json",
+        "data/etherology/recipes/azel_ingot_from_blasting.json",
+        "data/etherology/recipes/raw_azel.json",
+    }
+)
+EXPECTED_SLITHERITE_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/advancements/recipes/building_blocks/chiseled_polished_slitherite.json",
+        "data/etherology/advancements/recipes/building_blocks/chiseled_polished_slitherite_bricks.json",
+        "data/etherology/advancements/recipes/building_blocks/chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/chiseled_polished_slitherite_from_polished_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/cracked_polished_slitherite_bricks.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_brick_slab.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_brick_stairs.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_bricks.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_bricks_from_polished_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_from_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_slab.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_slab_from_polished_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_stairs.json",
+        "data/etherology/advancements/recipes/building_blocks/polished_slitherite_stairs_from_polished_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/slitherite_slab.json",
+        "data/etherology/advancements/recipes/building_blocks/slitherite_slab_from_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/building_blocks/slitherite_stairs.json",
+        "data/etherology/advancements/recipes/building_blocks/slitherite_stairs_from_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/decorations/polished_slitherite_brick_wall.json",
+        "data/etherology/advancements/recipes/decorations/polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/advancements/recipes/decorations/polished_slitherite_wall.json",
+        "data/etherology/advancements/recipes/decorations/polished_slitherite_wall_from_polished_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/decorations/slitherite_wall.json",
+        "data/etherology/advancements/recipes/decorations/slitherite_wall_from_slitherite_stonecutting.json",
+        "data/etherology/advancements/recipes/decorations/stonecutter.json",
+        "data/etherology/advancements/recipes/redstone/comparator.json",
+        "data/etherology/advancements/recipes/redstone/polished_slitherite_button.json",
+        "data/etherology/advancements/recipes/redstone/polished_slitherite_pressure_plate.json",
+        "data/etherology/advancements/recipes/redstone/repeater.json",
+        "data/etherology/loot_tables/blocks/chiseled_polished_slitherite.json",
+        "data/etherology/loot_tables/blocks/chiseled_polished_slitherite_bricks.json",
+        "data/etherology/loot_tables/blocks/cracked_polished_slitherite_bricks.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_brick_slab.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_brick_stairs.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_brick_wall.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_bricks.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_button.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_pressure_plate.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_slab.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_stairs.json",
+        "data/etherology/loot_tables/blocks/polished_slitherite_wall.json",
+        "data/etherology/loot_tables/blocks/slitherite.json",
+        "data/etherology/loot_tables/blocks/slitherite_slab.json",
+        "data/etherology/loot_tables/blocks/slitherite_stairs.json",
+        "data/etherology/loot_tables/blocks/slitherite_wall.json",
+        "data/etherology/recipes/chiseled_polished_slitherite.json",
+        "data/etherology/recipes/chiseled_polished_slitherite_bricks.json",
+        "data/etherology/recipes/chiseled_polished_slitherite_bricks_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/recipes/chiseled_polished_slitherite_from_polished_slitherite_stonecutting.json",
+        "data/etherology/recipes/comparator.json",
+        "data/etherology/recipes/cracked_polished_slitherite_bricks.json",
+        "data/etherology/recipes/polished_slitherite.json",
+        "data/etherology/recipes/polished_slitherite_brick_slab.json",
+        "data/etherology/recipes/polished_slitherite_brick_slab_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_brick_stairs.json",
+        "data/etherology/recipes/polished_slitherite_brick_stairs_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_brick_wall.json",
+        "data/etherology/recipes/polished_slitherite_brick_wall_from_polished_slitherite_bricks_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_bricks.json",
+        "data/etherology/recipes/polished_slitherite_bricks_from_polished_slitherite_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_button.json",
+        "data/etherology/recipes/polished_slitherite_from_slitherite_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_pressure_plate.json",
+        "data/etherology/recipes/polished_slitherite_slab.json",
+        "data/etherology/recipes/polished_slitherite_slab_from_polished_slitherite_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_stairs.json",
+        "data/etherology/recipes/polished_slitherite_stairs_from_polished_slitherite_stonecutting.json",
+        "data/etherology/recipes/polished_slitherite_wall.json",
+        "data/etherology/recipes/polished_slitherite_wall_from_polished_slitherite_stonecutting.json",
+        "data/etherology/recipes/repeater.json",
+        "data/etherology/recipes/slitherite_slab.json",
+        "data/etherology/recipes/slitherite_slab_from_slitherite_stonecutting.json",
+        "data/etherology/recipes/slitherite_stairs.json",
+        "data/etherology/recipes/slitherite_stairs_from_slitherite_stonecutting.json",
+        "data/etherology/recipes/slitherite_wall.json",
+        "data/etherology/recipes/slitherite_wall_from_slitherite_stonecutting.json",
+        "data/etherology/recipes/stonecutter.json",
+    }
+)
+EXPECTED_WARP_COUNTER_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/advancements/recipes/tools/warp_counter.json",
+        "data/etherology/recipes/warp_counter.json",
+    }
+)
+EXPECTED_PEDESTAL_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/advancements/recipes/decorations/pedestal.json",
+        "data/etherology/loot_tables/blocks/pedestal.json",
+        "data/etherology/recipes/pedestal.json",
+    }
+)
+EXPECTED_ALCHEMY_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/recipes/binder.json",
+        "data/etherology/recipes/ebony_ingot.json",
+        "data/etherology/recipes/glint_shard.json",
+        "data/etherology/recipes/unadjusted_lens.json",
+    }
+)
+EXPECTED_TAG_DATA_ENTRIES = frozenset(
+    {
+        "data/etherology/tags/blocks/peach_logs.json",
+        "data/minecraft/tags/blocks/beacon_base_blocks.json",
+        "data/minecraft/tags/blocks/mineable/hoe.json",
+        "data/minecraft/tags/blocks/mineable/pickaxe.json",
+        "data/minecraft/tags/blocks/needs_iron_tool.json",
+        "data/minecraft/tags/blocks/needs_stone_tool.json",
+        "data/minecraft/tags/blocks/slabs.json",
+        "data/minecraft/tags/blocks/stairs.json",
+        "data/minecraft/tags/blocks/stone_bricks.json",
+        "data/minecraft/tags/blocks/stone_pressure_plates.json",
+        "data/minecraft/tags/blocks/walls.json",
+        "data/minecraft/tags/enchantment/non_treasure.json",
+        "data/minecraft/tags/game_events/vibrations.json",
+        "data/minecraft/tags/game_events/warden_can_listen.json",
+        "data/minecraft/tags/items/buttons.json",
+        "data/minecraft/tags/items/slabs.json",
+        "data/minecraft/tags/items/stairs.json",
+        "data/minecraft/tags/items/walls.json",
+    }
+)
+EXPECTED_PRODUCTION_DATA_ENTRY_GROUPS = (
+    EXPECTED_FOUNDATION_DATA_ENTRIES,
+    EXPECTED_METAL_DATA_ENTRIES,
+    EXPECTED_FOREST_LANTERN_DATA_ENTRIES,
+    EXPECTED_ATTRAHITE_DATA_ENTRIES,
+    EXPECTED_SLITHERITE_DATA_ENTRIES,
+    EXPECTED_WARP_COUNTER_DATA_ENTRIES,
+    EXPECTED_PEDESTAL_DATA_ENTRIES,
+    EXPECTED_ALCHEMY_DATA_ENTRIES,
+    EXPECTED_TAG_DATA_ENTRIES,
+)
+EXPECTED_PRODUCTION_DATA_ENTRIES = frozenset().union(
+    *EXPECTED_PRODUCTION_DATA_ENTRY_GROUPS
+)
 STOP_TIMEOUT_SECONDS = 20
 START_STABILITY_SECONDS = 2.0
 START_IDENTITY_GRACE_SECONDS = 0.5
 MAXIMUM_DOWNLOAD_SIZE = 128 * 1024 * 1024
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
+JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT = "-Xmx64M"
+INSTALLER_OPERATION_PATH = STATE_ROOT / ".java-installer-operation.pending.json"
+MAXIMUM_INSTALLER_OPERATION_SIZE = 16 * 1024
+SUPERVISOR_BIND_TIMEOUT_SECONDS = 2.0
+SUPERVISOR_HANDOFF_TIMEOUT_SECONDS = 15.0
+SUPERVISOR_SHUTDOWN_TIMEOUT_SECONDS = 30.0
+SUPERVISOR_ABSENCE_TIMEOUT_SECONDS = 2.0
 FORGE_MAIN_CLASS = "cpw.mods.bootstraplauncher.BootstrapLauncher"
 FATAL_CLIENT_LOG_MARKERS = (
     "A mod crashed on startup!",
@@ -132,6 +293,39 @@ FATAL_CLIENT_LOG_MARKERS = (
 
 class E2EError(RuntimeError):
     """Reports a fail-closed Forge profile or lifecycle failure."""
+
+
+class InstallerCleanupUncertain(E2EError):
+    """Requires preserving staging evidence when installer cleanup is uncertain."""
+
+
+@dataclass(frozen=True)
+class InstallerOperation:
+    """Holds the exact durable token that excludes concurrent Java installers."""
+
+    run_id: str
+    profile_id: str
+    controller_pid: int
+    content: bytes
+
+
+@dataclass
+class InstallerSupervisorController:
+    """Owns one bound installer supervisor and its private control capability."""
+
+    operation: InstallerOperation
+    process: subprocess.Popen[bytes]
+    target: OwnedJavaProcess
+    session_id: int
+    sampler: MacOsProcessMemorySampler
+    control_socket: socket.socket
+    control: installer_supervisor.FramedControl
+    runtime_directory: Path
+    java_target: OwnedJavaProcess | None = None
+    monitor_target: OwnedJavaProcess | None = None
+    handoff: dict[str, object] | None = None
+    java_returncode: int | None = None
+    activated: bool = False
 
 
 @dataclass(frozen=True)
@@ -301,7 +495,7 @@ def validate_manifest_shape(
     profile_id = safe_leaf_name(profile.get("id"), "profile.id")
     if re.fullmatch(r"[a-z0-9][a-z0-9.-]+", profile_id) is None:
         raise E2EError("The Forge profile id is not stable lowercase text")
-    if profile_id != "etherology-e2e-forge-1.20.1-v18":
+    if profile_id != slitherite_run_contract.PROFILE_ID:
         raise E2EError("The Forge profile id differs from the isolated profile contract")
     if profile.get("runtime_directory") != profile_id:
         raise E2EError("The Forge runtime directory must equal its unique profile id")
@@ -358,7 +552,7 @@ def validate_manifest_shape(
         "ethereal-channel",
         "forest-lantern",
         "attrahite-block-registry",
-        "slitherite-block-registry",
+        slitherite_run_contract.SCENARIO_ID,
     ]:
         raise E2EError(
             "The Forge harness must expose storage, channel, Forest Lantern, "
@@ -573,6 +767,29 @@ def resolve_scenario_id(
     raise E2EError(f"Unsupported Forge E2E scenario {scenario_id!r}; expected {scenarios}")
 
 
+def require_slitherite_harness_pin() -> tuple[int, str]:
+    try:
+        return slitherite_run_contract.require_harness_pin()
+    except slitherite_run_contract.RunContractError as exception:
+        raise E2EError(str(exception)) from exception
+
+
+def resolve_slitherite_run_scenario_id(
+    configuration: ResolvedConfiguration, configured_scenario_id: str | None
+) -> str:
+    try:
+        scenario_id = slitherite_run_contract.require_explicit_scenario(
+            configured_scenario_id
+        )
+    except slitherite_run_contract.RunContractError as exception:
+        raise E2EError(str(exception)) from exception
+    if scenario_id not in scenario_ids(configuration):
+        raise E2EError(
+            f"Forge Slitherite v18 scenario is absent from the active profile: {scenario_id}"
+        )
+    return scenario_id
+
+
 def runtime_root(
     configuration: ResolvedConfiguration, state_root: Path = STATE_ROOT
 ) -> Path:
@@ -628,6 +845,118 @@ def ensure_owned_state_roots(state_root: Path = STATE_ROOT) -> None:
     ensure_directory_is_not_linked(state_root / "runtimes", "Forge E2E runtimes root")
 
 
+def installer_operation_path(state_root: Path = STATE_ROOT) -> Path:
+    return state_root / INSTALLER_OPERATION_PATH.name
+
+
+def require_no_installer_operation(state_root: Path = STATE_ROOT) -> None:
+    path = installer_operation_path(state_root)
+    if path.exists() or path.is_symlink():
+        raise InstallerCleanupUncertain(
+            "A prior Forge installer operation is still active or cleanup-unproven; "
+            f"refusing another Java launch: {path}"
+        )
+
+
+def acquire_installer_operation(
+    configuration: ResolvedConfiguration,
+    state_root: Path = STATE_ROOT,
+) -> InstallerOperation:
+    """Creates the one durable repository-owned installer interlock."""
+
+    ensure_owned_state_roots(state_root)
+    state_root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    require_no_installer_operation(state_root)
+    run_id = hashlib.sha256(os.urandom(32)).hexdigest()
+    profile_id = str(profile_spec(configuration)["id"])
+    controller_pid = os.getpid()
+    payload = {
+        "schema": 1,
+        "run_id": run_id,
+        "profile_id": profile_id,
+        "controller_pid": controller_pid,
+    }
+    content = (
+        json.dumps(payload, ensure_ascii=True, separators=(",", ":"), sort_keys=True)
+        + "\n"
+    ).encode("utf-8")
+    path = installer_operation_path(state_root)
+    try:
+        write_private_text_exclusive(path, content.decode("utf-8"))
+    except FileExistsError as exception:
+        raise InstallerCleanupUncertain(
+            "Another Forge installer operation acquired the durable interlock: "
+            f"{path}"
+        ) from exception
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot acquire the durable Forge installer interlock: {exception}"
+        ) from exception
+    return InstallerOperation(run_id, profile_id, controller_pid, content)
+
+
+def verify_installer_operation(
+    operation: InstallerOperation,
+    state_root: Path = STATE_ROOT,
+) -> tuple[int, int]:
+    path = installer_operation_path(state_root)
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW)
+        file_stat = os.fstat(descriptor)
+        with os.fdopen(descriptor, "rb", closefd=False) as handle:
+            content = handle.read(MAXIMUM_INSTALLER_OPERATION_SIZE + 1)
+        final_stat = os.fstat(descriptor)
+        if (
+            path.is_symlink()
+            or not stat.S_ISREG(file_stat.st_mode)
+            or file_stat.st_uid != os.getuid()
+            or stat.S_IMODE(file_stat.st_mode) != 0o600
+            or file_stat.st_size <= 0
+            or file_stat.st_size > MAXIMUM_INSTALLER_OPERATION_SIZE
+            or content != operation.content
+            or (file_stat.st_dev, file_stat.st_ino, file_stat.st_size)
+            != (final_stat.st_dev, final_stat.st_ino, final_stat.st_size)
+        ):
+            raise InstallerCleanupUncertain(
+                "The durable Forge installer interlock changed while held"
+            )
+    except OSError as exception:
+        raise InstallerCleanupUncertain(
+            f"Cannot revalidate the durable Forge installer interlock: {exception}"
+        ) from exception
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    return file_stat.st_dev, file_stat.st_ino
+
+
+def release_installer_operation(
+    operation: InstallerOperation,
+    state_root: Path = STATE_ROOT,
+) -> None:
+    """Releases only the exact durable token held by this controller."""
+
+    expected_identity = verify_installer_operation(operation, state_root)
+    path = installer_operation_path(state_root)
+    try:
+        current_stat = path.stat(follow_symlinks=False)
+        if (current_stat.st_dev, current_stat.st_ino) != expected_identity:
+            raise InstallerCleanupUncertain(
+                "The durable Forge installer interlock changed before release"
+            )
+        path.unlink()
+        directory_descriptor = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(directory_descriptor)
+        finally:
+            os.close(directory_descriptor)
+    except OSError as exception:
+        raise InstallerCleanupUncertain(
+            f"Cannot durably release the Forge installer interlock: {exception}"
+        ) from exception
+
+
 def write_private_text_exclusive(path: Path, content: str) -> None:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
@@ -659,6 +988,7 @@ def reserve_launch_attempt(
     scenario_id: str,
     state_root: Path = STATE_ROOT,
 ) -> Path:
+    scenario_id = resolve_slitherite_run_scenario_id(configuration, scenario_id)
     require_unattempted_profile(configuration, state_root)
     attempt = launch_attempt_path(configuration, state_root)
     content = (
@@ -780,6 +1110,11 @@ def verify_exact_file(
         raise E2EError(f"{description} failed SHA-256 validation: {path}")
 
 
+def verify_slitherite_harness_artifact(path: Path, description: str) -> None:
+    expected_size, expected_sha256 = require_slitherite_harness_pin()
+    verify_exact_file(path, expected_sha256, expected_size, description)
+
+
 def copy_response(response: BinaryIO, handle: BinaryIO, maximum_size: int) -> int:
     total_size = 0
     while True:
@@ -845,7 +1180,12 @@ def java_major_version(java_path: Path) -> int | None:
         return None
     try:
         completed = subprocess.run(
-            [str(java_path), "-XshowSettings:properties", "-version"],
+            [
+                str(java_path),
+                JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT,
+                "-XshowSettings:properties",
+                "-version",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -860,7 +1200,17 @@ def java_major_version(java_path: Path) -> int | None:
     return int(match.group(1))
 
 
+def require_safe_java_option_environment() -> None:
+    """Rejects inherited JVM option injection through the shared guard contract."""
+
+    try:
+        verify_java_option_environment(os.environ)
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
+
+
 def resolve_java_17() -> Path:
+    require_safe_java_option_environment()
     candidates: list[Path] = []
     override = os.environ.get(JAVA_OVERRIDE_ENVIRONMENT_VARIABLE)
     if override:
@@ -1659,9 +2009,1127 @@ def verify_runtime(
     return discovered_mod_ids
 
 
-def install_isolated_game(
-    configuration: ResolvedConfiguration, root: Path, java_path: Path
+def installer_process_group_exists(process_group_id: int) -> bool:
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError as exception:
+        raise InstallerCleanupUncertain(
+            "Cannot verify the installer supervisor process group"
+        ) from exception
+    return True
+
+
+def wait_for_installer_process_group_absence(process_group_id: int) -> None:
+    """Waits briefly for a reaped anchor's killed process group to disappear."""
+
+    deadline = time.monotonic() + SUPERVISOR_ABSENCE_TIMEOUT_SECONDS
+    while installer_process_group_exists(process_group_id):
+        if time.monotonic() >= deadline:
+            raise InstallerCleanupUncertain(
+                "Installer supervisor process group remained after anchor exit"
+            )
+        time.sleep(0.05)
+
+
+def bind_installer_supervisor(
+    process: subprocess.Popen[bytes],
+    sampler: MacOsProcessMemorySampler,
+) -> tuple[OwnedJavaProcess, int]:
+    expected_executable = str(Path(sys.executable).resolve(strict=True))
+    deadline = time.monotonic() + SUPERVISOR_BIND_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        if process.poll() is not None:
+            break
+        try:
+            process_group_id = os.getpgid(process.pid)
+            session_id = os.getsid(process.pid)
+        except ProcessLookupError:
+            time.sleep(0.01)
+            continue
+        if process_group_id == process.pid and session_id == process.pid:
+            target = sampler.bind(
+                process.pid,
+                process_group_id,
+                expected_executable,
+            )
+            if target is not None:
+                return target, session_id
+        time.sleep(0.01)
+    raise E2EError("Installer supervisor identity could not be bound before activation")
+
+
+def verify_installer_supervisor_live(
+    controller: InstallerSupervisorController,
 ) -> None:
+    if controller.process.poll() is not None:
+        raise E2EError("Installer supervisor exited before protocol completion")
+    if controller.sampler.revalidate(controller.target) != controller.target:
+        raise E2EError("Installer supervisor identity changed during provisioning")
+    try:
+        process_group_id = os.getpgid(controller.target.pid)
+        session_id = os.getsid(controller.target.pid)
+    except ProcessLookupError as exception:
+        raise E2EError("Installer supervisor vanished during provisioning") from exception
+    if (
+        process_group_id != controller.target.process_group_id
+        or session_id != controller.session_id
+    ):
+        raise E2EError("Installer supervisor group or session identity changed")
+
+
+def supervisor_activation_frame(
+    controller: InstallerSupervisorController,
+    java_path: Path,
+    forge_installer: Path,
+    launcher_root: Path,
+    expected_installer_sha256: str,
+) -> dict[str, object]:
+    installer_content = read_bounded_stable_private_file(
+        forge_installer,
+        installer_supervisor.MAXIMUM_INSTALLER_SIZE,
+        "pinned Forge installer",
+    )
+    installer_sha256 = hashlib.sha256(installer_content).hexdigest()
+    if (
+        re.fullmatch(r"[0-9a-f]{64}", expected_installer_sha256) is None
+        or installer_sha256 != expected_installer_sha256
+    ):
+        raise E2EError("Pinned Forge installer changed before supervisor activation")
+    return {
+        "schema": installer_supervisor.SCHEMA,
+        "action": "ACTIVATE",
+        "run_id": controller.operation.run_id,
+        "controller_pid": controller.operation.controller_pid,
+        "supervisor_pid": controller.target.pid,
+        "supervisor_process_group_id": controller.target.process_group_id,
+        "supervisor_session_id": controller.session_id,
+        "supervisor_proc_start_abstime": controller.target.proc_start_abstime,
+        "supervisor_executable": controller.target.expected_executable,
+        "installer_kind": installer_supervisor.INSTALLER_KIND_FORGE_CLIENT,
+        "java_path": str(java_path),
+        "installer_path": str(forge_installer),
+        "installer_size": len(installer_content),
+        "installer_sha256": installer_sha256,
+        "launcher_root": str(launcher_root),
+        "runtime_directory": str(controller.runtime_directory),
+        "maximum_memory_mb": installer_supervisor.MAXIMUM_MEMORY_MB,
+        "install_timeout_seconds": installer_supervisor.INSTALL_TIMEOUT_SECONDS,
+    }
+
+
+def spawn_installer_supervisor(
+    operation: InstallerOperation,
+    runtime_directory: Path,
+) -> InstallerSupervisorController:
+    verify_installer_operation(operation, STATE_ROOT)
+    if (
+        not runtime_directory.is_absolute()
+        or not runtime_directory.is_dir()
+        or runtime_directory.is_symlink()
+        or stat.S_IMODE(runtime_directory.stat(follow_symlinks=False).st_mode) != 0o700
+        or any(runtime_directory.iterdir())
+    ):
+        raise E2EError("Installer supervisor runtime is not a fresh 0700 directory")
+    controller_socket, child_socket = socket.socketpair(
+        socket.AF_UNIX,
+        socket.SOCK_STREAM,
+    )
+    process: subprocess.Popen[bytes] | None = None
+    try:
+        verify_installer_operation(operation, STATE_ROOT)
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-B",
+                str((SCRIPT_DIRECTORY / "java_installer_supervisor.py").resolve()),
+                "--control-fd",
+                str(child_socket.fileno()),
+            ],
+            cwd=REPOSITORY_ROOT,
+            env=dict(os.environ),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            close_fds=True,
+            pass_fds=(child_socket.fileno(),),
+        )
+        child_socket.close()
+        sampler = MacOsProcessMemorySampler.native()
+        target, session_id = bind_installer_supervisor(process, sampler)
+        return InstallerSupervisorController(
+            operation=operation,
+            process=process,
+            target=target,
+            session_id=session_id,
+            sampler=sampler,
+            control_socket=controller_socket,
+            control=installer_supervisor.FramedControl(controller_socket),
+            runtime_directory=runtime_directory,
+        )
+    except BaseException as launch_exception:
+        cleanup_failures: list[BaseException] = []
+        for endpoint in (child_socket, controller_socket):
+            try:
+                endpoint.close()
+            except BaseException as cleanup_exception:
+                cleanup_failures.append(cleanup_exception)
+        if process is not None:
+            try:
+                returncode = process.wait(timeout=SUPERVISOR_SHUTDOWN_TIMEOUT_SECONDS)
+                if returncode != -signal.SIGKILL:
+                    raise InstallerCleanupUncertain(
+                        "Installer supervisor setup failed without an exact clean group exit"
+                    )
+                wait_for_installer_process_group_absence(process.pid)
+            except BaseException as cleanup_exception:
+                cleanup_failures.append(cleanup_exception)
+            if cleanup_failures:
+                raise InstallerCleanupUncertain(
+                    "Installer supervisor setup failed and every post-spawn cleanup "
+                    "step could not be proven"
+                ) from cleanup_failures[0]
+        elif cleanup_failures:
+            raise E2EError(
+                "Installer supervisor setup failed before spawn and its local "
+                "capability could not be closed"
+            ) from cleanup_failures[0]
+        raise
+
+
+def owned_process_from_frame(
+    frame: dict[str, object],
+    prefix: str,
+) -> OwnedJavaProcess:
+    try:
+        return OwnedJavaProcess(
+            pid=frame[f"{prefix}_pid"],
+            process_group_id=frame[f"{prefix}_process_group_id"],
+            proc_start_abstime=frame[f"{prefix}_proc_start_abstime"],
+            expected_executable=frame[f"{prefix}_executable"],
+        )
+    except (KeyError, TypeError, ValueError) as exception:
+        raise E2EError(f"Installer {prefix} identity frame is invalid") from exception
+
+
+def require_supervisor_frame_fields(
+    frame: dict[str, object],
+    expected_fields: set[str],
+    action: str,
+    run_id: str,
+) -> None:
+    try:
+        installer_supervisor.require_exact_fields(frame, expected_fields, action)
+    except installer_supervisor.SupervisorError as exception:
+        raise E2EError(str(exception)) from exception
+    if frame["run_id"] != run_id:
+        raise E2EError(f"Installer supervisor {action} changed the operation run ID")
+
+
+def installer_guard_state(
+    controller: InstallerSupervisorController,
+    handoff: dict[str, object],
+) -> dict[str, object]:
+    if controller.java_target is None:
+        raise E2EError("Installer handoff has no bound Java identity")
+    return {
+        "pid": controller.java_target.pid,
+        "process_group_id": controller.java_target.process_group_id,
+        "proc_start_abstime": controller.java_target.proc_start_abstime,
+        "expected_executable": controller.java_target.expected_executable,
+        "memory_guard_pid": handoff["monitor_pid"],
+        "memory_guard_telemetry": handoff["monitor_telemetry"],
+        "memory_guard_readiness": handoff["monitor_readiness"],
+        "memory_guard_maximum_memory_mb": installer_supervisor.MAXIMUM_MEMORY_MB,
+        "memory_guard_group_anchor": {
+            "pid": controller.target.pid,
+            "process_group_id": controller.target.process_group_id,
+            "proc_start_abstime": controller.target.proc_start_abstime,
+            "expected_executable": controller.target.expected_executable,
+        },
+    }
+
+
+def validate_supervisor_handoff(
+    controller: InstallerSupervisorController,
+    frame: dict[str, object],
+    java_path: Path,
+    forge_installer: Path,
+    launcher_root: Path,
+) -> None:
+    expected_fields = {
+        "schema",
+        "action",
+        "run_id",
+        "supervisor_pid",
+        "supervisor_process_group_id",
+        "supervisor_session_id",
+        "supervisor_proc_start_abstime",
+        "supervisor_executable",
+        "java_pid",
+        "java_process_group_id",
+        "java_session_id",
+        "java_proc_start_abstime",
+        "java_executable",
+        "monitor_pid",
+        "monitor_process_group_id",
+        "monitor_session_id",
+        "monitor_proc_start_abstime",
+        "monitor_executable",
+        "monitor_target",
+        "monitor_group_anchor",
+        "monitor_readiness",
+        "monitor_telemetry",
+        "memory_policy",
+        "installer_output_log",
+        "monitor_output_log",
+        "installer_command_sha256",
+        "lease_interval_seconds",
+        "lease_expiry_seconds",
+    }
+    require_supervisor_frame_fields(
+        frame,
+        expected_fields,
+        "HANDOFF",
+        controller.operation.run_id,
+    )
+    supervisor_target = owned_process_from_frame(frame, "supervisor")
+    java_target = owned_process_from_frame(frame, "java")
+    monitor_target = owned_process_from_frame(frame, "monitor")
+    if (
+        supervisor_target != controller.target
+        or frame["supervisor_session_id"] != controller.session_id
+        or java_target.expected_executable != str(java_path)
+        or java_target.process_group_id != controller.target.process_group_id
+        or frame["java_session_id"] != controller.session_id
+        or monitor_target.pid != monitor_target.process_group_id
+        or frame["monitor_session_id"] != monitor_target.pid
+        or monitor_target.expected_executable
+        != str(Path(sys.executable).resolve(strict=True))
+        or frame["monitor_target"]
+        != installer_supervisor.identity_payload(java_target)
+        or frame["monitor_group_anchor"]
+        != installer_supervisor.identity_payload(controller.target)
+    ):
+        raise E2EError("Installer supervisor HANDOFF identities do not match")
+    if (
+        controller.sampler.revalidate(java_target) != java_target
+        or controller.sampler.revalidate(monitor_target) != monitor_target
+    ):
+        raise E2EError("Installer Java or memory-guard identity is not live at handoff")
+    try:
+        java_session_id = os.getsid(java_target.pid)
+        monitor_session_id = os.getsid(monitor_target.pid)
+    except ProcessLookupError as exception:
+        raise E2EError("Installer handoff process vanished during validation") from exception
+    if java_session_id != controller.session_id or monitor_session_id != monitor_target.pid:
+        raise E2EError("Installer handoff session membership changed")
+    runtime = controller.runtime_directory
+    expected_paths = {
+        "monitor_readiness": str(runtime / macos_guarded_java.READINESS_FILE_NAME),
+        "monitor_telemetry": str(runtime / macos_guarded_java.TELEMETRY_FILE_NAME),
+        "installer_output_log": str(runtime / installer_supervisor.INSTALLER_LOG_NAME),
+        "monitor_output_log": str(runtime / installer_supervisor.MONITOR_LOG_NAME),
+    }
+    if any(frame[name] != path for name, path in expected_paths.items()):
+        raise E2EError("Installer supervisor HANDOFF escaped its owned runtime")
+    expected_command = [
+        str(java_path),
+        installer_supervisor.EXACT_HEAP_ARGUMENT,
+        "-jar",
+        str(forge_installer),
+        "--installClient",
+        str(launcher_root),
+    ]
+    if (
+        frame["memory_policy"]
+        != memory_policy_payload(installer_supervisor.MAXIMUM_MEMORY_MB)
+        or frame["installer_command_sha256"]
+        != installer_supervisor.installer_command_sha256(expected_command)
+        or frame["lease_interval_seconds"]
+        != int(installer_supervisor.LEASE_INTERVAL_SECONDS)
+        or frame["lease_expiry_seconds"]
+        != int(installer_supervisor.LEASE_EXPIRY_SECONDS)
+    ):
+        raise E2EError("Installer supervisor HANDOFF policy or command changed")
+    controller.java_target = java_target
+    controller.monitor_target = monitor_target
+    controller.handoff = frame
+    verify_supervised_installer_guard(controller)
+
+
+def verify_supervised_installer_guard(
+    controller: InstallerSupervisorController,
+) -> None:
+    verify_installer_supervisor_live(controller)
+    handoff = controller.handoff
+    if handoff is None or controller.java_target is None or controller.monitor_target is None:
+        raise E2EError("Installer supervisor has no validated guarded handoff")
+    if (
+        controller.sampler.revalidate(controller.java_target) != controller.java_target
+        or controller.sampler.revalidate(controller.monitor_target)
+        != controller.monitor_target
+    ):
+        raise E2EError("Installer Java or memory guard identity changed")
+    state = installer_guard_state(controller, handoff)
+    try:
+        verify_guard_state_paths(state, controller.runtime_directory)
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
+    if not memory_guard_process_matches(state) or not memory_guard_is_enforcing(state):
+        raise E2EError("Installer memory guard stopped authoritative enforcement")
+
+
+def validate_supervisor_error(
+    controller: InstallerSupervisorController,
+    frame: dict[str, object],
+) -> str:
+    require_supervisor_frame_fields(
+        frame,
+        {
+            "schema",
+            "action",
+            "run_id",
+            "code",
+            "detail",
+            "out_of_group_cleanup_complete",
+            "anchor_group_kill_pending",
+        },
+        "ERROR",
+        controller.operation.run_id,
+    )
+    code = frame["code"]
+    detail = frame["detail"]
+    if (
+        not isinstance(code, str)
+        or code not in installer_supervisor.ERROR_CODES
+        or not isinstance(detail, str)
+        or len(detail.encode("utf-8")) > installer_supervisor.MAXIMUM_ERROR_DETAIL_BYTES
+        or type(frame["out_of_group_cleanup_complete"]) is not bool
+        or frame["anchor_group_kill_pending"] is not True
+    ):
+        raise E2EError("Installer supervisor ERROR frame is invalid")
+    if frame["out_of_group_cleanup_complete"] is not True:
+        raise InstallerCleanupUncertain(
+            f"Installer supervisor could not stop its external monitor: {detail}"
+        )
+    return f"{code}: {detail}"
+
+
+def receive_supervisor_frame(
+    controller: InstallerSupervisorController,
+    deadline: float,
+) -> dict[str, object]:
+    while True:
+        controller.control.poll()
+        if controller.control.frames:
+            return controller.control.frames.popleft()
+        if controller.control.eof:
+            raise E2EError("Installer supervisor capability closed before a reply")
+        verify_installer_supervisor_live(controller)
+        if time.monotonic() >= deadline:
+            raise E2EError("Timed out waiting for the installer supervisor")
+        time.sleep(installer_supervisor.POLL_INTERVAL_SECONDS)
+
+
+def sample_owned_process(
+    sampler: MacOsProcessMemorySampler,
+    target: OwnedJavaProcess,
+) -> MemorySample:
+    """Samples one pinned process without collapsing errors into absence."""
+
+    try:
+        return sampler.sample(target, time.monotonic_ns())
+    except BaseException as exception:
+        raise E2EError("Cannot authoritatively sample an owned process") from exception
+
+
+def wait_for_supervisor_group_exit(
+    controller: InstallerSupervisorController,
+) -> None:
+    try:
+        returncode = controller.process.wait(
+            timeout=SUPERVISOR_SHUTDOWN_TIMEOUT_SECONDS
+        )
+    except subprocess.TimeoutExpired as exception:
+        raise InstallerCleanupUncertain(
+            "Installer supervisor did not terminate its anchored process group"
+        ) from exception
+    if returncode != -signal.SIGKILL:
+        raise InstallerCleanupUncertain(
+            f"Installer supervisor exited with unexpected status {returncode}"
+        )
+    deadline = time.monotonic() + SUPERVISOR_ABSENCE_TIMEOUT_SECONDS
+    while True:
+        group_remains = installer_process_group_exists(
+            controller.target.process_group_id
+        )
+        try:
+            monitor_sample = (
+                None
+                if controller.monitor_target is None
+                else sample_owned_process(controller.sampler, controller.monitor_target)
+            )
+        except E2EError as exception:
+            raise InstallerCleanupUncertain(
+                "Installer memory guard absence could not be sampled"
+            ) from exception
+        monitor_remains = (
+            monitor_sample is not None
+            and monitor_sample.status is not macos_guarded_java.SampleStatus.MISSING
+        )
+        if not group_remains and not monitor_remains:
+            return
+        if time.monotonic() >= deadline:
+            remaining = []
+            if group_remains:
+                remaining.append("anchored process group")
+            if monitor_remains:
+                remaining.append(
+                    "memory guard identity with status "
+                    f"{monitor_sample.status.value if monitor_sample is not None else 'unknown'}"
+                )
+            raise InstallerCleanupUncertain(
+                "Installer cleanup left live ownership: " + ", ".join(remaining)
+            )
+        time.sleep(0.05)
+
+
+def read_bounded_stable_private_file(
+    path: Path,
+    maximum_size: int,
+    description: str,
+) -> bytes:
+    """Reads one owner-private regular file through a stable no-follow handle."""
+
+    if maximum_size < 0:
+        raise ValueError("The bounded file size must not be negative")
+    flags = os.O_RDONLY | os.O_NOFOLLOW
+    if hasattr(os, "O_CLOEXEC"):
+        flags |= os.O_CLOEXEC
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exception:
+        raise E2EError(f"Cannot open {description}: {exception}") from exception
+    try:
+        before = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(before.st_mode)
+            or before.st_uid != os.getuid()
+            or stat.S_IMODE(before.st_mode) != 0o600
+            or before.st_nlink != 1
+        ):
+            raise E2EError(f"The {description} is not an owner-private regular file")
+        if before.st_size < 0 or before.st_size > maximum_size:
+            raise E2EError(f"The {description} exceeded its strict size bound")
+        content = bytearray()
+        while len(content) <= maximum_size:
+            try:
+                chunk = os.read(
+                    descriptor,
+                    min(64 * 1024, maximum_size + 1 - len(content)),
+                )
+            except InterruptedError:
+                continue
+            if not chunk:
+                break
+            content.extend(chunk)
+        if len(content) > maximum_size:
+            raise E2EError(f"The {description} exceeded its strict size bound")
+        after = os.fstat(descriptor)
+        named = path.stat(follow_symlinks=False)
+        stable_fields = (
+            "st_dev",
+            "st_ino",
+            "st_mode",
+            "st_nlink",
+            "st_uid",
+            "st_size",
+            "st_mtime_ns",
+            "st_ctime_ns",
+        )
+        if (
+            any(getattr(before, field) != getattr(after, field) for field in stable_fields)
+            or before.st_dev != named.st_dev
+            or before.st_ino != named.st_ino
+            or len(content) != after.st_size
+        ):
+            raise E2EError(f"The {description} changed while it was read")
+        return bytes(content)
+    except OSError as exception:
+        raise E2EError(f"Cannot read {description}: {exception}") from exception
+    finally:
+        os.close(descriptor)
+
+
+def installer_output_tail(controller: InstallerSupervisorController) -> bytes:
+    if controller.handoff is None:
+        raise E2EError("Installer supervisor has no output-log handoff")
+    path = Path(str(controller.handoff["installer_output_log"]))
+    return read_bounded_stable_private_file(
+        path,
+        installer_supervisor.MAXIMUM_OUTPUT_TAIL_SIZE,
+        "installer supervisor output tail",
+    )
+
+
+def validate_supervisor_java_exited(
+    controller: InstallerSupervisorController,
+    frame: dict[str, object],
+) -> int:
+    """Validates the supervisor's authenticated monitor-terminal transition."""
+
+    require_supervisor_frame_fields(
+        frame,
+        {
+            "schema",
+            "action",
+            "run_id",
+            "java_pid",
+            "java_process_group_id",
+            "java_session_id",
+            "java_proc_start_abstime",
+            "java_executable",
+            "returncode",
+            "reaped",
+            "cleanup_disposition",
+            "installer_command_sha256",
+            "monitor_pid",
+            "monitor_process_group_id",
+            "monitor_session_id",
+            "monitor_proc_start_abstime",
+            "monitor_executable",
+            "monitor_terminal_timeout_seconds",
+        },
+        "JAVA_EXITED",
+        controller.operation.run_id,
+    )
+    if (
+        controller.handoff is None
+        or controller.java_target is None
+        or controller.monitor_target is None
+        or controller.java_returncode is not None
+    ):
+        raise E2EError("Installer JAVA_EXITED arrived outside its exact phase")
+    returncode = frame["returncode"]
+    if (
+        owned_process_from_frame(frame, "java") != controller.java_target
+        or owned_process_from_frame(frame, "monitor") != controller.monitor_target
+        or frame["java_session_id"] != controller.session_id
+        or frame["monitor_session_id"] != controller.monitor_target.pid
+        or type(returncode) is not int
+        or not -(1 << 31) <= returncode < (1 << 31)
+        or frame["reaped"] is not True
+        or frame["cleanup_disposition"]
+        != "java-reaped-monitor-terminal-pending"
+        or frame["installer_command_sha256"]
+        != controller.handoff["installer_command_sha256"]
+        or frame["monitor_terminal_timeout_seconds"]
+        != int(installer_supervisor.MONITOR_TERMINAL_TIMEOUT_SECONDS)
+    ):
+        raise E2EError("Installer supervisor JAVA_EXITED identities are invalid")
+    verify_installer_supervisor_live(controller)
+    java_sample = sample_owned_process(controller.sampler, controller.java_target)
+    monitor_sample = sample_owned_process(controller.sampler, controller.monitor_target)
+    monitor_is_exact_or_missing = (
+        monitor_sample.status is macos_guarded_java.SampleStatus.MISSING
+        or (
+            monitor_sample.status is macos_guarded_java.SampleStatus.AVAILABLE
+            and monitor_sample.observed_identity == controller.monitor_target
+        )
+    )
+    if (
+        java_sample.status is not macos_guarded_java.SampleStatus.MISSING
+        or not monitor_is_exact_or_missing
+    ):
+        raise E2EError(
+            "Installer supervisor JAVA_EXITED lacks authoritative process samples"
+        )
+    controller.java_returncode = returncode
+    return returncode
+
+
+def validate_supervisor_completion(
+    controller: InstallerSupervisorController,
+    frame: dict[str, object],
+) -> int:
+    require_supervisor_frame_fields(
+        frame,
+        {
+            "schema",
+            "action",
+            "run_id",
+            "java_pid",
+            "java_process_group_id",
+            "java_session_id",
+            "java_proc_start_abstime",
+            "java_executable",
+            "returncode",
+            "reaped",
+            "cleanup_disposition",
+            "installer_command_sha256",
+            "monitor_pid",
+            "monitor_process_group_id",
+            "monitor_session_id",
+            "monitor_proc_start_abstime",
+            "monitor_executable",
+            "monitor_reaped",
+            "output_tail_length",
+            "output_tail_sha256",
+        },
+        "COMPLETION",
+        controller.operation.run_id,
+    )
+    if (
+        controller.java_target is None
+        or controller.monitor_target is None
+        or controller.java_returncode is None
+    ):
+        raise E2EError("Installer completion arrived before a validated handoff")
+    if (
+        owned_process_from_frame(frame, "java") != controller.java_target
+        or owned_process_from_frame(frame, "monitor") != controller.monitor_target
+        or frame["java_session_id"] != controller.session_id
+        or frame["monitor_session_id"] != controller.monitor_target.pid
+        or frame["reaped"] is not True
+        or frame["monitor_reaped"] is not True
+        or frame["returncode"] != controller.java_returncode
+        or frame["cleanup_disposition"]
+        != "java-and-monitor-reaped-anchor-kill-pending"
+        or frame["installer_command_sha256"]
+        != controller.handoff["installer_command_sha256"]
+    ):
+        raise E2EError("Installer supervisor COMPLETION identities are invalid")
+    returncode = frame["returncode"]
+    output_tail_length = frame["output_tail_length"]
+    output_tail_sha256 = frame["output_tail_sha256"]
+    if (
+        type(returncode) is not int
+        or type(output_tail_length) is not int
+        or output_tail_length < 0
+        or output_tail_length > installer_supervisor.MAXIMUM_OUTPUT_TAIL_SIZE
+        or not isinstance(output_tail_sha256, str)
+        or re.fullmatch(r"[0-9a-f]{64}", output_tail_sha256) is None
+    ):
+        raise E2EError("Installer supervisor COMPLETION values are invalid")
+    tail = installer_output_tail(controller)
+    if (
+        len(tail) != output_tail_length
+        or hashlib.sha256(tail).hexdigest() != output_tail_sha256
+    ):
+        raise E2EError("Installer supervisor output tail changed after completion")
+    telemetry_path = Path(str(controller.handoff["monitor_telemetry"]))
+    history_failure = forge_installer_guard_history_failure(
+        telemetry_path,
+        controller.java_target,
+    )
+    if history_failure is not None:
+        raise E2EError(history_failure)
+    java_sample = sample_owned_process(controller.sampler, controller.java_target)
+    monitor_sample = sample_owned_process(controller.sampler, controller.monitor_target)
+    if (
+        java_sample.status is not macos_guarded_java.SampleStatus.MISSING
+        or monitor_sample.status is not macos_guarded_java.SampleStatus.MISSING
+    ):
+        raise E2EError(
+            "Installer Java or monitor absence was not authoritative after completion"
+        )
+    return returncode
+
+
+def _request_supervisor_cleanup(
+    controller: InstallerSupervisorController,
+) -> None:
+    authenticated_error: str | None = None
+    protocol_failure: BaseException | None = None
+    close_failure: BaseException | None = None
+    try:
+        if controller.activated:
+            if controller.process.poll() is None:
+                try:
+                    controller.control.send(
+                        {
+                            "schema": installer_supervisor.SCHEMA,
+                            "action": "STOP",
+                            "run_id": controller.operation.run_id,
+                        }
+                    )
+                except installer_supervisor.SupervisorError:
+                    pass
+            deadline = time.monotonic() + SUPERVISOR_SHUTDOWN_TIMEOUT_SECONDS
+            exit_observed = False
+            while time.monotonic() < deadline:
+                controller.control.poll()
+                while controller.control.frames:
+                    frame = controller.control.frames.popleft()
+                    if frame.get("action") == "HANDOFF" and controller.handoff is None:
+                        controller.handoff = frame
+                    elif frame.get("action") == "ERROR":
+                        authenticated_error = validate_supervisor_error(
+                            controller,
+                            frame,
+                        )
+                if controller.process.poll() is not None:
+                    if exit_observed or controller.control.eof:
+                        break
+                    exit_observed = True
+                    continue
+                time.sleep(0.05)
+    except BaseException as exception:
+        protocol_failure = exception
+    finally:
+        try:
+            controller.control_socket.close()
+        except BaseException as exception:
+            close_failure = exception
+    group_failure: BaseException | None = None
+    try:
+        wait_for_supervisor_group_exit(controller)
+    except BaseException as exception:
+        group_failure = exception
+    if group_failure is not None:
+        if isinstance(group_failure, InstallerCleanupUncertain):
+            raise group_failure
+        raise InstallerCleanupUncertain(
+            "Installer supervisor group exit could not be proven"
+        ) from group_failure
+    if close_failure is not None:
+        raise InstallerCleanupUncertain(
+            "Installer supervisor capability could not be closed exactly"
+        ) from close_failure
+    if protocol_failure is not None:
+        if isinstance(protocol_failure, InstallerCleanupUncertain):
+            raise protocol_failure
+        raise InstallerCleanupUncertain(
+            "Installer supervisor cleanup protocol could not be authenticated"
+        ) from protocol_failure
+    if controller.activated and authenticated_error is None:
+        raise InstallerCleanupUncertain(
+            "Installer supervisor cleanup lacked an authenticated terminal ERROR"
+        )
+
+
+def request_supervisor_cleanup(
+    controller: InstallerSupervisorController,
+) -> None:
+    """Either proves exact cleanup or reports durable cleanup uncertainty."""
+
+    try:
+        _request_supervisor_cleanup(controller)
+    except InstallerCleanupUncertain:
+        raise
+    except BaseException as exception:
+        raise InstallerCleanupUncertain(
+            "Installer supervisor cleanup could not be authenticated and proven"
+        ) from exception
+
+
+def run_supervised_forge_installer(
+    configuration: ResolvedConfiguration,
+    operation: InstallerOperation,
+    java_path: Path,
+    root: Path,
+    launcher_root: Path,
+) -> None:
+    """Runs the pinned Forge installer behind a bound fail-closed anchor."""
+
+    require_safe_java_option_environment()
+    verify_installer_operation(operation, STATE_ROOT)
+    forge_installer = installer_path(configuration, root)
+    runtime_directory = Path(
+        tempfile.mkdtemp(prefix=".forge-installer-supervisor.", dir=root)
+    ).resolve()
+    controller: InstallerSupervisorController | None = None
+    cleanup_proven = False
+    try:
+        try:
+            controller = spawn_installer_supervisor(operation, runtime_directory)
+        except InstallerCleanupUncertain:
+            raise
+        except BaseException:
+            cleanup_proven = True
+            raise
+        activation = supervisor_activation_frame(
+            controller,
+            java_path,
+            forge_installer,
+            launcher_root,
+            str(configuration.installer["sha256"]),
+        )
+        controller.activated = True
+        controller.control.send(activation)
+
+        frame = receive_supervisor_frame(
+            controller,
+            time.monotonic() + SUPERVISOR_HANDOFF_TIMEOUT_SECONDS,
+        )
+        if frame.get("action") == "ERROR":
+            error_detail = validate_supervisor_error(controller, frame)
+            wait_for_supervisor_group_exit(controller)
+            cleanup_proven = True
+            raise E2EError(f"Forge installer supervisor refused activation: {error_detail}")
+        validate_supervisor_handoff(
+            controller,
+            frame,
+            java_path,
+            forge_installer,
+            launcher_root,
+        )
+        handoff_sha256 = installer_supervisor.frame_sha256(frame)
+        controller.control.send(
+            {
+                "schema": installer_supervisor.SCHEMA,
+                "action": "ARMED",
+                "run_id": operation.run_id,
+                "handoff_sha256": handoff_sha256,
+            }
+        )
+        sequence = 0
+        next_lease_at = time.monotonic()
+        terminal_deadline: float | None = None
+        completion: dict[str, object] | None = None
+
+        def accept_progress_frame(candidate: dict[str, object]) -> None:
+            nonlocal cleanup_proven, completion, terminal_deadline
+
+            action = candidate.get("action")
+            if action == "ERROR":
+                error_detail = validate_supervisor_error(controller, candidate)
+                wait_for_supervisor_group_exit(controller)
+                cleanup_proven = True
+                raise E2EError(f"Forge installer supervisor failed: {error_detail}")
+            if action == "JAVA_EXITED":
+                if terminal_deadline is not None or completion is not None:
+                    raise E2EError(
+                        "Installer supervisor repeated its terminal transition"
+                    )
+                validate_supervisor_java_exited(controller, candidate)
+                terminal_deadline = (
+                    time.monotonic()
+                    + installer_supervisor.MONITOR_TERMINAL_TIMEOUT_SECONDS
+                    + installer_supervisor.LEASE_INTERVAL_SECONDS
+                )
+                return
+            if action == "COMPLETION":
+                if terminal_deadline is None or completion is not None:
+                    raise E2EError(
+                        "Installer supervisor completed outside its terminal phase"
+                    )
+                completion = candidate
+                return
+            raise E2EError("Installer supervisor sent an unexpected frame")
+
+        while completion is None:
+            controller.control.poll()
+            while controller.control.frames:
+                accept_progress_frame(controller.control.frames.popleft())
+            if completion is not None:
+                break
+            if controller.control.eof:
+                raise E2EError("Installer supervisor capability closed before completion")
+            verify_installer_supervisor_live(controller)
+            now = time.monotonic()
+            if now >= next_lease_at:
+                if terminal_deadline is None:
+                    try:
+                        verify_supervised_installer_guard(controller)
+                    except E2EError as guard_exception:
+                        grace_deadline = time.monotonic() + 0.5
+                        while (
+                            time.monotonic() < grace_deadline
+                            and terminal_deadline is None
+                            and completion is None
+                        ):
+                            controller.control.poll()
+                            while controller.control.frames:
+                                accept_progress_frame(
+                                    controller.control.frames.popleft()
+                                )
+                            if controller.control.eof:
+                                break
+                            time.sleep(0.01)
+                        if terminal_deadline is None and completion is None:
+                            raise guard_exception
+                elif time.monotonic() >= terminal_deadline:
+                    raise E2EError(
+                        "Installer supervisor exceeded its monitor-terminal phase"
+                    )
+                if completion is not None:
+                    break
+                sequence += 1
+                controller.control.send(
+                    {
+                        "schema": installer_supervisor.SCHEMA,
+                        "action": "LEASE",
+                        "run_id": operation.run_id,
+                        "sequence": sequence,
+                    }
+                )
+                next_lease_at = time.monotonic() + installer_supervisor.LEASE_INTERVAL_SECONDS
+            time.sleep(installer_supervisor.POLL_INTERVAL_SECONDS)
+        sequence += 1
+        controller.control.send(
+            {
+                "schema": installer_supervisor.SCHEMA,
+                "action": "LEASE",
+                "run_id": operation.run_id,
+                "sequence": sequence,
+            }
+        )
+        returncode = validate_supervisor_completion(controller, completion)
+        completion_sha256 = installer_supervisor.frame_sha256(completion)
+        controller.control.send(
+            {
+                "schema": installer_supervisor.SCHEMA,
+                "action": "FINAL_ACK",
+                "run_id": operation.run_id,
+                "completion_sha256": completion_sha256,
+            }
+        )
+        wait_for_supervisor_group_exit(controller)
+        cleanup_proven = True
+        if returncode != 0:
+            tail = installer_output_tail(controller).decode("utf-8", errors="replace")
+            raise E2EError(
+                f"Forge installer exited with {returncode}:\n"
+                + "\n".join(tail.splitlines()[-30:])
+            )
+    except installer_supervisor.SupervisorError as exception:
+        raise E2EError(f"Installer supervisor protocol failed: {exception}") from exception
+    finally:
+        cleanup_exception: InstallerCleanupUncertain | None = None
+        if controller is not None and not cleanup_proven:
+            try:
+                request_supervisor_cleanup(controller)
+                cleanup_proven = True
+            except InstallerCleanupUncertain as exception:
+                cleanup_exception = exception
+        if controller is not None:
+            try:
+                controller.control_socket.close()
+            except BaseException as exception:
+                if not cleanup_proven and cleanup_exception is None:
+                    cleanup_exception = InstallerCleanupUncertain(
+                        "Installer supervisor capability cleanup remained uncertain"
+                    )
+                    cleanup_exception.__cause__ = exception
+        if cleanup_proven and runtime_directory.exists():
+            shutil.rmtree(runtime_directory)
+        if cleanup_exception is not None:
+            raise cleanup_exception
+
+
+def forge_installer_guard_history_failure(
+    telemetry_path: Path,
+    expected_target: OwnedJavaProcess | None = None,
+) -> str | None:
+    """Finds any retained interval where installer enforcement was not authoritative."""
+
+    try:
+        content = read_bounded_stable_private_file(
+            telemetry_path,
+            macos_guarded_java.MAXIMUM_TELEMETRY_SIZE_BYTES,
+            "installer memory guard telemetry",
+        )
+        payload = json.loads(content.decode("utf-8"))
+    except (E2EError, UnicodeDecodeError, json.JSONDecodeError) as exception:
+        return f"memory guard telemetry became unreadable: {exception}"
+    if (
+        not isinstance(payload, dict)
+        or set(payload) != {"schema", "target", "policy", "state", "records"}
+        or payload.get("schema") != 1
+    ):
+        return "memory guard telemetry has an invalid schema"
+    if expected_target is not None and payload.get("target") != {
+        "pid": expected_target.pid,
+        "process_group_id": expected_target.process_group_id,
+        "proc_start_abstime": expected_target.proc_start_abstime,
+        "expected_executable": expected_target.expected_executable,
+    }:
+        return "memory guard telemetry belongs to a different installer identity"
+    if payload.get("policy") != memory_policy_payload(
+        installer_supervisor.MAXIMUM_MEMORY_MB
+    ):
+        return "memory guard telemetry has the wrong installer memory policy"
+    guard_state = payload.get("state")
+    records = payload.get("records")
+    if not isinstance(guard_state, dict) or not isinstance(records, list) or not records:
+        return "memory guard telemetry has no retained enforcement history"
+    if set(guard_state) != {
+        "enforcement_disarmed",
+        "stop_callback_invoked",
+        "sample_count",
+        "retained_record_count",
+        "dropped_record_count",
+        "last_stop_outcome",
+    }:
+        return "memory guard telemetry has an invalid state inventory"
+    sample_count = guard_state.get("sample_count")
+    retained_record_count = guard_state.get("retained_record_count")
+    dropped_record_count = guard_state.get("dropped_record_count")
+    if (
+        guard_state.get("enforcement_disarmed") is not False
+        or guard_state.get("stop_callback_invoked") is not False
+        or guard_state.get("last_stop_outcome") != "not-required"
+        or type(sample_count) is not int
+        or type(retained_record_count) is not int
+        or type(dropped_record_count) is not int
+        or retained_record_count != len(records)
+        or dropped_record_count < 0
+        or sample_count != retained_record_count + dropped_record_count
+    ):
+        return "memory guard enforcement was disarmed"
+    expected_record_fields = {
+        "observed_at_monotonic_ns",
+        "source",
+        "status",
+        "identity_matches_target",
+        "current_phys_footprint_bytes",
+        "resident_size_bytes",
+        "virtual_size_bytes",
+        "lifetime_max_phys_footprint_bytes",
+        "detail",
+        "decision",
+        "stop_outcome",
+    }
+    for index, record in enumerate(records):
+        if not isinstance(record, dict) or set(record) != expected_record_fields:
+            return "memory guard telemetry contains a malformed record"
+        decision = record.get("decision")
+        status = record.get("status")
+        if decision in ("hard", "emergency"):
+            return f"memory guard reached the {decision} physical-memory threshold"
+        if status == "available":
+            if (
+                record.get("source") != "proc-pid-rusage-v4"
+                or record.get("identity_matches_target") is not True
+                or decision not in ("normal", "warning")
+                or record.get("stop_outcome") != "not-required"
+            ):
+                return "memory guard recorded a non-authoritative available sample"
+            continue
+        is_natural_terminal_sample = (
+            index == len(records) - 1
+            and status == "missing"
+            and record.get("source") == "proc-pid-rusage-v4"
+            and record.get("identity_matches_target") is None
+            and decision == "not-enforceable"
+            and record.get("stop_outcome") == "not-required"
+        )
+        if not is_natural_terminal_sample:
+            return f"memory guard sampling became non-enforcing: {status}"
+    return None
+
+
+def install_isolated_game(
+    configuration: ResolvedConfiguration,
+    root: Path,
+    java_path: Path,
+    operation: InstallerOperation,
+) -> None:
+    require_safe_java_option_environment()
     verify_launcher_library()
     try:
         import minecraft_launcher_lib.install
@@ -1690,35 +3158,20 @@ def install_isolated_game(
         None,
         "Pinned Forge installer",
     )
-    command = [
-        str(java_path),
-        "-jar",
-        str(forge_installer),
-        "--installClient",
-        str(launcher_root),
-    ]
-    try:
-        completed = subprocess.run(
-            command,
-            cwd=launcher_root,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            timeout=900,
-            check=False,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exception:
-        raise E2EError(f"Forge installer did not complete: {exception}") from exception
-    if completed.returncode != 0:
-        output_tail = "\n".join(completed.stdout.splitlines()[-30:])
-        raise E2EError(
-            f"Forge installer exited with {completed.returncode}:\n{output_tail}"
-        )
+    run_supervised_forge_installer(
+        configuration,
+        operation,
+        java_path,
+        root,
+        launcher_root,
+    )
     materialize_inherited_client_jar(configuration, root)
 
 
 def provision_profile(configuration: ResolvedConfiguration) -> bool:
+    require_safe_java_option_environment()
     ensure_owned_state_roots()
+    require_no_installer_operation(STATE_ROOT)
     require_unattempted_profile(configuration)
     target_root = runtime_root(configuration)
     if target_root.exists() or target_root.is_symlink():
@@ -1726,16 +3179,19 @@ def provision_profile(configuration: ResolvedConfiguration) -> bool:
         verify_runtime(configuration, target_root, artifact_policy="optional")
         ensure_evidence_layout(configuration, target_root)
         return False
-    java_path = resolve_java_17()
     STATE_ROOT.mkdir(mode=0o700, parents=True, exist_ok=True)
     RUNTIMES_ROOT.mkdir(mode=0o700, exist_ok=True)
-    staging_root = Path(
-        tempfile.mkdtemp(
-            prefix=f".{profile_spec(configuration)['runtime_directory']}.",
-            dir=RUNTIMES_ROOT,
-        )
-    )
+    operation = acquire_installer_operation(configuration, STATE_ROOT)
+    staging_root: Path | None = None
+    retain_staging_root = False
     try:
+        java_path = resolve_java_17()
+        staging_root = Path(
+            tempfile.mkdtemp(
+                prefix=f".{profile_spec(configuration)['runtime_directory']}.",
+                dir=RUNTIMES_ROOT,
+            )
+        )
         target_game_directory = game_directory(configuration, staging_root)
         target_launcher_directory = launcher_directory(configuration, staging_root)
         target_game_directory.mkdir(mode=0o700)
@@ -1769,12 +3225,32 @@ def provision_profile(configuration: ResolvedConfiguration) -> bool:
             None,
             "Forge installer",
         )
-        install_isolated_game(configuration, staging_root, java_path)
+        install_isolated_game(configuration, staging_root, java_path, operation)
         verify_runtime(configuration, staging_root, artifact_policy="optional")
         ensure_evidence_layout(configuration, staging_root)
         os.replace(staging_root, target_root)
+    except InstallerCleanupUncertain:
+        retain_staging_root = True
+        raise
+    except BaseException as provision_exception:
+        try:
+            release_installer_operation(operation, STATE_ROOT)
+        except InstallerCleanupUncertain as release_exception:
+            retain_staging_root = True
+            raise release_exception from provision_exception
+        raise
+    else:
+        try:
+            release_installer_operation(operation, STATE_ROOT)
+        except InstallerCleanupUncertain:
+            retain_staging_root = True
+            raise
     finally:
-        if staging_root.exists():
+        if (
+            not retain_staging_root
+            and staging_root is not None
+            and staging_root.exists()
+        ):
             shutil.rmtree(staging_root)
     verify_runtime(configuration, target_root, artifact_policy="optional")
     verify_evidence_layout(configuration, target_root)
@@ -1800,11 +3276,16 @@ def assert_runtime_not_running(configuration: ResolvedConfiguration) -> None:
 def stage_artifacts(
     configuration: ResolvedConfiguration,
 ) -> tuple[bool, dict[str, object]]:
+    require_slitherite_harness_pin()
     assert_runtime_not_running(configuration)
     verify_runtime(configuration, artifact_policy="ignore")
     source_paths = {
         role: artifact_source_path(configuration, role) for role in ARTIFACT_ROLES
     }
+    verify_slitherite_harness_artifact(
+        source_paths["harness"],
+        "Final Forge Slitherite v18 harness build output",
+    )
     if len(set(source_paths.values())) != len(ARTIFACT_ROLES):
         raise E2EError("The Forge production and harness tasks resolve to the same JAR")
     inspections = {
@@ -1815,6 +3296,10 @@ def stage_artifacts(
     current_lock = load_artifact_lock(configuration)
     if current_lock == desired_lock:
         verify_locked_artifacts(configuration)
+        verify_slitherite_harness_artifact(
+            artifact_target_path(configuration, "harness"),
+            "Staged Forge Slitherite v18 harness",
+        )
         return False, desired_lock
     target_paths = {
         role: artifact_target_path(configuration, role) for role in ARTIFACT_ROLES
@@ -1856,6 +3341,10 @@ def stage_artifacts(
         for temporary_path in temporary_paths.values():
             temporary_path.unlink(missing_ok=True)
     verify_runtime(configuration, artifact_policy="required")
+    verify_slitherite_harness_artifact(
+        artifact_target_path(configuration, "harness"),
+        "Staged Forge Slitherite v18 harness",
+    )
     return True, desired_lock
 
 
@@ -1978,12 +3467,14 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     configured_scenario_id: str | None = None,
 ) -> tuple[Path, list[str]]:
-    try:
-        verify_java_option_environment(os.environ)
-    except GuardedJavaError as exception:
-        raise E2EError(str(exception)) from exception
+    require_safe_java_option_environment()
+    require_slitherite_harness_pin()
     require_unattempted_profile(configuration)
     verify_runtime(configuration, artifact_policy="required")
+    verify_slitherite_harness_artifact(
+        artifact_target_path(configuration, "harness"),
+        "Staged Forge Slitherite v18 harness",
+    )
     verify_evidence_layout(configuration)
     java_path = resolve_java_17()
     command = generate_command(configuration, java_path, configured_scenario_id)
@@ -2301,8 +3792,9 @@ def provision_command() -> int:
 
 
 def stage_command() -> int:
-    ensure_owned_state_roots()
     configuration = load_configuration()
+    require_slitherite_harness_pin()
+    ensure_owned_state_roots()
     require_unattempted_profile(configuration)
     staged, lock = stage_artifacts(configuration)
     message = "Staged" if staged else "Verified already-staged"
@@ -2316,9 +3808,13 @@ def stage_command() -> int:
 
 
 def check_command(configured_scenario_id: str | None = None) -> int:
-    ensure_owned_state_roots()
     configuration = load_configuration()
-    scenario_id = resolve_scenario_id(configuration, configured_scenario_id)
+    scenario_id = resolve_slitherite_run_scenario_id(
+        configuration, configured_scenario_id
+    )
+    require_slitherite_harness_pin()
+    ensure_owned_state_roots()
+    require_no_installer_operation(STATE_ROOT)
     java_path, command = verify_environment(configuration, scenario_id)
     print(
         "Ready: "
@@ -2336,9 +3832,13 @@ def check_command(configured_scenario_id: str | None = None) -> int:
 
 
 def start_command(configured_scenario_id: str | None = None) -> int:
-    ensure_owned_state_roots()
     configuration = load_configuration()
-    scenario_id = resolve_scenario_id(configuration, configured_scenario_id)
+    scenario_id = resolve_slitherite_run_scenario_id(
+        configuration, configured_scenario_id
+    )
+    require_slitherite_harness_pin()
+    ensure_owned_state_roots()
+    require_no_installer_operation(STATE_ROOT)
     clear_stale_and_reject_live_owned_clients()
     java_path, command = verify_environment(configuration, scenario_id)
     assert_runtime_not_running(configuration)

@@ -294,6 +294,10 @@ final class FabricLensRuntimeBackendTest {
                                 + "RecipeResultComponentBackend;)V",
                         "ru/feytox/etherology/item/LensRuntime#bind"
                                 + "(Lru/feytox/etherology/item/LensRuntimeBackend;)V",
+                        "ru/feytox/etherology/block/pedestal/"
+                                + "PedestalBlockEntityRemoval#bind"
+                                + "(Lru/feytox/etherology/block/pedestal/"
+                                + "PedestalBlockEntityRemovalBackend;)V",
                         "ru/feytox/etherology/registry/particle/SharedParticleTypes#register()V",
                         "ru/feytox/etherology/Etherology#initialize()V"
                 ),

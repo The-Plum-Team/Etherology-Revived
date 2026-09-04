@@ -15,19 +15,19 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
 
 import forge_client
 import forge_evidence
+import forge_slitherite_run_contract_v18 as run_contract
 import slitherite_client_evidence_contract_v1 as contract_core
 
 
 evidence = forge_evidence
-SCENARIO_ID = contract_core.SCENARIO_ID
-PROFILE_ID = "etherology-e2e-forge-1.20.1-v18"
+SCENARIO_ID = run_contract.SCENARIO_ID
+PROFILE_ID = run_contract.PROFILE_ID
 ACTIVE_PROFILE_RELATIVE_PATH = "scripts/e2e/forge-1.20.1-profile.json"
 SNAPSHOT_PROFILE_RELATIVE_PATH = "scripts/e2e/forge-1.20.1-profile-v18.json"
 PROFILE_SIZE = 3737
 PROFILE_SHA256 = "16473184a6f11c74c9a18013b3473b48ea50752c47f4908b7927a297381edb3f"
-# Pin both values from the final remapped harness before native verification.
-HARNESS_SIZE: int | None = None
-HARNESS_SHA256: str | None = None
+HARNESS_SIZE = run_contract.HARNESS_SIZE
+HARNESS_SHA256 = run_contract.HARNESS_SHA256
 ARCHIVE_DIRECTORY_NAME = "slitherite-block-registry-v18"
 ARCHIVE_KIND = forge_evidence.ARCHIVE_KIND
 ARCHIVE_VERIFICATION_SCOPE = forge_evidence.ARCHIVE_VERIFICATION_SCOPE

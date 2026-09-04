@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+from collections import deque
 from contextlib import contextmanager, redirect_stdout
 from dataclasses import replace
 import io
 import json
 import os
 from pathlib import Path
+import signal
+import subprocess
 import sys
 import tempfile
 import textwrap
+import types
 import unittest
 from unittest import mock
 import zipfile
@@ -421,6 +425,25 @@ class ConfigurationTests(unittest.TestCase):
 
 
 class MetadataIntegrityTests(unittest.TestCase):
+    def test_production_data_inventory_is_immutable_disjoint_and_exact(self) -> None:
+        groups = forge_client.EXPECTED_PRODUCTION_DATA_ENTRY_GROUPS
+
+        self.assertIsInstance(groups, tuple)
+        self.assertIsInstance(
+            forge_client.EXPECTED_PRODUCTION_DATA_ENTRIES, frozenset
+        )
+        self.assertTrue(groups)
+        self.assertTrue(all(isinstance(group, frozenset) for group in groups))
+        for group_index, group in enumerate(groups):
+            for other_group in groups[group_index + 1 :]:
+                self.assertTrue(group.isdisjoint(other_group))
+        self.assertEqual(152, sum(len(group) for group in groups))
+        self.assertEqual(
+            frozenset().union(*groups),
+            forge_client.EXPECTED_PRODUCTION_DATA_ENTRIES,
+        )
+        self.assertEqual(152, len(forge_client.EXPECTED_PRODUCTION_DATA_ENTRIES))
+
     def test_dependency_requires_exact_root_mod_id_version_hash_and_size(self) -> None:
         configuration = forge_client.load_configuration()
         dependency = forge_client.dependency_specs(configuration)[0]
@@ -609,6 +632,1430 @@ class MetadataIntegrityTests(unittest.TestCase):
                 )
 
 
+class ForgeInstallerMemorySafetyTests(unittest.TestCase):
+    def installer_target(self) -> macos_guarded_java.OwnedJavaProcess:
+        return macos_guarded_java.OwnedJavaProcess(
+            pid=12345,
+            process_group_id=12345,
+            proc_start_abstime=987654321,
+            expected_executable="/test/java",
+        )
+
+    def telemetry_record(
+        self,
+        *,
+        status: str = "available",
+        source: str = "proc-pid-rusage-v4",
+        identity_matches_target: bool | None = True,
+        decision: str = "normal",
+        stop_outcome: str = "not-required",
+    ) -> dict[str, object]:
+        return {
+            "observed_at_monotonic_ns": 123456789,
+            "source": source,
+            "status": status,
+            "identity_matches_target": identity_matches_target,
+            "current_phys_footprint_bytes": 256 * 1024 * 1024,
+            "resident_size_bytes": 128 * 1024 * 1024,
+            "virtual_size_bytes": 512 * 1024 * 1024,
+            "lifetime_max_phys_footprint_bytes": 256 * 1024 * 1024,
+            "detail": "",
+            "decision": decision,
+            "stop_outcome": stop_outcome,
+        }
+
+    def telemetry_payload(
+        self,
+        records: list[dict[str, object]] | None = None,
+    ) -> dict[str, object]:
+        selected_records = records or [self.telemetry_record()]
+        target = self.installer_target()
+        return {
+            "schema": 1,
+            "target": {
+                "pid": target.pid,
+                "process_group_id": target.process_group_id,
+                "proc_start_abstime": target.proc_start_abstime,
+                "expected_executable": target.expected_executable,
+            },
+            "policy": macos_guarded_java.memory_policy_payload(
+                forge_client.installer_supervisor.MAXIMUM_MEMORY_MB
+            ),
+            "state": {
+                "enforcement_disarmed": False,
+                "stop_callback_invoked": False,
+                "sample_count": len(selected_records),
+                "retained_record_count": len(selected_records),
+                "dropped_record_count": 0,
+                "last_stop_outcome": "not-required",
+            },
+            "records": selected_records,
+        }
+
+    def test_java_version_probe_has_a_tiny_explicit_heap_cap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            java_path = Path(temporary_directory).resolve() / "java"
+            java_path.write_bytes(b"not executed")
+            java_path.chmod(0o700)
+            completed = subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="java.specification.version = 17\n",
+            )
+            with mock.patch.object(
+                forge_client.subprocess,
+                "run",
+                return_value=completed,
+            ) as run:
+                self.assertEqual(17, forge_client.java_major_version(java_path))
+
+            run.assert_called_once_with(
+                [
+                    str(java_path),
+                    "-Xmx64M",
+                    "-XshowSettings:properties",
+                    "-version",
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+
+    def test_guard_history_accepts_only_authoritative_or_natural_terminal_samples(
+        self,
+    ) -> None:
+        terminal = self.telemetry_record(
+            status="missing",
+            identity_matches_target=None,
+            decision="not-enforceable",
+        )
+        payload = self.telemetry_payload(
+            [
+                self.telemetry_record(decision="warning"),
+                terminal,
+            ]
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            telemetry = Path(temporary_directory) / "telemetry.json"
+            telemetry.write_text(json.dumps(payload), encoding="utf-8")
+            telemetry.chmod(0o600)
+
+            failure = forge_client.forge_installer_guard_history_failure(telemetry)
+
+        self.assertIsNone(failure)
+
+    def test_guard_history_rejects_every_non_enforcing_or_mismatched_surface(self) -> None:
+        cases: dict[str, tuple[str, object]] = {
+            "hard threshold": ("record.decision", "hard"),
+            "emergency threshold": ("record.decision", "emergency"),
+            "sampling error": ("record.status", "error"),
+            "identity drift": ("record.status", "identity-drift"),
+            "fallback source": ("record.source", "fallback"),
+            "identity mismatch": ("record.identity_matches_target", False),
+            "wrong policy": ("policy.heap_limit_bytes", 20 * 1024 * 1024 * 1024),
+            "disarmed": ("state.enforcement_disarmed", True),
+            "malformed record": ("remove.detail", None),
+        }
+        for name, (path, value) in cases.items():
+            with self.subTest(name=name):
+                payload = self.telemetry_payload()
+                section, field = path.split(".", 1)
+                if section == "record":
+                    payload["records"][0][field] = value  # type: ignore[index]
+                elif section == "remove":
+                    del payload["records"][0][field]  # type: ignore[index]
+                else:
+                    payload[section][field] = value  # type: ignore[index]
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    telemetry = Path(temporary_directory) / "telemetry.json"
+                    telemetry.write_text(json.dumps(payload), encoding="utf-8")
+                    telemetry.chmod(0o600)
+
+                    failure = forge_client.forge_installer_guard_history_failure(
+                        telemetry
+                    )
+
+                self.assertIsNotNone(failure)
+
+    def test_install_delegates_only_to_typed_supervisor_controller(self) -> None:
+        configuration = forge_client.load_configuration()
+        package = types.ModuleType("minecraft_launcher_lib")
+        package.__path__ = []  # type: ignore[attr-defined]
+        install_module = types.ModuleType("minecraft_launcher_lib.install")
+        install_minecraft = mock.Mock()
+        install_module.install_minecraft_version = install_minecraft  # type: ignore[attr-defined]
+        package.install = install_module  # type: ignore[attr-defined]
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            launcher_root = forge_client.launcher_directory(configuration, root)
+            (launcher_root / "installers").mkdir(parents=True)
+            forge_installer = forge_client.installer_path(configuration, root)
+            forge_installer.write_bytes(b"pinned installer")
+            java_path = root / "java"
+            java_path.write_bytes(b"not executed")
+            java_path.chmod(0o700)
+            operation = forge_client.InstallerOperation(
+                run_id="a" * 64,
+                profile_id="etherology-e2e-forge-1.20.1-v18",
+                controller_pid=123,
+                content=b"operation",
+            )
+            with (
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.dict(
+                    sys.modules,
+                    {
+                        "minecraft_launcher_lib": package,
+                        "minecraft_launcher_lib.install": install_module,
+                    },
+                ),
+                mock.patch.object(forge_client, "verify_launcher_library"),
+                mock.patch.object(forge_client, "verify_exact_file"),
+                mock.patch.object(
+                    forge_client,
+                    "run_supervised_forge_installer",
+                ) as run_supervised,
+                mock.patch.object(
+                    forge_client,
+                    "materialize_inherited_client_jar",
+                ) as materialize,
+                mock.patch.object(forge_client.subprocess, "run") as subprocess_run,
+            ):
+                forge_client.install_isolated_game(
+                    configuration,
+                    root,
+                    java_path,
+                    operation,
+                )
+
+            install_minecraft.assert_called_once_with("1.20.1", str(launcher_root))
+            run_supervised.assert_called_once_with(
+                configuration,
+                operation,
+                java_path,
+                root,
+                launcher_root,
+            )
+            materialize.assert_called_once_with(configuration, root)
+            subprocess_run.assert_not_called()
+
+    def test_provision_retains_only_an_uncertain_installer_staging_root(self) -> None:
+        configuration = forge_client.load_configuration()
+        cases = (
+            (forge_client.E2EError("ordinary failure"), False),
+            (forge_client.InstallerCleanupUncertain("cleanup uncertain"), True),
+        )
+        for failure, should_retain in cases:
+            with self.subTest(failure=type(failure).__name__):
+                with tempfile.TemporaryDirectory() as temporary_directory:
+                    state_root = Path(temporary_directory).resolve() / ".state"
+                    runtimes_root = state_root / "runtimes"
+                    target_root = runtimes_root / "final-runtime"
+                    with (
+                        mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                        mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                        mock.patch.object(forge_client, "RUNTIMES_ROOT", runtimes_root),
+                        mock.patch.object(
+                            forge_client,
+                            "runtime_root",
+                            return_value=target_root,
+                        ),
+                        mock.patch.object(forge_client, "ensure_owned_state_roots"),
+                        mock.patch.object(forge_client, "require_unattempted_profile"),
+                        mock.patch.object(
+                            forge_client,
+                            "resolve_java_17",
+                            return_value=Path("/test/java"),
+                        ),
+                        mock.patch.object(forge_client, "download_pinned_file"),
+                        mock.patch.object(forge_client, "verify_dependency_jar"),
+                        mock.patch.object(
+                            forge_client,
+                            "install_isolated_game",
+                            side_effect=failure,
+                        ),
+                        self.assertRaises(type(failure)),
+                    ):
+                        forge_client.provision_profile(configuration)
+
+                    staging_roots = [
+                        path
+                        for path in runtimes_root.iterdir()
+                        if path.name != target_root.name
+                    ]
+                    self.assertEqual(should_retain, bool(staging_roots))
+                    if should_retain:
+                        self.assertTrue(
+                            (staging_roots[0] / forge_client.PROFILE_MARKER_NAME).is_file()
+                        )
+
+    def test_provision_rejects_injected_options_before_state_mutation(self) -> None:
+        configuration = forge_client.load_configuration()
+        for variable_name in macos_guarded_java.JAVA_OPTION_ENVIRONMENT_VARIABLES:
+            with self.subTest(variable_name=variable_name):
+                with (
+                    mock.patch.dict(
+                        forge_client.os.environ,
+                        {variable_name: "-Xmx20G"},
+                        clear=True,
+                    ),
+                    mock.patch.object(
+                        forge_client,
+                        "ensure_owned_state_roots",
+                    ) as ensure_roots,
+                    self.assertRaisesRegex(forge_client.E2EError, variable_name),
+                ):
+                    forge_client.provision_profile(configuration)
+
+                ensure_roots.assert_not_called()
+
+
+class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
+    def supervisor_controller(
+        self,
+        *,
+        activated: bool = False,
+    ) -> forge_client.InstallerSupervisorController:
+        operation = forge_client.InstallerOperation(
+            run_id="a" * 64,
+            profile_id="etherology-e2e-forge-1.20.1-v18",
+            controller_pid=321,
+            content=b"operation",
+        )
+        target = macos_guarded_java.OwnedJavaProcess(
+            pid=500,
+            process_group_id=500,
+            proc_start_abstime=1000,
+            expected_executable=str(Path(sys.executable).resolve()),
+        )
+        process = mock.Mock(pid=target.pid)
+        process.poll.return_value = None
+        process.wait.return_value = -signal.SIGKILL
+        control = mock.Mock()
+        control.frames = deque()
+        control.eof = False
+        controller = forge_client.InstallerSupervisorController(
+            operation=operation,
+            process=process,
+            target=target,
+            session_id=target.pid,
+            sampler=mock.Mock(),
+            control_socket=mock.Mock(),
+            control=control,
+            runtime_directory=Path("/test/supervisor-runtime"),
+        )
+        controller.activated = activated
+        return controller
+
+    def test_operation_interlock_is_exclusive_exact_and_durable(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory).resolve() / ".state"
+            operation = forge_client.acquire_installer_operation(
+                configuration,
+                state_root,
+            )
+            path = forge_client.installer_operation_path(state_root)
+            self.assertEqual(operation.content, path.read_bytes())
+            self.assertEqual(0o600, path.stat().st_mode & 0o777)
+            with self.assertRaises(forge_client.InstallerCleanupUncertain):
+                forge_client.acquire_installer_operation(configuration, state_root)
+
+            forge_client.release_installer_operation(operation, state_root)
+            self.assertFalse(path.exists())
+
+            operation = forge_client.acquire_installer_operation(
+                configuration,
+                state_root,
+            )
+            path.write_bytes(b"tampered\n")
+            with self.assertRaisesRegex(
+                forge_client.InstallerCleanupUncertain,
+                "changed",
+            ):
+                forge_client.release_installer_operation(operation, state_root)
+
+    def test_pending_operation_blocks_provision_before_java_or_download(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory).resolve() / ".state"
+            runtimes_root = state_root / "runtimes"
+            runtimes_root.mkdir(parents=True)
+            forge_client.installer_operation_path(state_root).write_text(
+                "pending\n",
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                mock.patch.object(forge_client, "RUNTIMES_ROOT", runtimes_root),
+                mock.patch.object(
+                    forge_client,
+                    "resolve_java_17",
+                ) as resolve_java,
+                mock.patch.object(
+                    forge_client,
+                    "download_pinned_file",
+                ) as download,
+                mock.patch.object(forge_client.subprocess, "Popen") as popen,
+                self.assertRaises(forge_client.InstallerCleanupUncertain),
+            ):
+                forge_client.provision_profile(configuration)
+
+            resolve_java.assert_not_called()
+            download.assert_not_called()
+            popen.assert_not_called()
+
+    def test_supervisor_is_bound_before_any_activation_can_be_sent(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            state_root = root / ".state"
+            operation = forge_client.acquire_installer_operation(
+                configuration,
+                state_root,
+            )
+            runtime = root / "supervisor-runtime"
+            runtime.mkdir(mode=0o700)
+            process = mock.Mock(pid=500)
+            process.poll.return_value = None
+            target = macos_guarded_java.OwnedJavaProcess(
+                pid=500,
+                process_group_id=500,
+                proc_start_abstime=123456789,
+                expected_executable=str(Path(sys.executable).resolve()),
+            )
+            sampler = mock.Mock()
+            controller_socket = mock.Mock()
+            child_socket = mock.Mock()
+            child_socket.fileno.return_value = 17
+            framed_control = mock.Mock()
+            with (
+                mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                mock.patch.object(
+                    forge_client.socket,
+                    "socketpair",
+                    return_value=(controller_socket, child_socket),
+                ),
+                mock.patch.object(
+                    forge_client.subprocess,
+                    "Popen",
+                    return_value=process,
+                ) as popen,
+                mock.patch.object(
+                    forge_client.MacOsProcessMemorySampler,
+                    "native",
+                    return_value=sampler,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "bind_installer_supervisor",
+                    return_value=(target, 500),
+                ) as bind,
+                mock.patch.object(
+                    forge_client.installer_supervisor,
+                    "FramedControl",
+                    return_value=framed_control,
+                ),
+            ):
+                controller = forge_client.spawn_installer_supervisor(
+                    operation,
+                    runtime,
+                )
+
+            bind.assert_called_once_with(process, sampler)
+            self.assertIs(framed_control, controller.control)
+            command = popen.call_args.args[0]
+            self.assertEqual(sys.executable, command[0])
+            self.assertNotIn("java", command)
+            self.assertEqual((17,), popen.call_args.kwargs["pass_fds"])
+            child_socket.close.assert_called_once()
+
+    def test_post_spawn_socket_close_failure_still_proves_group_exit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve() / "supervisor-runtime"
+            runtime.mkdir(mode=0o700)
+            operation = self.supervisor_controller().operation
+            process = mock.Mock(pid=500)
+            process.wait.return_value = -signal.SIGKILL
+            controller_socket = mock.Mock()
+            child_socket = mock.Mock()
+            child_socket.fileno.return_value = 17
+            child_socket.close.side_effect = OSError("child socket close failed")
+            controller_socket.close.side_effect = OSError(
+                "controller socket close failed"
+            )
+            with (
+                mock.patch.object(forge_client, "verify_installer_operation"),
+                mock.patch.object(
+                    forge_client.socket,
+                    "socketpair",
+                    return_value=(controller_socket, child_socket),
+                ),
+                mock.patch.object(
+                    forge_client.subprocess,
+                    "Popen",
+                    return_value=process,
+                ) as popen,
+                mock.patch.object(
+                    forge_client,
+                    "wait_for_installer_process_group_absence",
+                ) as wait_for_absence,
+                self.assertRaisesRegex(
+                    forge_client.InstallerCleanupUncertain,
+                    "post-spawn cleanup",
+                ),
+            ):
+                forge_client.spawn_installer_supervisor(operation, runtime)
+
+            popen.assert_called_once()
+            self.assertEqual(2, child_socket.close.call_count)
+            controller_socket.close.assert_called_once()
+            process.wait.assert_called_once_with(
+                timeout=forge_client.SUPERVISOR_SHUTDOWN_TIMEOUT_SECONDS
+            )
+            wait_for_absence.assert_called_once_with(process.pid)
+
+    def test_cleanup_protocol_and_socket_failures_still_attempt_group_proof(
+        self,
+    ) -> None:
+        controller = self.supervisor_controller(activated=True)
+        controller.control.poll.side_effect = OSError("protocol read failed")
+        controller.control_socket.close.side_effect = OSError(
+            "capability close failed"
+        )
+        with (
+            mock.patch.object(
+                forge_client,
+                "wait_for_supervisor_group_exit",
+            ) as wait_for_exit,
+            self.assertRaises(forge_client.InstallerCleanupUncertain) as raised,
+        ):
+            forge_client.request_supervisor_cleanup(controller)
+
+        wait_for_exit.assert_called_once_with(controller)
+        self.assertNotIsInstance(raised.exception, OSError)
+        self.assertIn("capability", str(raised.exception))
+
+    def test_cleanup_authenticates_error_from_final_post_exit_poll(self) -> None:
+        controller = self.supervisor_controller(activated=True)
+        controller.process.poll.return_value = -signal.SIGKILL
+        error_frame = {
+            "schema": forge_client.installer_supervisor.SCHEMA,
+            "action": "ERROR",
+            "run_id": controller.operation.run_id,
+            "code": "stop-requested",
+            "detail": "controller requested cleanup",
+            "out_of_group_cleanup_complete": True,
+            "anchor_group_kill_pending": True,
+        }
+        poll_count = 0
+
+        def expose_error_on_final_poll() -> None:
+            nonlocal poll_count
+
+            poll_count += 1
+            if poll_count == 2:
+                controller.control.frames.append(error_frame)
+
+        controller.control.poll.side_effect = expose_error_on_final_poll
+        with (
+            mock.patch.object(forge_client.time, "monotonic", return_value=0.0),
+            mock.patch.object(
+                forge_client,
+                "wait_for_supervisor_group_exit",
+            ) as wait_for_exit,
+        ):
+            forge_client.request_supervisor_cleanup(controller)
+
+        self.assertEqual(2, poll_count)
+        controller.control.send.assert_not_called()
+        wait_for_exit.assert_called_once_with(controller)
+
+    def test_group_absence_allows_one_observed_signal_zero_race(self) -> None:
+        with (
+            mock.patch.object(
+                forge_client,
+                "installer_process_group_exists",
+                side_effect=(True, False),
+            ) as group_exists,
+            mock.patch.object(
+                forge_client.time,
+                "monotonic",
+                side_effect=(0.0, 0.1),
+            ),
+            mock.patch.object(forge_client.time, "sleep") as sleep,
+        ):
+            forge_client.wait_for_installer_process_group_absence(500)
+
+        self.assertEqual([mock.call(500), mock.call(500)], group_exists.call_args_list)
+        sleep.assert_called_once_with(0.05)
+
+    def test_nonmissing_monitor_sample_never_counts_as_absence(self) -> None:
+        for status in (
+            macos_guarded_java.SampleStatus.ERROR,
+            macos_guarded_java.SampleStatus.IDENTITY_DRIFT,
+        ):
+            with self.subTest(status=status.value):
+                controller = self.supervisor_controller()
+                controller.monitor_target = macos_guarded_java.OwnedJavaProcess(
+                    pid=600,
+                    process_group_id=600,
+                    proc_start_abstime=1001,
+                    expected_executable=str(Path(sys.executable).resolve()),
+                )
+                controller.sampler.revalidate.return_value = None
+                controller.sampler.sample.return_value = mock.Mock(status=status)
+                with (
+                    mock.patch.object(
+                        forge_client,
+                        "installer_process_group_exists",
+                        return_value=False,
+                    ),
+                    mock.patch.object(
+                        forge_client.time,
+                        "monotonic",
+                        side_effect=(0.0, 3.0),
+                    ),
+                    self.assertRaisesRegex(
+                        forge_client.InstallerCleanupUncertain,
+                        status.value,
+                    ),
+                ):
+                    forge_client.wait_for_supervisor_group_exit(controller)
+
+                controller.sampler.sample.assert_called_once()
+                controller.sampler.revalidate.assert_not_called()
+
+    def test_installer_output_rejects_oversized_and_symlinked_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            oversized = root / "oversized-output.log"
+            oversized.write_bytes(
+                b"x"
+                * (forge_client.installer_supervisor.MAXIMUM_OUTPUT_TAIL_SIZE + 1)
+            )
+            oversized.chmod(0o600)
+            target = root / "target-output.log"
+            target.write_bytes(b"bounded output")
+            target.chmod(0o600)
+            linked = root / "linked-output.log"
+            linked.symlink_to(target)
+            cases = (
+                (oversized, "strict size bound"),
+                (linked, "Cannot open"),
+            )
+            for path, pattern in cases:
+                with self.subTest(path=path.name):
+                    controller = self.supervisor_controller()
+                    controller.handoff = {"installer_output_log": str(path)}
+                    with self.assertRaisesRegex(forge_client.E2EError, pattern):
+                        forge_client.installer_output_tail(controller)
+
+    def test_installer_telemetry_rejects_oversized_and_symlinked_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            oversized = root / "oversized-telemetry.json"
+            oversized.write_bytes(
+                b"x" * (macos_guarded_java.MAXIMUM_TELEMETRY_SIZE_BYTES + 1)
+            )
+            oversized.chmod(0o600)
+            target = root / "target-telemetry.json"
+            target.write_text("{}", encoding="utf-8")
+            target.chmod(0o600)
+            linked = root / "linked-telemetry.json"
+            linked.symlink_to(target)
+            for path in (oversized, linked):
+                with self.subTest(path=path.name):
+                    failure = forge_client.forge_installer_guard_history_failure(path)
+
+                    self.assertIsNotNone(failure)
+                    self.assertIn("became unreadable", failure)
+
+    def test_handoff_binds_all_three_process_identities_and_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            runtime = root / "supervisor-runtime"
+            runtime.mkdir(mode=0o700)
+            java_path = root / "java"
+            installer_path = root / "forge-installer.jar"
+            launcher_root = root / "launcher"
+            operation = forge_client.InstallerOperation(
+                "a" * 64,
+                "etherology-e2e-forge-1.20.1-v18",
+                321,
+                b"operation",
+            )
+            supervisor_target = macos_guarded_java.OwnedJavaProcess(
+                500,
+                500,
+                1000,
+                str(Path(sys.executable).resolve()),
+            )
+            java_target = macos_guarded_java.OwnedJavaProcess(
+                501,
+                500,
+                1001,
+                str(java_path),
+            )
+            monitor_target = macos_guarded_java.OwnedJavaProcess(
+                600,
+                600,
+                1002,
+                str(Path(sys.executable).resolve()),
+            )
+            sampler = mock.Mock()
+            sampler.revalidate.side_effect = lambda target: target
+            controller = forge_client.InstallerSupervisorController(
+                operation,
+                mock.Mock(),
+                supervisor_target,
+                500,
+                sampler,
+                mock.Mock(),
+                mock.Mock(),
+                runtime,
+            )
+            command = [
+                str(java_path),
+                forge_client.installer_supervisor.EXACT_HEAP_ARGUMENT,
+                "-jar",
+                str(installer_path),
+                "--installClient",
+                str(launcher_root),
+            ]
+            frame = {
+                "schema": 1,
+                "action": "HANDOFF",
+                "run_id": operation.run_id,
+                **{
+                    f"supervisor_{name}": value
+                    for name, value in {
+                        "pid": supervisor_target.pid,
+                        "process_group_id": supervisor_target.process_group_id,
+                        "proc_start_abstime": supervisor_target.proc_start_abstime,
+                        "executable": supervisor_target.expected_executable,
+                    }.items()
+                },
+                "supervisor_session_id": 500,
+                **{
+                    f"java_{name}": value
+                    for name, value in {
+                        "pid": java_target.pid,
+                        "process_group_id": java_target.process_group_id,
+                        "proc_start_abstime": java_target.proc_start_abstime,
+                        "executable": java_target.expected_executable,
+                    }.items()
+                },
+                "java_session_id": 500,
+                **{
+                    f"monitor_{name}": value
+                    for name, value in {
+                        "pid": monitor_target.pid,
+                        "process_group_id": monitor_target.process_group_id,
+                        "proc_start_abstime": monitor_target.proc_start_abstime,
+                        "executable": monitor_target.expected_executable,
+                    }.items()
+                },
+                "monitor_session_id": 600,
+                "monitor_target": forge_client.installer_supervisor.identity_payload(
+                    java_target
+                ),
+                "monitor_group_anchor": (
+                    forge_client.installer_supervisor.identity_payload(
+                        supervisor_target
+                    )
+                ),
+                "monitor_readiness": str(
+                    runtime / macos_guarded_java.READINESS_FILE_NAME
+                ),
+                "monitor_telemetry": str(
+                    runtime / macos_guarded_java.TELEMETRY_FILE_NAME
+                ),
+                "memory_policy": macos_guarded_java.memory_policy_payload(1024),
+                "installer_output_log": str(
+                    runtime / forge_client.installer_supervisor.INSTALLER_LOG_NAME
+                ),
+                "monitor_output_log": str(
+                    runtime / forge_client.installer_supervisor.MONITOR_LOG_NAME
+                ),
+                "installer_command_sha256": (
+                    forge_client.installer_supervisor.installer_command_sha256(command)
+                ),
+                "lease_interval_seconds": 1,
+                "lease_expiry_seconds": 3,
+            }
+            with (
+                mock.patch.object(
+                    forge_client.os,
+                    "getsid",
+                    side_effect=lambda pid: 500 if pid == 501 else 600,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "verify_supervised_installer_guard",
+                ),
+            ):
+                forge_client.validate_supervisor_handoff(
+                    controller,
+                    frame,
+                    java_path,
+                    installer_path,
+                    launcher_root,
+                )
+
+            self.assertEqual(java_target, controller.java_target)
+            self.assertEqual(monitor_target, controller.monitor_target)
+            changed = dict(frame)
+            changed["java_process_group_id"] = 999
+            with self.assertRaisesRegex(forge_client.E2EError, "identities"):
+                forge_client.validate_supervisor_handoff(
+                    controller,
+                    changed,
+                    java_path,
+                    installer_path,
+                    launcher_root,
+                )
+
+    def test_java_exited_requires_exact_phase_identities_and_process_samples(
+        self,
+    ) -> None:
+        controller = self.supervisor_controller()
+        java_target = macos_guarded_java.OwnedJavaProcess(
+            pid=501,
+            process_group_id=500,
+            proc_start_abstime=1001,
+            expected_executable="/test/java",
+        )
+        monitor_target = macos_guarded_java.OwnedJavaProcess(
+            pid=600,
+            process_group_id=600,
+            proc_start_abstime=1002,
+            expected_executable=str(Path(sys.executable).resolve()),
+        )
+        command_sha256 = "b" * 64
+        controller.handoff = {"installer_command_sha256": command_sha256}
+        controller.java_target = java_target
+        controller.monitor_target = monitor_target
+        frame = {
+            "schema": forge_client.installer_supervisor.SCHEMA,
+            "action": "JAVA_EXITED",
+            "run_id": controller.operation.run_id,
+            "java_pid": java_target.pid,
+            "java_process_group_id": java_target.process_group_id,
+            "java_session_id": controller.session_id,
+            "java_proc_start_abstime": java_target.proc_start_abstime,
+            "java_executable": java_target.expected_executable,
+            "returncode": 7,
+            "reaped": True,
+            "cleanup_disposition": "java-reaped-monitor-terminal-pending",
+            "installer_command_sha256": command_sha256,
+            "monitor_pid": monitor_target.pid,
+            "monitor_process_group_id": monitor_target.process_group_id,
+            "monitor_session_id": monitor_target.pid,
+            "monitor_proc_start_abstime": monitor_target.proc_start_abstime,
+            "monitor_executable": monitor_target.expected_executable,
+            "monitor_terminal_timeout_seconds": int(
+                forge_client.installer_supervisor.MONITOR_TERMINAL_TIMEOUT_SECONDS
+            ),
+        }
+        java_missing = mock.Mock(
+            status=macos_guarded_java.SampleStatus.MISSING,
+        )
+        monitor_available = mock.Mock(
+            status=macos_guarded_java.SampleStatus.AVAILABLE,
+            observed_identity=monitor_target,
+        )
+        controller.sampler.sample.side_effect = (java_missing, monitor_available)
+        with mock.patch.object(forge_client, "verify_installer_supervisor_live"):
+            returncode = forge_client.validate_supervisor_java_exited(
+                controller,
+                frame,
+            )
+
+        self.assertEqual(7, returncode)
+        self.assertEqual(7, controller.java_returncode)
+
+        controller.java_returncode = None
+        changed = dict(frame)
+        changed["java_pid"] = 999
+        with self.assertRaisesRegex(forge_client.E2EError, "identities"):
+            forge_client.validate_supervisor_java_exited(controller, changed)
+
+        controller.java_returncode = 7
+        with self.assertRaisesRegex(forge_client.E2EError, "outside its exact phase"):
+            forge_client.validate_supervisor_java_exited(controller, frame)
+
+    def test_controller_sequence_arms_leases_acks_and_proves_group_exit(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            state_root = root / ".state"
+            operation = forge_client.acquire_installer_operation(
+                configuration,
+                state_root,
+            )
+            launcher_root = forge_client.launcher_directory(configuration, root)
+            (launcher_root / "installers").mkdir(parents=True)
+            forge_installer = forge_client.installer_path(configuration, root)
+            forge_installer.write_bytes(b"installer")
+            forge_installer.chmod(0o600)
+            java_path = root / "java"
+            java_path.write_bytes(b"not executed")
+            supervisor_target = macos_guarded_java.OwnedJavaProcess(
+                500,
+                500,
+                1000,
+                str(Path(sys.executable).resolve()),
+            )
+            control = mock.Mock()
+            handoff = {"schema": 1, "action": "HANDOFF", "run_id": operation.run_id}
+            java_exited = {
+                "schema": 1,
+                "action": "JAVA_EXITED",
+                "run_id": operation.run_id,
+            }
+            completion = {
+                "schema": 1,
+                "action": "COMPLETION",
+                "run_id": operation.run_id,
+            }
+            control.frames = deque((handoff, java_exited, completion))
+            control.eof = False
+
+            def spawn(
+                selected_operation: forge_client.InstallerOperation,
+                runtime: Path,
+            ) -> forge_client.InstallerSupervisorController:
+                self.assertEqual(operation, selected_operation)
+                return forge_client.InstallerSupervisorController(
+                    operation,
+                    mock.Mock(),
+                    supervisor_target,
+                    500,
+                    mock.Mock(),
+                    mock.Mock(),
+                    control,
+                    runtime,
+                )
+
+            def validate_handoff(
+                controller: forge_client.InstallerSupervisorController,
+                frame: dict[str, object],
+                *_arguments: object,
+            ) -> None:
+                controller.handoff = frame
+
+            def validate_java_exited(
+                controller: forge_client.InstallerSupervisorController,
+                _frame: dict[str, object],
+            ) -> int:
+                controller.java_returncode = 0
+                return 0
+
+            with (
+                mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.object(
+                    forge_client,
+                    "spawn_installer_supervisor",
+                    side_effect=spawn,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "supervisor_activation_frame",
+                    return_value={
+                        "schema": 1,
+                        "action": "ACTIVATE",
+                        "run_id": operation.run_id,
+                    },
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_handoff",
+                    side_effect=validate_handoff,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "verify_installer_supervisor_live",
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_java_exited",
+                    side_effect=validate_java_exited,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_completion",
+                    return_value=0,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "wait_for_supervisor_group_exit",
+                ) as wait_for_exit,
+            ):
+                forge_client.run_supervised_forge_installer(
+                    configuration,
+                    operation,
+                    java_path,
+                    root,
+                    launcher_root,
+                )
+
+            sent_actions = [call.args[0]["action"] for call in control.send.call_args_list]
+            self.assertEqual(["ACTIVATE", "ARMED", "LEASE", "FINAL_ACK"], sent_actions)
+            wait_for_exit.assert_called_once()
+            self.assertEqual([], list(root.glob(".forge-installer-supervisor.*")))
+
+    def test_delayed_terminal_transition_sends_contiguous_leases(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            launcher_root = forge_client.launcher_directory(configuration, root)
+            java_path = root / "java"
+            controller = self.supervisor_controller()
+            operation = controller.operation
+            control = controller.control
+            handoff = {
+                "schema": 1,
+                "action": "HANDOFF",
+                "run_id": operation.run_id,
+            }
+            java_exited = {
+                "schema": 1,
+                "action": "JAVA_EXITED",
+                "run_id": operation.run_id,
+            }
+            completion = {
+                "schema": 1,
+                "action": "COMPLETION",
+                "run_id": operation.run_id,
+            }
+            clock = 0.0
+            poll_count = 0
+
+            def poll_control() -> None:
+                nonlocal poll_count
+
+                poll_count += 1
+                if poll_count == 3:
+                    control.frames.append(java_exited)
+                elif poll_count == 5:
+                    control.frames.append(completion)
+
+            def spawn(
+                selected_operation: forge_client.InstallerOperation,
+                runtime: Path,
+            ) -> forge_client.InstallerSupervisorController:
+                self.assertEqual(operation, selected_operation)
+                controller.runtime_directory = runtime
+                return controller
+
+            def validate_handoff(
+                selected_controller: forge_client.InstallerSupervisorController,
+                frame: dict[str, object],
+                *_arguments: object,
+            ) -> None:
+                selected_controller.handoff = frame
+
+            def validate_java_exited(
+                selected_controller: forge_client.InstallerSupervisorController,
+                _frame: dict[str, object],
+            ) -> int:
+                selected_controller.java_returncode = 0
+                return 0
+
+            def monotonic() -> float:
+                return clock
+
+            def advance_clock(_seconds: float) -> None:
+                nonlocal clock
+
+                clock += 1.0
+
+            control.poll.side_effect = poll_control
+            with (
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.object(forge_client, "verify_installer_operation"),
+                mock.patch.object(
+                    forge_client,
+                    "spawn_installer_supervisor",
+                    side_effect=spawn,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "supervisor_activation_frame",
+                    return_value={
+                        "schema": 1,
+                        "action": "ACTIVATE",
+                        "run_id": operation.run_id,
+                    },
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "receive_supervisor_frame",
+                    return_value=handoff,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_handoff",
+                    side_effect=validate_handoff,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_java_exited",
+                    side_effect=validate_java_exited,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_completion",
+                    return_value=0,
+                ),
+                mock.patch.object(forge_client, "verify_installer_supervisor_live"),
+                mock.patch.object(
+                    forge_client,
+                    "verify_supervised_installer_guard",
+                ) as verify_guard,
+                mock.patch.object(forge_client, "wait_for_supervisor_group_exit"),
+                mock.patch.object(
+                    forge_client.time,
+                    "monotonic",
+                    side_effect=monotonic,
+                ),
+                mock.patch.object(
+                    forge_client.time,
+                    "sleep",
+                    side_effect=advance_clock,
+                ),
+            ):
+                forge_client.run_supervised_forge_installer(
+                    configuration,
+                    operation,
+                    java_path,
+                    root,
+                    launcher_root,
+                )
+
+            leases = [
+                call.args[0]
+                for call in control.send.call_args_list
+                if call.args[0]["action"] == "LEASE"
+            ]
+            self.assertEqual([1, 2, 3, 4, 5], [lease["sequence"] for lease in leases])
+            self.assertEqual(2, verify_guard.call_count)
+            self.assertEqual(5, poll_count)
+            self.assertEqual([], list(root.glob(".forge-installer-supervisor.*")))
+
+    def test_nonzero_completion_reports_only_the_bounded_diagnostic_tail(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            launcher_root = forge_client.launcher_directory(configuration, root)
+            java_path = root / "java"
+            operation = forge_client.InstallerOperation(
+                run_id="a" * 64,
+                profile_id="etherology-e2e-forge-1.20.1-v18",
+                controller_pid=321,
+                content=b"operation",
+            )
+            supervisor_target = macos_guarded_java.OwnedJavaProcess(
+                500,
+                500,
+                1000,
+                str(Path(sys.executable).resolve()),
+            )
+            handoff = {
+                "schema": 1,
+                "action": "HANDOFF",
+                "run_id": operation.run_id,
+            }
+            completion = {
+                "schema": 1,
+                "action": "COMPLETION",
+                "run_id": operation.run_id,
+            }
+            java_exited = {
+                "schema": 1,
+                "action": "JAVA_EXITED",
+                "run_id": operation.run_id,
+            }
+            control = mock.Mock()
+            control.frames = deque((java_exited, completion))
+            control.eof = False
+            oldest_line = b"oldest diagnostic must be discarded\n"
+            retained_suffix = (
+                b"retained diagnostic\n" * 28
+                + b"newest installer failure\n"
+            )
+            padding_size = (
+                forge_client.installer_supervisor.MAXIMUM_OUTPUT_TAIL_SIZE
+                - len(oldest_line)
+                - len(retained_suffix)
+                - 1
+            )
+            output_tail = (
+                oldest_line
+                + b"x" * padding_size
+                + b"\n"
+                + retained_suffix
+            )
+
+            def spawn(
+                selected_operation: forge_client.InstallerOperation,
+                runtime: Path,
+            ) -> forge_client.InstallerSupervisorController:
+                self.assertEqual(operation, selected_operation)
+                output_path = (
+                    runtime / forge_client.installer_supervisor.INSTALLER_LOG_NAME
+                )
+                output_path.write_bytes(output_tail)
+                output_path.chmod(0o600)
+                handoff["installer_output_log"] = str(output_path)
+                return forge_client.InstallerSupervisorController(
+                    operation,
+                    mock.Mock(),
+                    supervisor_target,
+                    500,
+                    mock.Mock(),
+                    mock.Mock(),
+                    control,
+                    runtime,
+                )
+
+            def validate_handoff(
+                controller: forge_client.InstallerSupervisorController,
+                frame: dict[str, object],
+                *_arguments: object,
+            ) -> None:
+                controller.handoff = frame
+
+            def validate_java_exited(
+                controller: forge_client.InstallerSupervisorController,
+                _frame: dict[str, object],
+            ) -> int:
+                controller.java_returncode = 7
+                return 7
+
+            with (
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.object(forge_client, "verify_installer_operation"),
+                mock.patch.object(
+                    forge_client,
+                    "spawn_installer_supervisor",
+                    side_effect=spawn,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "supervisor_activation_frame",
+                    return_value={
+                        "schema": 1,
+                        "action": "ACTIVATE",
+                        "run_id": operation.run_id,
+                    },
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "receive_supervisor_frame",
+                    return_value=handoff,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_handoff",
+                    side_effect=validate_handoff,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_java_exited",
+                    side_effect=validate_java_exited,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "validate_supervisor_completion",
+                    return_value=7,
+                ),
+                mock.patch.object(forge_client, "wait_for_supervisor_group_exit"),
+                self.assertRaisesRegex(
+                    forge_client.E2EError,
+                    "newest installer failure",
+                ) as raised,
+            ):
+                forge_client.run_supervised_forge_installer(
+                    configuration,
+                    operation,
+                    java_path,
+                    root,
+                    launcher_root,
+                )
+
+            message = str(raised.exception)
+            self.assertNotIn("oldest diagnostic must be discarded", message)
+            self.assertLessEqual(
+                len(message.encode("utf-8")),
+                forge_client.installer_supervisor.MAXIMUM_OUTPUT_TAIL_SIZE + 128,
+            )
+            self.assertEqual([], list(root.glob(".forge-installer-supervisor.*")))
+
+    def test_cleanup_uncertainty_retains_supervisor_runtime(self) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            state_root = root / ".state"
+            operation = forge_client.acquire_installer_operation(
+                configuration,
+                state_root,
+            )
+            launcher_root = forge_client.launcher_directory(configuration, root)
+            (launcher_root / "installers").mkdir(parents=True)
+            forge_installer = forge_client.installer_path(configuration, root)
+            forge_installer.write_bytes(b"installer")
+            forge_installer.chmod(0o600)
+            java_path = root / "java"
+            java_path.write_bytes(b"not executed")
+            controller = forge_client.InstallerSupervisorController(
+                operation,
+                mock.Mock(),
+                macos_guarded_java.OwnedJavaProcess(
+                    500,
+                    500,
+                    1000,
+                    str(Path(sys.executable).resolve()),
+                ),
+                500,
+                mock.Mock(),
+                mock.Mock(),
+                mock.Mock(),
+                root,
+            )
+            with (
+                mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.object(
+                    forge_client,
+                    "spawn_installer_supervisor",
+                    return_value=controller,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "supervisor_activation_frame",
+                    return_value={
+                        "schema": 1,
+                        "action": "ACTIVATE",
+                        "run_id": operation.run_id,
+                    },
+                ),
+                mock.patch.object(
+                    controller.control,
+                    "send",
+                    side_effect=forge_client.installer_supervisor.SupervisorError(
+                        "control-invalid",
+                        "broken socket",
+                    ),
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "request_supervisor_cleanup",
+                    side_effect=forge_client.InstallerCleanupUncertain(
+                        "cleanup unproven"
+                    ),
+                ),
+                self.assertRaisesRegex(
+                    forge_client.InstallerCleanupUncertain,
+                    "cleanup unproven",
+                ),
+            ):
+                forge_client.run_supervised_forge_installer(
+                    configuration,
+                    operation,
+                    java_path,
+                    root,
+                    launcher_root,
+                )
+
+            self.assertTrue(
+                list(root.glob(".forge-installer-supervisor.*")),
+            )
+            self.assertTrue(forge_client.installer_operation_path(state_root).is_file())
+
+    def test_activation_send_baseexception_requires_authenticated_cleanup(
+        self,
+    ) -> None:
+        class ActivationMayHaveEscaped(BaseException):
+            pass
+
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            state_root = root / ".state"
+            operation = forge_client.acquire_installer_operation(
+                configuration,
+                state_root,
+            )
+            launcher_root = forge_client.launcher_directory(configuration, root)
+            (launcher_root / "installers").mkdir(parents=True)
+            forge_installer = forge_client.installer_path(configuration, root)
+            forge_installer.write_bytes(b"installer")
+            forge_installer.chmod(0o600)
+            java_path = root / "java"
+            java_path.write_bytes(b"not executed")
+            controller = self.supervisor_controller()
+            controller.operation = operation
+            controller.process.poll.return_value = -signal.SIGKILL
+            controller.control.eof = True
+            escaped_actions: list[str] = []
+
+            def send_activation(frame: dict[str, object]) -> None:
+                escaped_actions.append(str(frame["action"]))
+                self.assertTrue(controller.activated)
+                raise ActivationMayHaveEscaped("write outcome is unknowable")
+
+            with (
+                mock.patch.object(forge_client, "STATE_ROOT", state_root),
+                mock.patch.dict(forge_client.os.environ, {}, clear=True),
+                mock.patch.object(
+                    forge_client,
+                    "spawn_installer_supervisor",
+                    return_value=controller,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "supervisor_activation_frame",
+                    return_value={
+                        "schema": 1,
+                        "action": "ACTIVATE",
+                        "run_id": operation.run_id,
+                    },
+                ),
+                mock.patch.object(
+                    controller.control,
+                    "send",
+                    side_effect=send_activation,
+                ),
+                mock.patch.object(
+                    forge_client,
+                    "wait_for_supervisor_group_exit",
+                ) as wait_for_exit,
+                self.assertRaisesRegex(
+                    forge_client.InstallerCleanupUncertain,
+                    "authenticated terminal ERROR",
+                ),
+            ):
+                forge_client.run_supervised_forge_installer(
+                    configuration,
+                    operation,
+                    java_path,
+                    root,
+                    launcher_root,
+                )
+
+            self.assertTrue(controller.activated)
+            self.assertEqual(["ACTIVATE"], escaped_actions)
+            wait_for_exit.assert_called_once_with(controller)
+            self.assertTrue(list(root.glob(".forge-installer-supervisor.*")))
+            self.assertTrue(forge_client.installer_operation_path(state_root).is_file())
+
+
 class RuntimeIsolationTests(unittest.TestCase):
     def write_guarded_process_state(self, state_root: Path) -> Path:
         profile_id = "etherology-e2e-forge-1.20.1-v18"
@@ -771,6 +2218,33 @@ class RuntimeIsolationTests(unittest.TestCase):
                 forge_client.require_unattempted_profile(
                     configuration,
                     state_root,
+                )
+
+    def test_start_attempt_rejects_every_non_slitherite_scenario_before_mutation(
+        self,
+    ) -> None:
+        configuration = forge_client.load_configuration()
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            state_root = Path(temporary_directory).resolve() / ".state"
+            state_root.mkdir()
+            for scenario_id in (
+                "ethereal-storage",
+                "ethereal-channel",
+                "forest-lantern",
+                "attrahite-block-registry",
+                "unknown-scenario",
+            ):
+                with self.subTest(scenario_id=scenario_id), self.assertRaisesRegex(
+                    forge_client.E2EError,
+                    "explicitly select",
+                ):
+                    forge_client.reserve_launch_attempt(
+                        configuration,
+                        scenario_id,
+                        state_root,
+                    )
+                self.assertFalse(
+                    forge_client.launch_attempt_path(configuration, state_root).exists()
                 )
 
     def test_linked_start_attempt_fails_closed(self) -> None:
@@ -1029,6 +2503,11 @@ class RuntimeIsolationTests(unittest.TestCase):
                 ),
                 mock.patch.object(
                     forge_client,
+                    "require_slitherite_harness_pin",
+                    return_value=(1, "a" * 64),
+                ),
+                mock.patch.object(
+                    forge_client,
                     "clear_stale_and_reject_live_owned_clients",
                 ),
                 mock.patch.object(
@@ -1076,7 +2555,9 @@ class RuntimeIsolationTests(unittest.TestCase):
                     "state was retained",
                 ),
             ):
-                forge_client.start_command("ethereal-storage")
+                forge_client.start_command(
+                    forge_client.slitherite_run_contract.SCENARIO_ID
+                )
 
             self.assertTrue(state_path.is_file())
             self.assertEqual(2, json.loads(state_path.read_text())["schema"])

@@ -30,6 +30,8 @@ final class EarlyBootstrapRegistrationTest {
             "ru/feytox/etherology/registry/block/ExtraBlocksRegistry.class";
     private static final String ETHEROLOGY =
             "ru/feytox/etherology/Etherology.class";
+    private static final String RECIPES_REGISTRY =
+            "ru/feytox/etherology/registry/misc/RecipesRegistry.class";
     private static final Set<String> PROJECT_BLOCK_REGISTRIES = Set.of(
             "ru/feytox/etherology/registry/block/DecoBlocks",
             "ru/feytox/etherology/registry/block/ExtraBlocksRegistry"
@@ -68,7 +70,7 @@ final class EarlyBootstrapRegistrationTest {
     }
 
     @Test
-    void sharedMetalFoodToolAndLensRegistriesAttachBeforeLegacyItems()
+    void sharedMetalFoodToolLensAndAlchemyRegistriesAttachBeforeLegacyItems()
             throws IOException {
         Set<String> registryOwners = Set.of(
                 "ru/feytox/etherology/registry/block/SharedMetalBlocks",
@@ -77,6 +79,7 @@ final class EarlyBootstrapRegistrationTest {
                 "ru/feytox/etherology/registry/item/SharedFoodItems",
                 "ru/feytox/etherology/registry/item/SharedToolItems",
                 "ru/feytox/etherology/registry/item/SharedLensItems",
+                "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes",
                 "ru/feytox/etherology/registry/item/EItems"
         );
 
@@ -88,6 +91,7 @@ final class EarlyBootstrapRegistrationTest {
                         "ru/feytox/etherology/registry/item/SharedFoodItems#register",
                         "ru/feytox/etherology/registry/item/SharedToolItems#register",
                         "ru/feytox/etherology/registry/item/SharedLensItems#register",
+                        "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes#register",
                         "ru/feytox/etherology/registry/item/EItems#registerItems"
                 ),
                 referencedMethods(ETHEROLOGY, "initialize", registryOwners)
@@ -99,6 +103,17 @@ final class EarlyBootstrapRegistrationTest {
         assertFalse(declaresAnyField(
                 DECO_BLOCKS,
                 Set.of("AZEL_BLOCK", "ETHRIL_BLOCK", "EBONY_BLOCK")
+        ));
+    }
+
+    @Test
+    void legacyRecipesRegistryDoesNotDuplicateSharedAlchemyRegistration()
+            throws IOException {
+        assertFalse(referencesOwner(
+                RECIPES_REGISTRY,
+                "registerAll",
+                Set.of("ru/feytox/etherology/recipes/alchemy/"
+                        + "AlchemyRecipeSerializer")
         ));
     }
 

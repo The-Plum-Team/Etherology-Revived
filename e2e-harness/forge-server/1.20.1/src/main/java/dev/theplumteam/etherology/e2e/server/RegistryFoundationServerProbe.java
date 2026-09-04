@@ -318,6 +318,8 @@ public final class RegistryFoundationServerProbe {
             );
         }
 
+        ServerProbeMemoryHandoff.publishAndAwaitAcknowledgement();
+
         profileId = requireSystemProperty(PROFILE_PROPERTY);
         scenarioId = requireSystemProperty(SCENARIO_PROPERTY);
         runtimeKind = requireSystemProperty(RUNTIME_KIND_PROPERTY);

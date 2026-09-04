@@ -5,7 +5,8 @@
   "compatibilityLevel": "JAVA_17",
   "mixins": [
     "ChannelLeverSupportMixin",
-    "ForestLanternShearsItemMixin"
+    "ForestLanternShearsItemMixin",
+    "PedestalDispenserBlockMixin"
   ],
   "injectors": {
     "defaultRequire": 1

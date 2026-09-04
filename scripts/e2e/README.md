@@ -79,7 +79,8 @@ then stage them together:
 
 ```bash
 ./gradlew :fabric:1.20.1:buildE2eHarness \
-  :fabric:1.20.1:verifyE2eHarnessIsolation --no-daemon --console=plain
+  :fabric:1.20.1:verifyE2eHarnessIsolation \
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 python3 -B scripts/e2e/client.py stage
 python3 -B scripts/e2e/client.py check --scenario slitherite-block-registry
 ```
@@ -234,13 +235,13 @@ python3 -B -m unittest scripts/e2e/test_client.py scripts/e2e/test_evidence.py \
   scripts/e2e/test_fabric_attrahite_evidence_v30.py \
   scripts/e2e/test_fabric_slitherite_evidence_v31.py
 ./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ./gradlew :fabric:1.20.1:fabricForestLanternEvidenceSafetyTest \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ./gradlew :fabric:1.20.1:fabricAttrahiteEvidenceSafetyTest \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ./gradlew :fabric:1.20.1:fabricSlitheriteEvidenceSafetyTest \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ```
 
 ## Accepted Fabric Slitherite evidence (v31)
@@ -322,7 +323,7 @@ Archive-only verification remains repeatable:
 python3 -B scripts/e2e/fabric_attrahite_evidence_v30.py \
   --archive docs/evidence/fabric-1.20.1/attrahite-block-registry-v30
 ./gradlew :fabric:1.20.1:validateFabricAttrahiteEvidenceArchiveIntegrity \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ```
 
 The production-JAR SHA-256 is
@@ -366,7 +367,7 @@ Archive-only verification is repeatable and never consults live profile state:
 python3 -B scripts/e2e/fabric_forest_lantern_evidence.py \
   --archive docs/evidence/fabric-1.20.1/forest-lantern-v24
 ./gradlew :fabric:1.20.1:validateFabricForestLanternV24Milestone \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ```
 
 The archive and milestone now pass. Manifest creation binds the exact
@@ -413,9 +414,9 @@ outputs, or live runtime state:
 python3 -B scripts/e2e/fabric_metal_block_evidence.py \
   --archive docs/evidence/fabric-1.20.1/metal-block-registry-v23
 ./gradlew :fabric:1.20.1:fabricMetalBlockRegistryEvidenceSafetyTest \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ./gradlew :fabric:1.20.1:validateFabricMetalBlockRegistryEvidenceArchiveIntegrity \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ```
 
 Manifest creation rejects a different repository destination, runtime, profile,
@@ -500,13 +501,33 @@ The launcher-created runtime marker also records the tracked profile manifest's
 repository path, exact byte size, and SHA-256. Every readiness and launch action
 recomputes that descriptor and rejects a mismatched marker.
 
+Forge provisioning is serialized by the durable repository-owned
+`.java-installer-operation.pending.json` interlock. The controller launches only
+`java_installer_supervisor.py` through a private Unix-socket capability; that
+supervisor owns the pinned installer in its own session with exactly
+`-Xmx1024M`. It binds the Java and memory-monitor identities before accepting
+leases, publishes an authenticated `JAVA_EXITED` transition while the monitor
+records its natural terminal sample, and self-terminates its anchored process
+group with `SIGKILL` only after the controller acknowledges the frozen output
+digest. The interlock and staging evidence remain in place unless the exact
+anchor group and separately owned monitor are authoritatively absent. The
+pinned Forge installer and all six SHA-1-pinned processors execute reflectively
+inside that single heap-bounded JVM; none of those exact artifacts contains a
+process-spawning bytecode reference.
+
+Repository Gradle invocations are independently constrained by
+`org.gradle.jvmargs=-Xmx2G`, daemon and parallel execution disabled, and at most
+two workers. Native commands must retain `--no-daemon --no-parallel
+--max-workers=2`; no E2E lifecycle uses an external launcher or game profile.
+
 The following is the historical one-shot v17 workflow. It is retained only as
 provenance and must not be executed again; no consumed identity may be reused:
 
 ```bash
 python3 -B scripts/e2e/forge_client.py validate
 python3 -B scripts/e2e/forge_client.py provision
-./gradlew :forge:1.20.1:buildE2eHarness --no-daemon --console=plain
+./gradlew :forge:1.20.1:buildE2eHarness \
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 python3 -B scripts/e2e/forge_client.py stage
 python3 -B scripts/e2e/forge_client.py check --scenario attrahite-block-registry
 ```
@@ -593,7 +614,7 @@ python3 -B scripts/e2e/forge_attrahite_evidence_v17.py \
   --archive docs/evidence/forge-1.20.1/attrahite-block-registry-v17
 ./gradlew \
   :forge:1.20.1:validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity \
-  --no-daemon --console=plain
+  --no-daemon --no-parallel --max-workers=2 --console=plain
 ```
 
 The production-JAR SHA-256 is
@@ -752,7 +773,7 @@ python3 -B scripts/e2e/forge_server_attrahite_evidence_v19.py \
   --runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v19
 python3 -B scripts/e2e/forge_server_attrahite_evidence_v19.py \
   --archive docs/evidence/forge-1.20.1/attrahite-block-registry-server-v19
-./gradlew --no-daemon --no-parallel --console=plain \
+./gradlew --no-daemon --no-parallel --max-workers=2 --console=plain \
   :forge:1.20.1:validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity
 ```
 
@@ -793,7 +814,7 @@ and `run` may be used for another native capture only after advancing the
 tracked profile, contract, and verifier to a new ID and fresh runtime:
 
 ```bash
-./gradlew --no-daemon --no-parallel \
+./gradlew --no-daemon --no-parallel --max-workers=2 \
   :forge:1.20.1:verifyRegistryFoundationServerProbe --console=plain
 python3 -B scripts/e2e/forge_server.py validate
 python3 -B scripts/e2e/forge_server.py provision
@@ -801,9 +822,15 @@ python3 -B scripts/e2e/forge_server.py check
 python3 -B scripts/e2e/forge_server.py run
 ```
 
-The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
-dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
-and server logs independently, contains the process group, rejects crash,
+The runner uses a JDK 21-or-newer Gradle host and starts Gradle directly in a
+dedicated process group. The Java 17 server publishes an authenticated PID and
+executable handoff, proves one exact `-Xmx2048m` argument and a 2-GiB runtime
+maximum, then blocks until the controller binds its macOS process start time
+and starts authoritative physical-footprint monitoring. Only then does the
+controller acknowledge the probe and attach PID-scoped `caffeinate`. It bounds
+the process log, server log, handoff, and telemetry independently; a hard or
+emergency decision stops only the revalidated owned launch group. Cleanup
+uncertainty retains the run lock and process log. The runner also rejects crash,
 forbidden client-startup, and unexpected client-class markers, requires a saved
 world and normal shutdown, and publishes `done.marker` only after the report,
 copied server log, and launcher result pass. External game profiles consulted:
@@ -1148,6 +1175,8 @@ download, provision, build, or launch Minecraft:
 
 ```bash
 python3 -B -m unittest scripts/e2e/test_forge_client.py \
+  scripts/e2e/test_java_installer_supervisor.py \
+  scripts/e2e/test_macos_guarded_java.py \
   scripts/e2e/test_forge_evidence.py \
   scripts/e2e/test_forge_channel_evidence.py \
   scripts/e2e/test_forge_forest_lantern_evidence.py \

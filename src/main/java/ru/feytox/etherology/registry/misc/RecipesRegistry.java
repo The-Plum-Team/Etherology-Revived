@@ -12,7 +12,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import ru.feytox.etherology.recipes.FeyRecipeSerializer;
-import ru.feytox.etherology.recipes.alchemy.AlchemyRecipeSerializer;
 import ru.feytox.etherology.recipes.empower.EmpowerRecipeSerializer;
 import ru.feytox.etherology.recipes.jewelry.BrokenRecipeSerializer;
 import ru.feytox.etherology.recipes.jewelry.LensRecipeSerializer;
@@ -33,7 +32,6 @@ public class RecipesRegistry {
     public static void registerAll() {
         register(LensRecipeSerializer.INSTANCE);
         register(ModifierRecipeSerializer.INSTANCE);
-        register(AlchemyRecipeSerializer.INSTANCE);
         register(EmpowerRecipeSerializer.INSTANCE);
         register(MatrixRecipeSerializer.INSTANCE);
         register(BrokenRecipeSerializer.INSTANCE);

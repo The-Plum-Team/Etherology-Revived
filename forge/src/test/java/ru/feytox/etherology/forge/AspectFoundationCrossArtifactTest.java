@@ -36,6 +36,20 @@ final class AspectFoundationCrossArtifactTest {
             CLASS_PREFIX + "magic/aspects/AspectContainer.class";
     private static final String ASPECT_CONTAINER_OWNER =
             CLASS_PREFIX + "magic/aspects/AspectContainer";
+    private static final String ASPECT_CONTAINER_ID =
+            CLASS_PREFIX + "magic/aspects/AspectContainerId.class";
+    private static final String ASPECT_CONTAINER_TYPE =
+            CLASS_PREFIX + "magic/aspects/AspectContainerType.class";
+    private static final String ASPECT_ENTRY =
+            CLASS_PREFIX + "magic/aspects/AspectEntry.class";
+    private static final String ASPECT_REGISTRY_PART =
+            CLASS_PREFIX + "magic/aspects/AspectRegistryPart.class";
+    private static final String REVELATION_PROVIDER =
+            CLASS_PREFIX + "magic/aspects/RevelationAspectProvider.class";
+    private static final String ASPECTS_LOADER =
+            CLASS_PREFIX + "data/aspects/AspectsLoader.class";
+    private static final String SHARED_ASPECT_REGISTRIES =
+            CLASS_PREFIX + "registry/misc/SharedAspectRegistries.class";
     private static final String ALCHEMY_SERIALIZER =
             CLASS_PREFIX + "recipes/alchemy/AlchemyRecipeSerializer.class";
     private static final String FABRIC_INITIALIZER = CLASS_PREFIX + "Etherology.class";
@@ -43,7 +57,14 @@ final class AspectFoundationCrossArtifactTest {
     private static final Set<String> SHARED_CLASSES = Set.of(
             ASPECT,
             ETHEROLOGY_ASPECT,
-            ASPECT_CONTAINER
+            ASPECT_CONTAINER,
+            ASPECT_CONTAINER_ID,
+            ASPECT_CONTAINER_TYPE,
+            ASPECT_ENTRY,
+            ASPECT_REGISTRY_PART,
+            REVELATION_PROVIDER,
+            ASPECTS_LOADER,
+            SHARED_ASPECT_REGISTRIES
     );
     private static final List<String> ASPECT_NAMES = List.of(
             "RELLA", "ETHA", "DIZORD", "VACUO", "NETHA", "GRAVIA", "MOUNTA",
@@ -56,7 +77,32 @@ final class AspectFoundationCrossArtifactTest {
     private static final List<String> LEGACY_SOURCE_PATHS = List.of(
             "src/main/java/ru/feytox/etherology/magic/aspects/Aspect.java",
             "src/main/java/ru/feytox/etherology/magic/aspects/EtherologyAspect.java",
-            "src/main/java/ru/feytox/etherology/magic/aspects/AspectContainer.java"
+            "src/main/java/ru/feytox/etherology/magic/aspects/AspectContainer.java",
+            "src/main/java/ru/feytox/etherology/magic/aspects/AspectContainerId.java",
+            "src/main/java/ru/feytox/etherology/magic/aspects/AspectContainerType.java",
+            "src/main/java/ru/feytox/etherology/magic/aspects/AspectEntry.java",
+            "src/main/java/ru/feytox/etherology/magic/aspects/AspectRegistryPart.java",
+            "src/main/java/ru/feytox/etherology/magic/aspects/"
+                    + "RevelationAspectProvider.java",
+            "src/main/java/ru/feytox/etherology/data/aspects/AspectsLoader.java",
+            "src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "SharedAspectRegistries.java"
+    );
+    private static final List<String> COMMON_SOURCE_PATHS = List.of(
+            "magic/aspects/Aspect.java",
+            "magic/aspects/EtherologyAspect.java",
+            "magic/aspects/AspectContainer.java",
+            "magic/aspects/AspectContainerId.java",
+            "magic/aspects/AspectContainerType.java",
+            "magic/aspects/AspectEntry.java",
+            "magic/aspects/AspectRegistryPart.java",
+            "magic/aspects/RevelationAspectProvider.java",
+            "data/aspects/AspectsLoader.java",
+            "registry/misc/SharedAspectRegistries.java"
+    );
+    private static final List<String> ASPECT_RESOURCES = List.of(
+            "data/etherology/etherology/aspects/etherology.json",
+            "data/etherology/etherology/aspects/vanilla.json"
     );
 
     @Test
@@ -178,7 +224,7 @@ final class AspectFoundationCrossArtifactTest {
     }
 
     @Test
-    void onlyCommonSourceRootOwnsTheThreeCanonicalFqns() throws IOException {
+    void onlyCommonSourceRootOwnsTheCanonicalAspectBridge() throws IOException {
         Path repositoryRoot = requiredPath("etherology.aspectFoundation.repositoryRoot");
         assertTrue(Files.isDirectory(repositoryRoot, LinkOption.NOFOLLOW_LINKS));
         assertFalse(Files.isSymbolicLink(repositoryRoot));
@@ -188,17 +234,52 @@ final class AspectFoundationCrossArtifactTest {
             assertTrue(path.startsWith(repositoryRoot), path.toString());
             assertFalse(Files.exists(path, LinkOption.NOFOLLOW_LINKS), path.toString());
         }
-        for (String name : List.of(
-                "Aspect.java",
-                "EtherologyAspect.java",
-                "AspectContainer.java"
-        )) {
+        for (String name : COMMON_SOURCE_PATHS) {
             Path path = repositoryRoot.resolve(
-                    "common/src/main/java/ru/feytox/etherology/magic/aspects/" + name
+                    "common/src/main/java/ru/feytox/etherology/" + name
             ).normalize();
             assertTrue(Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS),
                     path.toString());
             assertFalse(Files.isSymbolicLink(path), path.toString());
+        }
+    }
+
+    @Test
+    void everyArtifactPackagesTheTwoByteExactCanonicalAspectParts()
+            throws IOException {
+        Path repositoryRoot = requiredPath(
+                "etherology.aspectFoundation.repositoryRoot"
+        );
+        for (Artifact artifact : artifacts()) {
+            try (JarFile jar = artifact.open()) {
+                List<String> entries = jar.stream().map(JarEntry::getName).toList();
+                for (String resource : ASPECT_RESOURCES) {
+                    assertEquals(
+                            1,
+                            entries.stream().filter(resource::equals).count(),
+                            artifact.description() + ":" + resource
+                    );
+                    byte[] canonical = Files.readAllBytes(repositoryRoot.resolve(
+                            "common/src/main/resources/" + resource
+                    ));
+                    JarEntry entry = jar.getJarEntry(resource);
+                    assertNotNull(entry, artifact.description() + ":" + resource);
+                    byte[] packaged;
+                    try (var input = jar.getInputStream(entry)) {
+                        packaged = input.readAllBytes();
+                    }
+                    assertTrue(
+                            java.util.Arrays.equals(canonical, packaged),
+                            artifact.description() + ":" + resource
+                    );
+                }
+            }
+        }
+
+        for (String resource : ASPECT_RESOURCES) {
+            assertFalse(Files.exists(repositoryRoot.resolve(
+                    "src/main/resources/" + resource
+            )));
         }
     }
 

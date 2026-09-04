@@ -119,6 +119,7 @@ STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
 PINNED_FABRIC_LIBRARY_CACHE_DIRECTORY = "pinned-fabric-libraries"
 JAVA_OVERRIDE_ENVIRONMENT_VARIABLE = "ETHERLOGY_ORIGINAL_JAVA_21"
+JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT = "-Xmx64M"
 SCENARIO_PROPERTY_NAME = "etherology.original.e2e.scenario"
 OFFLINE_ACCESS_TOKEN = "offline-etherology-original-baseline"
 OFFLINE_CLIENT_ID = "etherology-original-baseline-client"
@@ -2161,7 +2162,12 @@ def java_major_version(java_path: Path) -> int | None:
         return None
     try:
         completed = subprocess.run(
-            [str(java_path), "-XshowSettings:properties", "-version"],
+            [
+                str(java_path),
+                JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT,
+                "-XshowSettings:properties",
+                "-version",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,

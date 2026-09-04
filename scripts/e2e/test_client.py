@@ -1338,6 +1338,60 @@ class ArtifactStagingTests(unittest.TestCase):
 
 
 class LaunchTests(unittest.TestCase):
+    def test_java_version_probe_has_a_tiny_explicit_heap_cap(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            java_path = Path(temporary_directory).resolve() / "java"
+            java_path.write_bytes(b"not executed")
+            java_path.chmod(0o700)
+            completed = client.subprocess.CompletedProcess(
+                args=[],
+                returncode=0,
+                stdout="java.specification.version = 17\n",
+            )
+            with mock.patch.object(
+                client.subprocess,
+                "run",
+                return_value=completed,
+            ) as run:
+                self.assertEqual(17, client.java_major_version(java_path))
+
+            run.assert_called_once_with(
+                [
+                    str(java_path),
+                    "-Xmx64M",
+                    "-XshowSettings:properties",
+                    "-version",
+                ],
+                stdout=client.subprocess.PIPE,
+                stderr=client.subprocess.STDOUT,
+                text=True,
+                timeout=20,
+                check=False,
+            )
+
+    def test_provision_rejects_java_option_injection_before_state_mutation(
+        self,
+    ) -> None:
+        configuration = client.load_configuration()
+        for variable_name in (
+            "JAVA_TOOL_OPTIONS",
+            "JDK_JAVA_OPTIONS",
+            "_JAVA_OPTIONS",
+        ):
+            with (
+                self.subTest(variable_name=variable_name),
+                mock.patch.dict(
+                    client.os.environ,
+                    {variable_name: "-Xmx20G"},
+                    clear=True,
+                ),
+                mock.patch.object(client, "ensure_owned_state_roots") as ensure_roots,
+                self.assertRaisesRegex(client.E2EError, variable_name),
+            ):
+                client.provision_profile(configuration)
+
+            ensure_roots.assert_not_called()
+
     def test_inherited_java_options_are_rejected_before_java_probe(self) -> None:
         configuration = client.load_configuration()
         for variable_name in (

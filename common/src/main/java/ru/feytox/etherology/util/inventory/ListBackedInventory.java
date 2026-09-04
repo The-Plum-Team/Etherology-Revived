@@ -7,27 +7,24 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.util.collection.DefaultedList;
 
 /**
- * Supplies the vanilla {@link Inventory} operations for an inventory backed by a
- * stable {@link DefaultedList} instance.
+ * Supplies vanilla inventory operations for an inventory backed by one stable list.
  */
 public interface ListBackedInventory extends Inventory {
 
     /**
      * Returns the stable list that stores this inventory's stacks.
+     *
+     * @return live inventory storage
      */
     DefaultedList<ItemStack> getItems();
 
-    /**
-     * Derives the slot count from the backing list.
-     */
+    /** {@inheritDoc} */
     @Override
     default int size() {
         return getItems().size();
     }
 
-    /**
-     * Reports whether every slot contains an empty stack.
-     */
+    /** {@inheritDoc} */
     @Override
     default boolean isEmpty() {
         for (int slot = 0; slot < size(); slot++) {
@@ -36,17 +33,13 @@ public interface ListBackedInventory extends Inventory {
         return true;
     }
 
-    /**
-     * Returns the live stack stored in the requested slot.
-     */
+    /** {@inheritDoc} */
     @Override
     default ItemStack getStack(int slot) {
         return getItems().get(slot);
     }
 
-    /**
-     * Splits a stack and marks the inventory dirty only when an item was removed.
-     */
+    /** {@inheritDoc} */
     @Override
     default ItemStack removeStack(int slot, int count) {
         ItemStack removedStack = Inventories.splitStack(getItems(), slot, count);
@@ -54,17 +47,13 @@ public interface ListBackedInventory extends Inventory {
         return removedStack;
     }
 
-    /**
-     * Removes the complete stack without invoking the dirty hook.
-     */
+    /** {@inheritDoc} */
     @Override
     default ItemStack removeStack(int slot) {
         return Inventories.removeStack(getItems(), slot);
     }
 
-    /**
-     * Stores the supplied stack and truncates it to this inventory's stack limit.
-     */
+    /** {@inheritDoc} */
     @Override
     default void setStack(int slot, ItemStack stack) {
         getItems().set(slot, stack);
@@ -73,24 +62,18 @@ public interface ListBackedInventory extends Inventory {
         }
     }
 
-    /**
-     * Provides an empty dirty hook for implementations that do not persist state.
-     */
+    /** {@inheritDoc} */
     @Override
     default void markDirty() {
     }
 
-    /**
-     * Allows access by default so location-sensitive inventories can opt in to checks.
-     */
+    /** {@inheritDoc} */
     @Override
     default boolean canPlayerUse(PlayerEntity player) {
         return true;
     }
 
-    /**
-     * Resets every slot through the backing list's default-value semantics.
-     */
+    /** {@inheritDoc} */
     @Override
     default void clear() {
         getItems().clear();

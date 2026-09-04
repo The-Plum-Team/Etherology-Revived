@@ -16,6 +16,7 @@ if str(SCRIPT_DIRECTORY) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIRECTORY))
 
 import macos_guarded_java
+import macos_memory_guard as guard_module
 
 
 TARGET = macos_guarded_java.OwnedJavaProcess(
@@ -146,6 +147,49 @@ class LaunchContractTests(unittest.TestCase):
                 4096,
                 {},
             )
+
+    def test_generic_heap_contract_accepts_exact_server_spelling(self) -> None:
+        macos_guarded_java.verify_exact_java_heap_arguments(
+            ["-Dprobe=true", "-Xmx2048m"],
+            2048,
+            "-Xmx2048m",
+        )
+
+    def test_generic_heap_contract_rejects_duplicate_or_normalized_spelling(
+        self,
+    ) -> None:
+        for arguments in (
+            ["-Xmx2048M"],
+            ["-Xmx2G"],
+            ["-Xmx2048m", "-Xmx2048m"],
+            ["-Xmx4096M", "-Xmx2048m"],
+        ):
+            with self.subTest(arguments=arguments), self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "exactly one -Xmx2048m",
+            ):
+                macos_guarded_java.verify_exact_java_heap_arguments(
+                    arguments,
+                    2048,
+                    "-Xmx2048m",
+                )
+
+    def test_server_policy_changes_only_the_declared_heap_boundary(self) -> None:
+        policy = macos_guarded_java.memory_policy_for_maximum_heap(2048)
+
+        self.assertEqual(2048 * 1024 * 1024, policy.heap_limit_bytes)
+        self.assertEqual(
+            macos_guarded_java.FOUR_GIB_CLIENT_MEMORY_POLICY.warning_phys_footprint_bytes,
+            policy.warning_phys_footprint_bytes,
+        )
+        self.assertEqual(
+            macos_guarded_java.FOUR_GIB_CLIENT_MEMORY_POLICY.hard_phys_footprint_bytes,
+            policy.hard_phys_footprint_bytes,
+        )
+        self.assertEqual(
+            macos_guarded_java.FOUR_GIB_CLIENT_MEMORY_POLICY.emergency_phys_footprint_bytes,
+            policy.emergency_phys_footprint_bytes,
+        )
 
 
 class StateArtifactTests(unittest.TestCase):
@@ -282,6 +326,7 @@ class StateArtifactTests(unittest.TestCase):
                             "proc_start_abstime": TARGET.proc_start_abstime,
                             "expected_executable": TARGET.expected_executable,
                         },
+                        "policy": macos_guarded_java.memory_policy_payload(2048),
                         "state": {"enforcement_disarmed": False},
                         "records": [
                             {
@@ -302,6 +347,7 @@ class StateArtifactTests(unittest.TestCase):
                 "expected_executable": TARGET.expected_executable,
                 "memory_guard_telemetry": str(telemetry_path),
                 "memory_guard_readiness": str(readiness_path),
+                "memory_guard_maximum_memory_mb": 2048,
             }
 
             with mock.patch.object(
@@ -310,6 +356,53 @@ class StateArtifactTests(unittest.TestCase):
                 return_value=observed_at + 1_000_000_000,
             ):
                 self.assertTrue(
+                    macos_guarded_java.memory_guard_is_enforcing(state)
+                )
+
+    def test_guard_health_rejects_a_wrong_serialized_heap_policy(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, _readiness_path = write_guard_artifacts(runtime)
+            observed_at = 10_000_000_000
+            telemetry_path.write_text(
+                json.dumps(
+                    {
+                        "schema": 1,
+                        "target": {
+                            "pid": TARGET.pid,
+                            "process_group_id": TARGET.process_group_id,
+                            "proc_start_abstime": TARGET.proc_start_abstime,
+                            "expected_executable": TARGET.expected_executable,
+                        },
+                        "policy": macos_guarded_java.memory_policy_payload(4096),
+                        "state": {"enforcement_disarmed": False},
+                        "records": [
+                            {
+                                "observed_at_monotonic_ns": observed_at,
+                                "source": "proc-pid-rusage-v4",
+                                "status": "available",
+                                "identity_matches_target": True,
+                            }
+                        ],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            state = {
+                "pid": TARGET.pid,
+                "process_group_id": TARGET.process_group_id,
+                "proc_start_abstime": TARGET.proc_start_abstime,
+                "expected_executable": TARGET.expected_executable,
+                "memory_guard_telemetry": str(telemetry_path),
+                "memory_guard_maximum_memory_mb": 2048,
+            }
+
+            with mock.patch.object(
+                macos_guarded_java.time,
+                "monotonic_ns",
+                return_value=observed_at + 1_000_000_000,
+            ):
+                self.assertFalse(
                     macos_guarded_java.memory_guard_is_enforcing(state)
                 )
 
@@ -458,6 +551,172 @@ class LaunchOrchestrationTests(unittest.TestCase):
                 popen.call_args_list[2].args[0],
             )
 
+    def test_bound_server_monitor_receives_exact_heap_policy_and_identity(self) -> None:
+        server_target = macos_guarded_java.OwnedJavaProcess(
+            pid=41001,
+            process_group_id=41000,
+            proc_start_abstime=TARGET.proc_start_abstime,
+            expected_executable=TARGET.expected_executable,
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            monitor_process = FakeProcess(42000)
+            with (
+                mock.patch.object(
+                    macos_guarded_java.subprocess,
+                    "Popen",
+                    return_value=monitor_process,
+                ) as popen,
+                mock.patch.object(
+                    macos_guarded_java,
+                    "_wait_for_monitor_readiness",
+                ),
+                mock.patch.object(macos_guarded_java.os, "getpgrp", return_value=1),
+            ):
+                monitor = macos_guarded_java.start_guarded_java_monitor(
+                    server_target,
+                    2048,
+                    runtime,
+                    mock.Mock(),
+                )
+
+            self.assertEqual(server_target, monitor.target)
+            command = popen.call_args.args[0]
+            maximum_memory_index = command.index("--maximum-memory-mb")
+            self.assertEqual("2048", command[maximum_memory_index + 1])
+            process_group_index = command.index("--process-group-id")
+            self.assertEqual("41000", command[process_group_index + 1])
+            self.assertTrue(popen.call_args.kwargs["start_new_session"])
+
+    def test_monitor_refuses_a_target_in_the_controller_group_before_spawn(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            with (
+                mock.patch.object(
+                    macos_guarded_java.os,
+                    "getpgrp",
+                    return_value=TARGET.process_group_id,
+                ),
+                mock.patch.object(macos_guarded_java.subprocess, "Popen") as popen,
+                self.assertRaisesRegex(
+                    macos_guarded_java.GuardedJavaError,
+                    "shares the controller",
+                ),
+            ):
+                macos_guarded_java.start_guarded_java_monitor(
+                    TARGET,
+                    4096,
+                    runtime,
+                    mock.Mock(),
+                )
+
+            popen.assert_not_called()
+
+    def test_monitor_accepts_shared_group_only_with_exact_live_anchor(self) -> None:
+        anchored_target = macos_guarded_java.OwnedJavaProcess(
+            pid=TARGET.pid + 1,
+            process_group_id=TARGET.process_group_id,
+            proc_start_abstime=TARGET.proc_start_abstime + 1,
+            expected_executable=TARGET.expected_executable,
+        )
+        anchor = macos_guarded_java.OwnedJavaProcess(
+            pid=TARGET.process_group_id,
+            process_group_id=TARGET.process_group_id,
+            proc_start_abstime=TARGET.proc_start_abstime - 1,
+            expected_executable="/test/python3",
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            monitor_process = FakeProcess(42000)
+            with (
+                mock.patch.object(
+                    macos_guarded_java.subprocess,
+                    "Popen",
+                    return_value=monitor_process,
+                ) as popen,
+                mock.patch.object(
+                    macos_guarded_java,
+                    "_wait_for_monitor_readiness",
+                ),
+                mock.patch.object(
+                    macos_guarded_java.os,
+                    "getpid",
+                    return_value=anchor.pid,
+                ),
+                mock.patch.object(
+                    macos_guarded_java.os,
+                    "getpgrp",
+                    return_value=anchor.process_group_id,
+                ),
+            ):
+                monitor = macos_guarded_java.start_guarded_java_monitor(
+                    anchored_target,
+                    1024,
+                    runtime,
+                    mock.Mock(),
+                    group_anchor=anchor,
+                )
+
+            self.assertEqual(anchor, monitor.group_anchor)
+            command = popen.call_args.args[0]
+            anchor_index = command.index("--group-anchor-pid")
+            self.assertEqual(str(anchor.pid), command[anchor_index + 1])
+
+    def test_anchored_memory_stop_is_term_for_hard_and_kill_for_emergency(self) -> None:
+        anchored_target = macos_guarded_java.OwnedJavaProcess(
+            pid=TARGET.pid + 1,
+            process_group_id=TARGET.process_group_id,
+            proc_start_abstime=TARGET.proc_start_abstime + 1,
+            expected_executable=TARGET.expected_executable,
+        )
+        anchor = macos_guarded_java.OwnedJavaProcess(
+            pid=TARGET.process_group_id,
+            process_group_id=TARGET.process_group_id,
+            proc_start_abstime=TARGET.proc_start_abstime - 1,
+            expected_executable="/test/python3",
+        )
+        missing_sample = guard_module.MemorySample.missing(
+            1,
+            guard_module.SampleSource.PROC_PID_RUSAGE_V4,
+            "gone",
+        )
+        hard_sampler = mock.Mock()
+        hard_sampler.revalidate.side_effect = lambda target: target
+        hard_sampler.sample.return_value = missing_sample
+        with mock.patch.object(macos_guarded_java.os, "killpg") as kill_group:
+            macos_guarded_java._stop_anchored_java_process(
+                anchored_target,
+                anchor,
+                guard_module.MemoryDecision.HARD,
+                hard_sampler,
+            )
+        kill_group.assert_called_once_with(
+            anchored_target.process_group_id,
+            signal.SIGTERM,
+        )
+
+        emergency_sampler = mock.Mock()
+        emergency_sampler.revalidate.side_effect = (anchor, anchored_target, None)
+        emergency_sampler.sample.return_value = missing_sample
+        with (
+            mock.patch.object(macos_guarded_java.os, "killpg") as kill_group,
+            mock.patch.object(
+                macos_guarded_java,
+                "_process_group_exists",
+                return_value=False,
+            ),
+        ):
+            macos_guarded_java._stop_anchored_java_process(
+                anchored_target,
+                anchor,
+                guard_module.MemoryDecision.EMERGENCY,
+                emergency_sampler,
+            )
+        kill_group.assert_called_once_with(
+            anchored_target.process_group_id,
+            signal.SIGKILL,
+        )
+
     def test_readiness_failure_stops_monitor_and_owned_java_before_return(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             root = Path(temporary_directory).resolve()
@@ -537,6 +796,25 @@ class LaunchOrchestrationTests(unittest.TestCase):
             kill_group.call_args_list,
         )
 
+    def test_auxiliary_cleanup_reports_an_unreaped_process_after_kill(self) -> None:
+        process = FakeProcess(42000)
+        process.wait = mock.Mock(
+            side_effect=(
+                subprocess.TimeoutExpired("wait", 2.0),
+                subprocess.TimeoutExpired("wait", 2.0),
+            )
+        )
+
+        with self.assertRaisesRegex(
+            macos_guarded_java.GuardedJavaError,
+            "remained live after SIGKILL",
+        ):
+            macos_guarded_java.stop_spawned_auxiliary(process)
+
+        self.assertEqual(1, process.terminate_count)
+        self.assertEqual(1, process.kill_count)
+        self.assertEqual(2, process.wait.call_count)
+
 
 class StopSafetyTests(unittest.TestCase):
     def test_identity_mismatch_never_signals_a_process_group(self) -> None:
@@ -572,9 +850,14 @@ class StopSafetyTests(unittest.TestCase):
             ),
             mock.patch.object(macos_guarded_java.os, "killpg") as kill_group,
             mock.patch.object(
+                macos_guarded_java,
+                "_process_group_exists",
+                return_value=False,
+            ),
+            mock.patch.object(
                 macos_guarded_java.time,
                 "monotonic",
-                side_effect=(0.0, 1.0, 1.1),
+                side_effect=(0.0, 1.0),
             ),
         ):
             forced = macos_guarded_java.stop_owned_java_process(TARGET)
@@ -582,17 +865,168 @@ class StopSafetyTests(unittest.TestCase):
         self.assertFalse(forced)
         kill_group.assert_called_once_with(TARGET.pid, signal.SIGTERM)
 
+    def test_verified_group_member_can_stop_its_owned_launch_group(self) -> None:
+        target = macos_guarded_java.OwnedJavaProcess(
+            pid=41001,
+            process_group_id=41000,
+            proc_start_abstime=TARGET.proc_start_abstime,
+            expected_executable=TARGET.expected_executable,
+        )
+        sampler = mock.Mock()
+        sampler.revalidate.return_value = target
+        sampler.sample.return_value = mock.Mock(
+            status=macos_guarded_java.SampleStatus.MISSING
+        )
+        with (
+            mock.patch.object(macos_guarded_java.os, "killpg") as kill_group,
+            mock.patch.object(
+                macos_guarded_java,
+                "_process_group_exists",
+                return_value=False,
+            ),
+            mock.patch.object(
+                macos_guarded_java.time,
+                "monotonic",
+                side_effect=(0.0, 1.0),
+            ),
+        ):
+            forced = macos_guarded_java.stop_owned_java_process(
+                target,
+                owned_process_group_id=41000,
+                sampler=sampler,
+            )
+
+        self.assertFalse(forced)
+        kill_group.assert_called_once_with(41000, signal.SIGTERM)
+
+    def test_owned_group_mismatch_never_signals(self) -> None:
+        sampler = mock.Mock()
+        with (
+            mock.patch.object(macos_guarded_java.os, "killpg") as kill_group,
+            self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "recorded dedicated PGID",
+            ),
+        ):
+            macos_guarded_java.stop_owned_java_process(
+                TARGET,
+                owned_process_group_id=TARGET.pid + 1,
+                sampler=sampler,
+            )
+
+        sampler.revalidate.assert_not_called()
+        kill_group.assert_not_called()
+
+    def test_verified_group_member_escalates_when_its_exact_identity_survives(self) -> None:
+        target = macos_guarded_java.OwnedJavaProcess(
+            pid=41001,
+            process_group_id=41000,
+            proc_start_abstime=TARGET.proc_start_abstime,
+            expected_executable=TARGET.expected_executable,
+        )
+        sampler = mock.Mock()
+        sampler.revalidate.side_effect = (target, target)
+        sampler.sample.return_value = mock.Mock(
+            status=macos_guarded_java.SampleStatus.MISSING
+        )
+        with (
+            mock.patch.object(macos_guarded_java.os, "getpgrp", return_value=1),
+            mock.patch.object(macos_guarded_java.os, "killpg") as kill_group,
+            mock.patch.object(
+                macos_guarded_java,
+                "_process_group_exists",
+                return_value=False,
+            ),
+            mock.patch.object(
+                macos_guarded_java.time,
+                "monotonic",
+                side_effect=(0.0, 0.0, 1.0, 1.0),
+            ),
+        ):
+            forced = macos_guarded_java.stop_owned_java_process(
+                target,
+                owned_process_group_id=41000,
+                timeout_seconds=0.0,
+                sampler=sampler,
+            )
+
+        self.assertTrue(forced)
+        self.assertEqual(
+            [
+                mock.call(41000, signal.SIGTERM),
+                mock.call(41000, signal.SIGKILL),
+            ],
+            kill_group.call_args_list,
+        )
+
+    def test_missing_identity_refuses_escalation_while_group_remains(self) -> None:
+        target = macos_guarded_java.OwnedJavaProcess(
+            pid=41001,
+            process_group_id=41000,
+            proc_start_abstime=TARGET.proc_start_abstime,
+            expected_executable=TARGET.expected_executable,
+        )
+        sampler = mock.Mock()
+        sampler.revalidate.side_effect = (target, None)
+        sampler.sample.return_value = mock.Mock(
+            status=macos_guarded_java.SampleStatus.MISSING
+        )
+        with (
+            mock.patch.object(macos_guarded_java.os, "getpgrp", return_value=1),
+            mock.patch.object(macos_guarded_java.os, "killpg") as kill_group,
+            mock.patch.object(
+                macos_guarded_java,
+                "_process_group_exists",
+                return_value=True,
+            ),
+            mock.patch.object(
+                macos_guarded_java.time,
+                "monotonic",
+                side_effect=(0.0, 0.0),
+            ),
+            self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "could not be confirmed absent",
+            ),
+        ):
+            macos_guarded_java.stop_owned_java_process(
+                target,
+                owned_process_group_id=41000,
+                timeout_seconds=0.0,
+                sampler=sampler,
+            )
+
+        kill_group.assert_called_once_with(41000, signal.SIGTERM)
+
 
 class TelemetryPersistenceTests(unittest.TestCase):
-    def test_exact_maximum_payload_does_not_grow_on_disk(self) -> None:
+    def test_largest_unterminated_payload_gets_one_bounded_newline(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = Path(temporary_directory) / "telemetry.json"
+            content = b"x" * (
+                macos_guarded_java.MAXIMUM_TELEMETRY_SIZE_BYTES - 1
+            )
+
+            macos_guarded_java._write_telemetry(path, content)
+
+            self.assertEqual(
+                macos_guarded_java.MAXIMUM_TELEMETRY_SIZE_BYTES,
+                path.stat().st_size,
+            )
+            self.assertEqual(content + b"\n", path.read_bytes())
+
+    def test_unterminated_maximum_payload_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             path = Path(temporary_directory) / "telemetry.json"
             content = b"x" * macos_guarded_java.MAXIMUM_TELEMETRY_SIZE_BYTES
 
-            macos_guarded_java._write_telemetry(path, content)
+            with self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "size bound",
+            ):
+                macos_guarded_java._write_telemetry(path, content)
 
-            self.assertEqual(len(content), path.stat().st_size)
-            self.assertEqual(content, path.read_bytes())
+            self.assertFalse(path.exists())
 
 
 if __name__ == "__main__":

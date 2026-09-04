@@ -55,6 +55,8 @@ MAXIMUM_NESTED_JAR_SIZE = 64 * 1024 * 1024
 MAXIMUM_NESTED_JAR_DEPTH = 12
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
 JAVA_OVERRIDE_ENVIRONMENT_VARIABLE = "ETHERLOGY_E2E_JAVA_17"
+JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT = "-Xmx64M"
+FABRIC_INSTALLER_EXACT_HEAP_ARGUMENT = "-Xmx1024M"
 SCENARIO_PROPERTY_NAME = "etherology.e2e.scenario"
 ARTIFACT_ROLES = ("production", "harness")
 FATAL_CLIENT_LOG_MARKERS = (
@@ -916,7 +918,12 @@ def java_major_version(java_path: Path) -> int | None:
         return None
     try:
         completed = subprocess.run(
-            [str(java_path), "-XshowSettings:properties", "-version"],
+            [
+                str(java_path),
+                JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT,
+                "-XshowSettings:properties",
+                "-version",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -932,6 +939,10 @@ def java_major_version(java_path: Path) -> int | None:
 
 
 def resolve_java_17() -> Path:
+    try:
+        verify_java_option_environment(os.environ)
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     candidates: list[Path] = []
     override = os.environ.get(JAVA_OVERRIDE_ENVIRONMENT_VARIABLE)
     if override:
@@ -1006,6 +1017,7 @@ def install_isolated_game(
     loader_version = str(configuration.runtime_lane["loader_version"])
     command = [
         str(java_path),
+        FABRIC_INSTALLER_EXACT_HEAP_ARGUMENT,
         "-jar",
         str(installer_path),
         "client",
@@ -1860,6 +1872,10 @@ def verify_runtime(
 
 
 def provision_profile(configuration: ResolvedConfiguration) -> bool:
+    try:
+        verify_java_option_environment(os.environ)
+    except GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     ensure_owned_state_roots()
     require_unattempted_profile(configuration)
     target_root = runtime_root(configuration)

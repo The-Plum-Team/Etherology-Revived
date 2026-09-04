@@ -14,7 +14,8 @@ import ru.feytox.etherology.util.misc.EIdentifier;
 @UtilityClass
 public class RegistriesRegistry {
 
-    public static RegistryKey<Registry<AspectRegistryPart>> ASPECTS = RegistryKey.ofRegistry(EIdentifier.of("aspects"));
+    public static final RegistryKey<Registry<AspectRegistryPart>> ASPECTS =
+            SharedAspectRegistries.ASPECTS;
     public static RegistryKey<Registry<Chapter>> CHAPTERS = RegistryKey.ofRegistry(EIdentifier.of("chapters"));
     public static RegistryKey<Registry<Tab>> TABS = RegistryKey.ofRegistry(EIdentifier.of("tabs"));
 

@@ -53,6 +53,10 @@ val canonicalGameEventTagEntries = setOf(
 val canonicalEnchantmentTagEntry =
     "data/minecraft/tags/enchantment/non_treasure.json"
 val commonEtherSourceDataEntry = "etherology/ether_sources/default.json"
+val commonAspectRegistryDataEntries = setOf(
+    "etherology/etherology/aspects/etherology.json",
+    "etherology/etherology/aspects/vanilla.json",
+)
 val canonicalMetalBlockDataEntries = setOf(
     "etherology/loot_tables/blocks/azel_block.json",
     "etherology/loot_tables/blocks/ethril_block.json",
@@ -245,15 +249,28 @@ val canonicalWarpCounterDataEntries = setOf(
     "etherology/recipes/warp_counter.json",
     "etherology/advancements/recipes/tools/warp_counter.json",
 )
+val canonicalAlchemyRecipeDataEntries = setOf(
+    "etherology/recipes/binder.json",
+    "etherology/recipes/ebony_ingot.json",
+    "etherology/recipes/glint_shard.json",
+    "etherology/recipes/unadjusted_lens.json",
+)
+val canonicalPedestalDataEntries = setOf(
+    "etherology/advancements/recipes/decorations/pedestal.json",
+    "etherology/loot_tables/blocks/pedestal.json",
+    "etherology/recipes/pedestal.json",
+)
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
     canonicalAttrahiteBlockDataEntries + canonicalSlitheriteDataEntries +
-    canonicalWarpCounterDataEntries +
+    canonicalWarpCounterDataEntries + canonicalPedestalDataEntries +
+    canonicalAlchemyRecipeDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
-    acceptedForgeDirectDataEntries + commonEtherSourceDataEntry
+    acceptedForgeDirectDataEntries + commonEtherSourceDataEntry +
+        commonAspectRegistryDataEntries
 val commonBootstrapClassEntry =
     "ru/feytox/etherology/bootstrap/EtherologyBootstrap.class"
 val platformRegistrarClassEntry =
@@ -645,6 +662,14 @@ val forgeServerProfileSnapshotV19 =
 val forgeServerContractV20 = rootProject.file("scripts/e2e/forge_server_contract_v20.py")
 val forgeServerProfileSnapshotV20 =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v20.json")
+val forgeSlitheriteBlockRegistryServerEvidenceArchiveV20 =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "slitherite-block-registry-server-v20",
+    )
+val forgeSlitheriteBlockRegistryServerEvidenceVerifierV20 =
+    rootProject.file("scripts/e2e/forge_server_slitherite_evidence_v20.py")
+val forgeSlitheriteBlockRegistryServerEvidenceTestV20 =
+    rootProject.file("scripts/e2e/test_forge_server_slitherite_evidence_v20.py")
 val forgeServerNativeRunPostponedReason =
     "Forge dedicated-server Slitherite v20 is postponed until all five related " +
         "recipes are present with their real pedestal, alchemy, and lens dependencies"
@@ -658,6 +683,10 @@ val forgeRegistryFoundationServerProfileManifest =
 val forgeRegistryFoundationServerProbeSource = rootProject.file(
     "e2e-harness/forge-server/1.20.1/src/main/java/" +
         "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.java",
+)
+val forgeRegistryFoundationServerMemoryHandoffSource = rootProject.file(
+    "e2e-harness/forge-server/1.20.1/src/main/java/" +
+        "dev/theplumteam/etherology/e2e/server/ServerProbeMemoryHandoff.java",
 )
 val forgeE2eProfileManifest = rootProject.file("scripts/e2e/forge-1.20.1-profile.json")
 val forgeChannelProfileSnapshotV11 =
@@ -705,6 +734,8 @@ val forgeSlitheriteEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_slitherite_evidence_v18.py")
 val forgeSlitheriteEvidenceTest =
     rootProject.file("scripts/e2e/test_forge_slitherite_evidence_v18.py")
+val forgeSlitheriteRunContractV18 =
+    rootProject.file("scripts/e2e/forge_slitherite_run_contract_v18.py")
 val slitheriteClientEvidenceContract =
     rootProject.file("scripts/e2e/slitherite_client_evidence_contract_v1.py")
 val slitheriteClientEvidenceTestSupport =
@@ -1019,6 +1050,12 @@ sourceSets {
             canonicalWarpCounterDataEntries.forEach { entry ->
                 include("data/$entry")
             }
+            canonicalPedestalDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+            canonicalAlchemyRecipeDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
             include(canonicalEnchantmentTagEntry)
             include("META-INF/**")
@@ -1166,6 +1203,60 @@ fun readClassUtf8Constants(classBytes: ByteArray): Set<String> {
         }
     }
     return constants
+}
+
+fun readClassMethodReferences(classBytes: ByteArray): Set<String> {
+    val utf8Constants = mutableMapOf<Int, String>()
+    val classNameIndexes = mutableMapOf<Int, Int>()
+    val nameAndTypeIndexes = mutableMapOf<Int, Pair<Int, Int>>()
+    val methodReferences = mutableListOf<Pair<Int, Int>>()
+    DataInputStream(ByteArrayInputStream(classBytes)).use { input ->
+        check(input.readInt() == 0xCAFEBABE.toInt()) { "Invalid Java class magic" }
+        input.readUnsignedShort()
+        input.readUnsignedShort()
+        val constantPoolCount = input.readUnsignedShort()
+        var constantPoolIndex = 1
+        while (constantPoolIndex < constantPoolCount) {
+            when (val tag = input.readUnsignedByte()) {
+                1 -> utf8Constants[constantPoolIndex] = input.readUTF()
+                3, 4 -> input.skipBytes(4)
+                5, 6 -> {
+                    input.skipBytes(8)
+                    constantPoolIndex++
+                }
+                7 -> classNameIndexes[constantPoolIndex] = input.readUnsignedShort()
+                8, 16, 19, 20 -> input.skipBytes(2)
+                9, 17, 18 -> input.skipBytes(4)
+                10, 11 -> methodReferences.add(
+                    input.readUnsignedShort() to input.readUnsignedShort(),
+                )
+                12 -> nameAndTypeIndexes[constantPoolIndex] =
+                    input.readUnsignedShort() to input.readUnsignedShort()
+                15 -> input.skipBytes(3)
+                else -> error("Unsupported Java class constant-pool tag $tag")
+            }
+            constantPoolIndex++
+        }
+    }
+    return methodReferences.mapTo(mutableSetOf()) { (classIndex, nameAndTypeIndex) ->
+        val classNameIndex = requireNotNull(classNameIndexes[classIndex]) {
+            "Class method reference has no owner"
+        }
+        val (methodNameIndex, descriptorIndex) =
+            requireNotNull(nameAndTypeIndexes[nameAndTypeIndex]) {
+                "Class method reference has no name and type"
+            }
+        val owner = requireNotNull(utf8Constants[classNameIndex]) {
+            "Class method-reference owner has no UTF-8 constant"
+        }
+        val methodName = requireNotNull(utf8Constants[methodNameIndex]) {
+            "Class method reference has no UTF-8 name"
+        }
+        val descriptor = requireNotNull(utf8Constants[descriptorIndex]) {
+            "Class method reference has no UTF-8 descriptor"
+        }
+        "$owner.$methodName:$descriptor"
+    }
 }
 
 fun readCompiledClassConstants(
@@ -3855,6 +3946,70 @@ fun missingForgeAttrahiteBlockRegistryServerEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeSlitheriteBlockRegistryServerEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeSlitheriteBlockRegistryServerEvidenceVerifierV20.isFile
+        || Files.isSymbolicLink(
+            forgeSlitheriteBlockRegistryServerEvidenceVerifierV20.toPath(),
+        )
+    ) {
+        missingConditions.add(
+            "strict Forge Slitherite block-registry server evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeRegistryFoundationServerEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("slitherite-block-registry-server-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeSlitheriteBlockRegistryServerEvidenceArchiveV20)) {
+        missingConditions.add(
+            "the exact frozen Forge Slitherite block-registry server-v20 evidence archive " +
+                "is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeSlitheriteBlockRegistryServerEvidenceVerifierV20.absolutePath,
+        "--archive",
+        forgeSlitheriteBlockRegistryServerEvidenceArchiveV20.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Slitherite block-registry server evidence verification " +
+                    "failed: ${detail.take(4_000)}",
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Slitherite block-registry server evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeForestLanternClientEvidenceMilestone(): List<String> {
     val missingConditions = mutableListOf<String>()
     if (!forgeForestLanternEvidenceVerifier.isFile
@@ -4141,6 +4296,13 @@ fun firstIncompleteForgeMilestone(
         return "Attrahite native acceptance" to missingAttrahiteNativeAcceptance
     }
 
+    val missingSlitheriteServerEvidence =
+        missingForgeSlitheriteBlockRegistryServerEvidenceMilestone()
+    if (missingSlitheriteServerEvidence.isNotEmpty()) {
+        return "Slitherite block-registry dedicated-server evidence" to
+            missingSlitheriteServerEvidence
+    }
+
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
     if (missingRegistrySpine.isNotEmpty()) {
         return "authoritative registry spine" to missingRegistrySpine
@@ -4400,6 +4562,7 @@ tasks.named<Test>("test").configure {
     exclude("**/LensFoundationCrossArtifactTest.class")
     exclude("**/UnadjustedLensRegistryResourcesTest.class")
     exclude("**/AspectFoundationCrossArtifactTest.class")
+    exclude("**/PedestalCrossArtifactTest.class")
     exclude("**/AlchemyRecipeFoundationCrossArtifactTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
@@ -5479,7 +5642,22 @@ val unadjustedLensRegistryTest =
                     + "SharedLensItems.java",
             ),
             rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "SharedAlchemyRecipes.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/bootstrap/"
+                    + "EtherologyBootstrap.java",
+            ),
+            rootProject.file(
                 "src/main/java/ru/feytox/etherology/registry/item/EItems.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "RecipesRegistry.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/Etherology.java",
             ),
             rootProject.file(
                 "src/client/resources/assets/etherology/models/item/"
@@ -5579,9 +5757,30 @@ val aspectFoundationCrossArtifactTest =
             rootProject.fileTree(
                 "common/src/main/java/ru/feytox/etherology/magic/aspects",
             ) {
-                include("Aspect.java")
-                include("EtherologyAspect.java")
-                include("AspectContainer.java")
+                include("*.java")
+            },
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/data/aspects/AspectsLoader.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/misc/" +
+                    "SharedAspectRegistries.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/misc/RegistriesRegistry.java",
+            ),
+            rootProject.file(
+                "forge/src/main/java/ru/feytox/etherology/forge/" +
+                    "ForgeAspectRegistryEvents.java",
+            ),
+            rootProject.file(
+                "forge/src/main/java/ru/feytox/etherology/forge/" +
+                    "ForgeAspectReloadEvents.java",
+            ),
+            rootProject.fileTree(
+                "common/src/main/resources/data/etherology/etherology/aspects",
+            ) {
+                include("*.json")
             },
         ).withPropertyName("canonicalAspectFoundationSources")
         doFirst {
@@ -5617,6 +5816,153 @@ val aspectFoundationCrossArtifactTest =
             )
             systemProperty(
                 "etherology.aspectFoundation.repositoryRoot",
+                rootProject.projectDir.absolutePath,
+            )
+        }
+    }
+
+val canonicalPedestalSourcesAndResources = files(
+    rootProject.fileTree(
+        "common/src/main/java/ru/feytox/etherology/block/pedestal",
+    ) {
+        include("*.java")
+    },
+    rootProject.file(
+        "common/src/main/java/ru/feytox/etherology/util/inventory/" +
+            "ListBackedInventory.java",
+    ),
+    rootProject.file(
+        "common/src/main/java/ru/feytox/etherology/util/misc/UniqueProvider.java",
+    ),
+    rootProject.file(
+        "common/src/main/java/ru/feytox/etherology/registry/block/" +
+            "SharedPedestalBlocks.java",
+    ),
+    rootProject.file(
+        "common/src/main/java/ru/feytox/etherology/registry/item/" +
+            "SharedPedestalBlockItems.java",
+    ),
+    rootProject.file(
+        "common/src/main/java/ru/feytox/etherology/registry/block/" +
+            "SharedPedestalBlockEntities.java",
+    ),
+    rootProject.file(
+        "common/src/main/java/ru/feytox/etherology/bootstrap/EtherologyBootstrap.java",
+    ),
+    rootProject.file(
+        "fabric/src/main/java/ru/feytox/etherology/block/pedestal/" +
+            "FabricPedestalBlockEntityRemovalBackend.java",
+    ),
+    rootProject.file("fabric/src/main/java/ru/feytox/etherology/EtherologyFabric.java"),
+    rootProject.file("src/main/java/ru/feytox/etherology/mixin/DispenserBlockMixin.java"),
+    rootProject.file(
+        "src/main/java/ru/feytox/etherology/network/interaction/" +
+            "RemoveBlockEntityS2C.java",
+    ),
+    rootProject.file(
+        "src/client/java/ru/feytox/etherology/client/block/pedestal/" +
+            "PedestalRenderer.java",
+    ),
+    rootProject.file(
+        "src/client/java/ru/feytox/etherology/client/registry/" +
+            "BlockRenderLayerMapRegistry.java",
+    ),
+    rootProject.file(
+        "src/client/java/ru/feytox/etherology/client/registry/" +
+            "BlockRenderersRegistry.java",
+    ),
+    rootProject.fileTree("forge/src/main/java/ru/feytox/etherology/forge") {
+        include("EtherologyForge.java")
+        include("block/pedestal/ForgePedestalBlockEntityRemovalBackend.java")
+        include("client/ForgeClientEvents.java")
+        include("client/ForgePedestalClientRemoval.java")
+        include("client/PedestalRenderer.java")
+        include("mixin/PedestalDispenserBlockMixin.java")
+        include("network/ForgePedestalNetwork.java")
+        include("network/RemovePedestalBlockEntityS2C.java")
+    },
+    rootProject.file("src/main/resources/etherology.mixins.json"),
+    rootProject.file("forge/src/main/resources/etherology.forge.mixins.json"),
+    rootProject.fileTree("src/client/resources/assets/etherology") {
+        include("**/*pedestal*")
+    },
+    englishLanguageFile,
+    rootProject.fileTree("src/main/generated") {
+        canonicalPedestalDataEntries.forEach { entry -> include("data/$entry") }
+        include("data/minecraft/tags/blocks/mineable/pickaxe.json")
+        include("assets/etherology/lang/ru_ru.json")
+    },
+)
+
+val pedestalCrossArtifactTest =
+    tasks.register<Test>("pedestalCrossArtifactTest") {
+        group = "verification"
+        description =
+            "Runs exact cross-loader Pedestal ownership, isolation, and packaged-resource tests."
+        dependsOn(
+            tasks.named("testClasses"),
+            commonJar,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            fabricShadowJar,
+            fabricRemapJar,
+            forgeShadowJar,
+        )
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform()
+        filter {
+            includeTestsMatching(
+                "ru.feytox.etherology.forge.PedestalCrossArtifactTest",
+            )
+        }
+        inputs.file(commonJar.flatMap { it.archiveFile })
+            .withPropertyName("pedestalCommonJar")
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("pedestalFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("pedestalForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("pedestalFabricDevelopmentJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+            .withPropertyName("pedestalFabricProductionJar")
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("pedestalForgeShadowJar")
+        inputs.files(canonicalPedestalSourcesAndResources)
+            .withPropertyName("canonicalPedestalSourcesAndResources")
+        doFirst {
+            systemProperty(
+                "etherology.pedestal.commonJar",
+                commonJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.pedestal.fabricTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.pedestal.forgeTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.pedestal.fabricDevelopmentJar",
+                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.pedestal.fabricProductionJar",
+                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.pedestal.forgeShadowJar",
+                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.pedestal.repositoryRoot",
                 rootProject.projectDir.absolutePath,
             )
         }
@@ -5677,6 +6023,15 @@ val alchemyRecipeFoundationCrossArtifactTest =
             rootProject.file(
                 "fabric/src/main/java/ru/feytox/etherology/EtherologyFabric.java",
             ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "SharedAlchemyRecipes.java",
+            ),
+            rootProject.fileTree("src/main/generated") {
+                canonicalAlchemyRecipeDataEntries.forEach { entry ->
+                    include("data/$entry")
+                }
+            },
         ).withPropertyName("canonicalAlchemyRecipeFoundationSources")
         doFirst {
             systemProperty(
@@ -6561,7 +6916,8 @@ val forgeSlitheriteBlockRegistryServerSafetyTest =
     tasks.register<Exec>("forgeSlitheriteBlockRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the prepared Forge Slitherite block-registry v20 contract tests."
+            "Runs the prepared Forge Slitherite block-registry v20 contract and " +
+                "sealed-evidence tests."
         dependsOn(
             forgeAttrahiteBlockRegistryServerV19SafetyTest,
             serverProbeSafetyInterlockTest,
@@ -6574,17 +6930,28 @@ val forgeSlitheriteBlockRegistryServerSafetyTest =
             "unittest",
             "scripts/e2e/test_forge_server.py",
             "scripts/e2e/test_forge_server_contract_v20.py",
+            "scripts/e2e/test_forge_server_slitherite_evidence_v20.py",
+            "scripts/e2e/test_macos_guarded_java.py",
         )
         inputs.files(
             forgeServerContractV19,
             forgeServerContractV20,
             forgeServerProfileSnapshotV19,
             forgeServerProfileSnapshotV20,
+            forgeAttrahiteBlockRegistryServerEvidenceVerifierV19,
+            forgeAttrahiteBlockRegistryServerEvidenceTestV19,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
             forgeRegistryFoundationServerRunnerTestV20,
+            forgeSlitheriteBlockRegistryServerEvidenceVerifierV20,
+            forgeSlitheriteBlockRegistryServerEvidenceTestV20,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
+            forgeRegistryFoundationServerMemoryHandoffSource,
+            rootProject.file("scripts/e2e/macos_guarded_java.py"),
+            rootProject.file("scripts/e2e/test_macos_guarded_java.py"),
+            rootProject.file("scripts/baseline/macos_memory_guard.py"),
+            rootProject.file("scripts/baseline/tests/test_macos_memory_guard.py"),
             slitheriteClientEvidenceContract,
             originalSlitheriteEvidenceVerifier,
             rootProject.file("release/release-matrix.json"),
@@ -6822,6 +7189,35 @@ val validateForgeAttrahiteBlockRegistryServerEvidenceArchiveIntegrity =
                 "Forge $minecraftVersion Attrahite block-registry server evidence is invalid:\n${
                     missingConditions.joinToString("\n") { condition -> " - $condition" }
                 }"
+            }
+        }
+    }
+
+val validateForgeSlitheriteBlockRegistryServerEvidenceArchiveIntegrity =
+    tasks.register("validateForgeSlitheriteBlockRegistryServerEvidenceArchiveIntegrity") {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Slitherite block-registry server-v20 archive."
+        dependsOn(forgeSlitheriteBlockRegistryServerSafetyTest)
+        inputs.files(
+            forgeServerContractV20,
+            forgeServerProfileSnapshotV20,
+            forgeSlitheriteBlockRegistryServerEvidenceVerifierV20,
+        )
+        if (forgeSlitheriteBlockRegistryServerEvidenceArchiveV20.exists()) {
+            inputs.dir(forgeSlitheriteBlockRegistryServerEvidenceArchiveV20)
+                .withPropertyName("forgeSlitheriteBlockRegistryServerEvidenceArchiveV20")
+        }
+        doLast {
+            val missingConditions =
+                missingForgeSlitheriteBlockRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Slitherite block-registry server evidence is " +
+                    "invalid:\n${
+                        missingConditions.joinToString("\n") { condition ->
+                            " - $condition"
+                        }
+                    }"
             }
         }
     }
@@ -7641,6 +8037,30 @@ val validateForgeSlitheriteStaticMilestone =
         ).withPropertyName("canonicalSlitheriteResources")
     }
 
+val validateForgeSlitheriteMilestone =
+    tasks.register("validateForgeSlitheriteMilestone") {
+        group = "verification"
+        description =
+            "Blocks the Slitherite slice until static checks and native Forge " +
+                "dedicated-server proof are accepted."
+        dependsOn(
+            validateForgeSlitheriteStaticMilestone,
+            validateForgeSlitheriteBlockRegistryServerEvidenceArchiveIntegrity,
+        )
+        doLast {
+            val missingConditions =
+                missingForgeSlitheriteBlockRegistryServerEvidenceMilestone()
+            check(missingConditions.isEmpty()) {
+                "Forge $minecraftVersion Slitherite native server acceptance is " +
+                    "incomplete:\n${
+                        missingConditions.joinToString("\n") { condition ->
+                            " - $condition"
+                        }
+                    }"
+            }
+        }
+    }
+
 val validateForgeWarpCounterStaticMilestone =
     tasks.register("validateForgeWarpCounterStaticMilestone") {
         group = "verification"
@@ -7648,7 +8068,7 @@ val validateForgeWarpCounterStaticMilestone =
             "Validates the shared Warp Counter registration and exact static resources; " +
                 "its corruption-driven model predicate remains deferred."
         dependsOn(
-            validateForgeSlitheriteStaticMilestone,
+            validateForgeSlitheriteMilestone,
             validateForgeAcceptedDataSet,
             commonJar,
             commonTest,
@@ -7743,8 +8163,9 @@ val validateForgeUnadjustedLensStaticMilestone =
     tasks.register("validateForgeUnadjustedLensStaticMilestone") {
         group = "verification"
         description =
-            "Validates one shared unadjusted-lens registry owner and exact static assets; " +
-                "Forge alchemy loading and lens runtime behavior remain deferred."
+            "Validates one shared unadjusted-lens registry owner, exact static assets, " +
+                "and cross-loader alchemy registration and packaging; native lens behavior " +
+                "remains deferred."
         dependsOn(
             validateForgeLensFoundationStaticMilestone,
             commonJar,
@@ -7772,7 +8193,22 @@ val validateForgeUnadjustedLensStaticMilestone =
                     + "SharedLensItems.java",
             ),
             rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "SharedAlchemyRecipes.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/bootstrap/"
+                    + "EtherologyBootstrap.java",
+            ),
+            rootProject.file(
                 "src/main/java/ru/feytox/etherology/registry/item/EItems.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "RecipesRegistry.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/Etherology.java",
             ),
             rootProject.file(
                 "src/client/resources/assets/etherology/models/item/"
@@ -7802,7 +8238,8 @@ val validateForgeAspectFoundationStaticMilestone =
     tasks.register("validateForgeAspectFoundationStaticMilestone") {
         group = "verification"
         description =
-            "Validates canonical shared aspect types and exact serialization/order contracts."
+            "Validates canonical shared aspect types, synced datapack bridges, resources, " +
+                "and exact serialization/order contracts."
         dependsOn(
             validateForgeUnadjustedLensStaticMilestone,
             commonJar,
@@ -7828,20 +8265,73 @@ val validateForgeAspectFoundationStaticMilestone =
             rootProject.fileTree(
                 "common/src/main/java/ru/feytox/etherology/magic/aspects",
             ) {
-                include("Aspect.java")
-                include("EtherologyAspect.java")
-                include("AspectContainer.java")
+                include("*.java")
+            },
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/data/aspects/AspectsLoader.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/misc/" +
+                    "SharedAspectRegistries.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/misc/RegistriesRegistry.java",
+            ),
+            rootProject.file(
+                "forge/src/main/java/ru/feytox/etherology/forge/" +
+                    "ForgeAspectRegistryEvents.java",
+            ),
+            rootProject.file(
+                "forge/src/main/java/ru/feytox/etherology/forge/" +
+                    "ForgeAspectReloadEvents.java",
+            ),
+            rootProject.fileTree(
+                "common/src/main/resources/data/etherology/etherology/aspects",
+            ) {
+                include("*.json")
             },
         ).withPropertyName("canonicalAspectFoundationSources")
+    }
+
+val validateForgePedestalStaticMilestone =
+    tasks.register("validateForgePedestalStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates exact shared Pedestal ownership, loader isolation, transformed " +
+                "contracts, and packaged resources."
+        dependsOn(
+            validateForgeAspectFoundationStaticMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            pedestalCrossArtifactTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("pedestalFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("pedestalForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(canonicalPedestalSourcesAndResources)
+            .withPropertyName("canonicalPedestalSourcesAndResources")
     }
 
 val validateForgeAlchemyRecipeFoundationStaticMilestone =
     tasks.register("validateForgeAlchemyRecipeFoundationStaticMilestone") {
         group = "verification"
         description =
-            "Validates canonical shared alchemy recipes and the narrow 1.20.1 component backend."
+            "Validates the canonical shared alchemy serializer/type registration, recipes, " +
+                "and the narrow 1.20.1 component backend."
         dependsOn(
-            validateForgeAspectFoundationStaticMilestone,
+            validateForgePedestalStaticMilestone,
             commonJar,
             commonTest,
             fabricTest,
@@ -7882,6 +8372,15 @@ val validateForgeAlchemyRecipeFoundationStaticMilestone =
             rootProject.file(
                 "fabric/src/main/java/ru/feytox/etherology/EtherologyFabric.java",
             ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/misc/"
+                    + "SharedAlchemyRecipes.java",
+            ),
+            rootProject.fileTree("src/main/generated") {
+                canonicalAlchemyRecipeDataEntries.forEach { entry ->
+                    include("data/$entry")
+                }
+            },
         ).withPropertyName("canonicalAlchemyRecipeFoundationSources")
     }
 
@@ -7939,11 +8438,12 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeFoodItemRegistryMilestone,
         validateForgeForestLanternMilestone,
         validateForgeAttrahiteMilestone,
-        validateForgeSlitheriteStaticMilestone,
+        validateForgeSlitheriteMilestone,
         validateForgeWarpCounterStaticMilestone,
         validateForgeLensFoundationStaticMilestone,
         validateForgeUnadjustedLensStaticMilestone,
         validateForgeAspectFoundationStaticMilestone,
+        validateForgePedestalStaticMilestone,
         validateForgeAlchemyRecipeFoundationStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
@@ -8042,6 +8542,8 @@ tasks.register("verifyForgePortGateClosed") {
         forgeAttrahiteBlockRegistryServerEvidenceVerifierV19,
         forgeServerContractV20,
         forgeServerProfileSnapshotV20,
+        forgeSlitheriteBlockRegistryServerEvidenceVerifierV20,
+        forgeSlitheriteBlockRegistryServerEvidenceTestV20,
         forgeRegistryFoundationServerRunner,
         forgeRegistryFoundationServerRunnerTest,
         forgeRegistryFoundationServerRunnerTestV20,
@@ -8109,6 +8611,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeAttrahiteBlockRegistryServerEvidenceArchiveV19.exists()) {
         inputs.dir(forgeAttrahiteBlockRegistryServerEvidenceArchiveV19)
             .withPropertyName("forgeAttrahiteBlockRegistryServerEvidenceArchiveV19")
+    }
+    if (forgeSlitheriteBlockRegistryServerEvidenceArchiveV20.exists()) {
+        inputs.dir(forgeSlitheriteBlockRegistryServerEvidenceArchiveV20)
+            .withPropertyName("forgeSlitheriteBlockRegistryServerEvidenceArchiveV20")
     }
     if (forgeForestLanternClientEvidenceArchive.exists()) {
         inputs.dir(forgeForestLanternClientEvidenceArchive)
@@ -8372,6 +8878,12 @@ if (minecraftVersion == "1.20.1") {
             )) {
                 "The dedicated-server probe launch contract changed"
             }
+            check(
+                serverProbeSealedArchive ==
+                    forgeSlitheriteBlockRegistryServerEvidenceArchiveV20,
+            ) {
+                "The dedicated-server probe sealed archive is not the exact v20 target"
+            }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
                 "scenario_directory" to "slitherite-block-registry",
@@ -8628,6 +9140,7 @@ if (minecraftVersion == "1.20.1") {
                         "RegistryFoundationServerProbe\$SlitheritePlacementSetup.class",
                     "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeModInventory.class",
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeMemoryHandoff.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator.class",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeReportWriter.class",
                 )) {
@@ -9287,9 +9800,10 @@ if (minecraftVersion == "1.20.1") {
                             "RegistryFoundationServerProbe.class",
                     ),
                 )
-                val probeConstants = readClassUtf8Constants(
-                    probeZip.getInputStream(probeEntry).use { input -> input.readAllBytes() },
-                )
+                val probeBytes = probeZip.getInputStream(probeEntry).use { input ->
+                    input.readAllBytes()
+                }
+                val probeConstants = readClassUtf8Constants(probeBytes)
                 val requiredProbeConstants = setOf(
                     "etherology_e2e_server_probe",
                     "etherology",
@@ -9560,6 +10074,8 @@ if (minecraftVersion == "1.20.1") {
                     "forest_lantern_mechanics_stable_after_reload",
                     "forest_lantern_contract_exact",
                     "dev/theplumteam/etherology/e2e/server/ReloadDataPackWriter",
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeMemoryHandoff",
+                    "publishAndAwaitAcknowledgement",
                     "dev/theplumteam/etherology/e2e/server/ServerProbeProcessTerminator",
                     "java/lang/Thread",
                     "currentThread",
@@ -9570,6 +10086,197 @@ if (minecraftVersion == "1.20.1") {
                 check(requiredProbeConstants.all(probeConstants::contains)) {
                     "The dedicated-server probe lost part of its lifecycle contract: " +
                         (requiredProbeConstants - probeConstants).sorted()
+                }
+
+                val probeMemoryHandoffMethodReferences =
+                    readClassMethodReferences(probeBytes).filter { methodReference ->
+                        methodReference.startsWith(
+                            "dev/theplumteam/etherology/e2e/server/" +
+                                "ServerProbeMemoryHandoff.",
+                        )
+                    }.toSet()
+                check(probeMemoryHandoffMethodReferences == setOf(
+                    "dev/theplumteam/etherology/e2e/server/" +
+                        "ServerProbeMemoryHandoff.publishAndAwaitAcknowledgement:()V",
+                )) {
+                    "The dedicated-server probe memory-handoff call changed: " +
+                        probeMemoryHandoffMethodReferences.sorted()
+                }
+
+                val memoryHandoffEntry = requireNotNull(
+                    probeZip.getEntry(
+                        "dev/theplumteam/etherology/e2e/server/" +
+                            "ServerProbeMemoryHandoff.class",
+                    ),
+                )
+                val memoryHandoffBytes = probeZip.getInputStream(memoryHandoffEntry)
+                    .use { input -> input.readAllBytes() }
+                val memoryHandoffConstants = readClassUtf8Constants(memoryHandoffBytes)
+                val expectedJavaOptionInjectionVariables = setOf(
+                    "JAVA_TOOL_OPTIONS",
+                    "JDK_JAVA_OPTIONS",
+                    "_JAVA_OPTIONS",
+                )
+                val actualJavaOptionInjectionVariables =
+                    memoryHandoffConstants.filter { constant ->
+                        constant == "JAVA_TOOL_OPTIONS"
+                            || constant.endsWith("_JAVA_OPTIONS")
+                    }.toSet()
+                check(
+                    actualJavaOptionInjectionVariables ==
+                        expectedJavaOptionInjectionVariables,
+                ) {
+                    "The server probe memory-handoff Java option guards changed: " +
+                        actualJavaOptionInjectionVariables.sorted()
+                }
+                val expectedMemoryHandoffEnvironmentVariables = setOf(
+                    "ETHERLOGY_E2E_FORGE_SERVER_MEMORY_ACKNOWLEDGEMENT",
+                    "ETHERLOGY_E2E_FORGE_SERVER_MEMORY_HANDOFF",
+                    "ETHERLOGY_E2E_FORGE_SERVER_RUN_TOKEN",
+                )
+                val actualMemoryHandoffEnvironmentVariables =
+                    memoryHandoffConstants.filter { constant ->
+                        constant.startsWith("ETHERLOGY_E2E_FORGE_SERVER_")
+                    }.toSet()
+                check(
+                    actualMemoryHandoffEnvironmentVariables ==
+                        expectedMemoryHandoffEnvironmentVariables,
+                ) {
+                    "The server probe memory-handoff environment changed: " +
+                        actualMemoryHandoffEnvironmentVariables.sorted()
+                }
+                val expectedMemoryHandoffFileNames = setOf(
+                    ".forge-server-java-memory-handoff.json",
+                    ".forge-server-java-memory-ready",
+                )
+                val actualMemoryHandoffFileNames =
+                    memoryHandoffConstants.filter { constant ->
+                        constant.startsWith(".forge-server-java-memory-")
+                    }.toSet()
+                check(actualMemoryHandoffFileNames == expectedMemoryHandoffFileNames) {
+                    "The server probe memory-handoff file inventory changed: " +
+                        actualMemoryHandoffFileNames.sorted()
+                }
+                val requiredMemoryHandoffConstants = setOf(
+                    "EXACT_MAXIMUM_HEAP_ARGUMENT",
+                    "EXACT_MAXIMUM_HEAP_BYTES",
+                    "-Xmx2048m",
+                    "java_feature",
+                    "maximum_heap_bytes",
+                    "maximum_heap_arguments",
+                    "The dedicated server memory handoff requires Java 17",
+                )
+                check(
+                    requiredMemoryHandoffConstants.all(memoryHandoffConstants::contains),
+                ) {
+                    "The server probe memory-handoff heap contract changed: " +
+                        (requiredMemoryHandoffConstants - memoryHandoffConstants).sorted()
+                }
+                val memoryHandoffMethodReferences =
+                    readClassMethodReferences(memoryHandoffBytes)
+                val expectedMemoryHandoffIdentityAndHeapMethodReferences = setOf(
+                    "java/lang/management/ManagementFactory.getRuntimeMXBean:" +
+                        "()Ljava/lang/management/RuntimeMXBean;",
+                    "java/lang/management/RuntimeMXBean.getInputArguments:" +
+                        "()Ljava/util/List;",
+                    "java/lang/ProcessHandle.current:()Ljava/lang/ProcessHandle;",
+                    "java/lang/ProcessHandle.info:()Ljava/lang/ProcessHandle\$Info;",
+                    "java/lang/ProcessHandle.pid:()J",
+                    "java/lang/ProcessHandle\$Info.command:()Ljava/util/Optional;",
+                    "java/lang/Runtime.version:()Ljava/lang/Runtime\$Version;",
+                    "java/lang/Runtime.getRuntime:()Ljava/lang/Runtime;",
+                    "java/lang/Runtime.maxMemory:()J",
+                    "java/lang/Runtime\$Version.feature:()I",
+                )
+                val actualMemoryHandoffIdentityAndHeapMethodReferences =
+                    memoryHandoffMethodReferences.filter { methodReference ->
+                        methodReference.startsWith(
+                            "java/lang/management/ManagementFactory.",
+                        ) || methodReference.startsWith(
+                            "java/lang/management/RuntimeMXBean.",
+                        ) || methodReference.startsWith("java/lang/ProcessHandle.")
+                            || methodReference.startsWith("java/lang/ProcessHandle\$Info.")
+                            || methodReference.startsWith("java/lang/Runtime.")
+                            || methodReference.startsWith("java/lang/Runtime\$Version.")
+                    }.toSet()
+                check(
+                    actualMemoryHandoffIdentityAndHeapMethodReferences ==
+                        expectedMemoryHandoffIdentityAndHeapMethodReferences,
+                ) {
+                    "The server probe memory-handoff identity/heap calls changed: " +
+                        actualMemoryHandoffIdentityAndHeapMethodReferences.sorted()
+                }
+                val expectedMemoryHandoffSystemMethodReferences = setOf(
+                    "java/lang/System.getenv:(Ljava/lang/String;)Ljava/lang/String;",
+                    "java/lang/System.nanoTime:()J",
+                )
+                val actualMemoryHandoffSystemMethodReferences =
+                    memoryHandoffMethodReferences.filter { methodReference ->
+                        methodReference.startsWith("java/lang/System.")
+                    }.toSet()
+                check(
+                    actualMemoryHandoffSystemMethodReferences ==
+                        expectedMemoryHandoffSystemMethodReferences,
+                ) {
+                    "The server probe memory-handoff environment/time calls changed: " +
+                        actualMemoryHandoffSystemMethodReferences.sorted()
+                }
+                val expectedMemoryHandoffArtifactMethodReferences = setOf(
+                    "java/nio/file/Files.createLink:" +
+                        "(Ljava/nio/file/Path;Ljava/nio/file/Path;)Ljava/nio/file/Path;",
+                    "java/nio/file/Files.createTempFile:" +
+                        "(Ljava/nio/file/Path;Ljava/lang/String;Ljava/lang/String;" +
+                        "[Ljava/nio/file/attribute/FileAttribute;)Ljava/nio/file/Path;",
+                    "java/nio/file/Files.deleteIfExists:(Ljava/nio/file/Path;)Z",
+                    "java/nio/file/Files.exists:" +
+                        "(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z",
+                    "java/nio/file/Files.isDirectory:" +
+                        "(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z",
+                    "java/nio/file/Files.isRegularFile:" +
+                        "(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z",
+                    "java/nio/file/Files.isSymbolicLink:(Ljava/nio/file/Path;)Z",
+                    "java/nio/file/Files.readString:" +
+                        "(Ljava/nio/file/Path;Ljava/nio/charset/Charset;)" +
+                        "Ljava/lang/String;",
+                    "java/nio/file/Files.size:(Ljava/nio/file/Path;)J",
+                    "java/nio/file/Files.write:" +
+                        "(Ljava/nio/file/Path;[B[Ljava/nio/file/OpenOption;)" +
+                        "Ljava/nio/file/Path;",
+                )
+                val actualMemoryHandoffArtifactMethodReferences =
+                    memoryHandoffMethodReferences.filter { methodReference ->
+                        methodReference.startsWith("java/nio/file/Files.")
+                    }.toSet()
+                check(
+                    actualMemoryHandoffArtifactMethodReferences ==
+                        expectedMemoryHandoffArtifactMethodReferences,
+                ) {
+                    "The server probe memory-handoff artifact calls changed: " +
+                        actualMemoryHandoffArtifactMethodReferences.sorted()
+                }
+                val memoryHandoffOwner =
+                    "dev/theplumteam/etherology/e2e/server/ServerProbeMemoryHandoff."
+                val expectedMemoryHandoffPrivateLifecycleMethodReferences = setOf(
+                    memoryHandoffOwner +
+                        "publishExclusive:(Ljava/nio/file/Path;Ljava/lang/String;)V",
+                    memoryHandoffOwner +
+                        "awaitAcknowledgement:" +
+                        "(Ljava/nio/file/Path;Ljava/lang/String;)V",
+                )
+                val actualMemoryHandoffPrivateLifecycleMethodReferences =
+                    memoryHandoffMethodReferences.filter { methodReference ->
+                        methodReference.startsWith(
+                            memoryHandoffOwner + "publishExclusive:",
+                        ) || methodReference.startsWith(
+                            memoryHandoffOwner + "awaitAcknowledgement:",
+                        )
+                    }.toSet()
+                check(
+                    actualMemoryHandoffPrivateLifecycleMethodReferences ==
+                        expectedMemoryHandoffPrivateLifecycleMethodReferences,
+                ) {
+                    "The server probe memory-handoff private lifecycle calls changed: " +
+                        actualMemoryHandoffPrivateLifecycleMethodReferences.sorted()
                 }
 
                 val terminatorEntry = requireNotNull(
@@ -9766,7 +10473,13 @@ if (minecraftVersion == "1.20.1") {
                 forgeChannelProfileSnapshotV11,
                 rootProject.file("scripts/e2e/test_forge_channel_evidence.py"),
                 rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/java_installer_supervisor.py"),
+                rootProject.file("scripts/e2e/macos_guarded_java.py"),
+                rootProject.file("scripts/baseline/macos_memory_guard.py"),
+                forgeSlitheriteRunContractV18,
                 rootProject.file("scripts/e2e/forge_evidence.py"),
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
             )
         }
 
@@ -9783,6 +10496,8 @@ if (minecraftVersion == "1.20.1") {
                 "unittest",
                 "scripts/e2e/test_forge_forest_lantern_evidence.py",
                 "scripts/e2e/test_forge_client.py",
+                "scripts/e2e/test_java_installer_supervisor.py",
+                "scripts/e2e/test_macos_guarded_java.py",
             )
             inputs.files(
                 forgeForestLanternEvidenceVerifier,
@@ -9794,9 +10509,18 @@ if (minecraftVersion == "1.20.1") {
                 forgeAttrahiteProfileSnapshotV14,
                 forgeAttrahiteProfileSnapshotV15,
                 forgeAttrahiteProfileSnapshotV16,
+                forgeAttrahiteProfileSnapshotV17,
+                forgeSlitheriteProfileSnapshotV18,
                 rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/java_installer_supervisor.py"),
+                rootProject.file("scripts/e2e/macos_guarded_java.py"),
+                forgeSlitheriteRunContractV18,
                 rootProject.file("scripts/e2e/test_forge_client.py"),
+                rootProject.file("scripts/e2e/test_java_installer_supervisor.py"),
+                rootProject.file("scripts/e2e/test_macos_guarded_java.py"),
+                rootProject.file("scripts/baseline/macos_memory_guard.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
+                rootProject.file("scripts/e2e/test_evidence.py"),
                 rootProject.file("release/release-matrix.json"),
                 rootProject.file("gradle.properties"),
                 rootProject.file("forge/build.gradle.kts"),
@@ -9827,6 +10551,7 @@ if (minecraftVersion == "1.20.1") {
                 forgeForestLanternProfileSnapshotV13,
                 forgeAttrahiteProfileSnapshotV14,
                 rootProject.file("scripts/e2e/forge_client.py"),
+                forgeSlitheriteRunContractV18,
                 rootProject.file("scripts/e2e/forge_evidence.py"),
                 rootProject.file("scripts/e2e/test_forge_evidence.py"),
                 rootProject.file("release/release-matrix.json"),
@@ -9889,6 +10614,7 @@ if (minecraftVersion == "1.20.1") {
                 "-m",
                 "unittest",
                 "scripts/e2e/test_forge_attrahite_evidence_v17.py",
+                "scripts/e2e/test_forge_client.py",
             )
             inputs.files(
                 forgeAttrahiteEvidenceVerifierV14,
@@ -9908,6 +10634,10 @@ if (minecraftVersion == "1.20.1") {
                 forgeAttrahiteProfileSnapshotV16,
                 forgeAttrahiteProfileSnapshotV17,
                 rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/java_installer_supervisor.py"),
+                rootProject.file("scripts/e2e/macos_guarded_java.py"),
+                rootProject.file("scripts/baseline/macos_memory_guard.py"),
+                forgeSlitheriteRunContractV18,
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
                 rootProject.file("scripts/e2e/test_forge_evidence.py"),
@@ -10044,6 +10774,8 @@ if (minecraftVersion == "1.20.1") {
                 "unittest",
                 "scripts/e2e/test_forge_slitherite_evidence_v18.py",
                 "scripts/e2e/test_forge_client.py",
+                "scripts/e2e/test_java_installer_supervisor.py",
+                "scripts/e2e/test_macos_guarded_java.py",
             )
             inputs.files(
                 forgeSlitheriteEvidenceVerifier,
@@ -10052,10 +10784,26 @@ if (minecraftVersion == "1.20.1") {
                 slitheriteClientEvidenceTestSupport,
                 originalSlitheriteEvidenceVerifier,
                 forgeE2eProfileManifest,
+                forgeChannelProfileSnapshotV11,
+                forgeForestLanternProfileSnapshotV12,
+                forgeForestLanternProfileSnapshotV13,
+                forgeAttrahiteProfileSnapshotV14,
+                forgeAttrahiteProfileSnapshotV15,
+                forgeAttrahiteProfileSnapshotV16,
+                forgeAttrahiteProfileSnapshotV17,
                 forgeSlitheriteProfileSnapshotV18,
                 rootProject.file("scripts/e2e/forge_client.py"),
+                rootProject.file("scripts/e2e/java_installer_supervisor.py"),
+                rootProject.file("scripts/e2e/macos_guarded_java.py"),
+                forgeSlitheriteRunContractV18,
                 rootProject.file("scripts/e2e/test_forge_client.py"),
+                rootProject.file("scripts/e2e/test_java_installer_supervisor.py"),
+                rootProject.file("scripts/e2e/test_macos_guarded_java.py"),
+                rootProject.file("scripts/baseline/macos_memory_guard.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
+                rootProject.file("release/release-matrix.json"),
+                rootProject.file("gradle.properties"),
+                rootProject.file("forge/build.gradle.kts"),
                 rootProject.file("docs/testing/E2E-CONTRACT.md"),
             )
         }
@@ -10121,6 +10869,104 @@ if (minecraftVersion == "1.20.1") {
         archiveVersion.set(project.version.toString())
         archiveClassifier.set("")
         destinationDirectory.set(layout.buildDirectory.dir("e2e-harness/libs"))
+    }
+
+    tasks.register("validateForgeSlitheriteClientArtifactFreeze") {
+        group = "verification"
+        description =
+            "Requires the final remapped Forge Slitherite v18 harness to match its run-contract pin."
+        dependsOn(remapE2eHarnessJar)
+        inputs.file(forgeSlitheriteRunContractV18)
+            .withPropertyName("forgeSlitheriteRunContractV18")
+        inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
+            .withPropertyName("forgeSlitheriteFinalRemappedHarness")
+        inputs.property(
+            "forgeSlitheriteExpectedProfileId",
+            "etherology-e2e-forge-1.20.1-v18",
+        )
+        inputs.property(
+            "forgeSlitheriteExpectedScenarioId",
+            "slitherite-block-registry",
+        )
+
+        doLast {
+            val contractPath = forgeSlitheriteRunContractV18.toPath()
+            check(
+                Files.isRegularFile(contractPath, LinkOption.NOFOLLOW_LINKS) &&
+                    !Files.isSymbolicLink(contractPath),
+            ) {
+                "Forge Slitherite v18 run-contract owner is missing, linked, or irregular"
+            }
+            val contractText = Files.readString(contractPath, StandardCharsets.UTF_8)
+            fun requireSingleAssignment(name: String): String {
+                val assignmentPattern = Regex(
+                    "(?m)^${Regex.escape(name)}(?:[ \\t]*:[^=\\r\\n]+)?" +
+                        "[ \\t]*=[ \\t]*([^#\\r\\n]+?)[ \\t]*(?:#.*)?$",
+                )
+                val assignments = assignmentPattern.findAll(contractText).toList()
+                check(assignments.size == 1) {
+                    "Forge Slitherite v18 run contract must assign $name exactly once"
+                }
+                return assignments.single().groupValues[1].trim()
+            }
+
+            check(
+                requireSingleAssignment("PROFILE_ID") ==
+                    "\"etherology-e2e-forge-1.20.1-v18\"",
+            ) {
+                "Forge Slitherite v18 run-contract profile id changed"
+            }
+            check(
+                requireSingleAssignment("SCENARIO_ID") ==
+                    "\"slitherite-block-registry\"",
+            ) {
+                "Forge Slitherite v18 run-contract scenario id changed"
+            }
+            val harnessSizeLiteral = requireSingleAssignment("HARNESS_SIZE")
+            val harnessSha256Literal = requireSingleAssignment("HARNESS_SHA256")
+            check(harnessSizeLiteral != "None" || harnessSha256Literal != "None") {
+                "Forge Slitherite v18 harness size and SHA-256 remain unpinned"
+            }
+            check(harnessSizeLiteral != "None" && harnessSha256Literal != "None") {
+                "Forge Slitherite v18 harness size and SHA-256 must be pinned together"
+            }
+            check(Regex("[1-9][0-9]*").matches(harnessSizeLiteral)) {
+                "Forge Slitherite v18 HARNESS_SIZE must be one positive decimal integer"
+            }
+            val expectedHarnessSize = harnessSizeLiteral.toLongOrNull()
+            check(expectedHarnessSize != null && expectedHarnessSize > 0L) {
+                "Forge Slitherite v18 HARNESS_SIZE exceeds the supported integer range"
+            }
+            val harnessSha256Match = Regex(
+                "(?:\"([0-9a-f]{64})\"|'([0-9a-f]{64})')",
+            ).matchEntire(harnessSha256Literal)
+            check(harnessSha256Match != null) {
+                "Forge Slitherite v18 HARNESS_SHA256 must be 64 lowercase hexadecimal characters"
+            }
+            val expectedHarnessSha256 = harnessSha256Match.groupValues
+                .drop(1)
+                .single { it.isNotEmpty() }
+
+            val harnessPath = remapE2eHarnessJar.get().archiveFile.get().asFile.toPath()
+            check(
+                Files.isRegularFile(harnessPath, LinkOption.NOFOLLOW_LINKS) &&
+                    !Files.isSymbolicLink(harnessPath),
+            ) {
+                "Final remapped Forge Slitherite v18 harness is missing, linked, or irregular"
+            }
+            val harnessBytes = Files.readAllBytes(harnessPath)
+            val actualHarnessSha256 = MessageDigest.getInstance("SHA-256")
+                .digest(harnessBytes)
+                .joinToString("") { byte ->
+                    "%02x".format(byte.toInt() and 0xff)
+                }
+            check(
+                harnessBytes.size.toLong() == expectedHarnessSize &&
+                    actualHarnessSha256 == expectedHarnessSha256,
+            ) {
+                "Final remapped Forge Slitherite v18 harness differs from its run-contract pin"
+            }
+        }
     }
 
     val remapE2eUnderTestJar = tasks.register<RemapJarTask>("remapE2eUnderTestJar") {

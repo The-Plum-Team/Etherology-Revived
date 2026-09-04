@@ -149,7 +149,7 @@ final class SharedLensItemsBytecodeTest {
     }
 
     @Test
-    void attachesOnceAfterToolItemsAndBeforeBlockEntities() throws IOException {
+    void attachesOnceAfterToolItemsAndBeforeAlchemyRecipes() throws IOException {
         List<String> invocations = methodInvocations(
                 classReader(BOOTSTRAP),
                 "initialize"
@@ -157,13 +157,14 @@ final class SharedLensItemsBytecodeTest {
         String toolRegistration =
                 "ru/feytox/etherology/registry/item/SharedToolItems#register()V";
         String lensRegistration = OWNER + "#register()V";
-        String blockEntityRegistration =
-                "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V";
+        String alchemyRegistration =
+                "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes"
+                        + "#register()V";
         int lensIndex = invocations.indexOf(lensRegistration);
 
         assertTrue(lensIndex > 0);
         assertEquals(toolRegistration, invocations.get(lensIndex - 1));
-        assertEquals(blockEntityRegistration, invocations.get(lensIndex + 1));
+        assertEquals(alchemyRegistration, invocations.get(lensIndex + 1));
         assertEquals(
                 1,
                 invocations.stream().filter(lensRegistration::equals).count()

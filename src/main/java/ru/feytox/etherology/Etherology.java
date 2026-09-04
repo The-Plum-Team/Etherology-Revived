@@ -20,6 +20,8 @@ import ru.feytox.etherology.registry.block.ExtraBlocksRegistry;
 import ru.feytox.etherology.registry.block.SharedAttrahiteBlocks;
 import ru.feytox.etherology.registry.block.SharedForestLanternBlocks;
 import ru.feytox.etherology.registry.block.SharedMetalBlocks;
+import ru.feytox.etherology.registry.block.SharedPedestalBlockEntities;
+import ru.feytox.etherology.registry.block.SharedPedestalBlocks;
 import ru.feytox.etherology.registry.block.SharedSlitheriteBlocks;
 import ru.feytox.etherology.registry.entity.EntityRegistry;
 import ru.feytox.etherology.registry.item.EItemGroups;
@@ -30,6 +32,7 @@ import ru.feytox.etherology.registry.item.SharedForestLanternBlockItems;
 import ru.feytox.etherology.registry.item.SharedLensItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
+import ru.feytox.etherology.registry.item.SharedPedestalBlockItems;
 import ru.feytox.etherology.registry.item.SharedSlitheriteBlockItems;
 import ru.feytox.etherology.registry.item.SharedToolItems;
 import ru.feytox.etherology.registry.misc.*;
@@ -54,8 +57,11 @@ public class Etherology {
 
         SharedAttrahiteBlocks.register();
         SharedSlitheriteBlocks.register();
+        SharedPedestalBlocks.register();
         SharedAttrahiteBlockItems.register();
         SharedSlitheriteBlockItems.register();
+        SharedPedestalBlockItems.register();
+        SharedPedestalBlockEntities.register();
         SharedSounds.register();
         SharedGameEvents.register();
         SharedLootConditions.register();
@@ -71,6 +77,7 @@ public class Etherology {
         SharedFoodItems.register();
         SharedToolItems.register();
         SharedLensItems.register();
+        SharedAlchemyRecipes.register();
         EItems.registerItems();
         EtherEnchantments.registerAll();
         EBlocks.registerAll();

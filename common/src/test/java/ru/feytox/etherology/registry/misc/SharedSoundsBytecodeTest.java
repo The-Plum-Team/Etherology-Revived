@@ -246,6 +246,8 @@ final class SharedSoundsBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/block/SharedSlitheriteBlocks"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/block/SharedPedestalBlocks"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedMetalBlockItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedForestLanternBlockItems"
                                 + "#register()V",
@@ -253,12 +255,18 @@ final class SharedSoundsBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedSlitheriteBlockItems"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/item/SharedPedestalBlockItems"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedFoodItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedToolItems#register()V",
                         "ru/feytox/etherology/registry/item/SharedLensItems#register()V",
+                        "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",
+                        "ru/feytox/etherology/registry/block/SharedPedestalBlockEntities"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/misc/SharedScreenHandlers#register()V",
                         SHARED_SOUNDS + "#register()V",
                         "ru/feytox/etherology/registry/misc/SharedGameEvents#register()V",

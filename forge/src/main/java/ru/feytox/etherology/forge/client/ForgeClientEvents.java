@@ -11,11 +11,14 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import ru.feytox.etherology.bootstrap.EtherologyBootstrap;
+import ru.feytox.etherology.forge.network.ForgePedestalNetwork;
 import ru.feytox.etherology.item.EtherealStorageInputItem;
 import ru.feytox.etherology.item.glints.GlintEtherData;
 import ru.feytox.etherology.registry.block.SharedBlockEntities;
 import ru.feytox.etherology.registry.block.SharedBlocks;
 import ru.feytox.etherology.registry.block.SharedForestLanternBlocks;
+import ru.feytox.etherology.registry.block.SharedPedestalBlockEntities;
+import ru.feytox.etherology.registry.block.SharedPedestalBlocks;
 import ru.feytox.etherology.registry.item.SharedItems;
 import ru.feytox.etherology.registry.misc.SharedScreenHandlers;
 
@@ -43,6 +46,9 @@ public final class ForgeClientEvents {
     }
 
     private static void registerClientContent() {
+        ForgePedestalNetwork.bindClientRemoval(
+                ForgePedestalClientRemoval.INSTANCE
+        );
         HandledScreens.register(
                 SharedScreenHandlers.ETHEREAL_STORAGE.get(),
                 EtherealStorageFoundationScreen::new
@@ -51,11 +57,16 @@ public final class ForgeClientEvents {
                 SharedBlockEntities.ETHEREAL_STORAGE.get(),
                 EtherealStorageFoundationRenderer::new
         );
+        BlockEntityRendererRegistry.register(
+                SharedPedestalBlockEntities.PEDESTAL.get(),
+                PedestalRenderer::new
+        );
         RenderTypeRegistry.register(
                 RenderLayer.getCutout(),
                 SharedBlocks.ETHEREAL_STORAGE.get(),
                 SharedBlocks.ETHEREAL_CHANNEL.get(),
-                SharedForestLanternBlocks.FOREST_LANTERN.get()
+                SharedForestLanternBlocks.FOREST_LANTERN.get(),
+                SharedPedestalBlocks.PEDESTAL.get()
         );
         ModelPredicateProviderRegistry.register(
                 SharedItems.GLINT_SHARD.get(),

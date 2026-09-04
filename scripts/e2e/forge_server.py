@@ -21,6 +21,7 @@ from typing import BinaryIO
 
 import forge_server_contract_v19 as contract_v19
 import forge_server_contract_v20 as contract_v20
+import macos_guarded_java
 
 
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
@@ -31,6 +32,10 @@ PROFILE_MANIFEST_RELATIVE_PATH = Path(
 PROBE_SOURCE_RELATIVE_PATH = Path(
     "e2e-harness/forge-server/1.20.1/src/main/java/"
     "dev/theplumteam/etherology/e2e/server/RegistryFoundationServerProbe.java"
+)
+MEMORY_HANDOFF_SOURCE_RELATIVE_PATH = Path(
+    "e2e-harness/forge-server/1.20.1/src/main/java/"
+    "dev/theplumteam/etherology/e2e/server/ServerProbeMemoryHandoff.java"
 )
 MANIFEST_PATH = REPOSITORY_ROOT / PROFILE_MANIFEST_RELATIVE_PATH
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
@@ -44,7 +49,23 @@ MANAGED_BY = "scripts/e2e/forge_server.py"
 CAFFEINATE_PATH = Path("/usr/bin/caffeinate")
 GRADLE_JAVA_OVERRIDE_ENVIRONMENT_VARIABLE = "ETHERLOGY_E2E_GRADLE_JAVA"
 RUN_TOKEN_ENVIRONMENT_VARIABLE = "ETHERLOGY_E2E_FORGE_SERVER_RUN_TOKEN"
+MEMORY_HANDOFF_ENVIRONMENT_VARIABLE = (
+    "ETHERLOGY_E2E_FORGE_SERVER_MEMORY_HANDOFF"
+)
+MEMORY_ACKNOWLEDGEMENT_ENVIRONMENT_VARIABLE = (
+    "ETHERLOGY_E2E_FORGE_SERVER_MEMORY_ACKNOWLEDGEMENT"
+)
+MEMORY_HANDOFF_FILE_NAME = ".forge-server-java-memory-handoff.json"
+MEMORY_ACKNOWLEDGEMENT_FILE_NAME = ".forge-server-java-memory-ready"
+SERVER_MAXIMUM_MEMORY_MB = 2048
+SERVER_MAXIMUM_HEAP_BYTES = SERVER_MAXIMUM_MEMORY_MB * 1024 * 1024
+SERVER_MAXIMUM_HEAP_ARGUMENT = "-Xmx2048m"
+SERVER_JAVA_FEATURE = 17
+JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT = "-Xmx64M"
 RUN_TIMEOUT_SECONDS = 15 * 60
+MEMORY_HANDOFF_TIMEOUT_SECONDS = RUN_TIMEOUT_SECONDS
+MEMORY_HANDOFF_BIND_TIMEOUT_SECONDS = 2.0
+MAXIMUM_MEMORY_HANDOFF_SIZE = 16 * 1024
 PROCESS_STOP_TIMEOUT_SECONDS = 15
 PROCESS_POLL_INTERVAL_SECONDS = 0.1
 MAXIMUM_PROCESS_LOG_SIZE = 64 * 1024 * 1024
@@ -304,6 +325,14 @@ class E2EError(RuntimeError):
     """Reports a dedicated-server profile, isolation, or lifecycle failure."""
 
 
+class ServerGuardStartError(E2EError):
+    """Carries a partially attached guard so cleanup keeps exact ownership."""
+
+    def __init__(self, message: str, server_guard: ServerJavaGuard) -> None:
+        super().__init__(message)
+        self.server_guard = server_guard
+
+
 @dataclass(frozen=True)
 class ResolvedConfiguration:
     """Holds the tracked server profile and its resolved release owners."""
@@ -314,6 +343,17 @@ class ResolvedConfiguration:
     runtime_lane: dict[str, object]
     repository_root: Path
     profile_manifest_path: Path
+
+
+@dataclass(frozen=True)
+class ServerJavaGuard:
+    """Carries the actual server identity and its two auxiliary processes."""
+
+    target: macos_guarded_java.OwnedJavaProcess
+    monitor: macos_guarded_java.GuardedJavaMonitor | None
+    caffeinate_process: subprocess.Popen[bytes] | None
+    handoff_path: Path
+    acknowledgement_path: Path
 
 
 def load_json_object(path: Path, description: str) -> dict[str, object]:
@@ -446,7 +486,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "kind": "loom-userdev",
         "task_path": TASK_PATH,
         "scenario": SCENARIO_ID,
-        "maximum_memory_mb": 2048,
+        "maximum_memory_mb": SERVER_MAXIMUM_MEMORY_MB,
     }):
         raise E2EError("The dedicated-server launch contract changed")
 
@@ -1098,7 +1138,12 @@ def java_major_version(java_path: Path) -> int | None:
         return None
     try:
         completed = subprocess.run(
-            [str(java_path), "-XshowSettings:properties", "-version"],
+            [
+                str(java_path),
+                JAVA_VERSION_PROBE_EXACT_HEAP_ARGUMENT,
+                "-XshowSettings:properties",
+                "-version",
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -1182,6 +1227,8 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
         "serverProbeRunLock",
         "serverProbeRunAttempt",
         "serverProbeProfileMarker",
+        'jvmArguments.add("-Xmx${serverProbeLaunch.getValue('
+        '"maximum_memory_mb")}m")',
         PROFILE_ID,
         SCENARIO_ID,
     )
@@ -1189,6 +1236,7 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
     if missing:
         raise E2EError(f"The named Forge server probe task is incomplete: {missing}")
     verify_probe_source_lifecycle(configuration)
+    verify_memory_handoff_source(configuration)
 
 
 def verify_probe_source_lifecycle(configuration: ResolvedConfiguration) -> None:
@@ -1213,6 +1261,53 @@ def verify_probe_source_lifecycle(configuration: ResolvedConfiguration) -> None:
         )
 
 
+def verify_memory_handoff_source(configuration: ResolvedConfiguration) -> None:
+    """Pins the in-JVM identity handoff and its exact 2048-MiB contract."""
+
+    probe_path = configuration.repository_root / PROBE_SOURCE_RELATIVE_PATH
+    handoff_path = (
+        configuration.repository_root / MEMORY_HANDOFF_SOURCE_RELATIVE_PATH
+    )
+    ensure_regular_unlinked_file(probe_path, "Forge server probe source")
+    ensure_regular_unlinked_file(handoff_path, "Forge server memory handoff source")
+    try:
+        probe_content = probe_path.read_text(encoding="utf-8")
+        handoff_content = handoff_path.read_text(encoding="utf-8")
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot read Forge server memory handoff sources: {exception}"
+        ) from exception
+    required_probe_fragments = (
+        "ServerProbeMemoryHandoff.publishAndAwaitAcknowledgement();",
+    )
+    required_handoff_fragments = (
+        f'"{MEMORY_HANDOFF_ENVIRONMENT_VARIABLE}"',
+        f'"{MEMORY_ACKNOWLEDGEMENT_ENVIRONMENT_VARIABLE}"',
+        f'"{RUN_TOKEN_ENVIRONMENT_VARIABLE}"',
+        f'EXACT_MAXIMUM_HEAP_ARGUMENT = "{SERVER_MAXIMUM_HEAP_ARGUMENT}"',
+        "EXACT_MAXIMUM_HEAP_BYTES = 2L * 1024L * 1024L * 1024L",
+        "ProcessHandle.current()",
+        "Runtime.getRuntime().maxMemory()",
+        "getRuntimeMXBean()",
+        '"JAVA_TOOL_OPTIONS"',
+        '"JDK_JAVA_OPTIONS"',
+        '"_JAVA_OPTIONS"',
+        "Files.createLink(target, temporaryPath)",
+        "awaitAcknowledgement(acknowledgementPath, runToken)",
+    )
+    if any(fragment not in probe_content for fragment in required_probe_fragments):
+        raise E2EError("The Forge server probe memory handoff call is incomplete")
+    missing = [
+        fragment
+        for fragment in required_handoff_fragments
+        if fragment not in handoff_content
+    ]
+    if missing:
+        raise E2EError(
+            f"The Forge server memory handoff implementation is incomplete: {missing}"
+        )
+
+
 def build_gradle_command(
     configuration: ResolvedConfiguration,
     java_path: Path,
@@ -1229,8 +1324,6 @@ def build_gradle_command(
             f"The selected Gradle Java executable is not JDK 21 or newer: {java_path}"
         )
     return [
-        str(caffeinate_path),
-        "-dimsu",
         str(gradle_wrapper),
         "--no-daemon",
         "--no-parallel",
@@ -1243,6 +1336,10 @@ def verify_environment(
     configuration: ResolvedConfiguration,
     state_root: Path = STATE_ROOT,
 ) -> tuple[Path, list[str]]:
+    try:
+        macos_guarded_java.verify_java_option_environment(os.environ)
+    except macos_guarded_java.GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
     require_native_run_ready()
     require_unsealed_profile(configuration)
     require_unattempted_profile(configuration, state_root)
@@ -1374,24 +1471,373 @@ def launcher_result(
     }
 
 
-def stop_process_group(process: subprocess.Popen[bytes]) -> None:
+def server_memory_handoff_paths(runtime_directory: Path) -> tuple[Path, Path]:
+    """Returns the two fixed in-JVM handoff paths in one owned runtime."""
+
+    if (
+        not runtime_directory.is_absolute()
+        or not runtime_directory.is_dir()
+        or runtime_directory.is_symlink()
+    ):
+        raise E2EError(
+            "The dedicated-server memory handoff runtime is missing or linked: "
+            f"{runtime_directory}"
+        )
+    return (
+        runtime_directory / MEMORY_HANDOFF_FILE_NAME,
+        runtime_directory / MEMORY_ACKNOWLEDGEMENT_FILE_NAME,
+    )
+
+
+def validate_server_java_handoff(
+    handoff_path: Path,
+    runtime_directory: Path,
+    run_token: str,
+    launch_process_id: int,
+) -> tuple[int, str]:
+    """Validates the exact identity and heap record emitted inside the server JVM."""
+
+    if re.fullmatch(r"[0-9a-f]{64}", run_token) is None:
+        raise E2EError("The server Java memory handoff run token is malformed")
+    if type(launch_process_id) is not int or launch_process_id <= 0:
+        raise E2EError("The server Java memory handoff launch PID is invalid")
+    expected_handoff, _acknowledgement = server_memory_handoff_paths(
+        runtime_directory
+    )
+    if handoff_path != expected_handoff:
+        raise E2EError("The server Java memory handoff path is not owned")
+    ensure_no_symlink_components(handoff_path, runtime_directory)
+    ensure_regular_unlinked_file(handoff_path, "Server Java memory handoff")
     try:
+        handoff_size = handoff_path.stat().st_size
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot inspect the server Java memory handoff: {exception}"
+        ) from exception
+    if handoff_size <= 0 or handoff_size > MAXIMUM_MEMORY_HANDOFF_SIZE:
+        raise E2EError(
+            f"The server Java memory handoff has an invalid size: {handoff_size}"
+        )
+    handoff = load_json_object(handoff_path, "server Java memory handoff")
+    if set(handoff) != {
+        "schema",
+        "run_token",
+        "pid",
+        "executable",
+        "java_feature",
+        "maximum_heap_bytes",
+        "maximum_heap_arguments",
+    }:
+        raise E2EError("The server Java memory handoff field inventory changed")
+    pid = handoff.get("pid")
+    executable = handoff.get("executable")
+    if (
+        type(handoff.get("schema")) is not int
+        or handoff.get("schema") != 1
+        or handoff.get("run_token") != run_token
+        or type(pid) is not int
+        or pid <= 0
+        or pid > (1 << 31) - 1
+        or pid == launch_process_id
+        or pid == os.getpid()
+        or not isinstance(executable, str)
+        or not Path(executable).is_absolute()
+        or Path(executable).name != "java"
+        or ".." in Path(executable).parts
+        or "\x00" in executable
+        or "\n" in executable
+        or "\r" in executable
+        or len(executable.encode("utf-8")) > 4096
+        or type(handoff.get("java_feature")) is not int
+        or handoff.get("java_feature") != SERVER_JAVA_FEATURE
+        or type(handoff.get("maximum_heap_bytes")) is not int
+        or handoff.get("maximum_heap_bytes") != SERVER_MAXIMUM_HEAP_BYTES
+    ):
+        raise E2EError(
+            "The server Java memory handoff identity or heap contract changed"
+        )
+    maximum_heap_arguments = handoff.get("maximum_heap_arguments")
+    if not isinstance(maximum_heap_arguments, list):
+        raise E2EError("The server Java maximum-heap argument inventory is invalid")
+    try:
+        macos_guarded_java.verify_exact_java_heap_arguments(
+            maximum_heap_arguments,
+            SERVER_MAXIMUM_MEMORY_MB,
+            SERVER_MAXIMUM_HEAP_ARGUMENT,
+        )
+    except macos_guarded_java.GuardedJavaError as exception:
+        raise E2EError(str(exception)) from exception
+    return pid, executable
+
+
+def wait_for_server_java_handoff(
+    process: subprocess.Popen[bytes],
+    output_path: Path,
+    runtime_directory: Path,
+    run_token: str,
+    sampler: macos_guarded_java.MacOsProcessMemorySampler,
+    run_deadline: float,
+) -> macos_guarded_java.OwnedJavaProcess:
+    """Binds the actual JavaExec child before the server probe can continue."""
+
+    handoff_path, _acknowledgement_path = server_memory_handoff_paths(
+        runtime_directory
+    )
+    handoff_deadline = min(
+        run_deadline,
+        time.monotonic() + MEMORY_HANDOFF_TIMEOUT_SECONDS,
+    )
+    while time.monotonic() < handoff_deadline:
+        verify_process_output_bound(output_path)
+        if handoff_path.exists() or handoff_path.is_symlink():
+            pid, executable = validate_server_java_handoff(
+                handoff_path,
+                runtime_directory,
+                run_token,
+                process.pid,
+            )
+            bind_deadline = min(
+                run_deadline,
+                time.monotonic() + MEMORY_HANDOFF_BIND_TIMEOUT_SECONDS,
+            )
+            while time.monotonic() < bind_deadline:
+                if process.poll() is not None:
+                    raise E2EError(
+                        "The Gradle launch exited before the server Java identity "
+                        "could be bound"
+                    )
+                try:
+                    process_group_id = os.getpgid(pid)
+                except ProcessLookupError:
+                    process_group_id = -1
+                except OSError as exception:
+                    raise E2EError(
+                        "Cannot inspect the server Java process group"
+                    ) from exception
+                if process_group_id != process.pid:
+                    raise E2EError(
+                        "The server Java process is outside the owned Gradle launch PGID"
+                    )
+                target = sampler.bind(pid, process_group_id, executable)
+                if target is not None:
+                    if (
+                        target.pid != pid
+                        or target.process_group_id != process_group_id
+                        or target.expected_executable != executable
+                    ):
+                        raise E2EError(
+                            "The native sampler returned a foreign server identity"
+                        )
+                    return target
+                time.sleep(0.01)
+            raise E2EError(
+                "The server Java handoff did not expose an authoritative exact identity"
+            )
+        if process.poll() is not None:
+            raise E2EError(
+                "The Gradle launch exited before the actual server JVM handoff"
+            )
+        time.sleep(0.01)
+    raise E2EError("Timed out waiting for the actual server JVM memory handoff")
+
+
+def start_server_java_guard(
+    process: subprocess.Popen[bytes],
+    output_path: Path,
+    runtime_directory: Path,
+    run_token: str,
+    sampler: macos_guarded_java.MacOsProcessMemorySampler,
+    run_deadline: float,
+    working_directory: Path,
+    output_handle: BinaryIO,
+    caffeinate_path: Path = CAFFEINATE_PATH,
+) -> ServerJavaGuard:
+    """Starts monitoring and then releases the blocked in-JVM probe constructor."""
+
+    handoff_path, acknowledgement_path = server_memory_handoff_paths(
+        runtime_directory
+    )
+    target = wait_for_server_java_handoff(
+        process,
+        output_path,
+        runtime_directory,
+        run_token,
+        sampler,
+        run_deadline,
+    )
+    ensure_regular_unlinked_file(caffeinate_path, "macOS caffeinate")
+    monitor: macos_guarded_java.GuardedJavaMonitor | None = None
+    caffeinate_process: subprocess.Popen[bytes] | None = None
+    try:
+        monitor = macos_guarded_java.start_guarded_java_monitor(
+            target,
+            SERVER_MAXIMUM_MEMORY_MB,
+            runtime_directory,
+            output_handle,
+        )
+        caffeinate_process = subprocess.Popen(
+            [str(caffeinate_path), "-dimsu", "-w", str(target.pid)],
+            cwd=working_directory,
+            stdin=subprocess.DEVNULL,
+            stdout=output_handle,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+            close_fds=True,
+        )
+        if process.poll() is not None:
+            raise E2EError(
+                "The Gradle launch exited before the guarded server handoff completed"
+            )
+        if monitor.process.poll() is not None:
+            raise E2EError(
+                "The server Java memory guard exited before handoff completed"
+            )
+        if caffeinate_process.poll() is not None:
+            raise E2EError("macOS caffeinate exited before server handoff completed")
+        write_bytes_exclusive(
+            acknowledgement_path,
+            f"token={run_token}\n".encode("ascii"),
+        )
+        return ServerJavaGuard(
+            target=target,
+            monitor=monitor,
+            caffeinate_process=caffeinate_process,
+            handoff_path=handoff_path,
+            acknowledgement_path=acknowledgement_path,
+        )
+    except BaseException as exception:
+        partial_guard = ServerJavaGuard(
+            target=target,
+            monitor=monitor,
+            caffeinate_process=caffeinate_process,
+            handoff_path=handoff_path,
+            acknowledgement_path=acknowledgement_path,
+        )
+        raise ServerGuardStartError(
+            f"The guarded server Java handoff failed: {exception}",
+            partial_guard,
+        ) from exception
+
+
+def verify_process_output_bound(output_path: Path) -> None:
+    """Rejects a process log that is missing or over its fixed byte bound."""
+
+    try:
+        output_size = output_path.stat().st_size
+    except OSError as exception:
+        raise E2EError(
+            f"Cannot inspect named Forge server probe output: {exception}"
+        ) from exception
+    if output_size > MAXIMUM_PROCESS_LOG_SIZE:
+        raise E2EError(
+            "Named Forge server probe output exceeded "
+            f"{MAXIMUM_PROCESS_LOG_SIZE} bytes during execution"
+        )
+
+
+def verify_owned_gradle_process_group(process: subprocess.Popen[bytes]) -> None:
+    """Requires the just-spawned Gradle wrapper to lead an isolated PGID."""
+
+    if process.poll() is not None:
+        raise E2EError(
+            "The Gradle launch exited before its dedicated PGID was verified"
+        )
+    try:
+        process_group_id = os.getpgid(process.pid)
+    except ProcessLookupError as exception:
+        raise E2EError(
+            "The Gradle launch disappeared before its dedicated PGID was verified"
+        ) from exception
+    if (
+        process.pid == os.getpid()
+        or process_group_id != process.pid
+        or process_group_id == os.getpgrp()
+    ):
+        raise E2EError(
+            "The Gradle launch does not own an isolated dedicated process group"
+        )
+
+
+def stop_process_group(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        if process_group_exists(process.pid):
+            raise E2EError(
+                "The Gradle leader exited while its owned process group remained"
+            )
+        return
+    try:
+        if os.getpgid(process.pid) != process.pid:
+            raise E2EError(
+                "The Gradle launch no longer owns its dedicated process group"
+            )
         os.killpg(process.pid, signal.SIGTERM)
     except ProcessLookupError:
+        if process_group_exists(process.pid):
+            raise E2EError("The owned Gradle process group identity is uncertain")
+        process.poll()
         return
     try:
         process.wait(timeout=PROCESS_STOP_TIMEOUT_SECONDS)
-        return
     except subprocess.TimeoutExpired:
-        pass
+        if os.getpgid(process.pid) != process.pid:
+            raise E2EError(
+                "The Gradle launch lost its dedicated process group before escalation"
+            )
+    else:
+        if wait_for_process_group_absence(
+            process.pid,
+            PROCESS_STOP_TIMEOUT_SECONDS,
+        ):
+            return
+        raise E2EError(
+            "The Gradle leader exited while its owned process group remained"
+        )
     try:
         os.killpg(process.pid, signal.SIGKILL)
     except ProcessLookupError:
+        if process_group_exists(process.pid):
+            raise E2EError("The owned Gradle process group identity is uncertain")
+        process.poll()
         return
     try:
         process.wait(timeout=PROCESS_STOP_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired as exception:
         raise E2EError("The timed-out Gradle process group did not stop") from exception
+    if not wait_for_process_group_absence(
+        process.pid,
+        PROCESS_STOP_TIMEOUT_SECONDS,
+    ):
+        raise E2EError("The killed Gradle process group did not disappear")
+
+
+def process_group_exists(process_group_id: int) -> bool:
+    """Checks one positive PGID without signaling any member."""
+
+    if type(process_group_id) is not int or process_group_id <= 0:
+        raise E2EError("The owned Gradle process group ID is invalid")
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError as exception:
+        raise E2EError(
+            "Cannot inspect the owned Gradle process group"
+        ) from exception
+    return True
+
+
+def wait_for_process_group_absence(
+    process_group_id: int,
+    timeout_seconds: float,
+) -> bool:
+    """Waits briefly for every member of one already-owned PGID to disappear."""
+
+    deadline = time.monotonic() + timeout_seconds
+    while time.monotonic() < deadline:
+        if not process_group_exists(process_group_id):
+            return True
+        time.sleep(PROCESS_POLL_INTERVAL_SECONDS)
+    return not process_group_exists(process_group_id)
 
 
 def read_process_tail(path: Path) -> str:
@@ -1410,33 +1856,25 @@ def read_process_tail(path: Path) -> str:
 def wait_for_bounded_process(
     process: subprocess.Popen[bytes],
     output_path: Path,
+    *,
+    run_deadline: float | None = None,
+    server_guard: ServerJavaGuard | None = None,
+    sampler: macos_guarded_java.MacOsProcessMemorySampler | None = None,
 ) -> int:
-    deadline = time.monotonic() + RUN_TIMEOUT_SECONDS
+    deadline = (
+        time.monotonic() + RUN_TIMEOUT_SECONDS
+        if run_deadline is None
+        else run_deadline
+    )
     while True:
-        try:
-            output_size = output_path.stat().st_size
-        except OSError as exception:
-            raise E2EError(
-                f"Cannot inspect named Forge server probe output: {exception}"
-            ) from exception
-        if output_size > MAXIMUM_PROCESS_LOG_SIZE:
-            raise E2EError(
-                "Named Forge server probe output exceeded "
-                f"{MAXIMUM_PROCESS_LOG_SIZE} bytes during execution"
-            )
+        verify_process_output_bound(output_path)
+        if server_guard is not None:
+            if sampler is None:
+                raise E2EError("The guarded server wait has no native sampler")
+            verify_server_guard_is_enforcing(server_guard, sampler)
         exit_code = process.poll()
         if exit_code is not None:
-            try:
-                final_output_size = output_path.stat().st_size
-            except OSError as exception:
-                raise E2EError(
-                    f"Cannot inspect named Forge server probe output: {exception}"
-                ) from exception
-            if final_output_size > MAXIMUM_PROCESS_LOG_SIZE:
-                raise E2EError(
-                    "Named Forge server probe output exceeded "
-                    f"{MAXIMUM_PROCESS_LOG_SIZE} bytes during execution"
-                )
+            verify_process_output_bound(output_path)
             return exit_code
         remaining_seconds = deadline - time.monotonic()
         if remaining_seconds <= 0:
@@ -1452,18 +1890,130 @@ def wait_for_bounded_process(
             continue
         except KeyboardInterrupt as exception:
             raise E2EError("The named Forge server probe was interrupted") from exception
-        try:
-            final_output_size = output_path.stat().st_size
-        except OSError as exception:
-            raise E2EError(
-                f"Cannot inspect named Forge server probe output: {exception}"
-            ) from exception
-        if final_output_size > MAXIMUM_PROCESS_LOG_SIZE:
-            raise E2EError(
-                "Named Forge server probe output exceeded "
-                f"{MAXIMUM_PROCESS_LOG_SIZE} bytes during execution"
-            )
+        verify_process_output_bound(output_path)
         return exit_code
+
+
+def server_guard_state(server_guard: ServerJavaGuard) -> dict[str, object]:
+    """Returns the exact state needed for the shared monitor health check."""
+
+    target = server_guard.target
+    if server_guard.monitor is None:
+        raise E2EError("The server Java guard has no monitor")
+    return {
+        "pid": target.pid,
+        "process_group_id": target.process_group_id,
+        "proc_start_abstime": target.proc_start_abstime,
+        "expected_executable": target.expected_executable,
+        "memory_guard_telemetry": str(server_guard.monitor.telemetry_path),
+        "memory_guard_maximum_memory_mb": SERVER_MAXIMUM_MEMORY_MB,
+    }
+
+
+def verify_server_guard_is_enforcing(
+    server_guard: ServerJavaGuard,
+    sampler: macos_guarded_java.MacOsProcessMemorySampler,
+) -> None:
+    """Fails closed if a still-live server loses authoritative monitoring."""
+
+    if server_guard.monitor is None:
+        raise E2EError("The live server Java process has no memory monitor")
+    if (
+        server_guard.monitor.process.poll() is None
+        and macos_guarded_java.memory_guard_is_enforcing(
+            server_guard_state(server_guard)
+        )
+    ):
+        return
+    sample = sampler.sample(server_guard.target, time.monotonic_ns())
+    if sample.status is macos_guarded_java.SampleStatus.MISSING:
+        return
+    if sample.status is macos_guarded_java.SampleStatus.AVAILABLE:
+        raise E2EError(
+            "The live server Java process lost authoritative memory monitoring"
+        )
+    raise E2EError(
+        "The server Java identity cannot be verified while its memory guard is unhealthy: "
+        f"{sample.status.value}"
+    )
+
+
+def require_guarded_server_stopped(
+    process: subprocess.Popen[bytes],
+    server_guard: ServerJavaGuard,
+    sampler: macos_guarded_java.MacOsProcessMemorySampler,
+) -> None:
+    """Requires both the exact server JVM and its Gradle launch PGID to be gone."""
+
+    sample = sampler.sample(server_guard.target, time.monotonic_ns())
+    if sample.status is not macos_guarded_java.SampleStatus.MISSING:
+        raise E2EError(
+            "The Gradle task ended without proving the guarded server JVM stopped: "
+            f"{sample.status.value}"
+        )
+    if process_group_exists(process.pid):
+        raise E2EError(
+            "The Gradle task ended while its dedicated launch PGID remained"
+        )
+
+
+def cleanup_server_launch(
+    process: subprocess.Popen[bytes] | None,
+    server_guard: ServerJavaGuard | None,
+    sampler: macos_guarded_java.MacOsProcessMemorySampler,
+) -> None:
+    """Stops only a proven-owned launch, leaving auxiliaries alive on uncertainty."""
+
+    if process is not None:
+        if server_guard is None:
+            stop_process_group(process)
+        else:
+            sample = sampler.sample(server_guard.target, time.monotonic_ns())
+            if sample.status is macos_guarded_java.SampleStatus.AVAILABLE:
+                try:
+                    macos_guarded_java.stop_owned_java_process(
+                        server_guard.target,
+                        owned_process_group_id=process.pid,
+                        timeout_seconds=PROCESS_STOP_TIMEOUT_SECONDS,
+                        sampler=sampler,
+                    )
+                except (
+                    macos_guarded_java.GuardedJavaError,
+                    macos_guarded_java.MemorySamplingError,
+                    OSError,
+                ) as exception:
+                    raise E2EError(
+                        f"The owned server launch group did not stop: {exception}"
+                    ) from exception
+                try:
+                    process.wait(timeout=PROCESS_STOP_TIMEOUT_SECONDS)
+                except subprocess.TimeoutExpired as exception:
+                    raise E2EError(
+                        "The Gradle launch did not reap after its guarded group stopped"
+                    ) from exception
+            elif sample.status is macos_guarded_java.SampleStatus.MISSING:
+                stop_process_group(process)
+            else:
+                raise E2EError(
+                    "Refusing cleanup because the guarded server identity is uncertain: "
+                    f"{sample.status.value}"
+                )
+            require_guarded_server_stopped(process, server_guard, sampler)
+    if server_guard is not None:
+        try:
+            macos_guarded_java.stop_spawned_auxiliary(
+                server_guard.caffeinate_process
+            )
+            if server_guard.monitor is not None:
+                macos_guarded_java.stop_guarded_java_monitor(server_guard.monitor)
+        except (
+            macos_guarded_java.GuardedJavaError,
+            OSError,
+            subprocess.TimeoutExpired,
+        ) as exception:
+            raise E2EError(
+                f"The owned server guard auxiliaries did not stop: {exception}"
+            ) from exception
 
 
 def execute_probe(
@@ -1472,6 +2022,17 @@ def execute_probe(
 ) -> dict[str, object]:
     java_path, command = verify_environment(configuration, state_root)
     target_root = runtime_root(configuration, state_root)
+    try:
+        sampler = macos_guarded_java.MacOsProcessMemorySampler.native()
+    except (
+        macos_guarded_java.MemorySamplingError,
+        macos_guarded_java.MemorySamplingUnavailable,
+        OSError,
+    ) as exception:
+        raise E2EError(
+            "Authoritative macOS physical-memory sampling is unavailable: "
+            f"{exception}"
+        ) from exception
     attempt_path = run_attempt_path(configuration, state_root)
     attempt_content = (
         f"profile_id={PROFILE_ID}\nscenario={SCENARIO_ID}\npid={os.getpid()}\n"
@@ -1503,6 +2064,8 @@ def execute_probe(
         ) from exception
     output_path: Path | None = None
     process: subprocess.Popen[bytes] | None = None
+    server_guard: ServerJavaGuard | None = None
+    cleanup_confirmed = False
     try:
         output_descriptor, output_name = tempfile.mkstemp(
             prefix=".forge-server-gradle.", suffix=".log", dir=target_root
@@ -1511,6 +2074,14 @@ def execute_probe(
         environment = os.environ.copy()
         environment["JAVA_HOME"] = str(java_path.parent.parent)
         environment[RUN_TOKEN_ENVIRONMENT_VARIABLE] = run_token
+        handoff_path, acknowledgement_path = server_memory_handoff_paths(
+            target_root
+        )
+        environment[MEMORY_HANDOFF_ENVIRONMENT_VARIABLE] = str(handoff_path)
+        environment[MEMORY_ACKNOWLEDGEMENT_ENVIRONMENT_VARIABLE] = str(
+            acknowledgement_path
+        )
+        run_deadline = time.monotonic() + RUN_TIMEOUT_SECONDS
         with os.fdopen(output_descriptor, "wb", buffering=0) as output_handle:
             try:
                 process = subprocess.Popen(
@@ -1527,12 +2098,31 @@ def execute_probe(
                 raise E2EError(
                     f"Cannot start the named Forge server probe: {exception}"
                 ) from exception
+            verify_owned_gradle_process_group(process)
             try:
-                exit_code = wait_for_bounded_process(process, output_path)
-            except E2EError:
-                if process.poll() is None:
-                    stop_process_group(process)
+                server_guard = start_server_java_guard(
+                    process,
+                    output_path,
+                    target_root,
+                    run_token,
+                    sampler,
+                    run_deadline,
+                    configuration.repository_root,
+                    output_handle,
+                )
+            except ServerGuardStartError as exception:
+                server_guard = exception.server_guard
                 raise
+            exit_code = wait_for_bounded_process(
+                process,
+                output_path,
+                run_deadline=run_deadline,
+                server_guard=server_guard,
+                sampler=sampler,
+            )
+        require_guarded_server_stopped(process, server_guard, sampler)
+        cleanup_server_launch(process, server_guard, sampler)
+        cleanup_confirmed = True
         if exit_code != 0:
             raise E2EError(
                 f"The named Forge server probe exited with {exit_code}: "
@@ -1568,10 +2158,22 @@ def execute_probe(
             COMPLETION_MARKER_CONTENT,
         )
         return result
+    except BaseException as run_exception:
+        if not cleanup_confirmed:
+            try:
+                cleanup_server_launch(process, server_guard, sampler)
+            except BaseException as cleanup_exception:
+                raise E2EError(
+                    "The Forge server run failed and cleanup ownership is uncertain; "
+                    f"the run lock and process log were retained: {cleanup_exception}"
+                ) from run_exception
+            cleanup_confirmed = True
+        raise
     finally:
-        if output_path is not None:
+        if cleanup_confirmed and output_path is not None:
             output_path.unlink(missing_ok=True)
-        lock_path.unlink(missing_ok=True)
+        if cleanup_confirmed:
+            lock_path.unlink(missing_ok=True)
 
 
 def validate_command() -> int:

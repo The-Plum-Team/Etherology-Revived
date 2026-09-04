@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -43,8 +44,13 @@ final class PedestalBaselineScenarioBytecodeTest {
             throws IOException {
         assertTrue(invocations("setupDispensers").containsAll(Set.of(
                 "setBlockState",
-                "setStack"
+                "setStack",
+                "scheduledTick"
         )));
+        assertEquals(1, invocationCount("setupDispensers", "scheduledTick"));
+        assertFalse(new String(classBytes(), StandardCharsets.ISO_8859_1)
+                .contains("REDSTONE_BLOCK"));
+        assertFalse(allInvocations().contains("powerPosition"));
         assertTrue(invocations("runTransitionProbe").containsAll(Set.of(
                 "nativePlacePedestal",
                 "isRemoved"
@@ -106,9 +112,11 @@ final class PedestalBaselineScenarioBytecodeTest {
                 "observe"
         )));
         assertFalse(renderWaitCalls.contains("transition"));
+        assertTrue(invocations("transition").contains("info"));
 
         String constants = new String(classBytes(), StandardCharsets.ISO_8859_1);
         assertTrue(constants.contains("client ticks; capture_phase="));
+        assertTrue(constants.contains("Pedestal stage transition: from="));
     }
 
     private static Set<String> invocations(String methodName) throws IOException {
@@ -152,6 +160,36 @@ final class PedestalBaselineScenarioBytecodeTest {
             );
         }
         return names;
+    }
+
+    private static int invocationCount(String methodName, String invokedName)
+            throws IOException {
+        int[] count = {0};
+        new ClassReader(classBytes()).accept(new ClassVisitor(Opcodes.ASM9) {
+            @Override
+            public MethodVisitor visitMethod(
+                    int access,
+                    String name,
+                    String descriptor,
+                    String signature,
+                    String[] exceptions
+            ) {
+                if (!methodName.equals(name)) return null;
+                return new MethodVisitor(Opcodes.ASM9) {
+                    @Override
+                    public void visitMethodInsn(
+                            int opcode,
+                            String owner,
+                            String name,
+                            String descriptor,
+                            boolean isInterface
+                    ) {
+                        if (invokedName.equals(name)) count[0]++;
+                    }
+                };
+            }
+        }, 0);
+        return count[0];
     }
 
     private static MethodVisitor invocationCollector(Set<String> names) {

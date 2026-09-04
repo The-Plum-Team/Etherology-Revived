@@ -99,14 +99,14 @@ UNPINNED_OPTIONAL_HTTP_MODULES = (
 SCRIPT_DIRECTORY = Path(__file__).resolve().parent
 REPOSITORY_ROOT = SCRIPT_DIRECTORY.parents[1]
 MANIFEST_PATH = (
-    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v12.json"
+    SCRIPT_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v13.json"
 )
 PEDESTAL_EVIDENCE_VERIFIER_PATH = (
-    SCRIPT_DIRECTORY / "original_pedestal_evidence_v12.py"
+    SCRIPT_DIRECTORY / "original_pedestal_evidence_v13.py"
 )
-PEDESTAL_EVIDENCE_VERIFIER_SIZE = 10_044
+PEDESTAL_EVIDENCE_VERIFIER_SIZE = 26_963
 PEDESTAL_EVIDENCE_VERIFIER_SHA256 = (
-    "4b6ceced8ac0e406b43b5cc6514857f0b6a59a084d07117750632238b0266fb4"
+    "221afc8f88d11a60d94dc4bd94f1dd54b93e57cb93a387b336a8987d341afabe"
 )
 STATE_ROOT = SCRIPT_DIRECTORY / ".state"
 RUNTIMES_ROOT = STATE_ROOT / "runtimes"
@@ -129,6 +129,7 @@ MAXIMUM_SKIN_CACHE_FILE_COUNT = 256
 MAXIMUM_SKIN_CACHE_SIZE = 64 * 1024 * 1024
 PROVISION_INSTALL_TIMEOUT_SECONDS = 3600
 PROCESS_STOP_TIMEOUT_SECONDS = 20
+FAILED_CLIENT_SHUTDOWN_GRACE_SECONDS = 15
 MUTABLE_SKIN_CACHE_RELATIVE_PATH = PurePosixPath("assets/skins")
 CONTROLLER_TERMINATION_SIGNALS = (
     signal.SIGHUP,
@@ -642,6 +643,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "etherology-original-fabric-1.21.1-published-0.1.7-v10": "v10",
         "etherology-original-fabric-1.21.1-published-0.1.7-v11": "v11",
         "etherology-original-fabric-1.21.1-published-0.1.7-v12": "v12",
+        "etherology-original-fabric-1.21.1-published-0.1.7-v13": "v13",
     }
     profile_revision = profile_revisions.get(profile_id)
     if profile_revision is None:
@@ -943,6 +945,7 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
         "v10": "1.3.5",
         "v11": "1.4.0",
         "v12": "1.4.1",
+        "v13": "1.4.2",
     }[profile_revision]
     expected_harness_file_name = (
         "Etherology-Original-E2E-Harness-Fabric-1.21.1-"
@@ -1101,6 +1104,15 @@ def validate_manifest_shape(manifest: dict[str, object]) -> None:
             "world_seed": 4995697396257403185,
         },
         "v12": {
+            "id": "pedestal-baseline",
+            "report_file": "report.json",
+            "completion_marker_file": "done.marker",
+            "screenshot_file": "pedestal-gallery.png",
+            "world_directory_name": "etherology-original-pedestal-baseline-world",
+            "world_display_name": "Etherology Original 0.1.7 Pedestal",
+            "world_seed": 4995697396257403185,
+        },
+        "v13": {
             "id": "pedestal-baseline",
             "report_file": "report.json",
             "completion_marker_file": "done.marker",
@@ -1648,6 +1660,7 @@ def verify_harness_artifact(configuration: Configuration) -> None:
                 "1.3.5",
                 "1.4.0",
                 "1.4.1",
+                "1.4.2",
             }
             expected_slitherite_class = (
                 "dev/theplumteam/etherology/baseline/fabric/"
@@ -6231,10 +6244,10 @@ def load_pedestal_evidence_verifier() -> types.ModuleType:
         verifier_path,
         PEDESTAL_EVIDENCE_VERIFIER_SHA256,
         PEDESTAL_EVIDENCE_VERIFIER_SIZE,
-        "Pedestal v12 evidence verifier",
+        "Pedestal v13 evidence verifier",
     )
     specification = importlib.util.spec_from_file_location(
-        "etherology_original_pedestal_evidence_v12",
+        "etherology_original_pedestal_evidence_v13",
         verifier_path,
     )
     if specification is None or specification.loader is None:
@@ -6278,7 +6291,7 @@ def verify_pedestal_evidence_verifier_binding(
         or len(verifier.EXPECTED_ASSERTION_NAMES) != 74
     ):
         raise BaselineError(
-            "The Pedestal verifier is not bound to the exact active v12 contract"
+            "The Pedestal verifier is not bound to the exact active v13 contract"
         )
     return verifier
 
@@ -6315,7 +6328,7 @@ def scenario_verifier_descriptor(
         PEDESTAL_EVIDENCE_VERIFIER_PATH,
         PEDESTAL_EVIDENCE_VERIFIER_SHA256,
         PEDESTAL_EVIDENCE_VERIFIER_SIZE,
-        "Pedestal v12 evidence verifier",
+        "Pedestal v13 evidence verifier",
     )
     return {
         "path": PEDESTAL_EVIDENCE_VERIFIER_PATH.relative_to(
@@ -7036,11 +7049,82 @@ def stop_owned_process_group(process: subprocess.Popen[bytes]) -> None:
         )
 
 
+def read_bounded_regular_file_no_follow(
+    path: Path,
+    maximum_size: int,
+) -> bytes | None:
+    no_follow = getattr(os, "O_NOFOLLOW", None)
+    non_block = getattr(os, "O_NONBLOCK", None)
+    if not isinstance(no_follow, int) or not isinstance(non_block, int):
+        return None
+    close_on_exec = getattr(os, "O_CLOEXEC", 0)
+    descriptor = -1
+    try:
+        descriptor = os.open(
+            path,
+            os.O_RDONLY | no_follow | non_block | close_on_exec,
+        )
+        file_status = os.fstat(descriptor)
+        if (
+            not stat.S_ISREG(file_status.st_mode)
+            or file_status.st_size <= 0
+            or file_status.st_size > maximum_size
+        ):
+            return None
+        content = bytearray()
+        while len(content) <= file_status.st_size:
+            chunk = os.read(descriptor, min(64 * 1024, file_status.st_size + 1))
+            if not chunk:
+                break
+            content.extend(chunk)
+            if len(content) > file_status.st_size:
+                return None
+        if len(content) != file_status.st_size:
+            return None
+        return bytes(content)
+    except OSError:
+        return None
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def failed_completion_marker_published(
+    marker_path: Path,
+    report_path: Path,
+    scenario_id: str,
+) -> bool:
+    marker_content = read_bounded_regular_file_no_follow(marker_path, 4096)
+    if marker_content is None:
+        return False
+    report_content = read_bounded_regular_file_no_follow(
+        report_path,
+        MAXIMUM_PROCESS_LOG_SIZE,
+    )
+    if report_content is None:
+        return False
+    try:
+        marker = marker_content.decode("utf-8")
+    except UnicodeError:
+        return False
+    report_sha256 = hashlib.sha256(report_content).hexdigest()
+    return re.fullmatch(
+        re.escape(scenario_id)
+        + r":failed\nreport_sha256:"
+        + report_sha256
+        + r"\n",
+        marker,
+    ) is not None
+
+
 def stream_owned_process_output(
     process: subprocess.Popen[bytes],
     log_handle: BinaryIO,
     initial_size: int,
     timeout_seconds: int,
+    failure_marker_path: Path,
+    failure_report_path: Path,
+    scenario_id: str,
 ) -> int:
     if process.stdout is None:
         raise BaselineError("Owned client has no controller-managed output pipe")
@@ -7048,6 +7132,7 @@ def stream_owned_process_output(
     selector.register(process.stdout, selectors.EVENT_READ)
     total_size = initial_size
     deadline = time.monotonic() + timeout_seconds
+    failed_marker_seen_at: float | None = None
     try:
         while True:
             remaining = deadline - time.monotonic()
@@ -7069,6 +7154,24 @@ def stream_owned_process_output(
             return_code = process.poll()
             if return_code is not None and not selector.get_map():
                 return return_code
+            if (
+                failed_marker_seen_at is None
+                and failed_completion_marker_published(
+                    failure_marker_path,
+                    failure_report_path,
+                    scenario_id,
+                )
+            ):
+                failed_marker_seen_at = time.monotonic()
+            if (
+                failed_marker_seen_at is not None
+                and time.monotonic() - failed_marker_seen_at
+                >= FAILED_CLIENT_SHUTDOWN_GRACE_SECONDS
+            ):
+                raise BaselineError(
+                    "Original-baseline client published failed evidence but did not "
+                    f"exit within {FAILED_CLIENT_SHUTDOWN_GRACE_SECONDS} seconds"
+                )
     finally:
         selector.close()
 
@@ -7177,6 +7280,9 @@ def _run_owned_client_locked(
                 log_handle,
                 len(header),
                 timeout_seconds,
+                completion_marker_path(configuration, root),
+                report_path(configuration, root),
+                scenario_id,
             )
             if process_group_exists(process.pid):
                 stop_owned_process_group(process)

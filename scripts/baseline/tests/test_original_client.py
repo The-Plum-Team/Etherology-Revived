@@ -9,6 +9,7 @@ import os
 from pathlib import Path, PurePosixPath
 import shutil
 import signal
+import subprocess
 import struct
 import sys
 import tempfile
@@ -59,7 +60,7 @@ ACTIVE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v10.json"
 )
 ACTIVE_PEDESTAL_MANIFEST_PATH = (
-    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v12.json"
+    BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v13.json"
 )
 LEGACY_SLITHERITE_MANIFEST_PATH = (
     BASELINE_DIRECTORY / "original-fabric-1.21.1-published-0.1.7-v5.json"
@@ -149,6 +150,7 @@ def harness_jar_bytes(
         "1.3.5",
         "1.4.0",
         "1.4.1",
+        "1.4.2",
     }
     metadata = {
         "schemaVersion": 1,
@@ -3874,11 +3876,11 @@ class JavaAndScenarioSafetyTests(unittest.TestCase):
     def test_current_capture_harness_is_exactly_pinned(self) -> None:
         configuration = client.load_configuration(ACTIVE_PEDESTAL_MANIFEST_PATH)
         client.require_capture_harness(configuration)
-        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.1")
-        self.assertEqual(client.harness_spec(configuration)["size"], 340_250)
+        self.assertEqual(client.harness_spec(configuration)["version"], "1.4.2")
+        self.assertEqual(client.harness_spec(configuration)["size"], 340_155)
         self.assertEqual(
             client.harness_spec(configuration)["sha256"],
-            "a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb",
+            "82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04",
         )
 
     def test_manifest_cannot_select_an_unpinned_harness_path(self) -> None:
@@ -4122,6 +4124,236 @@ class CommandAndProcessSafetyTests(unittest.TestCase):
             "A mod crashed on startup!",
         )
         self.assertIsNone(client.find_fatal_log_marker("normal shutdown"))
+
+    def test_failed_completion_marker_detector_is_exact(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            marker = Path(temporary_directory) / "done.marker"
+            report = Path(temporary_directory) / "report.json"
+            report.write_bytes(b'{"status":"failed"}\n')
+            report_sha256 = client.sha256_file(report)
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + report_sha256
+                + "\n",
+                encoding="utf-8",
+            )
+            self.assertTrue(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "slitherite-block-registry",
+                )
+            )
+            marker.write_text(
+                "pedestal-baseline:passed\n"
+                + "report_sha256:"
+                + report_sha256
+                + "\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+
+    def test_failed_completion_marker_rejects_untrusted_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            marker = root / "done.marker"
+            report = root / "report.json"
+            report.write_bytes(b'{"status":"failed"}\n')
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + "0" * 64
+                + "\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            marker.write_bytes(b"\xff")
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            marker.write_bytes(b"x" * 4097)
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            marker.unlink()
+            marker.symlink_to(report)
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            marker.unlink()
+            os.mkfifo(marker)
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            marker.unlink()
+            report.unlink()
+            os.mkfifo(report)
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + "0" * 64
+                + "\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+            report.unlink()
+            marker.unlink()
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + "0" * 64
+                + "\n",
+                encoding="utf-8",
+            )
+            self.assertFalse(
+                client.failed_completion_marker_published(
+                    marker,
+                    report,
+                    "pedestal-baseline",
+                )
+            )
+
+    def test_stream_bounds_shutdown_after_failed_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            marker = Path(temporary_directory) / "done.marker"
+            report = Path(temporary_directory) / "report.json"
+            report.write_bytes(b'{"status":"failed"}\n')
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + client.sha256_file(report)
+                + "\n",
+                encoding="utf-8",
+            )
+            process = subprocess.Popen(
+                [sys.executable, "-c", "import time; time.sleep(60)"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            try:
+                with (
+                    mock.patch.object(
+                        client,
+                        "FAILED_CLIENT_SHUTDOWN_GRACE_SECONDS",
+                        0,
+                    ),
+                    self.assertRaisesRegex(
+                        client.BaselineError,
+                        "published failed evidence",
+                    ),
+                ):
+                    client.stream_owned_process_output(
+                        process,
+                        io.BytesIO(),
+                        0,
+                        10,
+                        marker,
+                        report,
+                        "pedestal-baseline",
+                    )
+            finally:
+                process.terminate()
+                process.wait(timeout=10)
+                if process.stdout is not None:
+                    process.stdout.close()
+
+    def test_failed_marker_bounds_descendant_held_output_pipe(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory)
+            marker = root / "done.marker"
+            report = root / "report.json"
+            report.write_bytes(b'{"status":"failed"}\n')
+            marker.write_text(
+                "pedestal-baseline:failed\n"
+                + "report_sha256:"
+                + client.sha256_file(report)
+                + "\n",
+                encoding="utf-8",
+            )
+            child_source = (
+                "import subprocess, sys; "
+                "subprocess.Popen([sys.executable, '-c', "
+                "'import time; time.sleep(60)'], "
+                "stdout=sys.stdout, stderr=sys.stderr)"
+            )
+            process = subprocess.Popen(
+                [sys.executable, "-c", child_source],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+            try:
+                process.wait(timeout=10)
+                with (
+                    mock.patch.object(
+                        client,
+                        "FAILED_CLIENT_SHUTDOWN_GRACE_SECONDS",
+                        0,
+                    ),
+                    self.assertRaisesRegex(
+                        client.BaselineError,
+                        "published failed evidence",
+                    ),
+                ):
+                    client.stream_owned_process_output(
+                        process,
+                        io.BytesIO(),
+                        0,
+                        10,
+                        marker,
+                        report,
+                        "pedestal-baseline",
+                    )
+            finally:
+                if client.process_group_exists(process.pid):
+                    client.stop_owned_process_group(process)
+                if process.stdout is not None:
+                    process.stdout.close()
+            self.assertFalse(client.process_group_exists(process.pid))
 
 
 if __name__ == "__main__":

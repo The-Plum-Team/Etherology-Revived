@@ -4,8 +4,10 @@ This directory records the native `published-0.1.7` Pedestal baseline contract.
 The repository-owned Fabric 1.21.1 v11 profile consumed its sole launch on
 2026-09-04, reached a fresh integrated world, and then exceeded the
 controller's 1,800-second deadline before publishing a report or screenshot.
-V11 is diagnostic history, not accepted runtime evidence. A fresh v12 profile
-is prepared for the next attempt and has not been provisioned or launched.
+V11 is diagnostic history, not accepted runtime evidence. The fresh v12
+profile later consumed its own sole launch and also failed closed; it is
+separate diagnostic history and cannot be reused. The v13 profile and v1.4.2
+harness are prepared and pinned, but its fresh runtime remains absent.
 
 The dedicated scenario is designed to record:
 
@@ -62,11 +64,37 @@ as an inference rather than mechanic evidence. The compact diagnostic record is
 [`pedestal-v11`](../../../../evidence/original-1.21.1/pedestal-v11/). The
 ignored v11 runtime remains preserved and must never be launched again.
 
-The v12 v1.4.1 harness preserves the exact 74-assertion contract and camera
-coordinates. It clears input after each client tick, restores the exact player
-pose at `GameRenderer.render` HEAD before the framebuffer is drawn, and no
-longer returns from render readiness to a stage that resets the watchdog. Its
+The v12 v1.4.1 harness preserved the exact 74-assertion contract and camera
+coordinates. It cleared input after each client tick, restored the exact player
+pose at `GameRenderer.render` HEAD before the framebuffer was drawn, and no
+longer returned from render readiness to a stage that reset the watchdog. Its
 51 Java tests, remap, artifact validation, and two reproducible clean builds
 passed. Both builds produced a `340,250`-byte JAR with SHA-256
 `a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb`.
-These are static preparation facts, not native mechanic evidence.
+
+The v12 native run reached a fresh integrated world and failed at client tick
+155 during the first dispenser inspection. The harness powered all dispensers
+during immediate setup and inspected them after a fixed delay without proving
+that every fixture chunk was ticking. All eight fixtures at `x<0`, including
+the occupied-carpet upward fixture at `x=-15`, remained unfired with both
+inputs. All four fixtures at `x>=0` fired exactly once. This exact chunk split
+indicates redstone-scheduling nondeterminism in the harness as the
+best-supported inference, not accepted direction-specific Pedestal behavior;
+the retained runtime cannot prove the scheduler cause conclusively. The
+remaining lifecycle and capture assertions were never exercised and retained
+default failed values.
+
+The harness published its failed report and marker at 16:52:51 Europe/Madrid,
+then called `client.scheduleStop()`. Shutdown stalled after `Saving worlds`
+until the controller reached 1,800 seconds, killed its owned process group, and
+returned exit code `2`. There was no clean shutdown, controller verification,
+or screenshot. The compact record is
+[`pedestal-v12`](../../../../evidence/original-1.21.1/pedestal-v12/); its
+preserved runtime must never be launched again. V13 replaces redstone-powered
+fixture scheduling with one explicit vanilla scheduled tick per placed
+dispenser, using the actual placed state and still entering the published
+Etherology mixin. Its 51 tests and two clean reproducibility builds produced a
+`340,155`-byte JAR with SHA-256
+`82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04`.
+The controller verifies the failed marker against its regular report before a
+15-second failure-shutdown grace. V13 remains fresh and has no native claim yet.

@@ -1,0 +1,1069 @@
+{
+  "schema": 4,
+  "reference_id": "published-0.1.7",
+  "scenario": "pedestal-baseline",
+  "lane": "fabric-1.21.1-original",
+  "status": "failed",
+  "passed": false,
+  "client_ticks": 155,
+  "lifecycle_failure": "Pedestal server operation failed: IllegalStateException: Directional dispenser probe did not match the contract: item:down\u003dminecraft:amethyst_shardx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|item:up\u003dminecraft:amethyst_shardx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|item:north\u003dminecraft:amethyst_shardx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|item:south\u003dminecraft:amethyst_shardx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|item:west\u003dminecraft:amethyst_shardx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|item:east\u003dminecraft:amethyst_shardx1-\u003eminecraft:amethyst_shardx1,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|carpet:north\u003dminecraft:purple_carpetx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|carpet:south\u003dminecraft:purple_carpetx2-\u003eempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|carpet:west\u003dminecraft:purple_carpetx1-\u003eempty,minecraft:purple_carpetx1;decoration\u003dtrue;color\u003dpurple;facing\u003deast|carpet:east\u003dminecraft:purple_carpetx1-\u003eempty,minecraft:purple_carpetx1;decoration\u003dtrue;color\u003dpurple;facing\u003dwest|occupied-carpet-display:up\u003dminecraft:purple_carpetx2-\u003eempty,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth|full-target-fallback:west\u003dminecraft:arrowx1-\u003eminecraft:diamondx1,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth;guard\u003d[down, up];hash-pinned-published-0.1.7-bytecode-not-executed-safety-guard: empty-carpet-slot vertical direction reaches the horizontal-only facing property;ejected\u003d[minecraft:arrowx1];arrow_projectiles\u003d0",
+  "assertions": [
+    {
+      "name": "fabric_mod_loaded:etherology",
+      "passed": true,
+      "expected": "loaded",
+      "actual": "loaded"
+    },
+    {
+      "name": "pedestal_resources_exact",
+      "passed": true,
+      "expected": "64 byte-pinned resources",
+      "actual": "64 resources;multipart\u003d68;failure\u003d"
+    },
+    {
+      "name": "pedestal_blockstate_multipart_count_exact",
+      "passed": true,
+      "expected": "68",
+      "actual": "68"
+    },
+    {
+      "name": "registry:block:etherology:pedestal",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:item:etherology:pedestal",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "registry:block_entity_type:etherology:pedestal_block_entity",
+      "passed": true,
+      "expected": "present",
+      "actual": "present"
+    },
+    {
+      "name": "pedestal_runtime_block_class_exact",
+      "passed": true,
+      "expected": "ru.feytox.etherology.block.pedestal.PedestalBlock",
+      "actual": "ru.feytox.etherology.block.pedestal.PedestalBlock"
+    },
+    {
+      "name": "pedestal_runtime_block_entity_class_exact",
+      "passed": true,
+      "expected": "ru.feytox.etherology.block.pedestal.PedestalBlockEntity",
+      "actual": "ru.feytox.etherology.block.pedestal.PedestalBlockEntity"
+    },
+    {
+      "name": "pedestal_block_item_mapping_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "pedestal_translation_exact",
+      "passed": true,
+      "expected": "Pedestal",
+      "actual": "Pedestal"
+    },
+    {
+      "name": "pedestal_default_properties_exact",
+      "passed": true,
+      "expected": "{cloth_color\u003dwhite, decoration\u003dfalse, facing\u003dnorth, shape\u003dfull, waterlogged\u003dfalse}",
+      "actual": "{cloth_color\u003dwhite, decoration\u003dfalse, facing\u003dnorth, shape\u003dfull, waterlogged\u003dfalse}"
+    },
+    {
+      "name": "pedestal_state_count_exact",
+      "passed": true,
+      "expected": "1024",
+      "actual": "1024"
+    },
+    {
+      "name": "pedestal_state_network_ids_exact",
+      "passed": true,
+      "expected": "1024 unique non-negative raw ids",
+      "actual": "1024 unique;default\u003d32314"
+    },
+    {
+      "name": "pedestal_horizontal_facing_values_exact",
+      "passed": true,
+      "expected": "[east, north, south, west]",
+      "actual": "[east, north, south, west]"
+    },
+    {
+      "name": "pedestal_pickaxe_tag_exact",
+      "passed": true,
+      "expected": "true",
+      "actual": "true"
+    },
+    {
+      "name": "pedestal_recipe_exact",
+      "passed": true,
+      "expected": "etherology:pedestal\u003dminecraft:crafting-\u003eetherology:pedestalx2",
+      "actual": "etherology:pedestal\u003dminecraft:crafting-\u003eetherology:pedestalx2"
+    },
+    {
+      "name": "pedestal_advancement_exact",
+      "passed": true,
+      "expected": "etherology:recipes/decorations/pedestal",
+      "actual": "etherology:recipes/decorations/pedestal"
+    },
+    {
+      "name": "pedestal_loot_table_exact",
+      "passed": true,
+      "expected": "etherology:blocks/pedestal",
+      "actual": "etherology:blocks/pedestal"
+    },
+    {
+      "name": "pedestal_self_drop_exact",
+      "passed": true,
+      "expected": "etherology:pedestalx1",
+      "actual": "etherology:pedestalx1"
+    },
+    {
+      "name": "pedestal_native_standalone_placement_exact",
+      "passed": true,
+      "expected": "accepted;count\u003d1-\u003e0;shape\u003dfull",
+      "actual": "CONSUME;accepted\u003dtrue;count\u003d1-\u003e0;mapping\u003dtrue;state\u003detherology:pedestal[cloth_color\u003dwhite,decoration\u003dfalse,facing\u003dnorth,shape\u003dfull,waterlogged\u003dfalse]"
+    },
+    {
+      "name": "pedestal_native_waterlogged_placement_exact",
+      "passed": true,
+      "expected": "accepted;count\u003d1-\u003e0;shape\u003dfull;waterlogged\u003dtrue",
+      "actual": "CONSUME;accepted\u003dtrue;count\u003d1-\u003e0;mapping\u003dtrue;state\u003detherology:pedestal[cloth_color\u003dwhite,decoration\u003dfalse,facing\u003dnorth,shape\u003dfull,waterlogged\u003dtrue]"
+    },
+    {
+      "name": "pedestal_outline_shapes_exact",
+      "passed": true,
+      "expected": "bottom\u003d0.187500000,0.000000000,0.187500000-\u003e0.812500000,1.000000000,0.812500000;volume\u003d0.276367188;middle\u003d0.250000000,0.000000000,0.250000000-\u003e0.750000000,1.000000000,0.750000000;volume\u003d0.250000000;top\u003d0.125000000,0.000000000,0.125000000-\u003e0.875000000,1.000000000,0.875000000;volume\u003d0.347656250;full\u003d0.125000000,0.000000000,0.125000000-\u003e0.875000000,1.000000000,0.875000000;volume\u003d0.374023438",
+      "actual": "bottom\u003d0.187500000,0.000000000,0.187500000-\u003e0.812500000,1.000000000,0.812500000;volume\u003d0.276367188;middle\u003d0.250000000,0.000000000,0.250000000-\u003e0.750000000,1.000000000,0.750000000;volume\u003d0.250000000;top\u003d0.125000000,0.000000000,0.125000000-\u003e0.875000000,1.000000000,0.875000000;volume\u003d0.347656250;full\u003d0.125000000,0.000000000,0.125000000-\u003e0.875000000,1.000000000,0.875000000;volume\u003d0.374023438"
+    },
+    {
+      "name": "pedestal_stack_shape_transitions_exact",
+      "passed": true,
+      "expected": "standalone\u003dfull;two\u003dbottom,top;three\u003dbottom,middle,top",
+      "actual": "[full, bottom, top, bottom, middle, top]"
+    },
+    {
+      "name": "pedestal_block_entity_presence_by_shape_exact",
+      "passed": true,
+      "expected": "full\u003dtrue;bottom\u003dfalse;middle\u003dfalse;top\u003dtrue",
+      "actual": "{full\u003dtrue, bottom\u003dfalse, middle\u003dfalse, top\u003dtrue}"
+    },
+    {
+      "name": "pedestal_interaction_sequence_exact",
+      "passed": true,
+      "expected": "[red-carpet-stack-place, different-carpet-stack-noop, single-carpet-swap, same-carpet-retrieve, diamond-place, different-item-noop, full-same-item-noop, same-item-retrieve, empty-hand-item-first, empty-hand-carpet-second]",
+      "actual": "red-carpet-stack-place\u003dCONSUME;hand\u003dminecraft:red_carpetx2-\u003eminecraft:red_carpetx1;slots\u003dempty,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth|different-carpet-stack-noop\u003dCONSUME;hand\u003dminecraft:blue_carpetx2-\u003eminecraft:blue_carpetx2;slots\u003dempty,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth|single-carpet-swap\u003dCONSUME;hand\u003dminecraft:blue_carpetx1-\u003eminecraft:red_carpetx1;slots\u003dempty,minecraft:blue_carpetx1;decoration\u003dtrue;color\u003dblue;facing\u003dnorth|same-carpet-retrieve\u003dCONSUME;hand\u003dminecraft:blue_carpetx1-\u003eminecraft:blue_carpetx2;slots\u003dempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|diamond-place\u003dCONSUME;hand\u003dminecraft:diamondx2-\u003eminecraft:diamondx1;slots\u003dminecraft:diamondx1,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|different-item-noop\u003dCONSUME;hand\u003dminecraft:emeraldx2-\u003eminecraft:emeraldx2;slots\u003dminecraft:diamondx1,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|full-same-item-noop\u003dCONSUME;hand\u003dminecraft:diamondx64-\u003eminecraft:diamondx64;slots\u003dminecraft:diamondx1,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|same-item-retrieve\u003dCONSUME;hand\u003dminecraft:diamondx1-\u003eminecraft:diamondx2;slots\u003dempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth|empty-hand-item-first\u003dCONSUME;hand\u003dempty-\u003eminecraft:diamondx1;slots\u003dempty,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth|empty-hand-carpet-second\u003dCONSUME;hand\u003dempty-\u003eminecraft:red_carpetx1;slots\u003dempty,empty;decoration\u003dfalse;color\u003dwhite;facing\u003dnorth"
+    },
+    {
+      "name": "pedestal_inventory_two_max_one_slots_exact",
+      "passed": true,
+      "expected": "size\u003d2;max\u003d1",
+      "actual": "size\u003d2;max\u003d1"
+    },
+    {
+      "name": "pedestal_sided_inventory_closed_exact",
+      "passed": true,
+      "expected": "all six sides expose zero slots and deny IO",
+      "actual": "{down\u003d0, up\u003d0, north\u003d0, south\u003d0, west\u003d0, east\u003d0};insert_denied\u003dtrue;extract_denied\u003dtrue"
+    },
+    {
+      "name": "pedestal_nbt_items_exact",
+      "passed": true,
+      "expected": "Items\u003d2",
+      "actual": "Items\u003d2;keys\u003d[Items, id, removed, x, y, z]"
+    },
+    {
+      "name": "pedestal_nbt_removed_flag_exact",
+      "passed": true,
+      "expected": "present\u003dtrue;value\u003dfalse",
+      "actual": "present\u003dtrue;value\u003dfalse"
+    },
+    {
+      "name": "pedestal_item_dispenser_all_six_directions_exact",
+      "passed": false,
+      "expected": "[down, up, north, south, west, east]",
+      "actual": "[]"
+    },
+    {
+      "name": "pedestal_carpet_dispenser_horizontal_directions_exact",
+      "passed": false,
+      "expected": "[north, south, west, east]",
+      "actual": "[]"
+    },
+    {
+      "name": "pedestal_occupied_carpet_falls_through_to_display_exact",
+      "passed": false,
+      "expected": "occupied-carpet-display:up\u003dminecraft:purple_carpetx1-\u003eminecraft:purple_carpetx1,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth",
+      "actual": "missing"
+    },
+    {
+      "name": "pedestal_full_target_falls_through_to_generic_item_ejection_exact",
+      "passed": false,
+      "expected": "full-target-fallback:west\u003dminecraft:arrowx1-\u003eminecraft:diamondx1,minecraft:red_carpetx1;decoration\u003dtrue;color\u003dred;facing\u003dnorth;ejected\u003d[minecraft:arrowx1];arrow_projectiles\u003d0",
+      "actual": "missing;ejected\u003d[];arrow_projectiles\u003d-1"
+    },
+    {
+      "name": "pedestal_stack_transition_drops_exact",
+      "passed": false,
+      "expected": "minecraft:diamondx1+minecraft:red_carpetx1",
+      "actual": "none"
+    },
+    {
+      "name": "pedestal_stack_transition_stale_block_entity_removed",
+      "passed": false,
+      "expected": "old_removed\u003dtrue;world_absent\u003dtrue",
+      "actual": "old_removed\u003dfalse;world_absent\u003dfalse"
+    },
+    {
+      "name": "pedestal_stack_transition_client_block_entity_removed",
+      "passed": false,
+      "expected": "lookup_absent\u003dtrue;retained_removed\u003dtrue",
+      "actual": "lookup_absent\u003dfalse;retained_removed\u003dfalse"
+    },
+    {
+      "name": "pedestal_replacement_drops_exact",
+      "passed": false,
+      "expected": "minecraft:blue_carpetx1+minecraft:emeraldx1",
+      "actual": "none"
+    },
+    {
+      "name": "pedestal_replacement_stale_block_entity_removed",
+      "passed": false,
+      "expected": "old_removed\u003dtrue;world_absent\u003dtrue",
+      "actual": "old_removed\u003dfalse;world_absent\u003dfalse"
+    },
+    {
+      "name": "pedestal_replacement_client_block_entity_removed",
+      "passed": false,
+      "expected": "air\u003dtrue;lookup_absent\u003dtrue;retained_removed\u003dtrue",
+      "actual": "air\u003dfalse;lookup_absent\u003dfalse;retained_removed\u003dfalse"
+    },
+    {
+      "name": "pedestal_gallery_server_snapshot_exact",
+      "passed": false,
+      "expected": "exact",
+      "actual": ""
+    },
+    {
+      "name": "pedestal_transition_server_snapshot_exact",
+      "passed": false,
+      "expected": "exact",
+      "actual": ""
+    },
+    {
+      "name": "pedestal_persistence_initial_server_snapshot_exact",
+      "passed": false,
+      "expected": "exact",
+      "actual": ""
+    },
+    {
+      "name": "pedestal_forced_world_save_exact",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "pedestal_full_restart_completed",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "pedestal_reopened_server_snapshot_exact",
+      "passed": false,
+      "expected": "exact",
+      "actual": ""
+    },
+    {
+      "name": "pedestal_restart_persistence_exact",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "packaged_root_jar:etherology",
+      "passed": true,
+      "expected": "regular path JAR with SHA-256",
+      "actual": "Etherology-1.21-0.1.7.jar:38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    {
+      "name": "packaged_root_jar:etherology_original_baseline_harness",
+      "passed": true,
+      "expected": "regular path JAR with SHA-256",
+      "actual": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.4.1.jar:a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb"
+    },
+    {
+      "name": "live_world_identity",
+      "passed": false,
+      "expected": "Etherology Original 0.1.7 Pedestal;4995697396257403185;minecraft:overworld",
+      "actual": "unavailable"
+    },
+    {
+      "name": "isolated_save_directory_present",
+      "passed": true,
+      "expected": "etherology-original-pedestal-baseline-world",
+      "actual": "etherology-original-pedestal-baseline-world"
+    },
+    {
+      "name": "client_snapshot_exact:gallery",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "native_framebuffer_dimensions:gallery",
+      "passed": false,
+      "expected": "1920x1080",
+      "actual": "0x0"
+    },
+    {
+      "name": "completed_world_renders_before_capture:gallery",
+      "passed": false,
+      "expected": "120",
+      "actual": "0"
+    },
+    {
+      "name": "capture_render_ready:gallery",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "capture_camera_exact:gallery",
+      "passed": false,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-15.5;yaw\u003d0.0;pitch\u003d10.0;on_ground\u003dtrue",
+      "actual": "missing"
+    },
+    {
+      "name": "native_screenshot_written:gallery",
+      "passed": false,
+      "expected": "pedestal-gallery.png",
+      "actual": "not captured"
+    },
+    {
+      "name": "client_snapshot_exact:transition-drops",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "native_framebuffer_dimensions:transition-drops",
+      "passed": false,
+      "expected": "1920x1080",
+      "actual": "0x0"
+    },
+    {
+      "name": "completed_world_renders_before_capture:transition-drops",
+      "passed": false,
+      "expected": "120",
+      "actual": "0"
+    },
+    {
+      "name": "capture_render_ready:transition-drops",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "capture_camera_exact:transition-drops",
+      "passed": false,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-15.5;yaw\u003d0.0;pitch\u003d10.0;on_ground\u003dtrue",
+      "actual": "missing"
+    },
+    {
+      "name": "native_screenshot_written:transition-drops",
+      "passed": false,
+      "expected": "pedestal-transition-drops.png",
+      "actual": "not captured"
+    },
+    {
+      "name": "client_snapshot_exact:persistence-initial",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "native_framebuffer_dimensions:persistence-initial",
+      "passed": false,
+      "expected": "1920x1080",
+      "actual": "0x0"
+    },
+    {
+      "name": "completed_world_renders_before_capture:persistence-initial",
+      "passed": false,
+      "expected": "120",
+      "actual": "0"
+    },
+    {
+      "name": "capture_render_ready:persistence-initial",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "capture_camera_exact:persistence-initial",
+      "passed": false,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-15.5;yaw\u003d0.0;pitch\u003d10.0;on_ground\u003dtrue",
+      "actual": "missing"
+    },
+    {
+      "name": "native_screenshot_written:persistence-initial",
+      "passed": false,
+      "expected": "pedestal-persistence-initial.png",
+      "actual": "not captured"
+    },
+    {
+      "name": "client_snapshot_exact:persistence-reopened",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "native_framebuffer_dimensions:persistence-reopened",
+      "passed": false,
+      "expected": "1920x1080",
+      "actual": "0x0"
+    },
+    {
+      "name": "completed_world_renders_before_capture:persistence-reopened",
+      "passed": false,
+      "expected": "120",
+      "actual": "0"
+    },
+    {
+      "name": "capture_render_ready:persistence-reopened",
+      "passed": false,
+      "expected": "true",
+      "actual": "false"
+    },
+    {
+      "name": "capture_camera_exact:persistence-reopened",
+      "passed": false,
+      "expected": "first_person\u003dtrue;x\u003d0.5;y\u003d121.0;z\u003d-15.5;yaw\u003d0.0;pitch\u003d10.0;on_ground\u003dtrue",
+      "actual": "missing"
+    },
+    {
+      "name": "native_screenshot_written:persistence-reopened",
+      "passed": false,
+      "expected": "pedestal-persistence-reopened.png",
+      "actual": "not captured"
+    }
+  ],
+  "world": {
+    "save_directory": "etherology-original-pedestal-baseline-world",
+    "display_name": "Etherology Original 0.1.7 Pedestal",
+    "seed": 4995697396257403185,
+    "dimension": "minecraft:overworld",
+    "integrated": true,
+    "reopened": false
+  },
+  "artifacts": [
+    {
+      "mod_id": "etherology",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    {
+      "mod_id": "etherology_original_baseline_harness",
+      "origin_kind": "PATH",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.4.1.jar",
+      "size": 340250,
+      "sha256": "a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb"
+    }
+  ],
+  "pedestal": {
+    "resource_pins": {
+      "assets/etherology/blockstates/pedestal.json": {
+        "size": 9856,
+        "sha256": "db63a8b2b8006b8c7d74cae8f3a7e8fe06cc33d41a30c9f13f5c9b15c3040426"
+      },
+      "assets/etherology/lang/en_us.json": {
+        "size": 11371,
+        "sha256": "5ec70bb4100e112b984d9b79ebf7ca9fd5c1d77522894211658d27952fa7a315"
+      },
+      "assets/etherology/lang/ru_ru.json": {
+        "size": 14436,
+        "sha256": "9f675b42ae503d32399d978f1eeb470e8181ba7503a73b3798426e74176e67f8"
+      },
+      "assets/etherology/models/block/pedestal.json": {
+        "size": 1488,
+        "sha256": "3c204c693e8a480947b64837c5972b5ab0383ca148a793b8eaa3d706a3e4256f"
+      },
+      "assets/etherology/models/block/pedestal_black.json": {
+        "size": 515,
+        "sha256": "9f5ee4bcd6ff4b7b4110c584269aa1793e55f97c9463ae0ee0ad6b08104a1b61"
+      },
+      "assets/etherology/models/block/pedestal_blue.json": {
+        "size": 512,
+        "sha256": "6ea36c4dcdfb40612d51cc2f71e0932d5aa083f5132bb6f102d9e1d0960f4192"
+      },
+      "assets/etherology/models/block/pedestal_bottom.json": {
+        "size": 1501,
+        "sha256": "b2bb22bf4410b024ce5c3d765b2abb4e27d34e30d7e38466a93f1caef2f58616"
+      },
+      "assets/etherology/models/block/pedestal_brown.json": {
+        "size": 515,
+        "sha256": "2dd219781db7a7fb1dbcfdfc37f0941a01a05b731877b92523332f0b6c59d86d"
+      },
+      "assets/etherology/models/block/pedestal_column.json": {
+        "size": 1092,
+        "sha256": "9b574dfa2302f085e447c32fc2d1ccab0993bdabc5efe83d4a24e68f90397863"
+      },
+      "assets/etherology/models/block/pedestal_cyan.json": {
+        "size": 512,
+        "sha256": "1b768f236f122bf2c7002c6038f8a3c28dfac6f5e5bb686e67ec25053cd16673"
+      },
+      "assets/etherology/models/block/pedestal_gray.json": {
+        "size": 512,
+        "sha256": "cfc48aa14cbcb90ed9b867536bb9573916876beb74c6ffccd2d920caa40d8ea1"
+      },
+      "assets/etherology/models/block/pedestal_green.json": {
+        "size": 515,
+        "sha256": "cdc9f0914aaa9d9401195e7493ddd16d85b45f79c14faabc0f0da1949757d0ae"
+      },
+      "assets/etherology/models/block/pedestal_light_blue.json": {
+        "size": 530,
+        "sha256": "e49105d1a0c0f76e841aa015c75c52947edc68c388df27bfef8ef7382323c8ce"
+      },
+      "assets/etherology/models/block/pedestal_light_gray.json": {
+        "size": 530,
+        "sha256": "6666718c294c0d6ad734762532267ad03afb06080ad302d1f8e14793559d68cb"
+      },
+      "assets/etherology/models/block/pedestal_lime.json": {
+        "size": 512,
+        "sha256": "efad7ce916fca70606e7e6d8429ac97275479bd0abba86667325da2047f7e420"
+      },
+      "assets/etherology/models/block/pedestal_magenta.json": {
+        "size": 521,
+        "sha256": "fc5c9df704fefc07b53a75f4be1e67dcc3b3a3adfcf1822bd5dc5726f736260d"
+      },
+      "assets/etherology/models/block/pedestal_orange.json": {
+        "size": 518,
+        "sha256": "f5d7fb5e27a2f0db80964f79378e1c2ff3b6e3c7aab4c9629fe87e9f6aad80d3"
+      },
+      "assets/etherology/models/block/pedestal_pink.json": {
+        "size": 512,
+        "sha256": "8b60b0194b96a86b1b7a5eed43d1ca2abaaea502df3aea6cb8f46f5d9a9dd3f7"
+      },
+      "assets/etherology/models/block/pedestal_purple.json": {
+        "size": 518,
+        "sha256": "450d32ef09ec164179f2acbb7fe0415d0c8d0cc9cbd91663753cfe56397ca146"
+      },
+      "assets/etherology/models/block/pedestal_red.json": {
+        "size": 509,
+        "sha256": "4a9d87f2e533c342c4b6c00cf601b94956cfd22cd80449e651ab6db363bf13e6"
+      },
+      "assets/etherology/models/block/pedestal_top.json": {
+        "size": 1489,
+        "sha256": "5c695e4c806f62420ac9f7c426917aa6b14cb19139d47983fbcf22f46f54ce2e"
+      },
+      "assets/etherology/models/block/pedestal_white.json": {
+        "size": 515,
+        "sha256": "7c97f1c78ebb0bba7157c06f7752b1d1d86c8977f7cd7e0a1685da42c4200cab"
+      },
+      "assets/etherology/models/block/pedestal_yellow.json": {
+        "size": 518,
+        "sha256": "8516bcf02362423947c24989dcabb476908556c35742bebfe669a0530a3db7ea"
+      },
+      "assets/etherology/models/item/pedestal.json": {
+        "size": 43,
+        "sha256": "b8a810118418a416ee14bbb4ef10ae12b94bdef25e5485274cadb4d8d7a663d7"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side.png": {
+        "size": 259,
+        "sha256": "e4def33b8d4e0ece19ea4156fdc3a2411d9b21d6eb2b653e73f65ec189c234c3"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_black.png": {
+        "size": 236,
+        "sha256": "cfaa18fd7f5a844f8d788051c40043d3b6a3dcfda6fc964dd64a87f705bd0096"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_blue.png": {
+        "size": 227,
+        "sha256": "e0cf356f6959bb10dd2d30ff422c2d10380ea41b98949eddf83d3357d76b6458"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_bottom.png": {
+        "size": 229,
+        "sha256": "b9b6acb5e3efb56151d0f829b066d3dc1f8490477e433b8630733287a4d944cd"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_brown.png": {
+        "size": 224,
+        "sha256": "a2b0d92ea3f8760c4816e2e2d442e358e607047e2088c5c1c1ee641858dd3e01"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_column.png": {
+        "size": 204,
+        "sha256": "8870293b6cce511ca06a455f6250d85b7ef589ef42d5d4c8170d45eba366b501"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_cyan.png": {
+        "size": 226,
+        "sha256": "dbb1d2e2778d1d6c01f468a916e6774bf972e5d72f1dfd47a4f9060aa4aedffe"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_gray.png": {
+        "size": 220,
+        "sha256": "2578f2173a31480817804450a78b490c11b468749dbf16a50c5110367093c9e1"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_green.png": {
+        "size": 218,
+        "sha256": "be0af581f36f06ec5159315336ae526e126eadcc43729e51d9467f467f1fd6ba"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_light_blue.png": {
+        "size": 217,
+        "sha256": "9c5781ab162bbc9b96e33a31bfaf93a01759bb0b42d05d374293203b7e59e419"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_light_gray.png": {
+        "size": 272,
+        "sha256": "e24724223acc3ac3b0daf0f72305882345c01140cea0bea8e43955b04db7d1cc"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_lime.png": {
+        "size": 229,
+        "sha256": "33019ea73ee53878a8651fe2e7f021eba580cdd30db6cec7d90c3cfaf316127b"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_magenta.png": {
+        "size": 222,
+        "sha256": "3f837e1a46c92f86df6cd5e8267237c04e1e9909bd73c5daf28c0da8eb0bc81c"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_orange.png": {
+        "size": 239,
+        "sha256": "e2d3ce3a1b8776919ed72153aad936ecc18cf689a9f4e3cbded1a8defe746382"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_pink.png": {
+        "size": 239,
+        "sha256": "86b625f9c8367a1640a3f4bc5297908bcc39d1d567e9369cb6e5c99459039fab"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_purple.png": {
+        "size": 218,
+        "sha256": "98dab9faed07098b21baa42edb44520f21d93ed5ebbe4776a384a4e795699f40"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_red.png": {
+        "size": 232,
+        "sha256": "c3df2cacd323dee36811f0b527aa603d9ebaba2da405366928401e7d5445bb26"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_top.png": {
+        "size": 248,
+        "sha256": "ca26b7b90d8bad45845d993daae53b7b4875e604a591fcffb7a7b724d11aa1c5"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_white.png": {
+        "size": 236,
+        "sha256": "487c8dbd5488c614ec60e1f86afbeafbcabd0d3bcd21fa51da2558d89bdc10f7"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_side_yellow.png": {
+        "size": 235,
+        "sha256": "1b81740f636512b5b07e3c599d122a0eb1f9a811c462658c80786e4151b0ced5"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top.png": {
+        "size": 682,
+        "sha256": "77ee8f79b7907af2e1eed7853f6b7acd001e3c80ff0e61c69c87c5df0534bdd2"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_black.png": {
+        "size": 589,
+        "sha256": "3f88b1dfd4cf50f12ca5736c97af5aab63cd7d6a39ec15760672a011defac1ae"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_blue.png": {
+        "size": 589,
+        "sha256": "88f3b43fe46d8107732bbe180127aaa912f8c1a552f06bf00e6bb3b48b3630e2"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_brown.png": {
+        "size": 590,
+        "sha256": "b78f61691fb53ae27fd85fccbcfc581c9aa5b4ae5254958c720c765d39f3105b"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_cyan.png": {
+        "size": 585,
+        "sha256": "1c441f4012923127c25ca9012545b8aa4754dabe7522065a6a0620e3dd952af3"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_gray.png": {
+        "size": 590,
+        "sha256": "81417206bd9c33bf20cdffefdbec6e30230a32c25b331685a997879907db7d68"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_green.png": {
+        "size": 594,
+        "sha256": "8e822def5fb114ab07ddd9a0d1e0320c3dc68905feb78b00f4d6cf56448d30f1"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_light_blue.png": {
+        "size": 593,
+        "sha256": "c88abf148e42b201199617b19ff7140923f878bdce79aa7b4097e486b3a026bb"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_light_gray.png": {
+        "size": 644,
+        "sha256": "6c925999b0354dca4a06ffb8a62c015fe67e148cfdc0ecd6bc22bf041f71d57c"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_lime.png": {
+        "size": 588,
+        "sha256": "4a7b50f71bad15393db2cba68b3ec531611a94bc1a99fba68bf5c5146a078769"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_magenta.png": {
+        "size": 590,
+        "sha256": "30a2bafd83eb2582afea54760f040b06edbd732160f8af7e1ad5c068ecca80f8"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_orange.png": {
+        "size": 596,
+        "sha256": "14f86bbca2d21ae00ac839a7001eeed5e198540c9a602851a0f2757de6d0429b"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_pink.png": {
+        "size": 565,
+        "sha256": "14658a775881b79e7300af3e448d857b34371910811e21ae32792475a2584a28"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_purple.png": {
+        "size": 597,
+        "sha256": "e6750987ca0043d9107c1cc204671c77a4e89332dcb5d1cf605039bcb4dc98ca"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_red.png": {
+        "size": 573,
+        "sha256": "a2f6367dfb9940b0f33e812c2793799e2d2e238a7278ef22cf9bd0b53720e067"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_white.png": {
+        "size": 586,
+        "sha256": "d96f5a027e0a439c3a60155af47324f77b4a70ed998a0a22f4b4efb59133a37b"
+      },
+      "assets/etherology/textures/block/pedestal_ethereal_top_yellow.png": {
+        "size": 580,
+        "sha256": "a127b7fc3a2c869d137c801ecb79cf612375836557ae65f2bf56436a21363866"
+      },
+      "data/etherology/advancement/recipes/decorations/pedestal.json": {
+        "size": 569,
+        "sha256": "9e2cfbf250471f39fba010710b993de77d6b9d689db316b4dbf01b87a09c90cc"
+      },
+      "data/etherology/loot_table/blocks/pedestal.json": {
+        "size": 335,
+        "sha256": "e4a0dbb0b45a5a9036fb0eba4ea23352aa19c15e618121179c368356650483c5"
+      },
+      "data/etherology/recipe/pedestal.json": {
+        "size": 326,
+        "sha256": "1bbcbacd6f771b2b69dbe50006613a28655e6aac0b9c5cd4497f5dd93f86928a"
+      }
+    },
+    "multipart_clause_count": 68,
+    "registry": {
+      "block_present": true,
+      "item_present": true,
+      "block_entity_type_present": true,
+      "block_class": "ru.feytox.etherology.block.pedestal.PedestalBlock",
+      "item_class": "net.minecraft.class_1747",
+      "block_item_mapping": true,
+      "translation": "Pedestal",
+      "default_properties": {
+        "cloth_color": "white",
+        "decoration": "false",
+        "facing": "north",
+        "shape": "full",
+        "waterlogged": "false"
+      },
+      "state_count": 1024,
+      "default_state_raw_id": 32314,
+      "unique_state_raw_ids": 1024,
+      "network_ids_exact": true,
+      "horizontal_facing_values": [
+        "east",
+        "north",
+        "south",
+        "west"
+      ]
+    },
+    "data": {
+      "pickaxe_mineable": true,
+      "recipe": "etherology:pedestal\u003dminecraft:crafting-\u003eetherology:pedestalx2",
+      "advancement": "etherology:recipes/decorations/pedestal",
+      "loot_table": "etherology:blocks/pedestal",
+      "self_drop": "etherology:pedestalx1",
+      "failure": ""
+    },
+    "placement": {
+      "standalone": {
+        "action_result": "CONSUME",
+        "accepted": true,
+        "before_count": 1,
+        "after_count": 0,
+        "block_item_mapping": true,
+        "placed_id": "etherology:pedestal",
+        "placed_state": "etherology:pedestal[cloth_color\u003dwhite,decoration\u003dfalse,facing\u003dnorth,shape\u003dfull,waterlogged\u003dfalse]"
+      },
+      "waterlogged": {
+        "action_result": "CONSUME",
+        "accepted": true,
+        "before_count": 1,
+        "after_count": 0,
+        "block_item_mapping": true,
+        "placed_id": "etherology:pedestal",
+        "placed_state": "etherology:pedestal[cloth_color\u003dwhite,decoration\u003dfalse,facing\u003dnorth,shape\u003dfull,waterlogged\u003dtrue]"
+      },
+      "stack_shapes": [
+        "full",
+        "bottom",
+        "top",
+        "bottom",
+        "middle",
+        "top"
+      ],
+      "block_entity_presence": {
+        "full": true,
+        "bottom": false,
+        "middle": false,
+        "top": true
+      }
+    },
+    "shapes": {
+      "bottom": {
+        "min_x": 0.1875,
+        "min_y": 0.0,
+        "min_z": 0.1875,
+        "max_x": 0.8125,
+        "max_y": 1.0,
+        "max_z": 0.8125,
+        "volume": 0.2763671875
+      },
+      "middle": {
+        "min_x": 0.25,
+        "min_y": 0.0,
+        "min_z": 0.25,
+        "max_x": 0.75,
+        "max_y": 1.0,
+        "max_z": 0.75,
+        "volume": 0.25
+      },
+      "top": {
+        "min_x": 0.125,
+        "min_y": 0.0,
+        "min_z": 0.125,
+        "max_x": 0.875,
+        "max_y": 1.0,
+        "max_z": 0.875,
+        "volume": 0.34765625
+      },
+      "full": {
+        "min_x": 0.125,
+        "min_y": 0.0,
+        "min_z": 0.125,
+        "max_x": 0.875,
+        "max_y": 1.0,
+        "max_z": 0.875,
+        "volume": 0.3740234375
+      }
+    },
+    "interactions": [
+      {
+        "id": "red-carpet-stack-place",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:red_carpetx2",
+        "after_hand": "minecraft:red_carpetx1",
+        "item_slot": "empty",
+        "carpet_slot": "minecraft:red_carpetx1",
+        "decoration": "true",
+        "color": "red",
+        "facing": "north"
+      },
+      {
+        "id": "different-carpet-stack-noop",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:blue_carpetx2",
+        "after_hand": "minecraft:blue_carpetx2",
+        "item_slot": "empty",
+        "carpet_slot": "minecraft:red_carpetx1",
+        "decoration": "true",
+        "color": "red",
+        "facing": "north"
+      },
+      {
+        "id": "single-carpet-swap",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:blue_carpetx1",
+        "after_hand": "minecraft:red_carpetx1",
+        "item_slot": "empty",
+        "carpet_slot": "minecraft:blue_carpetx1",
+        "decoration": "true",
+        "color": "blue",
+        "facing": "north"
+      },
+      {
+        "id": "same-carpet-retrieve",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:blue_carpetx1",
+        "after_hand": "minecraft:blue_carpetx2",
+        "item_slot": "empty",
+        "carpet_slot": "empty",
+        "decoration": "false",
+        "color": "white",
+        "facing": "north"
+      },
+      {
+        "id": "diamond-place",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:diamondx2",
+        "after_hand": "minecraft:diamondx1",
+        "item_slot": "minecraft:diamondx1",
+        "carpet_slot": "empty",
+        "decoration": "false",
+        "color": "white",
+        "facing": "north"
+      },
+      {
+        "id": "different-item-noop",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:emeraldx2",
+        "after_hand": "minecraft:emeraldx2",
+        "item_slot": "minecraft:diamondx1",
+        "carpet_slot": "empty",
+        "decoration": "false",
+        "color": "white",
+        "facing": "north"
+      },
+      {
+        "id": "full-same-item-noop",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:diamondx64",
+        "after_hand": "minecraft:diamondx64",
+        "item_slot": "minecraft:diamondx1",
+        "carpet_slot": "empty",
+        "decoration": "false",
+        "color": "white",
+        "facing": "north"
+      },
+      {
+        "id": "same-item-retrieve",
+        "action_result": "CONSUME",
+        "before_hand": "minecraft:diamondx1",
+        "after_hand": "minecraft:diamondx2",
+        "item_slot": "empty",
+        "carpet_slot": "empty",
+        "decoration": "false",
+        "color": "white",
+        "facing": "north"
+      },
+      {
+        "id": "empty-hand-item-first",
+        "action_result": "CONSUME",
+        "before_hand": "empty",
+        "after_hand": "minecraft:diamondx1",
+        "item_slot": "empty",
+        "carpet_slot": "minecraft:red_carpetx1",
+        "decoration": "true",
+        "color": "red",
+        "facing": "north"
+      },
+      {
+        "id": "empty-hand-carpet-second",
+        "action_result": "CONSUME",
+        "before_hand": "empty",
+        "after_hand": "minecraft:red_carpetx1",
+        "item_slot": "empty",
+        "carpet_slot": "empty",
+        "decoration": "false",
+        "color": "white",
+        "facing": "north"
+      }
+    ],
+    "inventory": {
+      "block_entity_type": "etherology:pedestal_block_entity",
+      "block_entity_class": "ru.feytox.etherology.block.pedestal.PedestalBlockEntity",
+      "size": 2,
+      "max_count_per_stack": 1,
+      "available_slot_counts": {
+        "down": 0,
+        "up": 0,
+        "north": 0,
+        "south": 0,
+        "west": 0,
+        "east": 0
+      },
+      "insert_denied": true,
+      "extract_denied": true,
+      "nbt_keys": [
+        "Items",
+        "id",
+        "removed",
+        "x",
+        "y",
+        "z"
+      ],
+      "nbt_item_count": 2,
+      "nbt_removed_present": true,
+      "nbt_removed": false
+    },
+    "dispensers": {
+      "observations": [],
+      "guarded_carpet_directions": [],
+      "vertical_carpet_status": "missing",
+      "ejected_items": [],
+      "arrow_projectiles": -1
+    },
+    "transitions": {
+      "lower_state": "missing",
+      "upper_state": "missing",
+      "stack_world_block_entity_absent": false,
+      "top_block_entity_present": false,
+      "stack_old_reference_removed": false,
+      "replacement_air": false,
+      "replacement_world_block_entity_absent": false,
+      "replacement_old_reference_removed": false,
+      "stack_drops": {},
+      "replacement_drops": {},
+      "combined_drops": {},
+      "stack_client_lookup_absent": false,
+      "stack_client_retained_reference_removed": false,
+      "replacement_client_lookup_absent": false,
+      "replacement_client_retained_reference_removed": false,
+      "replacement_client_air": false
+    },
+    "gallery_snapshot": [],
+    "transition_snapshot": [],
+    "persistence_initial_snapshot": [],
+    "persistence_reopened_snapshot": [],
+    "forced_save": false,
+    "full_restart": false,
+    "persistence_exact": false,
+    "required_stable_renders": 120,
+    "required_light_ready_client_ticks": 20,
+    "limitations": [
+      "hash-pinned-published-0.1.7-bytecode-not-executed-safety-guard: empty-carpet-slot vertical direction reaches the horizontal-only facing property"
+    ]
+  },
+  "screenshots": [
+    {
+      "step": "gallery",
+      "file": "screenshots/pedestal-gallery.png",
+      "width": 0,
+      "height": 0,
+      "size": 0,
+      "sha256": "",
+      "completed_render_count": 0,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "transition-drops",
+      "file": "screenshots/pedestal-transition-drops.png",
+      "width": 0,
+      "height": 0,
+      "size": 0,
+      "sha256": "",
+      "completed_render_count": 0,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "persistence-initial",
+      "file": "screenshots/pedestal-persistence-initial.png",
+      "width": 0,
+      "height": 0,
+      "size": 0,
+      "sha256": "",
+      "completed_render_count": 0,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    },
+    {
+      "step": "persistence-reopened",
+      "file": "screenshots/pedestal-persistence-reopened.png",
+      "width": 0,
+      "height": 0,
+      "size": 0,
+      "sha256": "",
+      "completed_render_count": 0,
+      "source": "minecraft-framebuffer",
+      "edited": false
+    }
+  ]
+}

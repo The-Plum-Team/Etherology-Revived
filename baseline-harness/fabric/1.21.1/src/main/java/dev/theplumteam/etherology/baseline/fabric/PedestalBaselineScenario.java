@@ -301,7 +301,6 @@ final class PedestalBaselineScenario implements ClientScenario {
         }
 
         if (stage != Stage.COMPLETE
-                && stage != Stage.CAPTURING
                 && stageClientTicks >= MAXIMUM_STAGE_CLIENT_TICKS) {
             fail(client, "Timed out in " + stage + " after " + stageClientTicks
                     + " client ticks; capture_phase=" + capturePhase.id()
@@ -448,10 +447,6 @@ final class PedestalBaselineScenario implements ClientScenario {
         server.execute(() -> {
             try {
                 ServerWorld world = server.getOverworld();
-                if (world.getTime() < setup.dispenserReadyTick()) {
-                    dispenserInspectionInFlight = false;
-                    return;
-                }
                 DispenserProbe inspected = inspectDispensers(world);
                 if (!inspected.exact()) {
                     throw new IllegalStateException(
@@ -671,8 +666,7 @@ final class PedestalBaselineScenario implements ClientScenario {
                     placements,
                     shapes,
                     interactions.interactions(),
-                    interactions.inventory(),
-                    world.getTime() + 20L
+                    interactions.inventory()
             );
         } catch (RuntimeException exception) {
             recordServerFailure(exception);
@@ -722,6 +716,16 @@ final class PedestalBaselineScenario implements ClientScenario {
                     dispenserState,
                     Block.NOTIFY_ALL
             );
+            BlockState placedDispenserState = world.getBlockState(
+                    fixture.dispenser()
+            );
+            if (!placedDispenserState.isOf(Blocks.DISPENSER)
+                    || placedDispenserState.get(DispenserBlock.FACING)
+                    != fixture.direction()) {
+                throw new IllegalStateException(
+                        "Dispenser fixture state changed at " + fixture.dispenser()
+                );
+            }
             BlockEntity rawDispenser = world.getBlockEntity(fixture.dispenser());
             if (!(rawDispenser instanceof DispenserBlockEntity dispenser)) {
                 throw new IllegalStateException("Missing dispenser block entity at "
@@ -733,10 +737,27 @@ final class PedestalBaselineScenario implements ClientScenario {
                     ));
             dispenser.setStack(0, new ItemStack(input, 2));
             dispenser.markDirty();
-            world.setBlockState(
-                    fixture.power(),
-                    Blocks.REDSTONE_BLOCK.getDefaultState(),
-                    Block.NOTIFY_ALL
+            LOGGER.info(
+                    "Invoking one native dispenser tick: kind={}; direction={}; "
+                            + "position={}; chunk={}; before={}",
+                    fixture.kind(),
+                    fixture.direction().getName(),
+                    fixture.dispenser(),
+                    new ChunkPos(fixture.dispenser()),
+                    stackDescription(dispenser.getStack(0))
+            );
+            placedDispenserState.scheduledTick(
+                    world,
+                    fixture.dispenser(),
+                    world.getRandom()
+            );
+            LOGGER.info(
+                    "Completed one native dispenser tick: kind={}; direction={}; "
+                            + "position={}; after={}",
+                    fixture.kind(),
+                    fixture.direction().getName(),
+                    fixture.dispenser(),
+                    stackDescription(dispenser.getStack(0))
             );
         }
         player.setStackInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
@@ -2099,8 +2120,6 @@ final class PedestalBaselineScenario implements ClientScenario {
 
     private static void clearTransientProbeArea(ServerWorld world) {
         for (DispenserFixture fixture : DISPENSER_FIXTURES) {
-            world.setBlockState(fixture.power(), Blocks.AIR.getDefaultState(),
-                    Block.NOTIFY_ALL);
             world.setBlockState(fixture.dispenser(), Blocks.AIR.getDefaultState(),
                     Block.NOTIFY_ALL);
             world.setBlockState(fixture.target(), Blocks.AIR.getDefaultState(),
@@ -2229,6 +2248,15 @@ final class PedestalBaselineScenario implements ClientScenario {
     }
 
     private void transition(Stage nextStage) {
+        LOGGER.info(
+                "Pedestal stage transition: from={}; to={}; phase={}; "
+                        + "client_ticks={}; stage_ticks={}",
+                stage,
+                nextStage,
+                capturePhase.id(),
+                clientTicks,
+                stageClientTicks
+        );
         stage = nextStage;
         stageClientTicks = 0;
     }
@@ -2306,7 +2334,6 @@ final class PedestalBaselineScenario implements ClientScenario {
                     direction,
                     dispenser,
                     dispenser.offset(direction),
-                    powerPosition(dispenser, direction),
                     "minecraft:amethyst_shard",
                     "",
                     "",
@@ -2327,7 +2354,6 @@ final class PedestalBaselineScenario implements ClientScenario {
                     direction,
                     dispenser,
                     dispenser.offset(direction),
-                    powerPosition(dispenser, direction),
                     "minecraft:purple_carpet",
                     "",
                     "",
@@ -2340,7 +2366,6 @@ final class PedestalBaselineScenario implements ClientScenario {
                 Direction.UP,
                 occupiedCarpetDispenser,
                 occupiedCarpetDispenser.up(),
-                powerPosition(occupiedCarpetDispenser, Direction.UP),
                 "minecraft:purple_carpet",
                 "",
                 "minecraft:red_carpet",
@@ -2352,20 +2377,12 @@ final class PedestalBaselineScenario implements ClientScenario {
                 Direction.WEST,
                 fullTargetDispenser,
                 fullTargetDispenser.west(),
-                powerPosition(fullTargetDispenser, Direction.WEST),
                 "minecraft:arrow",
                 "minecraft:diamond",
                 "minecraft:red_carpet",
                 "red"
         ));
         return List.copyOf(fixtures);
-    }
-
-    private static BlockPos powerPosition(BlockPos dispenser, Direction output) {
-        Direction powerDirection = output.getAxis() == Direction.Axis.X
-                ? Direction.NORTH
-                : Direction.EAST;
-        return dispenser.offset(powerDirection);
     }
 
     private enum Stage {
@@ -3307,7 +3324,6 @@ final class PedestalBaselineScenario implements ClientScenario {
             Direction direction,
             BlockPos dispenser,
             BlockPos target,
-            BlockPos power,
             String inputId,
             String preloadItemId,
             String preloadCarpetId,
@@ -3759,8 +3775,7 @@ final class PedestalBaselineScenario implements ClientScenario {
             PlacementProbe placementProbe,
             ShapeProbe shapeProbe,
             InteractionProbe interactionProbe,
-            InventoryProbe inventoryProbe,
-            long dispenserReadyTick
+            InventoryProbe inventoryProbe
     ) {
 
         private boolean exact() {
@@ -3769,8 +3784,7 @@ final class PedestalBaselineScenario implements ClientScenario {
                     && placementProbe.exact()
                     && shapeProbe.exact()
                     && interactionProbe.exact()
-                    && inventoryProbe.exact()
-                    && dispenserReadyTick > 0L;
+                    && inventoryProbe.exact();
         }
     }
 

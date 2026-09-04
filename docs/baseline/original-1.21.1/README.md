@@ -25,13 +25,14 @@ Customizable Player Models, Ears, and Architectury are excluded recursively.
 
 The controller creates a new ignored, repository-owned runtime for each
 one-shot capture. The accepted Slitherite v10 runtime remains immutable. The
-Pedestal v11 runtime consumed its only launch and remains preserved; the next
-attempt is bound to a separately provisioned v12 runtime:
+Pedestal v11 and v12 runtimes each consumed their only launch and remain
+preserved. The prepared v13 contract will use a separate runtime:
 
 ```text
 scripts/baseline/.state/runtimes/
   etherology-original-fabric-1.21.1-published-0.1.7-v11/  # consumed; never reuse
-  etherology-original-fabric-1.21.1-published-0.1.7-v12/  # active; absent until provision
+  etherology-original-fabric-1.21.1-published-0.1.7-v12/  # consumed; never reuse
+  etherology-original-fabric-1.21.1-published-0.1.7-v13/  # active; absent until provision
 ```
 
 It never consults or mutates a launcher or user profile. The separately built
@@ -51,12 +52,30 @@ its clean build and 47 Java tests passed, and its exact JAR is pinned at
 `09272e04b122b20da33d1964b4e1ca9f67af768fb0db0c0fa1f74f0579799e57`.
 Its native run reached an integrated world but timed out before publishing any
 report or screenshot, so it is not accepted Pedestal evidence. The compact v11
-diagnostic record is under `docs/evidence/original-1.21.1/pedestal-v11`. The
-active v12 v1.4.1 harness passed 51 Java tests and two reproducible clean builds;
+diagnostic record is under `docs/evidence/original-1.21.1/pedestal-v11`.
+
+The v12 v1.4.1 harness passed 51 Java tests and two reproducible clean builds;
 its `340,250`-byte JAR has SHA-256
 `a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb`.
-The v12 runtime remains absent and has never been launched. The
-earlier phase-zero runtime proof remains under
+Its sole native run then failed closed at client tick 155: all eight dispenser
+fixtures at `x<0` remained unfired while all four at `x>=0` fired exactly once.
+That exact chunk split indicates redstone-scheduled harness nondeterminism rather
+than direction-specific Pedestal behavior as the best-supported inference; the
+retained runtime cannot prove the scheduler cause conclusively. The harness
+published a failed report and marker but no screenshot, then shutdown hung at
+`Saving worlds` until the controller's 1,800-second timeout killed the owned
+process group.
+V12 is not accepted evidence; its compact diagnostic record is under
+`docs/evidence/original-1.21.1/pedestal-v12`. The v13 v1.4.2 harness passed 51
+Java tests and two reproducible clean builds; its `340,155`-byte JAR has
+SHA-256
+`82e443947ae46b20a6c1e3cc10aedeadb2ed34450cc929b22e9405e2b5c45e04`.
+The `10,307`-byte v13 manifest has SHA-256
+`61e9d189041a826bfc8375884e559c26a38bbb5e109eff5279b315374c91fe9c`,
+and its `26,963`-byte verifier has SHA-256
+`221afc8f88d11a60d94dc4bd94f1dd54b93e57cb93a387b336a8987d341afabe`.
+The profile is prepared but not provisioned or launched.
+The earlier phase-zero runtime proof remains under
 `docs/evidence/original-1.21.1/phase0-smoke-v1`.
 
 The runtime contract also pins the official Minecraft version JSON, asset
@@ -119,9 +138,13 @@ world but exceeded the 1,800-second controller deadline before publishing a
 report, completion marker, verification, or screenshot. Two saved player
 snapshots and the pinned harness flow support a camera-readiness-loop diagnosis,
 but it remains an inference and no native Pedestal result is claimed. V11 must
-never be reused. The fresh v12 profile preserves the 74-assertion contract,
-locks the exact camera before rendering, and uses a monotonic render watchdog;
-it is statically prepared but has not been provisioned or launched. See
+never be reused. V12 later reached the dispenser phase, where its exact
+eight-unfired/four-fired chunk split indicated redstone-scheduled harness
+nondeterminism as the best-supported inference; it published a failed report
+and marker without a screenshot, then failed to shut down cleanly before the
+controller timeout. V12 also must never be reused. A fresh v13 profile with
+harness version 1.4.2 is prepared and pinned, but is not yet provisioned or
+launched. See
 [`pedestal`](mechanics/pedestal/README.md).
 
 The first dedicated original Fabric 1.21.1 harness now implements

@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "kind": "etherology-original-fabric-consumed-run-diagnostic",
+  "accepted": false,
+  "verification_scope": "archived-failed-report-and-log-integrity-without-mechanic-acceptance",
+  "reference": {
+    "id": "published-0.1.7",
+    "authority": "published-binary",
+    "source_commit_binding": "unavailable"
+  },
+  "scenario": "pedestal-baseline",
+  "profile": {
+    "id": "etherology-original-fabric-1.21.1-published-0.1.7-v12",
+    "manifest_path": "scripts/baseline/original-fabric-1.21.1-published-0.1.7-v12.json",
+    "manifest_size": 10307,
+    "manifest_sha256": "bcf54994a6245284292adb4056a22b24c29fdaaec60a90579d2c1eac95c10c6a"
+  },
+  "runtime": {
+    "minecraft": "1.21.1",
+    "loader": "fabric",
+    "loader_version": "0.17.3",
+    "java": 21,
+    "scope": "repository-owned-ignored-state",
+    "source_profiles": [],
+    "preserved_path": "scripts/baseline/.state/runtimes/etherology-original-fabric-1.21.1-published-0.1.7-v12",
+    "must_never_run_again": true
+  },
+  "controller": {
+    "commit": "4efdb5a3fc0e83fec8a10c2310516c106421d54b",
+    "path": "scripts/baseline/original_client.py",
+    "size": 299202,
+    "sha256": "0271d22b1ac4cac439dde3cc23c6f3a0616c2d7f69e3650c4fce7af9969a20bb",
+    "timeout_seconds": 1800,
+    "observed_exit_code": 2,
+    "observed_error": "Original-baseline client exceeded its 1800-second timeout",
+    "clean_shutdown": false,
+    "controller_verification_published": false,
+    "termination": {
+      "classification": "direct-parent-terminal-observation",
+      "summary": "After the failed report and marker were published, client.scheduleStop() reached integrated-server shutdown and stalled after Saving worlds. At the exact 1800-second ceiling, the controller terminated its owned process group and returned exit code 2.",
+      "archived_output_limitation": "The timeout message and process-group termination were witnessed directly in the parent terminal and are not appended to the controller log, which stops with the game output at Saving worlds."
+    }
+  },
+  "outcome": {
+    "launch_attempt_created_at_unix_ns": 1788533546493067000,
+    "controller_log_started_at_utc": "2026-09-04T14:52:29Z",
+    "harness_failure_published_at_local_time": "2026-09-04T16:52:51+02:00",
+    "world_created": true,
+    "runtime_retained_at_diagnostic_capture": true,
+    "report_published": true,
+    "completion_marker_published": true,
+    "report_status": "failed",
+    "report_passed": false,
+    "client_ticks": 155,
+    "assertion_count": 74,
+    "assertions_true_at_publication": 32,
+    "assertions_false_at_publication": 42,
+    "screenshot_count": 0,
+    "crash_report_count": 0,
+    "skin_cache_present": false,
+    "clean_shutdown": false,
+    "diagnosis": {
+      "classification": "direct-observation-with-best-supported-cause-inference",
+      "summary": "The redstone-powered dispenser fixtures did not receive exactly one scheduled activation each. All eight fixtures at x<0, including the occupied-carpet upward fixture at x=-15, remained unfired with both input items. All four fixtures at x>=0 fired exactly once. The scenario failed closed at the first dispenser inspection before transitions, persistence, or rendering.",
+      "best_supported_inference": "The harness powered all fixtures during immediate integrated-world setup and inspected them after a fixed delay without first proving ticking readiness. The exact chunk split indicates redstone-scheduling nondeterminism in the harness, not an original Pedestal behavior that differs by direction. Retained runtime data cannot prove the scheduler cause conclusively.",
+      "downstream_assertions": "Assertions after the dispenser inspection retained their unexecuted default values when the failed report was published; they are not independent mechanic failures.",
+      "limitation": "No v12 result is accepted as native Pedestal evidence."
+    }
+  },
+  "artifacts": {
+    "reference_bundle": {
+      "size": 7838299,
+      "sha256": "764bb85e398c3dca43f68a0d2c1eeecd0f3523da7a48adf48bcc5a967af4b91b"
+    },
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "Etherology-1.21-0.1.7.jar",
+      "size": 2743963,
+      "sha256": "38de3c1aad47fc715c2226266dec4c70c02d16370034a4e0350508131ac15c43"
+    },
+    "harness": {
+      "mod_id": "etherology_original_baseline_harness",
+      "file_name": "Etherology-Original-E2E-Harness-Fabric-1.21.1-1.4.1.jar",
+      "version": "1.4.1",
+      "size": 340250,
+      "sha256": "a99809d6443a4757c860e98d2f09e1d5775667a69e331a7e631930eb5728c7eb"
+    },
+    "scenario_verifier": {
+      "path": "scripts/baseline/original_pedestal_evidence_v12.py",
+      "size": 10044,
+      "sha256": "4b6ceced8ac0e406b43b5cc6514857f0b6a59a084d07117750632238b0266fb4"
+    },
+    "harness_sources": {
+      "commit": "4efdb5a3fc0e83fec8a10c2310516c106421d54b",
+      "contract": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalBaselineContract.java",
+        "size": 17454,
+        "sha256": "9bf244347a1b0a1d640efc762385f83fb3e713714aee55ef0547030a35d53a84"
+      },
+      "scenario": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalBaselineScenario.java",
+        "size": 164465,
+        "sha256": "b9080e5cfa22d6b320defae2e5306061fe4e97d05da7c2f0bdb3b3474a4f077f"
+      },
+      "writer": {
+        "path": "baseline-harness/fabric/1.21.1/src/main/java/dev/theplumteam/etherology/baseline/fabric/PedestalEvidenceWriter.java",
+        "size": 6284,
+        "sha256": "bd1cb0271420bc9fd277dfc026efb15118343ac1ee876e54a784c68f93398e5a"
+      }
+    }
+  },
+  "runtime_bindings": {
+    "profile_marker": {
+      "size": 3110,
+      "sha256": "0288f4554ebc57dd97076c0c704701fa2999c858e427b34941123e3fa9880359"
+    },
+    "artifact_lock": {
+      "size": 5389,
+      "sha256": "621b2d2646fdc30a81847d06284e42746f8a66f01c6853c7c16aeee0f0a84855"
+    },
+    "runtime_lock": {
+      "size": 832422,
+      "sha256": "20d3cbabb87f4c684ac649642364c8bc364e94c35e14cdf3be61ac4aa988634b"
+    },
+    "launch_attempt": {
+      "size": 872152,
+      "sha256": "e160f4530c247fb6fb2e8d8dd8023a92a7222ecad645050cc66f8c0841667b76"
+    },
+    "evidence_descriptor": {
+      "size": 972,
+      "sha256": "a4302eb6185f7687cadb7c3eaf2c265dd1d5506f0ec88a795c45d8e802c71604"
+    },
+    "game_log": {
+      "size": 18958,
+      "sha256": "01f07744e46697e5795f5d25734b602634182d9a62055e5da33dd26de5a1b478",
+      "archived_separately": false,
+      "relationship": "byte-for-byte suffix of controller/original-client.log after its 428-byte controller header"
+    }
+  },
+  "files": {
+    "controller/original-client.log": {
+      "source_path": "logs/original-client-20260904T145229Z.log",
+      "source_mtime_unix_seconds": 1788533571,
+      "size": 19386,
+      "sha256": "1610faaa566f9c974c89764792d24ede6ac1ee8dafd54a5efac2d5f8403deb42"
+    },
+    "reports/report.json": {
+      "source_path": "evidence/pedestal-baseline/reports/report.json",
+      "source_mtime_unix_seconds": 1788533571,
+      "size": 41416,
+      "sha256": "319fc02bc194678484ae158569d950f4d4a6e0c26d3e21af48479c631fba055a"
+    },
+    "reports/done.marker": {
+      "source_path": "evidence/pedestal-baseline/reports/done.marker",
+      "source_mtime_unix_seconds": 1788533571,
+      "size": 104,
+      "sha256": "6708c57df4494db0ae9ab75fd250d52ea8dce9ffd97aab5248922468c71e6939"
+    }
+  }
+}

@@ -35,6 +35,7 @@ if CONTROLLER_SPECIFICATION is None or CONTROLLER_SPECIFICATION.loader is None:
 client = importlib.util.module_from_spec(CONTROLLER_SPECIFICATION)
 sys.modules[CONTROLLER_SPECIFICATION.name] = client
 CONTROLLER_SPECIFICATION.loader.exec_module(client)
+active_verifier = client.load_pedestal_evidence_verifier()
 
 
 class BrightImage:
@@ -386,11 +387,11 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             source_configuration.harness_path,
             source_configuration.fabric_profile_snapshot_path,
         )
-        archive = repository / verifier.FRESH_ARCHIVE_RELATIVE_PATH
+        archive = repository / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
         archive.mkdir(parents=True)
         shutil.copy2(
             REPOSITORY_ROOT
-            / verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
             / "README.md",
             archive / "README.md",
         )
@@ -423,7 +424,9 @@ class PedestalEvidenceV12Test(unittest.TestCase):
                     verifier.PedestalEvidenceError,
                 )
 
-    def test_fresh_archive_is_byte_exact_and_rejects_contamination(self) -> None:
+    def test_active_fresh_archive_is_byte_exact_and_rejects_contamination(
+        self,
+    ) -> None:
         mutations = (
             lambda repository, archive: self.flip_readme_byte(archive),
             lambda repository, archive: (archive / "reports").mkdir(),
@@ -439,13 +442,13 @@ class PedestalEvidenceV12Test(unittest.TestCase):
                     _configuration, archive = self.isolated_archive_configuration(
                         repository
                     )
-                    verifier.validate_fresh_archive(
+                    active_verifier.validate_fresh_archive(
                         repository_root=repository,
                         archive_path=archive,
                     )
                     mutation(repository, archive)
-                    with self.assertRaises(verifier.PedestalEvidenceError):
-                        verifier.validate_fresh_archive(
+                    with self.assertRaises(active_verifier.PedestalEvidenceError):
+                        active_verifier.validate_fresh_archive(
                             repository_root=repository,
                             archive_path=archive,
                         )
@@ -465,7 +468,9 @@ class PedestalEvidenceV12Test(unittest.TestCase):
         readme.unlink()
         readme.symlink_to(foreign)
 
-    def test_v12_verifier_rejects_the_v11_configuration(self) -> None:
+    def test_historical_verifier_and_active_controller_reject_old_profiles(
+        self,
+    ) -> None:
         configuration = client.load_configuration()
         v11_manifest = (
             BASELINE_DIRECTORY
@@ -479,13 +484,22 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             )
         with self.assertRaisesRegex(
             client.BaselineError,
-            "exact active v12 contract",
+            "exact active v13 contract",
         ):
             client.verify_pedestal_evidence_verifier_binding(
                 client.load_configuration(v11_manifest)
             )
 
-    def test_controller_pins_and_describes_the_v12_adapter(self) -> None:
+        v12_manifest = REPOSITORY_ROOT / verifier.PROFILE_RELATIVE_PATH
+        with self.assertRaisesRegex(
+            client.BaselineError,
+            "exact active v13 contract",
+        ):
+            client.verify_pedestal_evidence_verifier_binding(
+                client.load_configuration(v12_manifest)
+            )
+
+    def test_controller_pins_and_describes_the_active_v13_adapter(self) -> None:
         configuration = client.load_configuration()
         descriptor = client.scenario_verifier_descriptor(
             configuration,
@@ -494,15 +508,20 @@ class PedestalEvidenceV12Test(unittest.TestCase):
         self.assertEqual(
             descriptor,
             {
-                "path": "scripts/baseline/original_pedestal_evidence_v12.py",
+                "path": "scripts/baseline/original_pedestal_evidence_v13.py",
                 "size": client.PEDESTAL_EVIDENCE_VERIFIER_SIZE,
                 "sha256": client.PEDESTAL_EVIDENCE_VERIFIER_SHA256,
             },
         )
 
         with tempfile.TemporaryDirectory() as temporary_directory:
-            tampered = Path(temporary_directory) / VERIFIER_PATH.name
-            content = bytearray(VERIFIER_PATH.read_bytes())
+            tampered = (
+                Path(temporary_directory)
+                / client.PEDESTAL_EVIDENCE_VERIFIER_PATH.name
+            )
+            content = bytearray(
+                client.PEDESTAL_EVIDENCE_VERIFIER_PATH.read_bytes()
+            )
             content[-2] ^= 1
             tampered.write_bytes(content)
             with mock.patch.object(
@@ -513,17 +532,34 @@ class PedestalEvidenceV12Test(unittest.TestCase):
                 with self.assertRaisesRegex(client.BaselineError, "SHA-256"):
                     client.load_pedestal_evidence_verifier()
 
-    def test_pinned_profile_is_unique_fresh_and_immutable(self) -> None:
+    def test_active_v13_profile_is_fresh_and_v12_history_is_immutable(
+        self,
+    ) -> None:
         configuration = client.load_configuration()
-        self.assertEqual(configuration.manifest_path, REPOSITORY_ROOT / verifier.PROFILE_RELATIVE_PATH)
-        self.assertEqual(configuration.manifest_path.stat().st_size, verifier.PROFILE_SIZE)
-        self.assertEqual(sha256_file(configuration.manifest_path), verifier.PROFILE_SHA256)
-        verifier.validate_fresh_contract(
+        self.assertEqual(
+            configuration.manifest_path,
+            REPOSITORY_ROOT / active_verifier.PROFILE_RELATIVE_PATH,
+        )
+        self.assertEqual(
+            configuration.manifest_path.stat().st_size,
+            active_verifier.PROFILE_SIZE,
+        )
+        self.assertEqual(
+            sha256_file(configuration.manifest_path),
+            active_verifier.PROFILE_SHA256,
+        )
+        active_verifier._validate_consumed_v12_history(
+            REPOSITORY_ROOT,
+            active_verifier.PedestalEvidenceError,
+        )
+        active_verifier.validate_fresh_contract(
             repository_root=REPOSITORY_ROOT,
             manifest_path=configuration.manifest_path,
             harness_path=configuration.harness_path,
             runtime_path=client.runtime_root(configuration),
-            archive_path=REPOSITORY_ROOT / "docs/evidence/original-1.21.1/pedestal-v12",
+            archive_path=(
+                REPOSITORY_ROOT / active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
+            ),
             sha256_file=sha256_file,
         )
 
@@ -583,10 +619,10 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             )
             verifier_stub = mock.Mock()
             verifier_stub.FRESH_ARCHIVE_RELATIVE_PATH = (
-                verifier.FRESH_ARCHIVE_RELATIVE_PATH
+                active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
             )
             verifier_stub.validate_fresh_archive.side_effect = (
-                verifier.validate_fresh_archive
+                active_verifier.validate_fresh_archive
             )
             java = Path("/fixture-java")
             command = [str(java)]
@@ -715,10 +751,10 @@ class PedestalEvidenceV12Test(unittest.TestCase):
             caffeinate.write_bytes(b"placeholder")
             verifier_stub = mock.Mock()
             verifier_stub.FRESH_ARCHIVE_RELATIVE_PATH = (
-                verifier.FRESH_ARCHIVE_RELATIVE_PATH
+                active_verifier.FRESH_ARCHIVE_RELATIVE_PATH
             )
             verifier_stub.validate_fresh_archive.side_effect = (
-                verifier.validate_fresh_archive
+                active_verifier.validate_fresh_archive
             )
 
             def contaminate_archive(*_arguments: object) -> dict[str, object]:

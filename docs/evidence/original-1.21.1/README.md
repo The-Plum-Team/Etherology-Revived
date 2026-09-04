@@ -4,16 +4,38 @@ This archive preserves native evidence from the separately isolated original
 Etherology runtime. It is the `published-0.1.7` binary reference, not the
 unbound `source-0.1.8` tree.
 
-## `pedestal-v12` — prepared, never run
+## `pedestal-v13` — prepared, never run
 
-The active contract reserves the fresh profile
-`etherology-original-fabric-1.21.1-published-0.1.7-v12` for the next native
-Pedestal baseline. Its v1.4.1 harness preserves the 74 assertions and four
-1920x1080 captures while locking input and the exact camera before rendering
-and keeping the render watchdog monotonic. All 51 Java tests, remap, artifact
-validation, and two reproducible clean builds passed. The profile has not been
-provisioned or launched, so no v12 runtime or native result is claimed. See
-[`pedestal-v12`](pedestal-v12/) for the fail-closed placeholder.
+The fresh profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v13` is the sole active
+Pedestal lane. Its v1.4.2 harness enters the real vanilla dispenser scheduled
+tick and published Etherology mixin exactly once per fixture, bounds every
+scenario stage, and lets the controller terminate only its owned process group
+after a hash-bound failed marker and 15-second shutdown grace. The harness,
+manifest, verifier, both consumed histories, and README-only target are pinned.
+The v13 runtime is absent and no native result is claimed. See
+[`pedestal-v13`](pedestal-v13/) for the fresh contract.
+
+## `pedestal-v12` — consumed failure diagnostic
+
+The repository-owned profile
+`etherology-original-fabric-1.21.1-published-0.1.7-v12` consumed its sole native
+launch on 2026-09-04. Its v1.4.1 harness reached a fresh integrated world, then
+failed closed at client tick 155 because the redstone-powered dispenser
+fixtures did not receive exactly one scheduled activation each. All eight
+fixtures at `x<0` remained unfired; all four at `x>=0` fired exactly once. This
+exact chunk split indicates harness scheduling nondeterminism, not original
+direction-specific Pedestal behavior, as the best-supported inference; the
+retained runtime cannot prove the scheduler cause conclusively.
+
+The harness published a failed 74-assertion report and hash-bound failed marker
+at 16:52:51 Europe/Madrid, with no screenshot. Its scheduled stop then hung at
+`Saving worlds`; the controller reached its 1,800-second deadline, killed its
+owned process group, and returned exit code `2`. There is no clean shutdown or
+controller verification, so v12 is not accepted evidence. Its compact,
+hash-bound record is under [`pedestal-v12`](pedestal-v12/). The preserved
+runtime must never be launched again. The prepared v13 profile is the next
+attempt, but it has not been provisioned or launched.
 
 ## `pedestal-v11` — consumed timeout diagnostic
 
@@ -30,7 +52,8 @@ contract. Together with the hash-pinned harness control flow, that supports a
 camera-readiness-loop diagnosis, but only as an inference because no harness
 telemetry was published. The compact, hash-bound diagnostic record is under
 [`pedestal-v11`](pedestal-v11/). The ignored runtime remains preserved and must
-never be run again. A fresh v12 profile will make the next Pedestal attempt.
+never be run again. V12 later consumed its own separate launch and is recorded
+above; neither profile may be reused.
 
 ## `phase0-smoke-v1`
 

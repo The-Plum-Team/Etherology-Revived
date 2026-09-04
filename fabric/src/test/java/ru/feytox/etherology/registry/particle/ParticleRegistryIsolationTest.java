@@ -90,6 +90,9 @@ final class ParticleRegistryIsolationTest {
         );
         assertEquals(
                 List.of(
+                        "ru/feytox/etherology/recipes/RecipeResultComponents#bind"
+                                + "(Lru/feytox/etherology/recipes/"
+                                + "RecipeResultComponentBackend;)V",
                         "ru/feytox/etherology/item/LensRuntime#bind"
                                 + "(Lru/feytox/etherology/item/LensRuntimeBackend;)V",
                         SHARED_PARTICLES + "#register()V",

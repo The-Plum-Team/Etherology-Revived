@@ -36,7 +36,7 @@ final class AspectFoundationCrossArtifactTest {
             CLASS_PREFIX + "magic/aspects/AspectContainer.class";
     private static final String ASPECT_CONTAINER_OWNER =
             CLASS_PREFIX + "magic/aspects/AspectContainer";
-    private static final String FABRIC_ALCHEMY_SERIALIZER =
+    private static final String ALCHEMY_SERIALIZER =
             CLASS_PREFIX + "recipes/alchemy/AlchemyRecipeSerializer.class";
     private static final String FABRIC_INITIALIZER = CLASS_PREFIX + "Etherology.class";
 
@@ -78,25 +78,19 @@ final class AspectFoundationCrossArtifactTest {
                                 .collect(java.util.stream.Collectors.toSet()),
                         artifact.description()
                 );
+                assertEquals(
+                        1,
+                        entries.stream().filter(ALCHEMY_SERIALIZER::equals).count(),
+                        artifact.description()
+                );
 
                 if (artifact.fabricApplication()) {
-                    assertEquals(
-                            1,
-                            entries.stream()
-                                    .filter(FABRIC_ALCHEMY_SERIALIZER::equals)
-                                    .count(),
-                            artifact.description()
-                    );
                     assertEquals(
                             1,
                             entries.stream().filter(FABRIC_INITIALIZER::equals).count(),
                             artifact.description()
                     );
                 } else {
-                    assertFalse(
-                            entries.contains(FABRIC_ALCHEMY_SERIALIZER),
-                            artifact.description()
-                    );
                     assertFalse(entries.contains(FABRIC_INITIALIZER),
                             artifact.description());
                 }

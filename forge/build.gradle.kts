@@ -4400,6 +4400,7 @@ tasks.named<Test>("test").configure {
     exclude("**/LensFoundationCrossArtifactTest.class")
     exclude("**/UnadjustedLensRegistryResourcesTest.class")
     exclude("**/AspectFoundationCrossArtifactTest.class")
+    exclude("**/AlchemyRecipeFoundationCrossArtifactTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -5616,6 +5617,100 @@ val aspectFoundationCrossArtifactTest =
             )
             systemProperty(
                 "etherology.aspectFoundation.repositoryRoot",
+                rootProject.projectDir.absolutePath,
+            )
+        }
+    }
+
+val alchemyRecipeFoundationCrossArtifactTest =
+    tasks.register<Test>("alchemyRecipeFoundationCrossArtifactTest") {
+        group = "verification"
+        description =
+            "Runs exact cross-loader alchemy-recipe ownership and isolation tests."
+        dependsOn(
+            tasks.named("testClasses"),
+            commonJar,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            fabricShadowJar,
+            fabricRemapJar,
+            forgeShadowJar,
+        )
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform()
+        filter {
+            includeTestsMatching(
+                "ru.feytox.etherology.forge.AlchemyRecipeFoundationCrossArtifactTest",
+            )
+        }
+        inputs.file(commonJar.flatMap { it.archiveFile })
+            .withPropertyName("alchemyRecipeFoundationCommonJar")
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("alchemyRecipeFoundationFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("alchemyRecipeFoundationForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("alchemyRecipeFoundationFabricDevelopmentJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+            .withPropertyName("alchemyRecipeFoundationFabricProductionJar")
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("alchemyRecipeFoundationForgeShadowJar")
+        inputs.files(
+            rootProject.fileTree(
+                "common/src/main/java/ru/feytox/etherology/recipes",
+            ) {
+                include("FeyInputRecipe.java")
+                include("FeyRecipe.java")
+                include("FeyRecipeSerializer.java")
+                include("FeyRecipeJsonProvider.java")
+                include("RecipeResultComponentBackend.java")
+                include("RecipeResultComponents.java")
+                include("alchemy/AlchemyRecipe.java")
+                include("alchemy/AlchemyRecipeInventory.java")
+                include("alchemy/AlchemyRecipeSerializer.java")
+            },
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/recipes/" +
+                    "FabricRecipeResultComponentBackend.java",
+            ),
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/EtherologyFabric.java",
+            ),
+        ).withPropertyName("canonicalAlchemyRecipeFoundationSources")
+        doFirst {
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.commonJar",
+                commonJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.fabricTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.forgeTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.fabricDevelopmentJar",
+                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.fabricProductionJar",
+                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.forgeShadowJar",
+                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.alchemyRecipeFoundation.repositoryRoot",
                 rootProject.projectDir.absolutePath,
             )
         }
@@ -7740,12 +7835,62 @@ val validateForgeAspectFoundationStaticMilestone =
         ).withPropertyName("canonicalAspectFoundationSources")
     }
 
+val validateForgeAlchemyRecipeFoundationStaticMilestone =
+    tasks.register("validateForgeAlchemyRecipeFoundationStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates canonical shared alchemy recipes and the narrow 1.20.1 component backend."
+        dependsOn(
+            validateForgeAspectFoundationStaticMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            alchemyRecipeFoundationCrossArtifactTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("alchemyRecipeFoundationFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("alchemyRecipeFoundationForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.fileTree(
+                "common/src/main/java/ru/feytox/etherology/recipes",
+            ) {
+                include("FeyInputRecipe.java")
+                include("FeyRecipe.java")
+                include("FeyRecipeSerializer.java")
+                include("FeyRecipeJsonProvider.java")
+                include("RecipeResultComponentBackend.java")
+                include("RecipeResultComponents.java")
+                include("alchemy/AlchemyRecipe.java")
+                include("alchemy/AlchemyRecipeInventory.java")
+                include("alchemy/AlchemyRecipeSerializer.java")
+            },
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/recipes/" +
+                    "FabricRecipeResultComponentBackend.java",
+            ),
+            rootProject.file(
+                "fabric/src/main/java/ru/feytox/etherology/EtherologyFabric.java",
+            ),
+        ).withPropertyName("canonicalAlchemyRecipeFoundationSources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeAspectFoundationStaticMilestone)
+        dependsOn(validateForgeAlchemyRecipeFoundationStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -7799,6 +7944,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeLensFoundationStaticMilestone,
         validateForgeUnadjustedLensStaticMilestone,
         validateForgeAspectFoundationStaticMilestone,
+        validateForgeAlchemyRecipeFoundationStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -7807,7 +7953,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeAspectFoundationStaticMilestone)
+    dependsOn(validateForgeAlchemyRecipeFoundationStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

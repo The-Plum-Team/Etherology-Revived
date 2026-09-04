@@ -44,7 +44,7 @@ final class AspectFoundationIsolationTest {
     }
 
     @Test
-    void legacyAlchemySerializerStillUsesTheCanonicalPublicSurface()
+    void canonicalAlchemySerializerStillUsesTheCanonicalPublicSurface()
             throws IOException {
         List<String> calls = new ArrayList<>();
         List<String> typeLiterals = new ArrayList<>();

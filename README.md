@@ -14,7 +14,7 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 | Minecraft | Loader | Status |
 | --- | --- | --- |
 | 1.20.1 | Fabric | Active port; build, datagen, unit tests, and six real-client E2E slices pass, including the dedicated Slitherite, metal-block, and Forest Lantern visual proofs; broader parity is pending |
-| 1.20.1 | Forge | Active port; bounded Storage, Channel, and Forest Lantern client E2E plus the shared registry/reload foundation and cumulative Forest Lantern dedicated-server proof are accepted; the broader registry, network, and release gates remain closed |
+| 1.20.1 | Forge | Active port; bounded Storage, Channel, and Forest Lantern native proofs plus the shared registry/reload foundation and Warp Counter static slice are accepted; the broader registry, network, and release gates remain closed |
 | 1.21.1–1.21.11 | Fabric + NeoForge | Declared follow-up branches |
 | 26.1, 26.1.1, 26.1.2, 26.2 | Fabric + NeoForge | Declared follow-up branches using the no-remap architecture |
 
@@ -56,6 +56,19 @@ steps. The original crumb recipes/advancements, age-gated loot, state/shape and
 growth behavior, Forge cutout rendering, four-facing placement, and save/reopen
 persistence are present and verified. Natural immature attachment remains
 coupled to the deferred peach-log/Golden-Forest graph.
+
+`SharedToolItems` is now the sole Common deferred owner of the plain
+`etherology:warp_counter` item with maximum stack count 1; Fabric's retained
+`ToolItems.WARP_COUNTER` field is only an alias. Forge packages the canonical
+static fifteen-frame presentation: the base model with its ordered overrides,
+14 child models, textures `warp_counter_0` through `warp_counter_14`, the exact
+English `Warp Counter` and Russian `Варп счётчик` names, and the original recipe
+and advancement. This static acceptance does not claim the corruption-driven
+model predicate, sound playback or the corruption/component graph, native E2E,
+or broader gameplay parity. Its positive gate is
+`:forge:1.20.1:validateForgeWarpCounterStaticMilestone`; the remainder of the
+authoritative registry spine is still the next forward stage.
+
 `SharedGameEvents` is the sole Common deferred owner of
 `etherology:etherology_resonance`, whose internal ID is
 `etherology_resonance` and whose range is 16. Both loaders package exact
@@ -203,8 +216,8 @@ progression. Forge client v12 remains an unaccepted, consumed harness-diagnostic
 identity. Any later Fabric client run requires v25 or newer; any later Forge
 client run requires v14 or newer.
 
-The active positive and diagnostic tasks are
-`:forge:1.20.1:validateForgeForestLanternMilestone` and
+The active positive static and diagnostic tasks are
+`:forge:1.20.1:validateForgeWarpCounterStaticMilestone` and
 `:forge:1.20.1:verifyForgePortGateClosed`. The latter reports the broader
 authoritative registry spine as the first incomplete forward stage.
 

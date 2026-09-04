@@ -14,6 +14,7 @@ import ru.feytox.etherology.registry.item.SharedItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
 import ru.feytox.etherology.registry.item.SharedSlitheriteBlockItems;
+import ru.feytox.etherology.registry.item.SharedToolItems;
 import ru.feytox.etherology.registry.misc.ResourceReloaders;
 import ru.feytox.etherology.registry.misc.SharedEnchantments;
 import ru.feytox.etherology.registry.misc.SharedGameEvents;
@@ -55,6 +56,7 @@ public final class EtherologyBootstrap {
         SharedItems.register();
         SharedMaterialItems.register();
         SharedFoodItems.register();
+        SharedToolItems.register();
         SharedBlockEntities.register();
         SharedScreenHandlers.register();
         SharedSounds.register();

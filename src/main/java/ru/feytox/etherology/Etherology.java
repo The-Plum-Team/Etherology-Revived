@@ -30,6 +30,7 @@ import ru.feytox.etherology.registry.item.SharedForestLanternBlockItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
 import ru.feytox.etherology.registry.item.SharedSlitheriteBlockItems;
+import ru.feytox.etherology.registry.item.SharedToolItems;
 import ru.feytox.etherology.registry.misc.*;
 import ru.feytox.etherology.registry.world.WorldGenRegistry;
 import ru.feytox.etherology.util.delayedTask.ServerTaskManager;
@@ -67,6 +68,7 @@ public class Etherology {
         SharedForestLanternBlockItems.register();
         SharedMaterialItems.register();
         SharedFoodItems.register();
+        SharedToolItems.register();
         EItems.registerItems();
         EtherEnchantments.registerAll();
         EBlocks.registerAll();

@@ -1,11 +1,11 @@
-# Forge 1.20.1 bootstrap, storage, channel, sound, registry, Ether-source, enchantment, particle, material-item, metal-block, food-item, and Forest Lantern status
+# Forge 1.20.1 bootstrap and accepted bounded gameplay status
 
 The Forge lane now has a native JavaFML entry point, a loader-neutral lifecycle handshake, and
 accepted bounded item, storage, channel, sound-registry, game-event, loot-condition,
 Ether-source reload, enchantment-registry/server, particle-registry/server, behavior-free
 material-item-registry/server, behavior-free metal-block-registry/server, and bounded
 food-item-registry/server milestones, plus the bounded Forest Lantern
-registry/mechanic/server/packaged-client milestone.
+registry/mechanic/server/packaged-client milestone and the Warp Counter static milestone.
 Its ethereal-storage
 vertical persists a 64-unit internal Ether buffer and four inventory slots, owns a server menu, exposes
 vanilla sided insertion and native Forge item-handler access, transfers Ether into canonical Glint
@@ -38,12 +38,16 @@ model/texture/name resources, and bounded native player-consumption evidence.
 the three crumb recipes and advancements are packaged. Dedicated-server v16 plus Forge client v13
 and Fabric client v24 prove the bounded mechanic, rendering, and save/reopen contracts. Natural
 immature attachment still depends on the deferred peach-log/Golden-Forest graph.
+`SharedToolItems` now owns the single plain maximum-stack-one `etherology:warp_counter`
+registration. Forge packages its complete fifteen-frame static visual set, both names, recipe,
+and advancement, while the corruption-driven predicate, sound playback and corruption graph, and
+native E2E remain deferred.
 The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
 `EtherologyBootstrap` attaches the shared block, Ether-item, metal-block, metal-block-item,
-material-item, food-item, block-entity,
-screen-handler, sound-event, game-event, loot-condition, enchantment, and particle registries
+material-item, food-item, tool-item, block-entity, screen-handler, sound-event, game-event,
+loot-condition, enchantment, and particle registries
 during `@Mod` construction, before Forge
 registry events run. It delegates
 handshake idempotence and failure state to `BootstrapLifecycle`. `PlatformRegistrar` supplies the
@@ -193,8 +197,14 @@ client systems have been registered.
   schema-10 v16 dedicated-server archive with 266 of 266 cumulative assertions.
 - `validateForgeForestLanternClientEvidenceArchiveIntegrity` validates the immutable v13 packaged
   client archive with 69 of 69 assertions and seven unedited 1920x1080 framebuffer captures.
-- `validateForgeForestLanternMilestone` is the current combined positive gate. It requires both
+- `validateForgeForestLanternMilestone` is an accepted combined positive gate. It requires both
   archives plus the Common, Fabric, and Forge static, bytecode, resource, and artifact proofs.
+- `validateForgeWarpCounterStaticMilestone` is expected to pass. It proves `SharedToolItems` is the
+  sole Common deferred owner of the plain maximum-stack-one `etherology:warp_counter`, verifies
+  the Fabric alias and both loader bootstrap paths, and requires the exact base model, 14 child
+  models, 15 textures, English/Russian names, recipe, and advancement across application
+  artifacts. It does not claim predicate execution, corruption state, sound playback, or native
+  E2E.
 - `validateForgeChannelCurrentArtifactDiagnostic` is deliberately not an acceptance dependency.
   It now fails because the later sound milestone changed the whole production JAR relative to the
   Channel capture. That expected byte mismatch is not a Channel regression and does not establish
@@ -203,7 +213,8 @@ client systems have been registered.
   after requiring every accepted positive gate, it reports the first incomplete forward stage.
   That stage is now the broader authoritative registry spine; the bounded sound, game-event,
   loot-condition, Ether-source reload, enchantment-registry, particle-registry, material-item,
-  metal-block, food-item, and Forest Lantern steps are no longer in its missing-condition list.
+  metal-block, food-item, Forest Lantern, and Warp Counter static steps are no longer in its
+  missing-condition list.
 - `validateForgeReleaseReadinessMilestone` is a permanent final backstop after every bounded
   forward gate. It fails unconditionally until the full gameplay graph and complete packaged
   native Forge client, dedicated-server, persistence, and E2E matrix are implemented and the task
@@ -717,6 +728,26 @@ the Fabric companion has its separate accepted milestone. These bounded proofs d
 natural immature attachment before the peach-log/Golden-Forest graph, creative-tab interaction,
 multiplayer, the complete authoritative registry, or release readiness.
 
+## Accepted bounded Warp Counter static milestone
+
+`SharedToolItems` is the sole Common deferred owner of `etherology:warp_counter`, constructed as
+one plain vanilla `Item` with maximum stack count 1. Fabric attaches that owner before legacy item
+initialization and keeps `ToolItems.WARP_COUNTER` only as an alias; it does not register the ID a
+second time.
+
+The Forge and Fabric application artifacts contain the exact canonical fifteen-frame static
+presentation: the base model with 15 ordered override entries, 14 child models, and textures
+`warp_counter_0` through `warp_counter_14`. They also contain the exact English `Warp Counter` and
+Russian `Варп счётчик` names and the original shaped recipe with its matching recipe-unlock
+advancement.
+
+`:forge:1.20.1:validateForgeWarpCounterStaticMilestone` is the positive Common-bytecode,
+Fabric-isolation, cross-artifact, accepted-data, and resource gate. The model overrides are static
+packaged declarations only: Forge does not yet install the corruption-driven predicate. Predicate
+evaluation, Warp Counter sound playback, the corruption component/backend/synchronization graph,
+native client or dedicated-server E2E, and the broader port remain deferred. The authoritative
+registry spine is therefore still the next fail-closed forward milestone.
+
 ## Forward fail-closed broader authoritative registry milestone
 
 The next forward gate remains the rest of the authoritative registry spine. The remaining temporary block,
@@ -726,7 +757,9 @@ recipe, effect, remaining game-event and loot consumers, tree, world-generation,
 lifecycle-hook ownership also remains incomplete. Enchantment, particle, and the accepted
 behavior-free material-item, metal-block, and food-item registry ownership are no longer in this list; enchanting
 applicability, Peal shockwave behavior, projectile reflection, client particle rendering, and
-material-item, metal-block, and food-item consumers remain later gameplay/client obligations. The bounded
+material-item, metal-block, food-item, and Warp Counter consumers remain later gameplay/client
+obligations. The Warp Counter's static item ownership is accepted, but its corruption predicate,
+sound playback, and corruption graph are not. The bounded
 registry-foundation and Ether-source reload server proofs do not satisfy the full
 registry/catalog placement-and-save smoke. The unfinished portions
 of the Ether graph stay behind that work.
@@ -741,7 +774,8 @@ E2E slice.
   `etherology:ether`, the accepted bounded ethereal-storage vertical, and the accepted bounded
   ethereal-channel foundation. `SharedSounds`, `SharedGameEvents`, `SharedLootConditions`,
   `SharedEnchantments`, `SharedParticleTypes`, `SharedMaterialItems`, `SharedMetalBlocks`, and
-  `SharedMetalBlockItems`, and `SharedFoodItems` now own the accepted Common sound, resonance,
+  `SharedMetalBlockItems`, `SharedFoodItems`, and `SharedToolItems` now own the accepted Common
+  sound, resonance,
   Fortune-scaled condition, enchantment, particle, behavior-free material-item, behavior-free
   metal-block, and bounded plain-food declarations;
   `ResourceReloaders` and `EtherSourceLoader` own the accepted Common Ether-source data path. The
@@ -764,7 +798,8 @@ E2E slice.
 
 The next gameplay slice is the broader authoritative registry spine after the accepted
 SharedSounds, SharedGameEvents, SharedLootConditions, Ether-source reload, SharedEnchantments, and
-SharedParticleTypes, SharedMaterialItems, SharedMetalBlocks, and SharedFoodItems foundations. A release remains invalid until that gate, the full-catalog dedicated-server
+SharedParticleTypes, SharedMaterialItems, SharedMetalBlocks, SharedFoodItems, and the Warp Counter
+static foundation. A release remains invalid until that gate, the full-catalog dedicated-server
 placement/save smoke, enchanting applicability, Peal shockwave and projectile reflection behavior,
 client visuals/screenshots, Forge particle factories/rendering, full combat, the deferred channel and sculk-frequency work, every
 subsequent gameplay system, and the full native E2E matrix are ported and accepted.

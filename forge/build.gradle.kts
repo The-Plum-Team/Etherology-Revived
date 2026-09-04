@@ -241,10 +241,15 @@ val canonicalSlitheriteVanillaRelatedDataEntries =
         canonicalSlitheriteVanillaRelatedAdvancementDataEntries
 val canonicalSlitheriteDataEntries =
     canonicalSlitheriteOwnedDataEntries + canonicalSlitheriteVanillaRelatedDataEntries
+val canonicalWarpCounterDataEntries = setOf(
+    "etherology/recipes/warp_counter.json",
+    "etherology/advancements/recipes/tools/warp_counter.json",
+)
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
     canonicalAttrahiteBlockDataEntries + canonicalSlitheriteDataEntries +
+    canonicalWarpCounterDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
 val acceptedForgeArtifactDataEntries =
@@ -1009,6 +1014,9 @@ sourceSets {
                 include("data/$entry")
             }
             canonicalSlitheriteDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+            canonicalWarpCounterDataEntries.forEach { entry ->
                 include("data/$entry")
             }
             canonicalGameEventTagEntries.forEach { entry -> include(entry) }
@@ -4388,6 +4396,7 @@ tasks.named<Test>("test").configure {
     exclude("**/ForestLanternBlockResourcesTest.class")
     exclude("**/AttrahiteBlockRegistryResourcesTest.class")
     exclude("**/SlitheriteCanonicalResourcesTest.class")
+    exclude("**/WarpCounterRegistryResourcesTest.class")
 }
 val gameEventRegistryTest = tasks.register<Test>("gameEventRegistryTest") {
     group = "verification"
@@ -5232,6 +5241,93 @@ val slitheriteBlockRegistryTest = tasks.register<Test>("slitheriteBlockRegistryT
         )
         systemProperty(
             "etherology.slitheriteBlocks.repositoryRoot",
+            rootProject.projectDir.absolutePath,
+        )
+    }
+}
+
+val warpCounterRegistryTest = tasks.register<Test>("warpCounterRegistryTest") {
+    group = "verification"
+    description =
+        "Runs exact cross-loader Warp Counter ownership and static-resource tests."
+    dependsOn(
+        tasks.named("testClasses"),
+        commonJar,
+        commonTransformProductionFabric,
+        commonTransformProductionForge,
+        fabricShadowJar,
+        fabricRemapJar,
+        forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    filter {
+        includeTestsMatching(
+            "ru.feytox.etherology.forge.WarpCounterRegistryResourcesTest",
+        )
+    }
+    inputs.file(commonJar.flatMap { it.archiveFile })
+        .withPropertyName("warpCounterCommonJar")
+    inputs.files(commonTransformProductionFabric)
+        .withPropertyName("warpCounterFabricTransformedCommonJar")
+    inputs.files(commonTransformProductionForge)
+        .withPropertyName("warpCounterForgeTransformedCommonJar")
+    inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("warpCounterFabricDevelopmentJar")
+    inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        .withPropertyName("warpCounterFabricProductionJar")
+    inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        .withPropertyName("warpCounterForgeShadowJar")
+    inputs.files(
+        rootProject.file(
+            "src/client/resources/assets/etherology/models/item/warp_counter.json",
+        ),
+        rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+            include("warp_counter_*.json")
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/item") {
+            include("warp_counter_*.png")
+        },
+        englishLanguageFile,
+        rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+        rootProject.fileTree("src/main/generated/data") {
+            canonicalWarpCounterDataEntries.forEach { entry -> include(entry) }
+        },
+    ).withPropertyName("canonicalWarpCounterStaticResources")
+    doFirst {
+        systemProperty(
+            "etherology.warpCounter.commonJar",
+            commonJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.warpCounter.fabricTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionFabric.get(),
+                "Fabric common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.warpCounter.forgeTransformedCommonJar",
+            taskOutputJar(
+                commonTransformProductionForge.get(),
+                "Forge common production transform",
+            ).absolutePath,
+        )
+        systemProperty(
+            "etherology.warpCounter.fabricDevelopmentJar",
+            fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.warpCounter.fabricProductionJar",
+            fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.warpCounter.forgeShadowJar",
+            forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+        )
+        systemProperty(
+            "etherology.warpCounter.repositoryRoot",
             rootProject.projectDir.absolutePath,
         )
     }
@@ -7162,12 +7258,60 @@ val validateForgeSlitheriteStaticMilestone =
         ).withPropertyName("canonicalSlitheriteResources")
     }
 
+val validateForgeWarpCounterStaticMilestone =
+    tasks.register("validateForgeWarpCounterStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the shared Warp Counter registration and exact static resources; " +
+                "its corruption-driven model predicate remains deferred."
+        dependsOn(
+            validateForgeSlitheriteStaticMilestone,
+            validateForgeAcceptedDataSet,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            warpCounterRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("warpCounterFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("warpCounterForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.file(
+                "src/client/resources/assets/etherology/models/item/warp_counter.json",
+            ),
+            rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+                include("warp_counter_*.json")
+            },
+            rootProject.fileTree(
+                "src/client/resources/assets/etherology/textures/item",
+            ) {
+                include("warp_counter_*.png")
+            },
+            englishLanguageFile,
+            rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+            rootProject.fileTree("src/main/generated/data") {
+                canonicalWarpCounterDataEntries.forEach { entry -> include(entry) }
+            },
+        ).withPropertyName("canonicalWarpCounterStaticResources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeForestLanternMilestone)
+        dependsOn(validateForgeWarpCounterStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -7217,6 +7361,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeForestLanternMilestone,
         validateForgeAttrahiteMilestone,
         validateForgeSlitheriteStaticMilestone,
+        validateForgeWarpCounterStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -7225,7 +7370,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeSlitheriteStaticMilestone)
+    dependsOn(validateForgeWarpCounterStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)
@@ -7233,6 +7378,20 @@ tasks.register("verifyForgePortGateClosed") {
     inputs.dir(soundDirectory)
     inputs.files(canonicalGameEventTagFiles.values)
     inputs.file(canonicalAttrahiteLootTable)
+    inputs.files(
+        rootProject.file(
+            "src/client/resources/assets/etherology/models/item/warp_counter.json",
+        ),
+        rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+            include("warp_counter_*.json")
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/item") {
+            include("warp_counter_*.png")
+        },
+        rootProject.fileTree("src/main/generated/data") {
+            canonicalWarpCounterDataEntries.forEach { entry -> include(entry) }
+        },
+    ).withPropertyName("canonicalWarpCounterStaticResources")
     inputs.files(
         rootProject.fileTree("src/main/generated/assets/etherology") {
             include("blockstates/attrahite*.json")

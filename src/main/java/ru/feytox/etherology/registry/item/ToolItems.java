@@ -39,7 +39,7 @@ public class ToolItems {
     public static final Item OCULAR = register("ocular", new OcularItem());
     public static final Item STAFF = register("staff", new StaffItem());
     public static final Item STREAM_KEY = register("stream_key", new StreamKeyItem());
-    public static final Item WARP_COUNTER = register("warp_counter", new Item(new Item.Settings().maxCount(1)));
+    public static final Item WARP_COUNTER = SharedToolItems.WARP_COUNTER.get();
 
     public static Item register(String id, Item item) {
         return Registry.register(Registries.ITEM, EIdentifier.of(id), item);

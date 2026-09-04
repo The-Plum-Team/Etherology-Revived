@@ -10,8 +10,9 @@ The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Chann
 bounded SharedSounds registry/resource milestone, bounded SharedGameEvents/SharedLootConditions
 registry/server foundation, bounded Common Ether-source reload path, and bounded
 SharedEnchantments, SharedParticleTypes, SharedMaterialItems, SharedMetalBlocks, and
-SharedFoodItems registry/server milestones, plus the bounded SharedForestLanternBlocks and
-SharedForestLanternBlockItems mechanic/server/packaged-client milestone, are
+SharedFoodItems registry/server milestones, the bounded SharedToolItems Warp Counter static
+milestone, plus the bounded SharedForestLanternBlocks and SharedForestLanternBlockItems
+mechanic/server/packaged-client milestone, are
 accepted, not the finished port.
 Storage now has canonical per-Glint Ether arithmetic, native Forge item-handler capability
 lifecycle, synchronized Gecko animation, and
@@ -42,7 +43,10 @@ native player consumption through reload. `SharedForestLanternBlocks` and
 `SharedForestLanternBlockItems` now close the Forest Lantern declaration, state/shape/growth,
 support, jump, loot, recipe/advancement, render-resource, cutout, placement, save/reopen, and
 bounded native client/server contracts. Natural immature attachment remains coupled to the
-deferred peach-log/Golden-Forest graph, and multiplayer is not claimed. The broader authoritative
+deferred peach-log/Golden-Forest graph, and multiplayer is not claimed. `SharedToolItems` closes
+only the plain maximum-stack-one Warp Counter declaration and its exact packaged static visual,
+translation, recipe, and advancement resources. The corruption-driven predicate and its sound,
+component, and corruption graph remain deferred with native E2E. The broader authoritative
 registry spine is still the first incomplete forward
 milestone. Broad content migration must follow the ownership and dependency order below.
 
@@ -109,15 +113,16 @@ prove that no canonical Fabric class is shadowed by the transformed common JAR.
 
 This is the current forward milestone. Its bounded shared-sound, game-event, loot-condition,
 Ether-source reload, enchantment-registry, particle-registry, behavior-free material-item, and
-behavior-free metal-block and food-item steps are accepted. The broader catalogs and lifecycle hooks in this slice remain the first
-incomplete work.
+behavior-free metal-block, food-item, and Warp Counter static steps are accepted. The broader
+catalogs and lifecycle hooks in this slice remain the first incomplete work.
 
 Source owners:
 
 - Blocks: accepted Common `SharedMetalBlocks`; remaining `ExtraBlocksRegistry`, `DecoBlocks`,
   `EBlocks`, `DevBlocks`, and `EBlockFamilies` declarations and behavior.
-- Items: accepted Common `SharedMaterialItems`, `SharedMetalBlockItems`, and `SharedFoodItems`; the remaining `EItems`, `ToolItems`, `ArmorItems`,
-  `DecoBlockItems`, and `EItemGroups` declarations and behavior.
+- Items: accepted Common `SharedMaterialItems`, `SharedMetalBlockItems`, `SharedFoodItems`, and
+  `SharedToolItems.WARP_COUNTER`; the remaining `EItems`, `ToolItems` declarations other than the
+  Warp Counter alias, `ArmorItems`, `DecoBlockItems`, and `EItemGroups` declarations and behavior.
 - Other registries: accepted Common `SharedSounds`, `SharedGameEvents`,
   `SharedLootConditions`, `SharedEnchantments`, and `SharedParticleTypes`; remaining
   `EntityRegistry`, `RecipesRegistry`, `ScreenHandlersRegistry`, `EffectsRegistry`,
@@ -421,6 +426,24 @@ Accepted bounded food-item-registry milestone:
   multiplayer, the deferred recipe behavior, creative-tab interaction, client rendering/gameplay,
   the complete registry, or release readiness. The broader authoritative registry spine remains
   the next forward gate.
+
+Accepted bounded Warp Counter static milestone:
+
+- `SharedToolItems` is the sole Common deferred owner of `etherology:warp_counter`. It constructs
+  exactly one plain vanilla `Item` with maximum stack count 1. Fabric attaches the same owner and
+  retains `ToolItems.WARP_COUNTER` only as a resolved alias, so there is no second item
+  registration.
+- Both loader artifacts package the canonical fifteen-frame static presentation: one base model
+  with 15 ordered overrides, 14 child models, and the 15 textures numbered 0 through 14. They also
+  package the exact `Warp Counter` and `Варп счётчик` names and the original shaped recipe plus its
+  recipe-unlock advancement.
+- `:forge:1.20.1:validateForgeWarpCounterStaticMilestone` is the positive bytecode,
+  cross-artifact, accepted-data, and resource gate. Packaging the override declarations does not
+  install or prove the corruption-driven model predicate. Predicate evaluation, Warp Counter
+  sound playback, the corruption/component/synchronization graph, native client or server E2E,
+  and wider gameplay parity remain deferred.
+- The remainder of the authoritative registry spine is still the next fail-closed forward
+  milestone; this static item slice does not advance native or release readiness.
 
 Implementation:
 
@@ -1013,8 +1036,9 @@ integration tests.
 The bounded storage, channel-foundation, SharedSounds registry/resource, SharedGameEvents,
 SharedLootConditions, Ether-source reload, SharedEnchantments, SharedParticleTypes, and
 SharedMaterialItems, SharedMetalBlocks, SharedMetalBlockItems, SharedFoodItems,
-SharedForestLanternBlocks, and SharedForestLanternBlockItems registry/mechanic gates are currently
-positive. The v4 registry-foundation, v6 Ether-source, v7 enchantment, v10 particle, v11
+SharedForestLanternBlocks, SharedForestLanternBlockItems, and the SharedToolItems Warp Counter
+static registry/resource gate are currently positive. The v4 registry-foundation, v6 Ether-source,
+v7 enchantment, v10 particle, v11
 material-item, v13 metal-block, and v14 food-item archives remain historical evidence. The current
 v16 proof is a fresh schema-10 Forge 47.4.9 dedicated-server run with 266 of 266 cumulative
 assertions, and the Forge v13 and Fabric v24 packaged clients supply the separate accepted native
@@ -1031,7 +1055,8 @@ authoritative registry spine is the next fail-closed milestone. Enchanting appli
 Peal shockwave behavior, projectile reflection, particle factories/rendering and emitted visuals,
 client screenshots, full combat, sound
 playback, and Forge's custom sculk frequency remain owned by later consumer-mechanic evidence; the
-deferred portions of the channel and machine graph likewise remain part of later full-slice
+Warp Counter corruption-driven predicate and corruption graph, and the deferred portions of the
+channel and machine graph likewise remain part of later full-slice
 acceptance rather than being inferred from bounded registry proofs.
 
 The final release-readiness task intentionally fails unconditionally until all required slices

@@ -208,7 +208,7 @@ final class SharedFoodItemsBytecodeTest {
     }
 
     @Test
-    void attachesOnceAfterMaterialsAndBeforeBlockEntities() throws IOException {
+    void attachesOnceAfterMaterialsAndBeforeToolItems() throws IOException {
         List<String> bootstrapInvocations = methodInvocations(
                 BOOTSTRAP_CLASS,
                 "initialize"
@@ -216,13 +216,13 @@ final class SharedFoodItemsBytecodeTest {
         String materialRegistration =
                 "ru/feytox/etherology/registry/item/SharedMaterialItems#register()V";
         String foodRegistration = FOOD_ITEMS_OWNER + "#register()V";
-        String blockEntityRegistration =
-                "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V";
+        String toolRegistration =
+                "ru/feytox/etherology/registry/item/SharedToolItems#register()V";
         int foodIndex = bootstrapInvocations.indexOf(foodRegistration);
 
         assertTrue(foodIndex > 0);
         assertEquals(materialRegistration, bootstrapInvocations.get(foodIndex - 1));
-        assertEquals(blockEntityRegistration, bootstrapInvocations.get(foodIndex + 1));
+        assertEquals(toolRegistration, bootstrapInvocations.get(foodIndex + 1));
         assertEquals(
                 1,
                 bootstrapInvocations.stream()

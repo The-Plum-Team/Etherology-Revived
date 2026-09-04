@@ -166,6 +166,9 @@ final class SlitheriteCanonicalResourcesTest {
             .map(SlitheriteBlock::id)
             .toList();
     private static final List<RecipeSpec> RECIPES = recipes();
+    private static final List<RelatedRecipeSpec> RELATED_RECIPES = relatedRecipes();
+    private static final Set<String> RELATED_RECIPE_RESOURCE_ENTRIES =
+            relatedRecipeResourceEntries();
     private static final Map<String, Set<String>> TAG_MEMBERS = tagMembers();
     private static final List<String> BLOCK_MODELS = List.of(
             "chiseled_polished_slitherite",
@@ -290,12 +293,14 @@ final class SlitheriteCanonicalResourcesTest {
         Path repositoryRoot = requiredPath("etherology.slitheriteBlocks.repositoryRoot");
         List<CanonicalResource> resources = canonicalResources();
         assertEquals(79, visualResources().size());
-        assertEquals(17 + 29 + 29 + 11, dataResources().size());
+        assertEquals(29, RECIPES.size());
+        assertEquals(3, RELATED_RECIPES.size());
+        assertEquals(17 + 29 + 29 + 3 + 3 + 11, dataResources().size());
         assertEquals(resources.size(), new LinkedHashSet<>(resources).size());
         for (CanonicalResource resource : resources) {
             requireRegularFile(repositoryRoot.resolve(resource.repositoryPath()));
         }
-        assertCanonicalOwnedResourceInventory(repositoryRoot, resources);
+        assertCanonicalResourceInventory(repositoryRoot, resources);
 
         assertLanguage(
                 repositoryRoot,
@@ -310,7 +315,7 @@ final class SlitheriteCanonicalResourcesTest {
 
         for (Artifact artifact : artifacts()) {
             try (JarFile jar = artifact.open()) {
-                assertPackagedOwnedResourceInventory(artifact, jar, resources);
+                assertPackagedCanonicalResourceInventory(artifact, jar, resources);
                 for (CanonicalResource resource : resources) {
                     assertCanonicalResource(repositoryRoot, artifact, jar, resource);
                 }
@@ -335,7 +340,7 @@ final class SlitheriteCanonicalResourcesTest {
     }
 
     @Test
-    void canonicalLootRecipesAdvancementsAndTagsMatchTheOriginalContract()
+    void canonicalOwnedLootRecipesAdvancementsAndTagsMatchTheOriginalContract()
             throws IOException {
         Path dataRoot = requiredPath("etherology.slitheriteBlocks.repositoryRoot")
                 .resolve("src/main/generated/data");
@@ -408,6 +413,27 @@ final class SlitheriteCanonicalResourcesTest {
                     members.stream().allMatch(TagValue::required),
                     expected.getKey()
             );
+        }
+    }
+
+    @Test
+    void relatedVanillaRecipesRemainSeparateAndMatchTheOriginalContract()
+            throws IOException {
+        Set<String> ownedRecipeIds = new LinkedHashSet<>(RECIPES.stream()
+                .map(RecipeSpec::id)
+                .toList());
+        Set<String> relatedRecipeIds = new LinkedHashSet<>(RELATED_RECIPES.stream()
+                .map(RelatedRecipeSpec::id)
+                .toList());
+        assertEquals(29, ownedRecipeIds.size());
+        assertEquals(Set.of("comparator", "repeater", "stonecutter"), relatedRecipeIds);
+        assertTrue(Collections.disjoint(ownedRecipeIds, relatedRecipeIds));
+
+        Path dataRoot = requiredPath("etherology.slitheriteBlocks.repositoryRoot")
+                .resolve("src/main/generated/data");
+        for (RelatedRecipeSpec recipe : RELATED_RECIPES) {
+            assertRelatedRecipe(dataRoot, recipe);
+            assertRelatedAdvancement(dataRoot, recipe);
         }
     }
 
@@ -925,11 +951,11 @@ final class SlitheriteCanonicalResourcesTest {
         );
     }
 
-    private static void assertCanonicalOwnedResourceInventory(
+    private static void assertCanonicalResourceInventory(
             Path repositoryRoot,
             List<CanonicalResource> resources
     ) throws IOException {
-        Set<String> expected = ownedResourceEntries(resources);
+        Set<String> expected = canonicalResourceEntries(resources);
         List<String> actual = new ArrayList<>();
         for (String sourceRoot : List.of(
                 "src/main/generated/assets/etherology",
@@ -943,7 +969,7 @@ final class SlitheriteCanonicalResourcesTest {
                         .map(path -> sourceRoot.endsWith("/data")
                                 ? "data/" + path
                                 : "assets/etherology/" + path)
-                        .filter(SlitheriteCanonicalResourcesTest::isOwnedResourceEntry)
+                        .filter(SlitheriteCanonicalResourcesTest::isCanonicalResourceEntry)
                         .forEach(actual::add);
             }
         }
@@ -951,33 +977,38 @@ final class SlitheriteCanonicalResourcesTest {
         assertEquals(expected, new LinkedHashSet<>(actual));
     }
 
-    private static void assertPackagedOwnedResourceInventory(
+    private static void assertPackagedCanonicalResourceInventory(
             Artifact artifact,
             JarFile jar,
             List<CanonicalResource> resources
     ) {
         Set<String> expected = artifact.includesResources()
-                ? ownedResourceEntries(resources)
+                ? canonicalResourceEntries(resources)
                 : Set.of();
         List<String> actual = jar.stream()
                 .map(JarEntry::getName)
-                .filter(SlitheriteCanonicalResourcesTest::isOwnedResourceEntry)
+                .filter(SlitheriteCanonicalResourcesTest::isCanonicalResourceEntry)
                 .toList();
         assertEquals(actual.size(), new LinkedHashSet<>(actual).size());
         assertEquals(expected, new LinkedHashSet<>(actual), artifact.description());
     }
 
-    private static Set<String> ownedResourceEntries(List<CanonicalResource> resources) {
+    private static Set<String> canonicalResourceEntries(List<CanonicalResource> resources) {
         Set<String> entries = new LinkedHashSet<>();
         for (CanonicalResource resource : resources) {
-            if (isOwnedResourceEntry(resource.jarEntry())) {
+            if (isCanonicalResourceEntry(resource.jarEntry())) {
                 entries.add(resource.jarEntry());
             }
         }
         return Collections.unmodifiableSet(entries);
     }
 
-    private static boolean isOwnedResourceEntry(String entry) {
+    private static boolean isCanonicalResourceEntry(String entry) {
+        return RELATED_RECIPE_RESOURCE_ENTRIES.contains(entry)
+                || isOwnedSlitheriteResourceEntry(entry);
+    }
+
+    private static boolean isOwnedSlitheriteResourceEntry(String entry) {
         if (!entry.contains("slitherite")) return false;
         return entry.startsWith("assets/etherology/blockstates/")
                 || entry.startsWith("assets/etherology/models/block/")
@@ -1071,6 +1102,126 @@ final class SlitheriteCanonicalResourcesTest {
         return List.copyOf(members);
     }
 
+    private static void assertRelatedRecipe(
+            Path dataRoot,
+            RelatedRecipeSpec recipe
+    ) throws IOException {
+        JsonObject json = readObject(
+                dataRoot.resolve("etherology/recipes/" + recipe.id() + ".json")
+        );
+        assertEquals(
+                Set.of("type", "category", "key", "pattern", "result", "show_notification"),
+                json.keySet(),
+                recipe.id()
+        );
+        assertEquals("minecraft:crafting_shaped", json.get("type").getAsString());
+        assertEquals(recipe.category(), json.get("category").getAsString(), recipe.id());
+
+        JsonObject key = json.getAsJsonObject("key");
+        assertEquals(recipe.ingredients().keySet(), key.keySet(), recipe.id());
+        for (Map.Entry<String, String> ingredient : recipe.ingredients().entrySet()) {
+            JsonObject value = key.getAsJsonObject(ingredient.getKey());
+            assertEquals(Set.of("item"), value.keySet(), recipe.id());
+            assertEquals(
+                    ingredient.getValue(),
+                    value.get("item").getAsString(),
+                    recipe.id()
+            );
+        }
+        assertEquals(recipe.pattern(), jsonStrings(json.getAsJsonArray("pattern")), recipe.id());
+
+        JsonObject result = json.getAsJsonObject("result");
+        assertEquals(Set.of("item"), result.keySet(), recipe.id());
+        assertEquals(recipe.result(), result.get("item").getAsString(), recipe.id());
+        assertTrue(json.get("show_notification").getAsBoolean(), recipe.id());
+    }
+
+    private static void assertRelatedAdvancement(
+            Path dataRoot,
+            RelatedRecipeSpec recipe
+    ) throws IOException {
+        JsonObject json = readObject(dataRoot.resolve(
+                "etherology/advancements/recipes/" + recipe.advancementCategory()
+                        + "/" + recipe.id() + ".json"
+        ));
+        assertEquals(
+                Set.of(
+                        "parent",
+                        "criteria",
+                        "requirements",
+                        "rewards",
+                        "sends_telemetry_event"
+                ),
+                json.keySet(),
+                recipe.id()
+        );
+        assertEquals("minecraft:recipes/root", json.get("parent").getAsString(), recipe.id());
+
+        JsonObject criteria = json.getAsJsonObject("criteria");
+        assertEquals(
+                Set.of(recipe.criterionName(), "has_the_recipe"),
+                criteria.keySet(),
+                recipe.id()
+        );
+        JsonObject itemCriterion = criteria.getAsJsonObject(recipe.criterionName());
+        assertEquals(Set.of("conditions", "trigger"), itemCriterion.keySet(), recipe.id());
+        assertEquals(
+                "minecraft:inventory_changed",
+                itemCriterion.get("trigger").getAsString(),
+                recipe.id()
+        );
+        JsonObject itemConditions = itemCriterion.getAsJsonObject("conditions");
+        assertEquals(Set.of("items"), itemConditions.keySet(), recipe.id());
+        JsonArray itemPredicates = itemConditions.getAsJsonArray("items");
+        assertEquals(1, itemPredicates.size(), recipe.id());
+        JsonObject itemPredicate = itemPredicates.get(0).getAsJsonObject();
+        assertEquals(Set.of("items"), itemPredicate.keySet(), recipe.id());
+        assertEquals(
+                List.of(recipe.criterionItem()),
+                jsonStrings(itemPredicate.getAsJsonArray("items")),
+                recipe.id()
+        );
+
+        JsonObject recipeCriterion = criteria.getAsJsonObject("has_the_recipe");
+        assertEquals(Set.of("conditions", "trigger"), recipeCriterion.keySet(), recipe.id());
+        assertEquals(
+                "minecraft:recipe_unlocked",
+                recipeCriterion.get("trigger").getAsString(),
+                recipe.id()
+        );
+        JsonObject recipeConditions = recipeCriterion.getAsJsonObject("conditions");
+        assertEquals(Set.of("recipe"), recipeConditions.keySet(), recipe.id());
+        assertEquals(
+                recipe.result(),
+                recipeConditions.get("recipe").getAsString(),
+                recipe.id()
+        );
+
+        JsonArray requirements = json.getAsJsonArray("requirements");
+        assertEquals(1, requirements.size(), recipe.id());
+        assertEquals(
+                List.of(recipe.criterionName(), "has_the_recipe"),
+                jsonStrings(requirements.get(0).getAsJsonArray()),
+                recipe.id()
+        );
+        JsonObject rewards = json.getAsJsonObject("rewards");
+        assertEquals(Set.of("recipes"), rewards.keySet(), recipe.id());
+        assertEquals(
+                List.of(recipe.result()),
+                jsonStrings(rewards.getAsJsonArray("recipes")),
+                recipe.id()
+        );
+        assertFalse(json.get("sends_telemetry_event").getAsBoolean(), recipe.id());
+    }
+
+    private static List<String> jsonStrings(JsonArray array) {
+        List<String> values = new ArrayList<>();
+        for (JsonElement value : array) {
+            values.add(value.getAsString());
+        }
+        return List.copyOf(values);
+    }
+
     private static String recipeResult(JsonObject recipe) {
         JsonElement result = recipe.get("result");
         return result.isJsonPrimitive()
@@ -1130,6 +1281,13 @@ final class SlitheriteCanonicalResourcesTest {
                             + "/" + recipe.id() + ".json"
             ));
         }
+        for (RelatedRecipeSpec recipe : RELATED_RECIPES) {
+            resources.add(data("etherology/recipes/" + recipe.id() + ".json"));
+            resources.add(data(
+                    "etherology/advancements/recipes/" + recipe.advancementCategory()
+                            + "/" + recipe.id() + ".json"
+            ));
+        }
         for (String tag : TAG_MEMBERS.keySet()) {
             resources.add(data(tag));
         }
@@ -1181,6 +1339,64 @@ final class SlitheriteCanonicalResourcesTest {
         ));
         tags.put("minecraft/tags/items/buttons.json", Set.of());
         return Collections.unmodifiableMap(tags);
+    }
+
+    private static List<RelatedRecipeSpec> relatedRecipes() {
+        return List.of(
+                relatedRecipe(
+                        "comparator",
+                        "redstone",
+                        Map.of(
+                                "#", "minecraft:redstone_torch",
+                                "I", "etherology:slitherite",
+                                "X", "minecraft:quartz"
+                        ),
+                        List.of(" # ", "#X#", "III"),
+                        "minecraft:comparator",
+                        "redstone",
+                        "has_quartz",
+                        "minecraft:quartz"
+                ),
+                relatedRecipe(
+                        "repeater",
+                        "redstone",
+                        Map.of(
+                                "#", "minecraft:redstone_torch",
+                                "I", "etherology:slitherite",
+                                "X", "minecraft:redstone"
+                        ),
+                        List.of("#X#", "III"),
+                        "minecraft:repeater",
+                        "redstone",
+                        "has_redstone_torch",
+                        "minecraft:redstone_torch"
+                ),
+                relatedRecipe(
+                        "stonecutter",
+                        "misc",
+                        Map.of(
+                                "#", "etherology:slitherite",
+                                "I", "minecraft:iron_ingot"
+                        ),
+                        List.of(" I ", "###"),
+                        "minecraft:stonecutter",
+                        "decorations",
+                        "has_slitherite",
+                        "etherology:slitherite"
+                )
+        );
+    }
+
+    private static Set<String> relatedRecipeResourceEntries() {
+        Set<String> entries = new LinkedHashSet<>();
+        for (RelatedRecipeSpec recipe : RELATED_RECIPES) {
+            entries.add("data/etherology/recipes/" + recipe.id() + ".json");
+            entries.add(
+                    "data/etherology/advancements/recipes/"
+                            + recipe.advancementCategory() + "/" + recipe.id() + ".json"
+            );
+        }
+        return Collections.unmodifiableSet(entries);
     }
 
     private static List<RecipeSpec> recipes() {
@@ -1431,6 +1647,28 @@ final class SlitheriteCanonicalResourcesTest {
         );
     }
 
+    private static RelatedRecipeSpec relatedRecipe(
+            String id,
+            String category,
+            Map<String, String> ingredients,
+            List<String> pattern,
+            String result,
+            String advancementCategory,
+            String criterionName,
+            String criterionItem
+    ) {
+        return new RelatedRecipeSpec(
+                id,
+                category,
+                Map.copyOf(ingredients),
+                List.copyOf(pattern),
+                result,
+                advancementCategory,
+                criterionName,
+                criterionItem
+        );
+    }
+
     private static Map<String, Set<String>> ownerSets() {
         Map<String, Set<String>> owners = new LinkedHashMap<>();
         for (String id : BLOCK_IDS) owners.put(id, new LinkedHashSet<>());
@@ -1526,6 +1764,18 @@ final class SlitheriteCanonicalResourcesTest {
             String result,
             int count,
             String advancementCategory
+    ) {
+    }
+
+    private record RelatedRecipeSpec(
+            String id,
+            String category,
+            Map<String, String> ingredients,
+            List<String> pattern,
+            String result,
+            String advancementCategory,
+            String criterionName,
+            String criterionItem
     ) {
     }
 

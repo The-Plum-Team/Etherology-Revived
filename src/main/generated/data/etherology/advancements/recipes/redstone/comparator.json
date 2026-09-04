@@ -15,7 +15,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "etherology:comparator"
+        "recipe": "minecraft:comparator"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
@@ -28,7 +28,7 @@
   ],
   "rewards": {
     "recipes": [
-      "etherology:comparator"
+      "minecraft:comparator"
     ]
   },
   "sends_telemetry_event": false

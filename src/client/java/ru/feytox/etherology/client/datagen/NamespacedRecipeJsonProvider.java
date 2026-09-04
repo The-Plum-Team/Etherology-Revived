@@ -10,9 +10,15 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Set;
 
 final class NamespacedRecipeJsonProvider implements RecipeJsonProvider {
 
+    private static final Set<String> PRESERVED_VANILLA_ADVANCEMENT_RECIPE_IDS = Set.of(
+            "minecraft:comparator",
+            "minecraft:repeater",
+            "minecraft:stonecutter"
+    );
     private final RecipeJsonProvider delegate;
     private final Identifier sourceRecipeId;
     private final Identifier recipeId;
@@ -42,7 +48,13 @@ final class NamespacedRecipeJsonProvider implements RecipeJsonProvider {
     @Override
     public JsonObject toAdvancementJson() {
         JsonObject advancementJson = delegate.toAdvancementJson();
-        if (advancementJson == null || sourceRecipeId.equals(recipeId)) return advancementJson;
+        if (advancementJson == null
+                || sourceRecipeId.equals(recipeId)
+                || PRESERVED_VANILLA_ADVANCEMENT_RECIPE_IDS.contains(
+                        sourceRecipeId.toString()
+                )) {
+            return advancementJson;
+        }
 
         boolean hasCriterionReference = normalizeCriterionRecipeIds(advancementJson);
         boolean hasRewardReference = normalizeRewardRecipeIds(advancementJson);

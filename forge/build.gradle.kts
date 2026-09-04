@@ -217,11 +217,30 @@ val canonicalSlitheriteTagDataEntries = setOf(
     "minecraft/tags/items/stairs.json",
     "minecraft/tags/items/walls.json",
 )
-val canonicalSlitheriteDataEntries =
+val canonicalSlitheriteOwnedDataEntries =
     canonicalSlitheriteLootDataEntries +
         canonicalSlitheriteRecipeDataEntries +
         canonicalSlitheriteAdvancementDataEntries +
         canonicalSlitheriteTagDataEntries
+val canonicalSlitheriteVanillaRelatedRecipeIds = setOf(
+    "comparator",
+    "repeater",
+    "stonecutter",
+)
+val canonicalSlitheriteVanillaRelatedRecipeDataEntries =
+    canonicalSlitheriteVanillaRelatedRecipeIds
+        .map { id -> "etherology/recipes/$id.json" }
+        .toSet()
+val canonicalSlitheriteVanillaRelatedAdvancementDataEntries = setOf(
+    "etherology/advancements/recipes/decorations/stonecutter.json",
+    "etherology/advancements/recipes/redstone/comparator.json",
+    "etherology/advancements/recipes/redstone/repeater.json",
+)
+val canonicalSlitheriteVanillaRelatedDataEntries =
+    canonicalSlitheriteVanillaRelatedRecipeDataEntries +
+        canonicalSlitheriteVanillaRelatedAdvancementDataEntries
+val canonicalSlitheriteDataEntries =
+    canonicalSlitheriteOwnedDataEntries + canonicalSlitheriteVanillaRelatedDataEntries
 val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +

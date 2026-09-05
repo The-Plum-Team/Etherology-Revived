@@ -328,6 +328,12 @@ final class EtherSourceReloadResourcesTest {
                 "ru/feytox/etherology/block/forestLantern/ForestLanternBlock"
                         + "#registerJumpEvent()V"
         );
+        int tabletLoot = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/LootTablesModifyRegistry#registerAll()V"
+        );
+        int tabletTrade = invocations.indexOf(
+                "ru/feytox/etherology/registry/misc/TradeOffersModificationRegistry#registerAll()V"
+        );
         int lifecycle = invocations.indexOf(
                 "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"
                         + "(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
@@ -338,7 +344,9 @@ final class EtherSourceReloadResourcesTest {
         assertEquals(enchantments + 1, particleTypes, description);
         assertEquals(particleTypes + 1, resourceReloaders, description);
         assertEquals(resourceReloaders + 1, forestLanternJumpEvent, description);
-        assertEquals(forestLanternJumpEvent + 1, lifecycle, description);
+        assertEquals(forestLanternJumpEvent + 1, tabletLoot, description);
+        assertEquals(tabletLoot + 1, tabletTrade, description);
+        assertEquals(tabletTrade + 1, lifecycle, description);
         assertEquals(1, count(invocations,
                 RESOURCE_RELOADERS_OWNER + "#registerServerData()V"), description);
     }

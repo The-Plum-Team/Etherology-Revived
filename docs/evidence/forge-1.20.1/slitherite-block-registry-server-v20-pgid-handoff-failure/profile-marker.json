@@ -1,0 +1,25 @@
+{
+  "isolation": {
+    "scope": "repository-owned-ignored-state",
+    "source_profiles": []
+  },
+  "launch": {
+    "scenario": "slitherite-block-registry",
+    "task_path": ":forge:1.20.1:runRegistryFoundationServerProbe"
+  },
+  "managed_by": "scripts/e2e/forge_server.py",
+  "profile_id": "etherology-e2e-forge-server-1.20.1-v20",
+  "profile_manifest": {
+    "relative_path": "scripts/e2e/forge-server-1.20.1-profile.json",
+    "sha256": "1a38dd4e88ee8960df96bcd9d4d074adc8f967c03534bee837b013badc7771be",
+    "size": 1206
+  },
+  "release": {
+    "artifact_node": "forge-1.20.1",
+    "java": 17,
+    "loader": "forge",
+    "loader_version": "47.4.9",
+    "minecraft": "1.20.1"
+  },
+  "schema": 1
+}

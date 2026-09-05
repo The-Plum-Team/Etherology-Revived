@@ -1,0 +1,39 @@
+[13:44:52] [main/INFO] (Launcher) ModLauncher running: args [--launchTarget, forgeserveruserdev, --gameDir, ., --fml.forgeVersion, 47.4.9, --fml.mcVersion, 1.20.1, --fml.forgeGroup, net.minecraftforge, --fml.mcpVersion, 20230612.114412, -mixin.config, etherology.forge.mixins.json, nogui]
+[13:44:52] [main/INFO] (Launcher) ModLauncher 10.0.9+10.0.9+main.dcd20f30 starting: java version 17.0.19 by Eclipse Adoptium; OS Mac OS X arch aarch64 version 26.6.2
+[13:44:52] [main/INFO] (unprotect) Initializing Unprotect using ModLauncher backend, target: Minecraft and loader classes (minecraft+forge)
+[13:44:52] [main/WARN] (FMLConfig) Configuration file /Users/neb/Documents/github/Etherology Revived/scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v20/game/config/fml.toml is not correct. Correcting
+[13:44:52] [main/INFO] (FMLConfig) Incorrect key [earlyWindowSkipGLVersions] was corrected from null to []
+[13:44:52] [main/INFO] (FMLConfig) Incorrect key [earlyWindowLogHelpMessage] was corrected from null to true
+[13:44:52] [main/INFO] (FMLConfig) Incorrect key [earlyWindowSquir] was corrected from null to false
+[13:44:52] [main/INFO] (FMLConfig) Incorrect key [earlyWindowShowCPU] was corrected from null to false
+[13:44:52] [main/INFO] (ImmediateWindowHandler) ImmediateWindowProvider not loading because launch target is forgeserveruserdev
+[13:44:52] [main/INFO] (mixin) SpongePowered MIXIN Subsystem Version=0.8.5 Source=union:/Users/neb/.gradle/caches/modules-2/files-2.1/dev.architectury/mixin-patched/0.8.5.12/cf1f787f58d3b08b0cb53ecbba7928c09a1893c8/mixin-patched-0.8.5.12.jar%23125!/ Service=ModLauncher Env=SERVER
+[13:44:53] [main/WARN] (ModFileParser) Mod file /Users/neb/.gradle/caches/modules-2/files-2.1/net.minecraftforge/javafmllanguage/1.20.1-47.4.9/6802c410879d06cd2c16ac24988dd5893293e21c/javafmllanguage-1.20.1-47.4.9.jar is missing mods.toml file
+[13:44:53] [main/WARN] (ModFileParser) Mod file /Users/neb/.gradle/caches/modules-2/files-2.1/net.minecraftforge/lowcodelanguage/1.20.1-47.4.9/1a098871d069f3cb2ed12f392f96f462902c0350/lowcodelanguage-1.20.1-47.4.9.jar is missing mods.toml file
+[13:44:53] [main/WARN] (ModFileParser) Mod file /Users/neb/.gradle/caches/modules-2/files-2.1/net.minecraftforge/mclanguage/1.20.1-47.4.9/5279b751da7297817db4fa9729e3f3c7bf03d594/mclanguage-1.20.1-47.4.9.jar is missing mods.toml file
+[13:44:53] [main/WARN] (ModFileParser) Mod file /Users/neb/.gradle/caches/modules-2/files-2.1/net.minecraftforge/fmlcore/1.20.1-47.4.9/f4f03c369d155fb551ebf908db260a0c5600c29b/fmlcore-1.20.1-47.4.9.jar is missing mods.toml file
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file javafmllanguage-1.20.1-47.4.9.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file lowcodelanguage-1.20.1-47.4.9.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file mclanguage-1.20.1-47.4.9.jar of type LANGPROVIDER with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file fmlcore-1.20.1-47.4.9.jar of type LIBRARY with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file forge-1.20.1-47.4.9-minecraft-merged-1.20.1-net.fabricmc.yarn.1_20_1.1.20.1+build.10-v2-forge-1.20.1-47.4.9.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file serverProbe of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file main of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file  of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator@57642552
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file architectury-forge-91d009a8-9.2.14.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.ClasspathLocator@1e90939f
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file geckolib-forge-1.20.1-91d009a8-4.7.4.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.ClasspathLocator@1e90939f
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file 9549848516211885039.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.ClasspathLocator@1e90939f
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file architectury-forge-91d009a8-9.2.14.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.ClasspathLocator@1e90939f
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file geckolib-forge-1.20.1-91d009a8-4.7.4.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.ClasspathLocator@1e90939f
+[13:44:53] [main/INFO] (ModDiscoverer) Found mod file 9549848516211885039.jar of type MOD with provider net.minecraftforge.fml.loading.moddiscovery.ClasspathLocator@1e90939f
+[13:44:53] [main/INFO] (JarInJarDependencyLocator) No dependencies to load found. Skipping!
+[13:44:53] [main/INFO] (mixin) Compatibility level set to JAVA_17
+[13:44:53] [main/INFO] (LaunchServiceHandler) Launching target 'forgeserveruserdev' with arguments [--gameDir, ., nogui]
+[13:44:53] [main/INFO] (mixin) Remapping refMap geckolib.refmap.json using RemapperChain (Architectury Patched)
+[13:44:53] [main/INFO] (unprotect) Found 7431 Minecraft classes
+[13:44:53] [main/INFO] (mixin) Remapping refMap architectury-forge-refmap.json using RemapperChain (Architectury Patched)
+[13:44:53] [main/INFO] (mixin) Remapping refMap architectury-common-refmap.json using RemapperChain (Architectury Patched)
+[05sept2026 13:44:54.017] [main/WARN] [oshi.util.platform.mac.SysctlUtil/]: Failed sysctl call: hw.cpufrequency, Error code: 2
+[05sept2026 13:44:55.636] [modloading-worker-0/INFO] [net.minecraftforge.common.ForgeMod/FORGEMOD]: Forge mod loading, version 47.4.9, for MC 1.20.1 with MCP 20230612.114412
+[05sept2026 13:44:55.636] [modloading-worker-0/INFO] [net.minecraftforge.common.MinecraftForge/FORGE]: MinecraftForge v47.4.9 Initialized
+[05sept2026 13:44:55.656] [modloading-worker-0/INFO] [dev.architectury.networking.forge.NetworkManagerImpl/]: Registering C2S receiver with id architectury:sync_ids

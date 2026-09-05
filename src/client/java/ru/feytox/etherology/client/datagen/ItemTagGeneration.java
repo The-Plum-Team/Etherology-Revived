@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.fabricmc.fabric.api.tag.convention.v1.ConventionalItemTags;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemConvertible;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.registry.tag.TagKey;
@@ -67,10 +68,11 @@ public class ItemTagGeneration extends FabricTagProvider.ItemTagProvider {
         addItems(AXES, EBONY_AXE);
         addItems(HOES, EBONY_HOE);
         addItems(PICKAXES, EBONY_PICKAXE);
-        addItems(PICKAXES, BATTLE_PICKAXES);
+        addOptionalItems(PICKAXES, BATTLE_PICKAXES);
         addItems(SHOVELS, EBONY_SHOVEL);
-        addItems(SWORDS, EBONY_SWORD, BROADSWORD, TUNING_MACE);
-        addItems(SWORDS, BATTLE_PICKAXES);
+        addItems(SWORDS, EBONY_SWORD);
+        addOptionalItems(SWORDS, BROADSWORD, TUNING_MACE);
+        addOptionalItems(SWORDS, BATTLE_PICKAXES);
         addItems(BOATS, PEACH_BOAT);
         addItems(CHEST_BOATS, PEACH_CHEST_BOAT);
 
@@ -80,5 +82,11 @@ public class ItemTagGeneration extends FabricTagProvider.ItemTagProvider {
 
     private void addItems(TagKey<Item> tagKey, ItemConvertible... items) {
         Arrays.stream(items).map(ItemConvertible::asItem).forEach(getOrCreateTagBuilder(tagKey)::add);
+    }
+
+    private void addOptionalItems(TagKey<Item> tagKey, ItemConvertible... items) {
+        var builder = getOrCreateTagBuilder(tagKey);
+        Arrays.stream(items).map(ItemConvertible::asItem).forEach(item ->
+                Registries.ITEM.getKey(item).ifPresent(builder::addOptional));
     }
 }

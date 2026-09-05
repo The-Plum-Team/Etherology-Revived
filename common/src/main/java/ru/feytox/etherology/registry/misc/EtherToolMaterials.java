@@ -2,7 +2,6 @@ package ru.feytox.etherology.registry.misc;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import lombok.Getter;
 import net.minecraft.item.ToolMaterial;
 import net.minecraft.item.ToolMaterials;
 import net.minecraft.recipe.Ingredient;
@@ -15,13 +14,10 @@ public enum EtherToolMaterials implements ToolMaterial {
     EBONY(ToolMaterials.IRON.getMiningLevel(), 320, 7, 3, 16,
             () -> Ingredient.ofItems(SharedMaterialItems.EBONY_INGOT.get()));
 
-    @Getter
     private final int miningLevel;
     private final int itemDurability;
     private final float miningSpeed;
-    @Getter
     private final float attackDamage;
-    @Getter
     private final int enchantability;
     private final Supplier<Ingredient> repairIngredient;
 
@@ -34,14 +30,32 @@ public enum EtherToolMaterials implements ToolMaterial {
         this.repairIngredient = Suppliers.memoize(repairIngredient);
     }
 
+    @Override
+    public int getMiningLevel() {
+        return miningLevel;
+    }
+
+    @Override
+    public float getAttackDamage() {
+        return attackDamage;
+    }
+
+    @Override
+    public int getEnchantability() {
+        return enchantability;
+    }
+
+    @Override
     public int getDurability() {
         return itemDurability;
     }
 
+    @Override
     public float getMiningSpeedMultiplier() {
         return miningSpeed;
     }
 
+    @Override
     public Ingredient getRepairIngredient() {
         return repairIngredient.get();
     }

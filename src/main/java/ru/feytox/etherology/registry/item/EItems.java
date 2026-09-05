@@ -7,7 +7,6 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import ru.feytox.etherology.item.*;
 import ru.feytox.etherology.item.glints.GlintItem;
-import ru.feytox.etherology.magic.seal.SealType;
 import ru.feytox.etherology.magic.staff.StaffStyles;
 import ru.feytox.etherology.util.misc.BoatTypes;
 import ru.feytox.etherology.util.misc.EIdentifier;
@@ -17,10 +16,10 @@ public class EItems {
 
     public static final Item TELDECORE = registerItem("teldecore", new Teldecore());
 
-    public static final Item PRIMOSHARD_KETA = registerItem("primoshard_keta", new PrimoShard(SealType.KETA));
-    public static final Item PRIMOSHARD_RELLA = registerItem("primoshard_rella", new PrimoShard(SealType.RELLA));
-    public static final Item PRIMOSHARD_CLOS = registerItem("primoshard_clos", new PrimoShard(SealType.CLOS));
-    public static final Item PRIMOSHARD_VIA = registerItem("primoshard_via", new PrimoShard(SealType.VIA));
+    public static final Item PRIMOSHARD_KETA = SharedPrimoShardItems.PRIMOSHARD_KETA.get();
+    public static final Item PRIMOSHARD_RELLA = SharedPrimoShardItems.PRIMOSHARD_RELLA.get();
+    public static final Item PRIMOSHARD_CLOS = SharedPrimoShardItems.PRIMOSHARD_CLOS.get();
+    public static final Item PRIMOSHARD_VIA = SharedPrimoShardItems.PRIMOSHARD_VIA.get();
     public static final GlintItem GLINT = (GlintItem) registerItem(
             "glint_shard",
             new GlintItem(EtherealStorageInputItem.MAX_ETHER)

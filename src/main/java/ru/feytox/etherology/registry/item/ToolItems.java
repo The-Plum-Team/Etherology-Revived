@@ -13,11 +13,11 @@ import static ru.feytox.etherology.registry.misc.EtherToolMaterials.EBONY;
 @UtilityClass
 public class ToolItems {
     // ebony tools
-    public static final Item EBONY_AXE = register("ebony_axe", new AxeItem(EBONY, 5, -3.1F, new Item.Settings()));
-    public static final Item EBONY_PICKAXE = register("ebony_pickaxe", new PickaxeItem(EBONY, 0, -2.8F, new Item.Settings()));
-    public static final Item EBONY_HOE = register("ebony_hoe", new HoeItem(EBONY, -2, -1, new Item.Settings()));
-    public static final Item EBONY_SHOVEL = register("ebony_shovel", new ShovelItem(EBONY, 0.5f, -3, new Item.Settings()));
-    public static final Item EBONY_SWORD = register("ebony_sword", new SwordItem(EBONY, 3, -2.4f, new Item.Settings()));
+    public static final Item EBONY_AXE = SharedToolItems.EBONY_AXE.get();
+    public static final Item EBONY_PICKAXE = SharedToolItems.EBONY_PICKAXE.get();
+    public static final Item EBONY_HOE = SharedToolItems.EBONY_HOE.get();
+    public static final Item EBONY_SHOVEL = SharedToolItems.EBONY_SHOVEL.get();
+    public static final Item EBONY_SWORD = SharedToolItems.EBONY_SWORD.get();
 
     // battle pickaxes
     public static final Item WOODEN_BATTLE_PICKAXE = register("wooden_battle_pickaxe", new BattlePickaxe(WOOD, 2, -2.6f));

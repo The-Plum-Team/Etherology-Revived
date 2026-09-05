@@ -1,6 +1,8 @@
 package ru.feytox.etherology.registry.item;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,8 +32,12 @@ final class WarpCounterRegistryIsolationTest {
     private static final String REGISTRY_SUPPLIER =
             "dev/architectury/registry/registries/RegistrySupplier";
 
-    @Test
-    void legacyFieldAliasesTheSharedSupplierWithoutOwningTheId()
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "WARP_COUNTER", "EBONY_AXE", "EBONY_PICKAXE", "EBONY_HOE",
+            "EBONY_SHOVEL", "EBONY_SWORD"
+    })
+    void legacyFieldAliasesTheSharedSupplierWithoutOwningTheId(String itemField)
             throws IOException {
         AtomicInteger fieldAccess = new AtomicInteger(-1);
         AtomicInteger legacyIdLoads = new AtomicInteger();
@@ -46,7 +53,7 @@ final class WarpCounterRegistryIsolationTest {
                     String signature,
                     Object value
             ) {
-                if (name.equals("WARP_COUNTER")) {
+                if (name.equals(itemField)) {
                     fieldAccess.set(access);
                     assertEquals("Lnet/minecraft/item/Item;", descriptor);
                 }
@@ -66,7 +73,7 @@ final class WarpCounterRegistryIsolationTest {
 
                     @Override
                     public void visitLdcInsn(Object value) {
-                        if (value.equals("warp_counter")) {
+                        if (value.equals(itemField.toLowerCase(Locale.ROOT))) {
                             legacyIdLoads.incrementAndGet();
                         }
                     }
@@ -81,16 +88,16 @@ final class WarpCounterRegistryIsolationTest {
                         if (name.equals("<clinit>")
                                 && opcode == Opcodes.GETSTATIC
                                 && owner.equals(SHARED_TOOL_ITEMS)
-                                && fieldName.equals("WARP_COUNTER")) {
+                                && fieldName.equals(itemField)) {
                             recordingAlias = true;
-                            aliasEvents.add("SharedToolItems#WARP_COUNTER");
+                            aliasEvents.add("SharedToolItems#" + itemField);
                         }
                         if (opcode == Opcodes.PUTSTATIC
                                 && owner.equals(TOOL_ITEMS_OWNER)
-                                && fieldName.equals("WARP_COUNTER")) {
+                                && fieldName.equals(itemField)) {
                             legacyAssignments.incrementAndGet();
                             if (recordingAlias) {
-                                aliasEvents.add("ToolItems#WARP_COUNTER");
+                                aliasEvents.add("ToolItems#" + itemField);
                                 recordingAlias = false;
                             }
                         }
@@ -129,10 +136,10 @@ final class WarpCounterRegistryIsolationTest {
         );
         assertEquals(
                 List.of(
-                        "SharedToolItems#WARP_COUNTER",
+                        "SharedToolItems#" + itemField,
                         "RegistrySupplier#get",
                         "CHECKCAST Item",
-                        "ToolItems#WARP_COUNTER"
+                        "ToolItems#" + itemField
                 ),
                 aliasEvents
         );

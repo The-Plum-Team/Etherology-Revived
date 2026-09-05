@@ -41,8 +41,8 @@ final class UnadjustedLensRegistryResourcesTest {
             CLASS_PREFIX + "registry/item/SharedLensItems.class";
     private static final String SHARED_LENS_ITEMS_OWNER =
             CLASS_PREFIX + "registry/item/SharedLensItems";
-    private static final String SHARED_ALCHEMY_RECIPES_OWNER =
-            CLASS_PREFIX + "registry/misc/SharedAlchemyRecipes";
+    private static final String SHARED_PRIMO_SHARD_ITEMS_OWNER =
+            CLASS_PREFIX + "registry/item/SharedPrimoShardItems";
     private static final String SHARED_DEFERRED_REGISTER_OWNER =
             CLASS_PREFIX + "registry/SharedDeferredRegister";
     private static final String REGISTRY_SUPPLIER_OWNER =
@@ -247,7 +247,7 @@ final class UnadjustedLensRegistryResourcesTest {
                 String toolRegistration = CLASS_PREFIX
                         + "registry/item/SharedToolItems#register()V";
                 String lensRegistration = SHARED_LENS_ITEMS_OWNER + "#register()V";
-                String successor = SHARED_ALCHEMY_RECIPES_OWNER + "#register()V";
+                String successor = SHARED_PRIMO_SHARD_ITEMS_OWNER + "#register()V";
                 int lensIndex = calls.indexOf(lensRegistration);
 
                 assertTrue(lensIndex > 0, artifact.description());

@@ -2,12 +2,33 @@
   "replace": false,
   "values": [
     "etherology:ebony_pickaxe",
-    "etherology:wooden_battle_pickaxe",
-    "etherology:stone_battle_pickaxe",
-    "etherology:iron_battle_pickaxe",
-    "etherology:golden_battle_pickaxe",
-    "etherology:ebony_battle_pickaxe",
-    "etherology:diamond_battle_pickaxe",
-    "etherology:netherite_battle_pickaxe"
+    {
+      "id": "etherology:wooden_battle_pickaxe",
+      "required": false
+    },
+    {
+      "id": "etherology:stone_battle_pickaxe",
+      "required": false
+    },
+    {
+      "id": "etherology:iron_battle_pickaxe",
+      "required": false
+    },
+    {
+      "id": "etherology:golden_battle_pickaxe",
+      "required": false
+    },
+    {
+      "id": "etherology:ebony_battle_pickaxe",
+      "required": false
+    },
+    {
+      "id": "etherology:diamond_battle_pickaxe",
+      "required": false
+    },
+    {
+      "id": "etherology:netherite_battle_pickaxe",
+      "required": false
+    }
   ]
 }

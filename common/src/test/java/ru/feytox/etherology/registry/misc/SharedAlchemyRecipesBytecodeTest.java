@@ -167,7 +167,7 @@ final class SharedAlchemyRecipesBytecodeTest {
     }
 
     @Test
-    void attachesSerializerBeforeTypeBetweenLensAndBlockEntities()
+    void attachesSerializerBeforeTypeBetweenPrimoShardsAndBlockEntities()
             throws IOException {
         assertEquals(
                 List.of(
@@ -183,15 +183,16 @@ final class SharedAlchemyRecipesBytecodeTest {
                 classReader(BOOTSTRAP),
                 "initialize"
         );
-        String lensRegistration =
-                "ru/feytox/etherology/registry/item/SharedLensItems#register()V";
+        String primoShardRegistration =
+                "ru/feytox/etherology/registry/item/SharedPrimoShardItems"
+                        + "#register()V";
         String alchemyRegistration = OWNER + "#register()V";
         String blockEntityRegistration =
                 "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V";
         int alchemyIndex = invocations.indexOf(alchemyRegistration);
 
         assertTrue(alchemyIndex > 0);
-        assertEquals(lensRegistration, invocations.get(alchemyIndex - 1));
+        assertEquals(primoShardRegistration, invocations.get(alchemyIndex - 1));
         assertEquals(blockEntityRegistration, invocations.get(alchemyIndex + 1));
         assertEquals(
                 1,

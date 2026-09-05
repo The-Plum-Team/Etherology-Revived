@@ -70,7 +70,7 @@ final class EarlyBootstrapRegistrationTest {
     }
 
     @Test
-    void sharedMetalFoodToolLensAndAlchemyRegistriesAttachBeforeLegacyItems()
+    void sharedMetalFoodToolLensPrimoShardAndAlchemyRegistriesAttachBeforeLegacyItems()
             throws IOException {
         Set<String> registryOwners = Set.of(
                 "ru/feytox/etherology/registry/block/SharedMetalBlocks",
@@ -79,6 +79,7 @@ final class EarlyBootstrapRegistrationTest {
                 "ru/feytox/etherology/registry/item/SharedFoodItems",
                 "ru/feytox/etherology/registry/item/SharedToolItems",
                 "ru/feytox/etherology/registry/item/SharedLensItems",
+                "ru/feytox/etherology/registry/item/SharedPrimoShardItems",
                 "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes",
                 "ru/feytox/etherology/registry/item/EItems"
         );
@@ -91,6 +92,7 @@ final class EarlyBootstrapRegistrationTest {
                         "ru/feytox/etherology/registry/item/SharedFoodItems#register",
                         "ru/feytox/etherology/registry/item/SharedToolItems#register",
                         "ru/feytox/etherology/registry/item/SharedLensItems#register",
+                        "ru/feytox/etherology/registry/item/SharedPrimoShardItems#register",
                         "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes#register",
                         "ru/feytox/etherology/registry/item/EItems#registerItems"
                 ),

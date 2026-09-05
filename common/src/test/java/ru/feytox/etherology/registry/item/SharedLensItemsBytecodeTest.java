@@ -149,7 +149,7 @@ final class SharedLensItemsBytecodeTest {
     }
 
     @Test
-    void attachesOnceAfterToolItemsAndBeforeAlchemyRecipes() throws IOException {
+    void attachesOnceAfterToolItemsAndBeforePrimoShardItems() throws IOException {
         List<String> invocations = methodInvocations(
                 classReader(BOOTSTRAP),
                 "initialize"
@@ -157,14 +157,14 @@ final class SharedLensItemsBytecodeTest {
         String toolRegistration =
                 "ru/feytox/etherology/registry/item/SharedToolItems#register()V";
         String lensRegistration = OWNER + "#register()V";
-        String alchemyRegistration =
-                "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes"
+        String primoShardRegistration =
+                "ru/feytox/etherology/registry/item/SharedPrimoShardItems"
                         + "#register()V";
         int lensIndex = invocations.indexOf(lensRegistration);
 
         assertTrue(lensIndex > 0);
         assertEquals(toolRegistration, invocations.get(lensIndex - 1));
-        assertEquals(alchemyRegistration, invocations.get(lensIndex + 1));
+        assertEquals(primoShardRegistration, invocations.get(lensIndex + 1));
         assertEquals(
                 1,
                 invocations.stream().filter(lensRegistration::equals).count()

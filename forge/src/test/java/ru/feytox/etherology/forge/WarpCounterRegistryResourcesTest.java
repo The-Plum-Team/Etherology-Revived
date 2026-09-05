@@ -38,6 +38,27 @@ final class WarpCounterRegistryResourcesTest {
 
     private static final String ITEM_ID = "warp_counter";
     private static final String ITEM_FIELD = "WARP_COUNTER";
+    private static final List<String> TOOL_FIELDS = List.of(
+            ITEM_FIELD, "EBONY_AXE", "EBONY_PICKAXE", "EBONY_HOE",
+            "EBONY_SHOVEL", "EBONY_SWORD"
+    );
+    private static final List<EbonyTool> EBONY_TOOLS = List.of(
+            new EbonyTool("axe", "axes", "Ebony Axe", "Эбонитовый топор",
+                    List.of("XX", "X#", " #"),
+                    "27c5ade42ef0c8c051b6b07f4845ef6443b9289060a55d171e98b2279a27ca91"),
+            new EbonyTool("pickaxe", "pickaxes", "Ebony Pickaxe", "Эбонитовая кирка",
+                    List.of("XXX", " # ", " # "),
+                    "0818da3d84a80ba7771aae7321e57b2be93cb5d8131b6d8e25c586efb744a50f"),
+            new EbonyTool("hoe", "hoes", "Ebony Hoe", "Эбонитовая мотыга",
+                    List.of("XX", " #", " #"),
+                    "98b83bfd0cb3f63a545288f16271828e553cee0b0c1e3830a8c33b0c32f89ac2"),
+            new EbonyTool("shovel", "shovels", "Ebony Shovel", "Эбонитовая лопата",
+                    List.of("X", "#", "#"),
+                    "4c3fafde584706d730d0a2e88153a62fc0ac4bb230b3d9ceacb0f0e035e8e2e2"),
+            new EbonyTool("sword", "swords", "Ebony Sword", "Эбонитовый меч",
+                    List.of("X", "X", "#"),
+                    "0f65509873ed212fedf2947122ff50e41512227a9ddf7cde3a43f21d7dfbc0c8")
+    );
     private static final String SHARED_TOOL_ITEMS =
             "ru/feytox/etherology/registry/item/SharedToolItems.class";
     private static final String SHARED_TOOL_ITEMS_OWNER =
@@ -347,6 +368,155 @@ final class WarpCounterRegistryResourcesTest {
         }
     }
 
+    @Test
+    void ebonyToolsHaveOneSharedMaterialAndDeclarationOwnerInEveryArtifact()
+            throws IOException {
+        Set<String> ids = new LinkedHashSet<>();
+        EBONY_TOOLS.forEach(tool -> ids.add(tool.id()));
+        String materialEntry =
+                "ru/feytox/etherology/registry/misc/EtherToolMaterials.class";
+        for (Artifact artifact : artifacts()) {
+            try (JarFile jar = artifact.open()) {
+                assertEquals(1, jar.stream()
+                        .filter(entry -> entry.getName().equals(materialEntry)).count(),
+                        artifact.description());
+                Map<String, List<String>> ownersById = new LinkedHashMap<>();
+                for (JarEntry entry : jar.stream()
+                        .filter(value -> value.getName().endsWith(".class")).toList()) {
+                    ClassReader reader = classReader(jar, entry.getName());
+                    reader.accept(new ClassVisitor(Opcodes.ASM9) {
+                        @Override
+                        public MethodVisitor visitMethod(
+                                int access, String name, String descriptor,
+                                String signature, String[] exceptions
+                        ) {
+                            return new MethodVisitor(Opcodes.ASM9) {
+                                @Override
+                                public void visitLdcInsn(Object value) {
+                                    if (value instanceof String id && ids.contains(id)) {
+                                        ownersById.computeIfAbsent(id, ignored -> new ArrayList<>())
+                                                .add(reader.getClassName() + "#" + name);
+                                    }
+                                }
+                            };
+                        }
+                    }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+                }
+                assertEquals(ids, ownersById.keySet(), artifact.description());
+                ownersById.forEach((id, owners) -> assertEquals(
+                        List.of(SHARED_TOOL_ITEMS_OWNER + "#<clinit>"),
+                        owners, artifact.description() + ":" + id
+                ));
+            }
+        }
+    }
+
+    @Test
+    void ebonyAssetsCraftingAndToolTagsAreCanonicalAcrossBothLoaders()
+            throws IOException {
+        Path root = requiredPath("etherology.warpCounter.repositoryRoot");
+        for (EbonyTool tool : EBONY_TOOLS) {
+            String modelEntry = "assets/etherology/models/item/" + tool.id() + ".json";
+            String textureEntry = "assets/etherology/textures/item/" + tool.id() + ".png";
+            String recipeEntry = "data/etherology/recipes/" + tool.id() + ".json";
+            String advancementEntry =
+                    "data/etherology/advancements/recipes/tools/" + tool.id() + ".json";
+            String tagEntry = "data/minecraft/tags/items/" + tool.tag() + ".json";
+            Map<String, Path> resources = Map.of(
+                    modelEntry, root.resolve("src/main/generated/" + modelEntry),
+                    textureEntry, root.resolve("src/client/resources/" + textureEntry),
+                    recipeEntry, root.resolve("src/main/generated/" + recipeEntry),
+                    advancementEntry, root.resolve("src/main/generated/" + advancementEntry),
+                    tagEntry, root.resolve("src/main/generated/" + tagEntry)
+            );
+            JsonObject model = parseObject(Files.readString(resources.get(modelEntry)));
+            assertEquals(Set.of("parent", "textures"), model.keySet(), tool.id());
+            assertEquals("minecraft:item/handheld", model.get("parent").getAsString());
+            assertEquals(Set.of("layer0"), model.getAsJsonObject("textures").keySet());
+            assertEquals("etherology:item/" + tool.id(),
+                    model.getAsJsonObject("textures").get("layer0").getAsString());
+            assertEquals(tool.textureSha256(), sha256(Files.readAllBytes(resources.get(textureEntry))));
+            assertEbonyRecipe(tool, parseObject(Files.readString(resources.get(recipeEntry))));
+            assertEbonyAdvancement(tool, parseObject(Files.readString(resources.get(advancementEntry))));
+            JsonObject tag = parseObject(Files.readString(resources.get(tagEntry)));
+            assertFalse(tag.get("replace").getAsBoolean());
+            List<String> requiredIds = new ArrayList<>();
+            for (JsonElement value : tag.getAsJsonArray("values")) {
+                if (value.isJsonPrimitive()) {
+                    requiredIds.add(value.getAsString());
+                } else {
+                    assertFalse(value.getAsJsonObject().get("required").getAsBoolean());
+                }
+            }
+            assertEquals(List.of("etherology:" + tool.id()), requiredIds);
+
+            for (Artifact artifact : artifacts()) {
+                try (JarFile jar = artifact.open()) {
+                    for (Map.Entry<String, Path> resource : resources.entrySet()) {
+                        assertResource(artifact, jar, resource.getKey(), resource.getValue(),
+                                sha256(Files.readAllBytes(resource.getValue())));
+                    }
+                    if (artifact.includesResources()) {
+                        assertEbonyName(jar, tool, ENGLISH_LANGUAGE_ENTRY, tool.english());
+                        assertEbonyName(jar, tool, RUSSIAN_LANGUAGE_ENTRY, tool.russian());
+                    }
+                }
+            }
+        }
+    }
+
+    private static void assertEbonyRecipe(EbonyTool tool, JsonObject recipe) {
+        assertEquals("minecraft:crafting_shaped", recipe.get("type").getAsString());
+        assertEquals("equipment", recipe.get("category").getAsString());
+        JsonObject key = recipe.getAsJsonObject("key");
+        assertEquals(Set.of("#", "X"), key.keySet());
+        assertEquals("minecraft:stick", key.getAsJsonObject("#").get("item").getAsString());
+        assertEquals("etherology:ebony_ingot", key.getAsJsonObject("X").get("item").getAsString());
+        List<String> pattern = new ArrayList<>();
+        recipe.getAsJsonArray("pattern").forEach(value -> pattern.add(value.getAsString()));
+        assertEquals(tool.pattern(), pattern, tool.id());
+        assertEquals(Set.of("item"), recipe.getAsJsonObject("result").keySet());
+        assertEquals("etherology:" + tool.id(),
+                recipe.getAsJsonObject("result").get("item").getAsString());
+    }
+
+    private static void assertEbonyAdvancement(EbonyTool tool, JsonObject advancement) {
+        String recipeId = "etherology:" + tool.id();
+        assertEquals("minecraft:recipes/root", advancement.get("parent").getAsString());
+        JsonObject criteria = advancement.getAsJsonObject("criteria");
+        assertEquals(Set.of("has_ebony_ingot", "has_the_recipe"), criteria.keySet());
+        JsonObject unlock = criteria.getAsJsonObject("has_the_recipe");
+        assertEquals("minecraft:recipe_unlocked", unlock.get("trigger").getAsString());
+        assertEquals(recipeId, unlock.getAsJsonObject("conditions").get("recipe").getAsString());
+        JsonObject inventory = criteria.getAsJsonObject("has_ebony_ingot");
+        assertEquals("minecraft:inventory_changed", inventory.get("trigger").getAsString());
+        JsonArray ingredients = inventory.getAsJsonObject("conditions").getAsJsonArray("items");
+        assertEquals(1, ingredients.size());
+        assertEquals("etherology:ebony_ingot", ingredients.get(0).getAsJsonObject()
+                .getAsJsonArray("items").get(0).getAsString());
+        JsonArray rewards = advancement.getAsJsonObject("rewards").getAsJsonArray("recipes");
+        assertEquals(1, rewards.size());
+        assertEquals(recipeId, rewards.get(0).getAsString());
+    }
+
+    private static void assertEbonyName(
+            JarFile jar, EbonyTool tool, String entry, String expected
+    ) throws IOException {
+        try (var stream = jar.getInputStream(jar.getJarEntry(entry))) {
+            JsonObject language = parseObject(new String(stream.readAllBytes(), StandardCharsets.UTF_8));
+            assertEquals(expected, language.get("item.etherology." + tool.id()).getAsString());
+        }
+    }
+
+    private record EbonyTool(
+            String suffix, String tag, String english, String russian,
+            List<String> pattern, String textureSha256
+    ) {
+        String id() {
+            return "ebony_" + suffix;
+        }
+    }
+
     private static void assertSharedOwnerShapeAndOwnership(
             String description,
             ClassReader reader
@@ -449,7 +619,9 @@ final class WarpCounterRegistryResourcesTest {
 
         assertTrue((classAccess[0] & Opcodes.ACC_PUBLIC) != 0, description);
         assertTrue((classAccess[0] & Opcodes.ACC_FINAL) != 0, description);
-        assertEquals(List.of("ITEMS", ITEM_FIELD), new ArrayList<>(fields.keySet()),
+        List<String> expectedNames = new ArrayList<>(List.of("ITEMS"));
+        expectedNames.addAll(TOOL_FIELDS);
+        assertEquals(expectedNames, new ArrayList<>(fields.keySet()),
                 description);
         assertEquals(
                 "Lru/feytox/etherology/registry/SharedDeferredRegister;",
@@ -463,7 +635,7 @@ final class WarpCounterRegistryResourcesTest {
         );
         assertEquals(1, privateConstructors[0], description);
         assertEquals(List.of(ITEM_ID), ids, description);
-        assertEquals(1, deferredRegistrations[0], description);
+        assertEquals(6, deferredRegistrations[0], description);
         assertEquals(1, attachCalls[0], description);
         assertEquals(0, supplierGets[0], description);
         assertEquals(Set.of(), forbiddenReferences, description);
@@ -471,7 +643,7 @@ final class WarpCounterRegistryResourcesTest {
 
     private static void assertExactCanonicalFactory(ClassReader reader) {
         List<FieldInfo> fields = new ArrayList<>();
-        List<String> factoryEvents = new ArrayList<>();
+        Map<String, List<String>> eventsByMethod = new LinkedHashMap<>();
         reader.accept(new ClassVisitor(Opcodes.ASM9) {
             @Override
             public FieldVisitor visitField(
@@ -493,6 +665,8 @@ final class WarpCounterRegistryResourcesTest {
                     String signature,
                     String[] exceptions
             ) {
+                List<String> factoryEvents = new ArrayList<>();
+                eventsByMethod.put(name + descriptor, factoryEvents);
                 return new MethodVisitor(Opcodes.ASM9) {
                     @Override
                     public void visitTypeInsn(int opcode, String type) {
@@ -536,6 +710,10 @@ final class WarpCounterRegistryResourcesTest {
         }, ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
 
         assertEquals(expectedFields(), fields);
+        List<List<String>> plainItemFactories = eventsByMethod.values().stream()
+                .filter(events -> events.contains("NEW Item"))
+                .toList();
+        assertEquals(1, plainItemFactories.size());
         assertEquals(
                 List.of(
                         "NEW Item",
@@ -545,27 +723,31 @@ final class WarpCounterRegistryResourcesTest {
                         "Item$Settings#maxCount(I)Lnet/minecraft/item/Item$Settings;",
                         "Item#<init>(Lnet/minecraft/item/Item$Settings;)V"
                 ),
-                factoryEvents
+                plainItemFactories.get(0)
         );
     }
 
     private static List<FieldInfo> expectedFields() {
-        return List.of(
+        List<FieldInfo> fields = new ArrayList<>();
+        fields.add(
                 new FieldInfo(
                         Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
                         "ITEMS",
                         "Lru/feytox/etherology/registry/SharedDeferredRegister;",
                         "Lru/feytox/etherology/registry/SharedDeferredRegister"
                                 + "<Lnet/minecraft/item/Item;>;"
-                ),
-                new FieldInfo(
+                )
+        );
+        for (String field : TOOL_FIELDS) {
+            fields.add(new FieldInfo(
                         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-                        ITEM_FIELD,
+                        field,
                         "Ldev/architectury/registry/registries/RegistrySupplier;",
                         "Ldev/architectury/registry/registries/RegistrySupplier"
                                 + "<Lnet/minecraft/item/Item;>;"
-                )
-        );
+                ));
+        }
+        return fields;
     }
 
     private static void assertExactLegacyAlias(

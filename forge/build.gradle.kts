@@ -249,6 +249,33 @@ val canonicalWarpCounterDataEntries = setOf(
     "etherology/recipes/warp_counter.json",
     "etherology/advancements/recipes/tools/warp_counter.json",
 )
+val canonicalEbonyToolIds = listOf(
+    "ebony_axe", "ebony_pickaxe", "ebony_hoe", "ebony_shovel", "ebony_sword",
+)
+val canonicalEbonyToolTagDataEntries = setOf(
+    "minecraft/tags/items/axes.json",
+    "minecraft/tags/items/pickaxes.json",
+    "minecraft/tags/items/hoes.json",
+    "minecraft/tags/items/shovels.json",
+    "minecraft/tags/items/swords.json",
+)
+val canonicalEbonyToolDataEntries = canonicalEbonyToolIds.flatMap { id ->
+    listOf(
+        "etherology/recipes/$id.json",
+        "etherology/advancements/recipes/tools/$id.json",
+    )
+}.toSet() + canonicalEbonyToolTagDataEntries
+val canonicalEbonyToolResourceFiles = rootProject.files(
+    canonicalEbonyToolIds.flatMap { id ->
+        listOf(
+            rootProject.file("src/main/generated/assets/etherology/models/item/$id.json"),
+            rootProject.file("src/client/resources/assets/etherology/textures/item/$id.png"),
+        )
+    },
+    canonicalEbonyToolDataEntries.map { entry ->
+        rootProject.file("src/main/generated/data/$entry")
+    },
+)
 val canonicalAlchemyRecipeDataEntries = setOf(
     "etherology/recipes/binder.json",
     "etherology/recipes/ebony_ingot.json",
@@ -264,7 +291,8 @@ val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
     canonicalAttrahiteBlockDataEntries + canonicalSlitheriteDataEntries +
-    canonicalWarpCounterDataEntries + canonicalPedestalDataEntries +
+    canonicalWarpCounterDataEntries + canonicalEbonyToolDataEntries +
+    canonicalPedestalDataEntries +
     canonicalAlchemyRecipeDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
     .map { entry -> entry.removePrefix("data/") }
@@ -1087,6 +1115,9 @@ sourceSets {
                 include("data/$entry")
             }
             canonicalWarpCounterDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+            canonicalEbonyToolDataEntries.forEach { entry ->
                 include("data/$entry")
             }
             canonicalPedestalDataEntries.forEach { entry ->
@@ -4665,6 +4696,7 @@ tasks.named<Test>("test").configure {
     exclude("**/WarpCounterRegistryResourcesTest.class")
     exclude("**/LensFoundationCrossArtifactTest.class")
     exclude("**/UnadjustedLensRegistryResourcesTest.class")
+    exclude("**/PrimoShardRegistryResourcesTest.class")
     exclude("**/AspectFoundationCrossArtifactTest.class")
     exclude("**/PedestalCrossArtifactTest.class")
     exclude("**/AlchemyRecipeFoundationCrossArtifactTest.class")
@@ -5520,7 +5552,7 @@ val slitheriteBlockRegistryTest = tasks.register<Test>("slitheriteBlockRegistryT
 val warpCounterRegistryTest = tasks.register<Test>("warpCounterRegistryTest") {
     group = "verification"
     description =
-        "Runs exact cross-loader Warp Counter ownership and static-resource tests."
+        "Runs cross-loader shared-tool ownership, Warp Counter, and Ebony-tool resource tests."
     dependsOn(
         tasks.named("testClasses"),
         commonJar,
@@ -5566,6 +5598,8 @@ val warpCounterRegistryTest = tasks.register<Test>("warpCounterRegistryTest") {
             canonicalWarpCounterDataEntries.forEach { entry -> include(entry) }
         },
     ).withPropertyName("canonicalWarpCounterStaticResources")
+    inputs.files(canonicalEbonyToolResourceFiles)
+        .withPropertyName("canonicalEbonyToolResources")
     doFirst {
         systemProperty(
             "etherology.warpCounter.commonJar",
@@ -5818,6 +5852,121 @@ val unadjustedLensRegistryTest =
             )
             systemProperty(
                 "etherology.unadjustedLens.repositoryRoot",
+                rootProject.projectDir.absolutePath,
+            )
+        }
+    }
+
+val primoShardRegistryTest =
+    tasks.register<Test>("primoShardRegistryTest") {
+        group = "verification"
+        description =
+            "Runs exact cross-loader Primoshard ownership and static-resource tests."
+        dependsOn(
+            tasks.named("testClasses"),
+            commonJar,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            fabricShadowJar,
+            fabricRemapJar,
+            forgeShadowJar,
+        )
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        useJUnitPlatform()
+        filter {
+            includeTestsMatching(
+                "ru.feytox.etherology.forge.PrimoShardRegistryResourcesTest",
+            )
+        }
+        inputs.file(commonJar.flatMap { it.archiveFile })
+            .withPropertyName("primoShardCommonJar")
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("primoShardFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("primoShardForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("primoShardFabricDevelopmentJar")
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+            .withPropertyName("primoShardFabricProductionJar")
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+            .withPropertyName("primoShardForgeShadowJar")
+        inputs.files(
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/item/PrimoShard.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/item/" +
+                    "SharedPrimoShardItems.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/bootstrap/" +
+                    "EtherologyBootstrap.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/item/EItems.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/Etherology.java",
+            ),
+            rootProject.fileTree(
+                "src/client/resources/assets/etherology/models/item",
+            ) {
+                include("primoshard_*.json")
+            },
+            rootProject.fileTree(
+                "src/client/resources/assets/etherology/textures/item",
+            ) {
+                include("primoshard_*.png")
+            },
+            englishLanguageFile,
+            rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+            rootProject.file(
+                "common/src/main/resources/data/etherology/ether_sources/default.json",
+            ),
+            rootProject.file(
+                "common/src/main/resources/data/etherology/etherology/aspects/" +
+                    "etherology.json",
+            ),
+        ).withPropertyName("canonicalPrimoShardSourcesAndResources")
+        inputs.file(
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/item/PrimoShard.java",
+            ),
+        ).withPropertyName("forbiddenLegacyPrimoShardSource").optional()
+        doFirst {
+            systemProperty(
+                "etherology.primoShards.commonJar",
+                commonJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.primoShards.fabricTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionFabric.get(),
+                    "Fabric common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.primoShards.forgeTransformedCommonJar",
+                taskOutputJar(
+                    commonTransformProductionForge.get(),
+                    "Forge common production transform",
+                ).absolutePath,
+            )
+            systemProperty(
+                "etherology.primoShards.fabricDevelopmentJar",
+                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.primoShards.fabricProductionJar",
+                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.primoShards.forgeShadowJar",
+                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
+            )
+            systemProperty(
+                "etherology.primoShards.repositoryRoot",
                 rootProject.projectDir.absolutePath,
             )
         }
@@ -8610,12 +8759,99 @@ val validateForgeAlchemyRecipeFoundationStaticMilestone =
         ).withPropertyName("canonicalAlchemyRecipeFoundationSources")
     }
 
+val validateForgePrimoShardStaticMilestone =
+    tasks.register("validateForgePrimoShardStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates one shared four-Primoshard registry owner, exact seal mapping, " +
+                "Fabric aliases, and cross-loader static resources."
+        dependsOn(
+            validateForgeAlchemyRecipeFoundationStaticMilestone,
+            commonJar,
+            commonTest,
+            fabricTest,
+            fabricShadowJar,
+            fabricRemapJar,
+            primoShardRegistryTest,
+            commonTransformProductionFabric,
+            commonTransformProductionForge,
+            forgeShadowJar,
+            tasks.named("test"),
+        )
+        inputs.file(commonJar.flatMap { it.archiveFile })
+        inputs.files(commonTransformProductionFabric)
+            .withPropertyName("primoShardFabricTransformedCommonJar")
+        inputs.files(commonTransformProductionForge)
+            .withPropertyName("primoShardForgeTransformedCommonJar")
+        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
+        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
+        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
+        inputs.files(
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/item/PrimoShard.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/registry/item/" +
+                    "SharedPrimoShardItems.java",
+            ),
+            rootProject.file(
+                "common/src/main/java/ru/feytox/etherology/bootstrap/" +
+                    "EtherologyBootstrap.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/registry/item/EItems.java",
+            ),
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/Etherology.java",
+            ),
+            rootProject.fileTree(
+                "src/client/resources/assets/etherology/models/item",
+            ) {
+                include("primoshard_*.json")
+            },
+            rootProject.fileTree(
+                "src/client/resources/assets/etherology/textures/item",
+            ) {
+                include("primoshard_*.png")
+            },
+            englishLanguageFile,
+            rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+            rootProject.file(
+                "common/src/main/resources/data/etherology/ether_sources/default.json",
+            ),
+            rootProject.file(
+                "common/src/main/resources/data/etherology/etherology/aspects/" +
+                    "etherology.json",
+            ),
+        ).withPropertyName("canonicalPrimoShardSourcesAndResources")
+        inputs.file(
+            rootProject.file(
+                "src/main/java/ru/feytox/etherology/item/PrimoShard.java",
+            ),
+        ).withPropertyName("forbiddenLegacyPrimoShardSource").optional()
+    }
+
+val validateForgeEbonyToolsStaticMilestone =
+    tasks.register("validateForgeEbonyToolsStaticMilestone") {
+        group = "verification"
+        description =
+            "Validates the five shared vanilla Ebony tools, material statistics, " +
+                "lazy repair ingredients, crafting recipes, tags, and packaged assets."
+        dependsOn(
+            validateForgePrimoShardStaticMilestone,
+            warpCounterRegistryTest,
+            validateForgeAcceptedDataSet,
+        )
+        inputs.files(canonicalEbonyToolResourceFiles)
+            .withPropertyName("canonicalEbonyToolResources")
+    }
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeAlchemyRecipeFoundationStaticMilestone)
+        dependsOn(validateForgeEbonyToolsStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -8671,6 +8907,8 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeAspectFoundationStaticMilestone,
         validateForgePedestalStaticMilestone,
         validateForgeAlchemyRecipeFoundationStaticMilestone,
+        validateForgePrimoShardStaticMilestone,
+        validateForgeEbonyToolsStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -8679,7 +8917,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeAlchemyRecipeFoundationStaticMilestone)
+    dependsOn(validateForgeEbonyToolsStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

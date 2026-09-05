@@ -82,7 +82,8 @@ jobs:
         run: |
           ./gradlew --no-daemon :fabric:1.20.1:runDatagen
           python -B -m unittest scripts/datagen/test_verify_recipe_advancements.py
-          python -B scripts/datagen/verify_recipe_advancements.py build/datagen/1.20.1
+          python -B scripts/datagen/verify_recipe_advancements.py build/datagen/1.20.1 \
+            --dependency-jar "$GRADLE_USER_HOME/caches/fabric-loom/1.20.1/minecraft-client.jar"
       - name: Build and isolate the Fabric E2E harness
         run: >-
           ./gradlew --no-daemon

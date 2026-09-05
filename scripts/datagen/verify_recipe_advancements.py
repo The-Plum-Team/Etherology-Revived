@@ -2,7 +2,9 @@
 
 import argparse
 import json
+import re
 import sys
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -61,13 +63,38 @@ def reward_recipe_ids(advancement: dict[str, Any]) -> list[str]:
     return [value for value in values if isinstance(value, str)]
 
 
-def verify(output_root: Path) -> VerificationResult:
+def dependency_recipe_ids(path: Path) -> set[str]:
+    recipe_entry = re.compile(r"data/([a-z0-9_.-]+)/recipes/([a-z0-9_./-]+)\.json")
+    recipe_ids: set[str] = set()
+    with zipfile.ZipFile(path) as archive:
+        for entry in archive.infolist():
+            match = recipe_entry.fullmatch(entry.filename)
+            if match is None or entry.is_dir():
+                continue
+            value = json.loads(archive.read(entry))
+            if not isinstance(value, dict) or not isinstance(value.get("type"), str):
+                raise ValueError(f"invalid dependency recipe: {path}!/{entry.filename}")
+            recipe_ids.add(f"{match[1]}:{match[2]}")
+    if not recipe_ids:
+        raise ValueError(f"no dependency recipes found in {path}")
+    return recipe_ids
+
+
+def verify(
+    output_root: Path, dependency_jars: tuple[Path, ...] = ()
+) -> VerificationResult:
     data_root = output_root / "data"
     recipe_paths = sorted(data_root.glob("*/recipes/**/*.json"))
     advancement_paths = sorted(data_root.glob("*/advancements/recipes/**/*.json"))
     recipe_ids = {recipe_id(data_root, path) for path in recipe_paths}
     errors: list[str] = []
     reference_count = 0
+
+    for dependency_jar in dependency_jars:
+        try:
+            recipe_ids.update(dependency_recipe_ids(dependency_jar))
+        except (OSError, ValueError, zipfile.BadZipFile) as error:
+            errors.append(str(error))
 
     if not recipe_paths:
         errors.append(f"no generated recipes found below {output_root}")
@@ -110,15 +137,19 @@ def verify(output_root: Path) -> VerificationResult:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Verify that generated recipe advancements reference generated recipe IDs."
+        description="Verify advancement recipe references against generated and dependency data."
     )
     parser.add_argument("output", type=Path, help="Fabric datagen output root")
+    parser.add_argument(
+        "--dependency-jar", type=Path, action="append", default=[],
+        help="Read additional recipe IDs from a Minecraft or mod JAR (repeatable)",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
-    result = verify(args.output)
+    result = verify(args.output, tuple(args.dependency_jar))
     print(
         f"recipes={result.recipe_count} advancements={result.advancement_count} "
         f"references={result.reference_count} errors={len(result.errors)}"

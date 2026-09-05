@@ -730,20 +730,28 @@ val forgeAttrahiteClientEvidenceArchive =
 val forgeAttrahiteHarnessSize = 244324L
 val forgeAttrahiteHarnessSha256 =
     "9921ec314c9aa411ca1c2f9632faa1a9e05a60b62589d12a416c228bc85170b8"
-val forgeSlitheriteEvidenceVerifier =
+val forgeSlitheriteEvidenceVerifierV18 =
     rootProject.file("scripts/e2e/forge_slitherite_evidence_v18.py")
-val forgeSlitheriteEvidenceTest =
+val forgeSlitheriteEvidenceTestV18 =
     rootProject.file("scripts/e2e/test_forge_slitherite_evidence_v18.py")
 val forgeSlitheriteRunContractV18 =
     rootProject.file("scripts/e2e/forge_slitherite_run_contract_v18.py")
+val forgeSlitheriteProfileSnapshotV18 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v18.json")
+val forgeSlitheriteEvidenceVerifier =
+    rootProject.file("scripts/e2e/forge_slitherite_evidence_v19.py")
+val forgeSlitheriteEvidenceTest =
+    rootProject.file("scripts/e2e/test_forge_slitherite_evidence_v19.py")
+val forgeSlitheriteRunContractV19 =
+    rootProject.file("scripts/e2e/forge_slitherite_run_contract_v19.py")
+val forgeSlitheriteProfileSnapshotV19 =
+    rootProject.file("scripts/e2e/forge-1.20.1-profile-v19.json")
 val slitheriteClientEvidenceContract =
     rootProject.file("scripts/e2e/slitherite_client_evidence_contract_v1.py")
 val slitheriteClientEvidenceTestSupport =
     rootProject.file("scripts/e2e/slitherite_client_evidence_test_support_v1.py")
 val originalSlitheriteEvidenceVerifier =
     rootProject.file("scripts/baseline/original_slitherite_evidence_v10.py")
-val forgeSlitheriteProfileSnapshotV18 =
-    rootProject.file("scripts/e2e/forge-1.20.1-profile-v18.json")
 val forgeMixinConfig = forgeResourcesRoot.resolve("etherology.forge.mixins.json")
 
 apply(plugin = "dev.architectury.loom")
@@ -10476,7 +10484,7 @@ if (minecraftVersion == "1.20.1") {
                 rootProject.file("scripts/e2e/java_installer_supervisor.py"),
                 rootProject.file("scripts/e2e/macos_guarded_java.py"),
                 rootProject.file("scripts/baseline/macos_memory_guard.py"),
-                forgeSlitheriteRunContractV18,
+                forgeSlitheriteRunContractV19,
                 rootProject.file("scripts/e2e/forge_evidence.py"),
                 rootProject.file("release/release-matrix.json"),
                 rootProject.file("gradle.properties"),
@@ -10511,10 +10519,12 @@ if (minecraftVersion == "1.20.1") {
                 forgeAttrahiteProfileSnapshotV16,
                 forgeAttrahiteProfileSnapshotV17,
                 forgeSlitheriteProfileSnapshotV18,
+                forgeSlitheriteProfileSnapshotV19,
                 rootProject.file("scripts/e2e/forge_client.py"),
                 rootProject.file("scripts/e2e/java_installer_supervisor.py"),
                 rootProject.file("scripts/e2e/macos_guarded_java.py"),
                 forgeSlitheriteRunContractV18,
+                forgeSlitheriteRunContractV19,
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/test_java_installer_supervisor.py"),
                 rootProject.file("scripts/e2e/test_macos_guarded_java.py"),
@@ -10551,7 +10561,7 @@ if (minecraftVersion == "1.20.1") {
                 forgeForestLanternProfileSnapshotV13,
                 forgeAttrahiteProfileSnapshotV14,
                 rootProject.file("scripts/e2e/forge_client.py"),
-                forgeSlitheriteRunContractV18,
+                forgeSlitheriteRunContractV19,
                 rootProject.file("scripts/e2e/forge_evidence.py"),
                 rootProject.file("scripts/e2e/test_forge_evidence.py"),
                 rootProject.file("release/release-matrix.json"),
@@ -10637,7 +10647,7 @@ if (minecraftVersion == "1.20.1") {
                 rootProject.file("scripts/e2e/java_installer_supervisor.py"),
                 rootProject.file("scripts/e2e/macos_guarded_java.py"),
                 rootProject.file("scripts/baseline/macos_memory_guard.py"),
-                forgeSlitheriteRunContractV18,
+                forgeSlitheriteRunContractV19,
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/forge_evidence.py"),
                 rootProject.file("scripts/e2e/test_forge_evidence.py"),
@@ -10764,7 +10774,7 @@ if (minecraftVersion == "1.20.1") {
         tasks.register<Exec>("forgeSlitheriteEvidenceVerifierTest") {
             group = "verification"
             description =
-                "Runs adversarial tests for the Forge Slitherite v18 verifier."
+                "Runs adversarial tests for the Forge Slitherite v19 verifier."
             dependsOn(forgeAttrahiteBlockRegistryEvidenceVerifierTest)
             workingDir(rootProject.projectDir)
             commandLine(
@@ -10772,7 +10782,7 @@ if (minecraftVersion == "1.20.1") {
                 "-B",
                 "-m",
                 "unittest",
-                "scripts/e2e/test_forge_slitherite_evidence_v18.py",
+                "scripts/e2e/test_forge_slitherite_evidence_v19.py",
                 "scripts/e2e/test_forge_client.py",
                 "scripts/e2e/test_java_installer_supervisor.py",
                 "scripts/e2e/test_macos_guarded_java.py",
@@ -10780,6 +10790,8 @@ if (minecraftVersion == "1.20.1") {
             inputs.files(
                 forgeSlitheriteEvidenceVerifier,
                 forgeSlitheriteEvidenceTest,
+                forgeSlitheriteEvidenceVerifierV18,
+                forgeSlitheriteEvidenceTestV18,
                 slitheriteClientEvidenceContract,
                 slitheriteClientEvidenceTestSupport,
                 originalSlitheriteEvidenceVerifier,
@@ -10792,10 +10804,12 @@ if (minecraftVersion == "1.20.1") {
                 forgeAttrahiteProfileSnapshotV16,
                 forgeAttrahiteProfileSnapshotV17,
                 forgeSlitheriteProfileSnapshotV18,
+                forgeSlitheriteProfileSnapshotV19,
                 rootProject.file("scripts/e2e/forge_client.py"),
                 rootProject.file("scripts/e2e/java_installer_supervisor.py"),
                 rootProject.file("scripts/e2e/macos_guarded_java.py"),
                 forgeSlitheriteRunContractV18,
+                forgeSlitheriteRunContractV19,
                 rootProject.file("scripts/e2e/test_forge_client.py"),
                 rootProject.file("scripts/e2e/test_java_installer_supervisor.py"),
                 rootProject.file("scripts/e2e/test_macos_guarded_java.py"),
@@ -10874,15 +10888,15 @@ if (minecraftVersion == "1.20.1") {
     tasks.register("validateForgeSlitheriteClientArtifactFreeze") {
         group = "verification"
         description =
-            "Requires the final remapped Forge Slitherite v18 harness to match its run-contract pin."
+            "Requires the final remapped Forge Slitherite v19 harness to match its run-contract pin."
         dependsOn(remapE2eHarnessJar)
-        inputs.file(forgeSlitheriteRunContractV18)
-            .withPropertyName("forgeSlitheriteRunContractV18")
+        inputs.file(forgeSlitheriteRunContractV19)
+            .withPropertyName("forgeSlitheriteRunContractV19")
         inputs.file(remapE2eHarnessJar.flatMap { it.archiveFile })
             .withPropertyName("forgeSlitheriteFinalRemappedHarness")
         inputs.property(
             "forgeSlitheriteExpectedProfileId",
-            "etherology-e2e-forge-1.20.1-v18",
+            "etherology-e2e-forge-1.20.1-v19",
         )
         inputs.property(
             "forgeSlitheriteExpectedScenarioId",
@@ -10890,12 +10904,12 @@ if (minecraftVersion == "1.20.1") {
         )
 
         doLast {
-            val contractPath = forgeSlitheriteRunContractV18.toPath()
+            val contractPath = forgeSlitheriteRunContractV19.toPath()
             check(
                 Files.isRegularFile(contractPath, LinkOption.NOFOLLOW_LINKS) &&
                     !Files.isSymbolicLink(contractPath),
             ) {
-                "Forge Slitherite v18 run-contract owner is missing, linked, or irregular"
+                "Forge Slitherite v19 run-contract owner is missing, linked, or irregular"
             }
             val contractText = Files.readString(contractPath, StandardCharsets.UTF_8)
             fun requireSingleAssignment(name: String): String {
@@ -10905,43 +10919,43 @@ if (minecraftVersion == "1.20.1") {
                 )
                 val assignments = assignmentPattern.findAll(contractText).toList()
                 check(assignments.size == 1) {
-                    "Forge Slitherite v18 run contract must assign $name exactly once"
+                    "Forge Slitherite v19 run contract must assign $name exactly once"
                 }
                 return assignments.single().groupValues[1].trim()
             }
 
             check(
                 requireSingleAssignment("PROFILE_ID") ==
-                    "\"etherology-e2e-forge-1.20.1-v18\"",
+                    "\"etherology-e2e-forge-1.20.1-v19\"",
             ) {
-                "Forge Slitherite v18 run-contract profile id changed"
+                "Forge Slitherite v19 run-contract profile id changed"
             }
             check(
                 requireSingleAssignment("SCENARIO_ID") ==
                     "\"slitherite-block-registry\"",
             ) {
-                "Forge Slitherite v18 run-contract scenario id changed"
+                "Forge Slitherite v19 run-contract scenario id changed"
             }
             val harnessSizeLiteral = requireSingleAssignment("HARNESS_SIZE")
             val harnessSha256Literal = requireSingleAssignment("HARNESS_SHA256")
             check(harnessSizeLiteral != "None" || harnessSha256Literal != "None") {
-                "Forge Slitherite v18 harness size and SHA-256 remain unpinned"
+                "Forge Slitherite v19 harness size and SHA-256 remain unpinned"
             }
             check(harnessSizeLiteral != "None" && harnessSha256Literal != "None") {
-                "Forge Slitherite v18 harness size and SHA-256 must be pinned together"
+                "Forge Slitherite v19 harness size and SHA-256 must be pinned together"
             }
             check(Regex("[1-9][0-9]*").matches(harnessSizeLiteral)) {
-                "Forge Slitherite v18 HARNESS_SIZE must be one positive decimal integer"
+                "Forge Slitherite v19 HARNESS_SIZE must be one positive decimal integer"
             }
             val expectedHarnessSize = harnessSizeLiteral.toLongOrNull()
             check(expectedHarnessSize != null && expectedHarnessSize > 0L) {
-                "Forge Slitherite v18 HARNESS_SIZE exceeds the supported integer range"
+                "Forge Slitherite v19 HARNESS_SIZE exceeds the supported integer range"
             }
             val harnessSha256Match = Regex(
                 "(?:\"([0-9a-f]{64})\"|'([0-9a-f]{64})')",
             ).matchEntire(harnessSha256Literal)
             check(harnessSha256Match != null) {
-                "Forge Slitherite v18 HARNESS_SHA256 must be 64 lowercase hexadecimal characters"
+                "Forge Slitherite v19 HARNESS_SHA256 must be 64 lowercase hexadecimal characters"
             }
             val expectedHarnessSha256 = harnessSha256Match.groupValues
                 .drop(1)
@@ -10952,7 +10966,7 @@ if (minecraftVersion == "1.20.1") {
                 Files.isRegularFile(harnessPath, LinkOption.NOFOLLOW_LINKS) &&
                     !Files.isSymbolicLink(harnessPath),
             ) {
-                "Final remapped Forge Slitherite v18 harness is missing, linked, or irregular"
+                "Final remapped Forge Slitherite v19 harness is missing, linked, or irregular"
             }
             val harnessBytes = Files.readAllBytes(harnessPath)
             val actualHarnessSha256 = MessageDigest.getInstance("SHA-256")
@@ -10964,7 +10978,7 @@ if (minecraftVersion == "1.20.1") {
                 harnessBytes.size.toLong() == expectedHarnessSize &&
                     actualHarnessSha256 == expectedHarnessSha256,
             ) {
-                "Final remapped Forge Slitherite v18 harness differs from its run-contract pin"
+                "Final remapped Forge Slitherite v19 harness differs from its run-contract pin"
             }
         }
     }

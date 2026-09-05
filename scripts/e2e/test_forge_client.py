@@ -194,7 +194,10 @@ class ConfigurationTests(unittest.TestCase):
         descriptor = forge_client.profile_descriptor(configuration)
         manifest_provenance = descriptor["profile_manifest"]
 
-        self.assertEqual("etherology-e2e-forge-1.20.1-v18", profile["id"])
+        self.assertEqual(
+            forge_client.slitherite_run_contract.PROFILE_ID,
+            profile["id"],
+        )
         self.assertNotEqual(
             "etherology-e2e-fabric-1.20.1-v23", profile["runtime_directory"]
         )
@@ -216,10 +219,14 @@ class ConfigurationTests(unittest.TestCase):
             manifest_provenance["sha256"],
         )
 
-    def test_active_profile_exactly_matches_v18_snapshot_and_preserves_prior_versions(
+    def test_active_profile_exactly_matches_v19_snapshot_and_preserves_prior_versions(
         self,
     ) -> None:
         active_profile = forge_client.REPOSITORY_ROOT / "scripts/e2e/forge-1.20.1-profile.json"
+        v19_snapshot = (
+            forge_client.REPOSITORY_ROOT
+            / "scripts/e2e/forge-1.20.1-profile-v19.json"
+        )
         v18_snapshot = (
             forge_client.REPOSITORY_ROOT
             / "scripts/e2e/forge-1.20.1-profile-v18.json"
@@ -253,7 +260,8 @@ class ConfigurationTests(unittest.TestCase):
             / "scripts/e2e/forge-1.20.1-profile-v11.json"
         )
 
-        self.assertEqual(active_profile.read_bytes(), v18_snapshot.read_bytes())
+        self.assertEqual(active_profile.read_bytes(), v19_snapshot.read_bytes())
+        self.assertNotEqual(active_profile.read_bytes(), v18_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v17_snapshot.read_bytes())
         self.assertNotEqual(v17_snapshot.read_bytes(), v16_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v15_snapshot.read_bytes())
@@ -261,6 +269,11 @@ class ConfigurationTests(unittest.TestCase):
         self.assertNotEqual(active_profile.read_bytes(), v13_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v12_snapshot.read_bytes())
         self.assertNotEqual(active_profile.read_bytes(), v11_snapshot.read_bytes())
+        self.assertEqual(3737, v19_snapshot.stat().st_size)
+        self.assertEqual(
+            "bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c",
+            forge_client.sha256_file(v19_snapshot),
+        )
         self.assertEqual(3737, v18_snapshot.stat().st_size)
         self.assertEqual(
             "16473184a6f11c74c9a18013b3473b48ea50752c47f4908b7927a297381edb3f",
@@ -798,7 +811,7 @@ class ForgeInstallerMemorySafetyTests(unittest.TestCase):
             java_path.chmod(0o700)
             operation = forge_client.InstallerOperation(
                 run_id="a" * 64,
-                profile_id="etherology-e2e-forge-1.20.1-v18",
+                profile_id=forge_client.slitherite_run_contract.PROFILE_ID,
                 controller_pid=123,
                 content=b"operation",
             )
@@ -920,7 +933,7 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
     ) -> forge_client.InstallerSupervisorController:
         operation = forge_client.InstallerOperation(
             run_id="a" * 64,
-            profile_id="etherology-e2e-forge-1.20.1-v18",
+            profile_id=forge_client.slitherite_run_contract.PROFILE_ID,
             controller_pid=321,
             content=b"operation",
         )
@@ -1449,7 +1462,7 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
             launcher_root = root / "launcher"
             operation = forge_client.InstallerOperation(
                 "a" * 64,
-                "etherology-e2e-forge-1.20.1-v18",
+                forge_client.slitherite_run_contract.PROFILE_ID,
                 321,
                 b"operation",
             )
@@ -1932,7 +1945,7 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
             java_path = root / "java"
             operation = forge_client.InstallerOperation(
                 run_id="a" * 64,
-                profile_id="etherology-e2e-forge-1.20.1-v18",
+                profile_id=forge_client.slitherite_run_contract.PROFILE_ID,
                 controller_pid=321,
                 content=b"operation",
             )
@@ -2234,7 +2247,7 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
 
 class RuntimeIsolationTests(unittest.TestCase):
     def write_guarded_process_state(self, state_root: Path) -> Path:
-        profile_id = "etherology-e2e-forge-1.20.1-v18"
+        profile_id = forge_client.slitherite_run_contract.PROFILE_ID
         runtime = state_root / "runtimes" / profile_id
         game = runtime / "game"
         game.mkdir(parents=True)
@@ -2377,7 +2390,7 @@ class RuntimeIsolationTests(unittest.TestCase):
 
             self.assertEqual(
                 (
-                    "profile_id=etherology-e2e-forge-1.20.1-v18\n"
+                    f"profile_id={forge_client.slitherite_run_contract.PROFILE_ID}\n"
                     "scenario=slitherite-block-registry\n"
                     f"controller_pid={os.getpid()}\n"
                 ),

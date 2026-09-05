@@ -57,7 +57,15 @@ before supervisor self-binding so a binding failure can be authenticated.
 
 ## Recovery disposition
 
-The global interlock may be released only after revalidating the exact archived
-bytes and inode, repeating the process-absence checks, proving the supervisor
-runtime is still empty, and preserving the staging runtime in place. v18 stays
-quarantined regardless; the next native attempt must use a new profile ID.
+The exact global interlock was safely released after revalidating its archived
+bytes, inode, digest, and owner-private mode; repeating the bound process-absence
+checks; proving the supervisor runtime remained empty and Forge output remained
+absent; and preserving the quarantined staging runtime in place. Only that
+verified interlock was released. The incomplete staging runtime remains
+quarantined, and v18 remains consumed and must never be provisioned or launched
+again.
+
+The next and current fresh Forge packaged-client identity is
+`etherology-e2e-forge-1.20.1-v19`. This recovery permits a separately bound v19
+attempt; it does not claim that v19 has been provisioned, launched, passed, or
+archived.

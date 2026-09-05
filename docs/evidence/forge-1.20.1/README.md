@@ -5,13 +5,26 @@ clients and a dedicated server on the baseline Mac. Every run used a new
 repository-owned profile under `scripts/e2e/.state/`; none read, modified, or
 derived data from an external launcher profile.
 
+The active mutable packaged-client contract is the fresh,
+never-provisioned `etherology-e2e-forge-1.20.1-v19` Slitherite profile. Its
+tracked manifest and v19 snapshot are byte-identical at 3,737 bytes with
+SHA-256
+`bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c`.
+It has no final runtime, launch-attempt marker, report, screenshots, or archive,
+and no native v19 success is claimed. The prior v18 client identity is
+quarantined and permanently consumed after its
+[pre-Java provisioning failure](provisioning-v18-pre-java-failure/); it must
+never be provisioned or launched again. Its exact retained installer interlock
+was safely released only after authenticated identity, byte, inode, mode, and
+process-absence checks while preserving the quarantined staging runtime.
+
 The active mutable dedicated-server contract is the blocked,
 never-provisioned v20 Slitherite profile. It has no runtime, launch-attempt
 marker, or archive in this directory. The immutable
 [`attrahite-block-registry-server-v19`](attrahite-block-registry-server-v19)
 archive remains the latest accepted cumulative dedicated-server evidence.
 
-## Current Attrahite packaged client (v17)
+## Latest accepted Attrahite packaged client (v17)
 
 The one-shot `etherology-e2e-forge-1.20.1-v17` profile ran the packaged
 `attrahite-block-registry` scenario in a fresh integrated world. The report
@@ -76,7 +89,8 @@ python3 -B scripts/e2e/forge_attrahite_evidence_v17.py \
 This is a bounded block-family, loot, recipe, rendering, and persistence proof;
 it does not establish natural Attrahite generation. The v17 identity is
 permanently consumed and must not be provisioned, staged, checked, or launched
-again.
+again. It remains the latest accepted Forge packaged-client archive while the
+fresh v19 contract has no native evidence.
 
 ## Forest Lantern dedicated server (v16)
 

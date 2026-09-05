@@ -456,16 +456,21 @@ The Forge lane is a separate repository-owned profile described by
 `forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
-an external launcher profile. The tracked launch contract is the consumed
-`etherology-e2e-forge-1.20.1-v17` profile. Its exact ordered scenarios are
-`ethereal-storage`, `ethereal-channel`, `forest-lantern`, and
-`attrahite-block-registry`; selection defaults to storage. v17 passed the native
-Attrahite capture with 91 of 91 assertions, two unedited 1920x1080
-framebuffers, strict stopped-live verification, archive sealing, and
-archive-only verification. Its accepted archive is
-`docs/evidence/forge-1.20.1/attrahite-block-registry-v17`. v13 passed the native
-Forest Lantern capture with 69 of 69 assertions, seven unedited 1920x1080
-framebuffers, and a minimum transition ratio of `0.008954`; its accepted
+an external launcher profile. The tracked launch contract is the fresh
+`etherology-e2e-forge-1.20.1-v19` profile. Its active manifest and immutable
+v19 snapshot are byte-identical at 3,737 bytes with SHA-256
+`bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c`.
+Its exact ordered scenarios are `ethereal-storage`, `ethereal-channel`,
+`forest-lantern`, `attrahite-block-registry`, and
+`slitherite-block-registry`; selection defaults to storage. v19 has not been
+provisioned or launched, and it has no native result or accepted archive.
+
+The consumed v17 profile passed the native Attrahite capture with 91 of 91
+assertions, two unedited 1920x1080 framebuffers, strict stopped-live
+verification, archive sealing, and archive-only verification. Its accepted
+archive is `docs/evidence/forge-1.20.1/attrahite-block-registry-v17`. v13 passed
+the native Forest Lantern capture with 69 of 69 assertions, seven unedited
+1920x1080 framebuffers, and a minimum transition ratio of `0.008954`; its accepted
 archive is `docs/evidence/forge-1.20.1/forest-lantern-v13`. The v13 identity is
 permanently consumed and must not be provisioned, staged, checked, or launched
 again. The v12 identity is also permanently consumed by its one native Forest
@@ -479,12 +484,22 @@ repository-owned runtime remain immutable history. The v11 profile and Channel
 archive also remain immutable.
 
 The prepared Slitherite harness retains the same standard 185-assertion
-contract used by Fabric, including all five related recipes. Its Forge native
-run is intentionally postponed: `etherology:pedestal` and
-`etherology:unadjusted_lens` require the real pedestal, alchemy, and lens
-dependency graphs, which are not yet ported. No placeholder registration or
-reduced recipe inventory is accepted as a substitute, and no v18 profile has
-been provisioned or launched.
+contract used by Fabric, including all five related recipes and their real
+pedestal, alchemy, and lens dependencies. No placeholder registration or
+reduced recipe inventory is accepted as a substitute. v19 is the next and only
+fresh Forge packaged-client identity for that native contract; preparation is
+not a provision, launch, pass, or evidence claim.
+
+The preceding v18 provisioning attempt failed before the Forge installer Java
+process was spawned because Homebrew framework Python transitioned from its
+launcher executable to its final macOS kernel image. The final v18 runtime was
+never created and Minecraft was never launched. Its incomplete staging runtime
+remains quarantined, the v18 identity is permanently consumed, and v18 must
+never be provisioned, staged, checked, or launched again. After the exact
+interlock bytes and inode were authenticated, all bound processes were proven
+absent, the supervisor runtime was proven empty, and the staging runtime was
+preserved, the global installer interlock was safely released. See the
+[v18 pre-Java provisioning failure report](../../docs/evidence/forge-1.20.1/provisioning-v18-pre-java-failure/README.md).
 
 The consumed v16 Attrahite attempt remains exact failed history and must never
 be provisioned, staged, checked, or launched again. It timed out while waiting
@@ -520,8 +535,9 @@ Repository Gradle invocations are independently constrained by
 two workers. Native commands must retain `--no-daemon --no-parallel
 --max-workers=2`; no E2E lifecycle uses an external launcher or game profile.
 
-The following is the historical one-shot v17 workflow. It is retained only as
-provenance and must not be executed again; no consumed identity may be reused:
+The following is the prepared one-shot v19 workflow. It targets only the fresh
+v19 runtime and does not describe a completed capture. No command may be
+retargeted to v18 or another consumed identity:
 
 ```bash
 python3 -B scripts/e2e/forge_client.py validate
@@ -529,7 +545,7 @@ python3 -B scripts/e2e/forge_client.py provision
 ./gradlew :forge:1.20.1:buildE2eHarness \
   --no-daemon --no-parallel --max-workers=2 --console=plain
 python3 -B scripts/e2e/forge_client.py stage
-python3 -B scripts/e2e/forge_client.py check --scenario attrahite-block-registry
+python3 -B scripts/e2e/forge_client.py check --scenario slitherite-block-registry
 ```
 
 Only `start` launches Minecraft. The lifecycle commands manage processes only
@@ -537,14 +553,14 @@ after matching the Forge version id, isolated game directory, scenario property,
 and BootstrapLauncher command:
 
 ```bash
-python3 -B scripts/e2e/forge_client.py start --scenario attrahite-block-registry
+python3 -B scripts/e2e/forge_client.py start --scenario slitherite-block-registry
 python3 -B scripts/e2e/forge_client.py status
 ```
 
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. It is never removed
-and blocks another provision, stage, check, or start for v17, including after an
-early launch failure. All consumed v11-v17 identities must never be relaunched.
+and blocks another provision, stage, check, or start for v19, including after an
+early launch failure. All consumed v11-v18 identities must never be reused.
 `status` remains available; `stop` and `stop-all-owned`
 are abort-only recovery commands, not part of successful capture publication.
 

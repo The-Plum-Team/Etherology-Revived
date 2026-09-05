@@ -27,7 +27,7 @@ import urllib.request
 import uuid
 import zipfile
 
-import forge_slitherite_run_contract_v18 as slitherite_run_contract
+import forge_slitherite_run_contract_v19 as slitherite_run_contract
 import java_installer_supervisor as installer_supervisor
 import macos_guarded_java
 from macos_guarded_java import (
@@ -785,7 +785,7 @@ def resolve_slitherite_run_scenario_id(
         raise E2EError(str(exception)) from exception
     if scenario_id not in scenario_ids(configuration):
         raise E2EError(
-            f"Forge Slitherite v18 scenario is absent from the active profile: {scenario_id}"
+            f"Forge Slitherite v19 scenario is absent from the active profile: {scenario_id}"
         )
     return scenario_id
 
@@ -3291,7 +3291,7 @@ def stage_artifacts(
     }
     verify_slitherite_harness_artifact(
         source_paths["harness"],
-        "Final Forge Slitherite v18 harness build output",
+        "Final Forge Slitherite v19 harness build output",
     )
     if len(set(source_paths.values())) != len(ARTIFACT_ROLES):
         raise E2EError("The Forge production and harness tasks resolve to the same JAR")
@@ -3305,7 +3305,7 @@ def stage_artifacts(
         verify_locked_artifacts(configuration)
         verify_slitherite_harness_artifact(
             artifact_target_path(configuration, "harness"),
-            "Staged Forge Slitherite v18 harness",
+            "Staged Forge Slitherite v19 harness",
         )
         return False, desired_lock
     target_paths = {
@@ -3350,7 +3350,7 @@ def stage_artifacts(
     verify_runtime(configuration, artifact_policy="required")
     verify_slitherite_harness_artifact(
         artifact_target_path(configuration, "harness"),
-        "Staged Forge Slitherite v18 harness",
+        "Staged Forge Slitherite v19 harness",
     )
     return True, desired_lock
 
@@ -3480,7 +3480,7 @@ def verify_environment(
     verify_runtime(configuration, artifact_policy="required")
     verify_slitherite_harness_artifact(
         artifact_target_path(configuration, "harness"),
-        "Staged Forge Slitherite v18 harness",
+        "Staged Forge Slitherite v19 harness",
     )
     verify_evidence_layout(configuration)
     java_path = resolve_java_17()

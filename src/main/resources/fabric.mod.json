@@ -43,6 +43,7 @@
     ]
   },
   "mixins": [
+    "etherology.common.mixins.json",
     "etherology.mixins.json",
     {
       "config": "etherology.client.mixins.json",

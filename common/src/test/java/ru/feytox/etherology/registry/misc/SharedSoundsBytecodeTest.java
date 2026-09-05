@@ -266,6 +266,8 @@ final class SharedSoundsBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/item/SharedPatternTabletItems"
+                                + "#register()V",
                         "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",
                         "ru/feytox/etherology/registry/block/SharedPedestalBlockEntities"
                                 + "#register()V",
@@ -279,6 +281,10 @@ final class SharedSoundsBytecodeTest {
                                 + "#registerServerData()V",
                         "ru/feytox/etherology/block/forestLantern/ForestLanternBlock"
                                 + "#registerJumpEvent()V",
+                        "ru/feytox/etherology/registry/misc/LootTablesModifyRegistry"
+                                + "#registerAll()V",
+                        "ru/feytox/etherology/registry/misc/TradeOffersModificationRegistry"
+                                + "#registerAll()V",
                         "ru/feytox/etherology/bootstrap/BootstrapLifecycle#initialize"
                                 + "(Lru/feytox/etherology/bootstrap/PlatformRegistrar;)V"
                 ),

@@ -32,6 +32,7 @@ import ru.feytox.etherology.registry.item.SharedForestLanternBlockItems;
 import ru.feytox.etherology.registry.item.SharedLensItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
+import ru.feytox.etherology.registry.item.SharedPatternTabletItems;
 import ru.feytox.etherology.registry.item.SharedPedestalBlockItems;
 import ru.feytox.etherology.registry.item.SharedPrimoShardItems;
 import ru.feytox.etherology.registry.item.SharedSlitheriteBlockItems;
@@ -80,6 +81,7 @@ public class Etherology {
         SharedLensItems.register();
         SharedPrimoShardItems.register();
         SharedAlchemyRecipes.register();
+        SharedPatternTabletItems.register();
         EItems.registerItems();
         EtherEnchantments.registerAll();
         EBlocks.registerAll();

@@ -16,10 +16,12 @@ import ru.feytox.etherology.registry.item.SharedItems;
 import ru.feytox.etherology.registry.item.SharedLensItems;
 import ru.feytox.etherology.registry.item.SharedMaterialItems;
 import ru.feytox.etherology.registry.item.SharedMetalBlockItems;
+import ru.feytox.etherology.registry.item.SharedPatternTabletItems;
 import ru.feytox.etherology.registry.item.SharedPedestalBlockItems;
 import ru.feytox.etherology.registry.item.SharedPrimoShardItems;
 import ru.feytox.etherology.registry.item.SharedSlitheriteBlockItems;
 import ru.feytox.etherology.registry.item.SharedToolItems;
+import ru.feytox.etherology.registry.misc.LootTablesModifyRegistry;
 import ru.feytox.etherology.registry.misc.ResourceReloaders;
 import ru.feytox.etherology.registry.misc.SharedAlchemyRecipes;
 import ru.feytox.etherology.registry.misc.SharedEnchantments;
@@ -27,6 +29,7 @@ import ru.feytox.etherology.registry.misc.SharedGameEvents;
 import ru.feytox.etherology.registry.misc.SharedLootConditions;
 import ru.feytox.etherology.registry.misc.SharedScreenHandlers;
 import ru.feytox.etherology.registry.misc.SharedSounds;
+import ru.feytox.etherology.registry.misc.TradeOffersModificationRegistry;
 import ru.feytox.etherology.registry.particle.SharedParticleTypes;
 
 /**
@@ -68,6 +71,7 @@ public final class EtherologyBootstrap {
         SharedLensItems.register();
         SharedPrimoShardItems.register();
         SharedAlchemyRecipes.register();
+        SharedPatternTabletItems.register();
         SharedBlockEntities.register();
         SharedPedestalBlockEntities.register();
         SharedScreenHandlers.register();
@@ -78,6 +82,8 @@ public final class EtherologyBootstrap {
         SharedParticleTypes.register();
         ResourceReloaders.registerServerData();
         ForestLanternBlock.registerJumpEvent();
+        LootTablesModifyRegistry.registerAll();
+        TradeOffersModificationRegistry.registerAll();
         LIFECYCLE.initialize(registrar);
     }
 }

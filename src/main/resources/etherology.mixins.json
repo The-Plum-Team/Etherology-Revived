@@ -32,7 +32,6 @@
     "RedstoneViewMixin",
     "RedstoneWireBlockMixin",
     "ShearsItemMixin",
-    "SmithingTemplateItemAccessor",
     "StructurePoolElementTypeAccessor",
     "TagEntryAccessor",
     "TagGroupLoaderMixin",

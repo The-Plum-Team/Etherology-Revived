@@ -1,6 +1,5 @@
 package ru.feytox.etherology.item;
 
-import lombok.Getter;
 import net.minecraft.client.item.TooltipContext;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -13,7 +12,6 @@ import ru.feytox.etherology.mixin.SmithingTemplateItemAccessor;
 
 import java.util.List;
 
-@Getter
 public class PatternTabletItem extends Item {
 
     private static final Text APPLIES = Text.translatable("item.etherology.pattern_tablet.applies_to").formatted(SmithingTemplateItemAccessor.getDescriptionFormatting());
@@ -24,6 +22,11 @@ public class PatternTabletItem extends Item {
     public PatternTabletItem(StaffStyles staffStyle) {
         super(new Settings());
         this.staffStyle = staffStyle;
+    }
+
+    /** Returns the pattern applied by the Inventor Table to a selected staff part. */
+    public StaffStyles getStaffStyle() {
+        return staffStyle;
     }
 
     @Override

@@ -167,7 +167,7 @@ final class SharedAlchemyRecipesBytecodeTest {
     }
 
     @Test
-    void attachesSerializerBeforeTypeBetweenPrimoShardsAndBlockEntities()
+    void attachesSerializerBeforeTypeBetweenPrimoShardsAndPatternTablets()
             throws IOException {
         assertEquals(
                 List.of(
@@ -187,13 +187,13 @@ final class SharedAlchemyRecipesBytecodeTest {
                 "ru/feytox/etherology/registry/item/SharedPrimoShardItems"
                         + "#register()V";
         String alchemyRegistration = OWNER + "#register()V";
-        String blockEntityRegistration =
-                "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V";
+        String tabletRegistration =
+                "ru/feytox/etherology/registry/item/SharedPatternTabletItems#register()V";
         int alchemyIndex = invocations.indexOf(alchemyRegistration);
 
         assertTrue(alchemyIndex > 0);
         assertEquals(primoShardRegistration, invocations.get(alchemyIndex - 1));
-        assertEquals(blockEntityRegistration, invocations.get(alchemyIndex + 1));
+        assertEquals(tabletRegistration, invocations.get(alchemyIndex + 1));
         assertEquals(
                 1,
                 invocations.stream().filter(alchemyRegistration::equals).count()

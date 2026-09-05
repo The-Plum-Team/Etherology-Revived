@@ -81,6 +81,7 @@ final class EarlyBootstrapRegistrationTest {
                 "ru/feytox/etherology/registry/item/SharedLensItems",
                 "ru/feytox/etherology/registry/item/SharedPrimoShardItems",
                 "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes",
+                "ru/feytox/etherology/registry/item/SharedPatternTabletItems",
                 "ru/feytox/etherology/registry/item/EItems"
         );
 
@@ -94,6 +95,7 @@ final class EarlyBootstrapRegistrationTest {
                         "ru/feytox/etherology/registry/item/SharedLensItems#register",
                         "ru/feytox/etherology/registry/item/SharedPrimoShardItems#register",
                         "ru/feytox/etherology/registry/misc/SharedAlchemyRecipes#register",
+                        "ru/feytox/etherology/registry/item/SharedPatternTabletItems#register",
                         "ru/feytox/etherology/registry/item/EItems#registerItems"
                 ),
                 referencedMethods(ETHEROLOGY, "initialize", registryOwners)

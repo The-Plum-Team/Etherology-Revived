@@ -19,7 +19,7 @@ Fabric lane currently compiles the ported canonical implementation under the roo
 common sources. This is an explicit transition state while loader-neutral code is
 moved into `common` by complete vertical slices.
 
-The latest implementation adds the four canonical Primoshards and the five vanilla Ebony tools
+The shared-item implementation includes the four canonical Primoshards and the five vanilla Ebony tools
 to Common. `SharedPrimoShardItems` owns the exact Keta/Rella/Clos/Via mapping and tooltip behavior;
 `SharedToolItems` now owns the Warp Counter plus the Ebony axe, pickaxe, hoe, shovel, and sword.
 The moved `EtherToolMaterials` retains both material definitions and lazy, memoized ingot repair.
@@ -27,6 +27,17 @@ The moved `EtherToolMaterials` retains both material definitions and lazy, memoi
 lens static gates and the earlier accepted foundations. It does not claim new native gameplay
 or visual acceptance. The two Ebony recycling recipes still depend on unported armor and remain
 outside the Forge data slice; the five crafting recipes and five tool tags are included.
+
+The seven pattern tablets now have one `SharedPatternTabletItems` declaration owner, with the
+canonical `PatternTabletItem`, `StaffStyles`, and vanilla smithing-tooltip accessor in Common.
+Both loaders install the same nine-chest loot additions and apprentice-toolsmith trade; the
+trade waits for the Traditional tablet's registration through `RegistrySupplier.listen`.
+`etherology.common.mixins.json` is consumed by both loaders, while the accessor is removed from
+Fabric's loader-specific config. Loom remaps its annotations directly, without a legacy refmap.
+`validateForgePatternTabletStaticMilestone` includes the earlier shared-item gates and verifies
+ownership, aliases, acquisition wiring, remapping, and exact packaged resources. Applying a
+tablet at the Inventor Table still depends on the unported Forge staff/table graph. No new
+native tooltip, chest-generation, trade, or visual acceptance is claimed by this static slice.
 
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 and
 dedicated metal-block-registry E2E runs in real macOS clients and integrated
@@ -246,7 +257,7 @@ Compile and test the implemented shared-item foundations without claiming a rele
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:validateForgeEbonyToolsStaticMilestone \
+  :forge:1.20.1:validateForgePatternTabletStaticMilestone \
   :forge:1.20.1:validateForgeForestLanternMilestone \
   :forge:1.20.1:validateForgeForestLanternServerEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeForestLanternClientEvidenceArchiveIntegrity \

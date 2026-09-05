@@ -1050,6 +1050,7 @@ extensions.configure<ArchitectPluginExtension>("architectury") {
 
 extensions.configure<LoomGradleExtensionAPI>("loom") {
     forge {
+        mixinConfig("etherology.common.mixins.json")
         mixinConfig("etherology.forge.mixins.json")
     }
 }
@@ -1177,6 +1178,7 @@ dependencies {
 
     "testImplementation"("org.junit.jupiter:junit-jupiter:5.13.4")
     "testImplementation"("org.ow2.asm:asm:9.9")
+    "testImplementation"("org.ow2.asm:asm-tree:9.9")
     "testRuntimeOnly"("org.junit.platform:junit-platform-launcher:1.13.4")
 }
 
@@ -4697,6 +4699,7 @@ tasks.named<Test>("test").configure {
     exclude("**/LensFoundationCrossArtifactTest.class")
     exclude("**/UnadjustedLensRegistryResourcesTest.class")
     exclude("**/PrimoShardRegistryResourcesTest.class")
+    exclude("**/PatternTabletCrossArtifactTest.class")
     exclude("**/AspectFoundationCrossArtifactTest.class")
     exclude("**/PedestalCrossArtifactTest.class")
     exclude("**/AlchemyRecipeFoundationCrossArtifactTest.class")
@@ -5857,40 +5860,48 @@ val unadjustedLensRegistryTest =
         }
     }
 
+val sharedItemRegistryArtifacts = mapOf(
+    "commonJar" to commonJar.flatMap { it.archiveFile }.map { it.asFile },
+    "fabricTransformedCommonJar" to commonTransformProductionFabric.map {
+        taskOutputJar(it, "Fabric common production transform")
+    },
+    "forgeTransformedCommonJar" to commonTransformProductionForge.map {
+        taskOutputJar(it, "Forge common production transform")
+    },
+    "fabricDevelopmentJar" to fabricShadowJar.flatMap { it.archiveFile }.map { it.asFile },
+    "fabricProductionJar" to fabricRemapJar.flatMap { it.archiveFile }.map { it.asFile },
+    "forgeShadowJar" to forgeShadowJar.flatMap { it.archiveFile }.map { it.asFile },
+)
+
+fun Test.configureSharedItemArtifacts(propertyPrefix: String) {
+    dependsOn(
+        tasks.named("testClasses"), commonJar, commonTransformProductionFabric,
+        commonTransformProductionForge, fabricShadowJar, fabricRemapJar, forgeShadowJar,
+    )
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    useJUnitPlatform()
+    inputs.files(sharedItemRegistryArtifacts.values)
+        .withPropertyName("sharedItemRegistryArtifacts")
+    doFirst {
+        sharedItemRegistryArtifacts.forEach { (suffix, artifact) ->
+            systemProperty("$propertyPrefix.$suffix", artifact.get().absolutePath)
+        }
+        systemProperty("$propertyPrefix.repositoryRoot", rootProject.projectDir.absolutePath)
+    }
+}
+
 val primoShardRegistryTest =
     tasks.register<Test>("primoShardRegistryTest") {
         group = "verification"
         description =
             "Runs exact cross-loader Primoshard ownership and static-resource tests."
-        dependsOn(
-            tasks.named("testClasses"),
-            commonJar,
-            commonTransformProductionFabric,
-            commonTransformProductionForge,
-            fabricShadowJar,
-            fabricRemapJar,
-            forgeShadowJar,
-        )
-        testClassesDirs = sourceSets.test.get().output.classesDirs
-        classpath = sourceSets.test.get().runtimeClasspath
-        useJUnitPlatform()
+        configureSharedItemArtifacts("etherology.primoShards")
         filter {
             includeTestsMatching(
                 "ru.feytox.etherology.forge.PrimoShardRegistryResourcesTest",
             )
         }
-        inputs.file(commonJar.flatMap { it.archiveFile })
-            .withPropertyName("primoShardCommonJar")
-        inputs.files(commonTransformProductionFabric)
-            .withPropertyName("primoShardFabricTransformedCommonJar")
-        inputs.files(commonTransformProductionForge)
-            .withPropertyName("primoShardForgeTransformedCommonJar")
-        inputs.file(fabricShadowJar.flatMap { it.archiveFile })
-            .withPropertyName("primoShardFabricDevelopmentJar")
-        inputs.file(fabricRemapJar.flatMap { it.archiveFile })
-            .withPropertyName("primoShardFabricProductionJar")
-        inputs.file(forgeShadowJar.flatMap { it.archiveFile })
-            .withPropertyName("primoShardForgeShadowJar")
         inputs.files(
             rootProject.file(
                 "common/src/main/java/ru/feytox/etherology/item/PrimoShard.java",
@@ -5934,43 +5945,42 @@ val primoShardRegistryTest =
                 include("PrimoShard.java")
             },
         ).withPropertyName("forbiddenLegacyPrimoShardSource")
-        doFirst {
-            systemProperty(
-                "etherology.primoShards.commonJar",
-                commonJar.get().archiveFile.get().asFile.absolutePath,
-            )
-            systemProperty(
-                "etherology.primoShards.fabricTransformedCommonJar",
-                taskOutputJar(
-                    commonTransformProductionFabric.get(),
-                    "Fabric common production transform",
-                ).absolutePath,
-            )
-            systemProperty(
-                "etherology.primoShards.forgeTransformedCommonJar",
-                taskOutputJar(
-                    commonTransformProductionForge.get(),
-                    "Forge common production transform",
-                ).absolutePath,
-            )
-            systemProperty(
-                "etherology.primoShards.fabricDevelopmentJar",
-                fabricShadowJar.get().archiveFile.get().asFile.absolutePath,
-            )
-            systemProperty(
-                "etherology.primoShards.fabricProductionJar",
-                fabricRemapJar.get().archiveFile.get().asFile.absolutePath,
-            )
-            systemProperty(
-                "etherology.primoShards.forgeShadowJar",
-                forgeShadowJar.get().archiveFile.get().asFile.absolutePath,
-            )
-            systemProperty(
-                "etherology.primoShards.repositoryRoot",
-                rootProject.projectDir.absolutePath,
-            )
-        }
     }
+
+val patternTabletCrossArtifactTest = tasks.register<Test>("patternTabletCrossArtifactTest") {
+    group = "verification"
+    description = "Checks shared pattern-tablet ownership, loader Mixin wiring, and packaged assets."
+    configureSharedItemArtifacts("etherology.patternTablets")
+    filter {
+        includeTestsMatching("ru.feytox.etherology.forge.PatternTabletCrossArtifactTest")
+    }
+    inputs.files(
+        rootProject.fileTree("common/src/main/java") {
+            include("**/PatternTabletItem.java", "**/StaffStyles.java")
+            include("**/SmithingTemplateItemAccessor.java", "**/SharedPatternTabletItems.java")
+            include("**/LootTablesModifyRegistry.java", "**/TradeOffersModificationRegistry.java")
+            include("**/EtherologyBootstrap.java")
+        },
+        rootProject.fileTree("src/main/java") {
+            include("**/PatternTabletItem.java", "**/StaffStyles.java")
+            include("**/SmithingTemplateItemAccessor.java", "**/SharedPatternTabletItems.java")
+            include("**/LootTablesModifyRegistry.java", "**/TradeOffersModificationRegistry.java")
+            include("**/EItems.java", "**/Etherology.java")
+        },
+        rootProject.file("common/src/main/resources/etherology.common.mixins.json"),
+        rootProject.file("src/main/resources/fabric.mod.json"),
+        rootProject.file("src/main/resources/etherology.mixins.json"),
+        rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+            include("*_pattern_tablet.json")
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology/textures/item") {
+            include("*_pattern_tablet.png")
+        },
+        englishLanguageFile,
+        rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+        rootProject.file("common/src/main/resources/data/etherology/etherology/aspects/etherology.json"),
+    ).withPropertyName("canonicalPatternTabletSourcesAndResources")
+}
 
 val aspectFoundationCrossArtifactTest =
     tasks.register<Test>("aspectFoundationCrossArtifactTest") {
@@ -8846,12 +8856,18 @@ val validateForgeEbonyToolsStaticMilestone =
             .withPropertyName("canonicalEbonyToolResources")
     }
 
+val validateForgePatternTabletStaticMilestone = tasks.register("validateForgePatternTabletStaticMilestone") {
+    group = "verification"
+    description = "Validates the seven shared pattern tablets, tooltip accessors, loot, and trade wiring."
+    dependsOn(validateForgeEbonyToolsStaticMilestone, patternTabletCrossArtifactTest)
+}
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgeEbonyToolsStaticMilestone)
+        dependsOn(validateForgePatternTabletStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -8909,6 +8925,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgeAlchemyRecipeFoundationStaticMilestone,
         validateForgePrimoShardStaticMilestone,
         validateForgeEbonyToolsStaticMilestone,
+        validateForgePatternTabletStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -8917,7 +8934,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgeEbonyToolsStaticMilestone)
+    dependsOn(validateForgePatternTabletStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

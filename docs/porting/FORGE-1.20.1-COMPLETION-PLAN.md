@@ -61,8 +61,8 @@ milestone. Broad content migration must follow the ownership and dependency orde
 ## Audit snapshot
 
 The initial audit found 353 canonical main Java files and 211 client Java files. After the accepted
-sole-owner moves, including the Primoshard and tool-material implementation moves, the active
-canonical roots contain 284 main and 211 client files, while Common contains 124 main files,
+sole-owner moves, including Primoshards, tool materials, pattern tablets, and their acquisition hooks, the active
+canonical roots contain 279 main and 211 client files, while Common contains 130 main files,
 Forge contains 18, and the Fabric adapter module contains 12. The
 initial direct loader/vendor scan found 22 bound main owners and 64 bound client owners. In that
 initial snapshot, removing the full REI, EMI, and Fabric datagen families left 23 directly bound
@@ -129,9 +129,11 @@ Source owners:
 
 - Blocks: accepted Common `SharedMetalBlocks`; remaining `ExtraBlocksRegistry`, `DecoBlocks`,
   `EBlocks`, `DevBlocks`, and `EBlockFamilies` declarations and behavior.
-- Items: accepted Common `SharedMaterialItems`, `SharedMetalBlockItems`, `SharedFoodItems`, and
-  `SharedToolItems.WARP_COUNTER`; the remaining `EItems`, `ToolItems` declarations other than the
-  Warp Counter alias, `ArmorItems`, `DecoBlockItems`, and `EItemGroups` declarations and behavior.
+- Items: Common `SharedMaterialItems`, `SharedMetalBlockItems`, `SharedFoodItems`,
+  `SharedToolItems` (Warp Counter plus five Ebony tools), `SharedLensItems`,
+  `SharedPrimoShardItems`, and `SharedPatternTabletItems`; the remaining `EItems`, `ToolItems`,
+  `ArmorItems`, `DecoBlockItems`, and `EItemGroups` declarations and behavior. Static item
+  foundations do not accept their deferred native gameplay or unported consumer graphs.
 - Other registries: accepted Common `SharedSounds`, `SharedGameEvents`,
   `SharedLootConditions`, `SharedEnchantments`, and `SharedParticleTypes`; remaining
   `EntityRegistry`, `RecipesRegistry`, `ScreenHandlersRegistry`, `EffectsRegistry`,

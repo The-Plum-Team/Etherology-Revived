@@ -48,8 +48,22 @@ includes the Ebony axe, pickaxe, hoe, shovel, and sword, backed by the Common-ow
 `EtherToolMaterials`. Both ingot repair suppliers remain lazy and memoized. Forge includes the
 five crafting recipes, advancements, and tool tags. Unported weapons stay optional in the shared
 pickaxe/sword tags, without changing Fabric membership. Armor-dependent recycling recipes and
-native tool/Primoshard acceptance remain deferred. The cumulative static entry point is
-`validateForgeEbonyToolsStaticMilestone`; it includes `validateForgePrimoShardStaticMilestone`.
+native tool/Primoshard acceptance remain deferred.
+
+The seven pattern tablets also have one Common declaration owner, `SharedPatternTabletItems`.
+Their item class, `StaffStyles`, smithing-tooltip accessor, loot additions, and trade additions
+are Common-owned. Both loaders attach the tablets before consuming them; the trade's
+`RegistrySupplier.listen` callback constructs its offer only after the Traditional tablet is
+registered. The four bastion chest variants retain Royal tablets; woodland mansions, desert
+pyramids, End cities, shipwreck treasure, and jungle temples retain Aristocrat, Ritual, Ocular,
+Heavenly, and Astronomy respectively. The original uniform roll range 0–1, count range 1–3,
+and entry weight 1 are unchanged. Apprentice toolsmiths retain the 12-emerald, one-tablet offer
+with eight uses and two experience. Hook attachment is idempotent on both loaders.
+Both artifacts consume `etherology.common.mixins.json`; the four static vanilla accessors use
+Loom's direct annotation remapping and are no longer duplicated in Fabric's own Mixin config.
+The cumulative static entry point is `validateForgePatternTabletStaticMilestone`, which includes
+the Ebony and Primoshard milestones. Its checks do not accept native chest generation, tooltip
+rendering, villager trading, or the unported Forge staff/Inventor Table pattern-application path.
 The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
@@ -796,7 +810,7 @@ E2E slice.
   metal-block, and bounded plain-food declarations;
   `ResourceReloaders` and `EtherSourceLoader` own the accepted Common Ether-source data path. The
   other temporary catalogs have not yet converged into the authoritative registry spine.
-- The canonical initializer remains in the 284-file canonical main source graph. Direct loader imports
+- The canonical initializer remains in the 279-file canonical main source graph. Direct loader imports
   and their transitive ownership closure still require per-slice decisions as classes move to
   Common; the initial audit's raw import counts are no longer treated as a current snapshot.
 - The canonical initializer directly reaches unported loader APIs for dynamic registries, the

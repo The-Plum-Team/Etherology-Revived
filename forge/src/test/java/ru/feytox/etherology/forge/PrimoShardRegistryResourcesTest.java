@@ -10,6 +10,7 @@ import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import ru.feytox.etherology.forge.ItemRegistryTestArtifacts.Artifact;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -942,45 +943,7 @@ final class PrimoShardRegistryResourcesTest {
     }
 
     private static List<Artifact> artifacts() throws IOException {
-        return List.of(
-                artifact("commonJar", "common JAR", false, false),
-                artifact(
-                        "fabricTransformedCommonJar",
-                        "Fabric-transformed common JAR",
-                        false,
-                        false
-                ),
-                artifact(
-                        "forgeTransformedCommonJar",
-                        "Forge-transformed common JAR",
-                        false,
-                        false
-                ),
-                artifact(
-                        "fabricDevelopmentJar",
-                        "Fabric development JAR",
-                        true,
-                        true
-                ),
-                artifact(
-                        "fabricProductionJar",
-                        "Fabric remapped production JAR",
-                        true,
-                        true
-                ),
-                artifact("forgeShadowJar", "Forge shadow JAR", true, false)
-        );
-    }
-
-    private static Artifact artifact(
-            String suffix,
-            String description,
-            boolean includesAssets,
-            boolean fabricApplication
-    ) throws IOException {
-        Path path = requiredPath("etherology.primoShards." + suffix);
-        requireRegularFile(path);
-        return new Artifact(path, description, includesAssets, fabricApplication);
+        return ItemRegistryTestArtifacts.load("etherology.primoShards");
     }
 
     private static Map<String, PrimoShardResource> primoShards() {
@@ -1059,15 +1022,4 @@ final class PrimoShardRegistryResourcesTest {
     ) {
     }
 
-    private record Artifact(
-            Path path,
-            String description,
-            boolean includesAssets,
-            boolean fabricApplication
-    ) {
-
-        private JarFile open() throws IOException {
-            return new JarFile(path.toFile());
-        }
-    }
 }

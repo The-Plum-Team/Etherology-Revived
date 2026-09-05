@@ -30,6 +30,14 @@ jobs:
           scripts/e2e/test_evidence.py
           scripts/e2e/test_forge_client.py
           scripts/e2e/test_forge_evidence.py
+          scripts/e2e/test_forge_server.py
+          scripts/e2e/test_forge_server_anchor_integration.py
+          scripts/e2e/test_forge_server_launch_anchor.py
+          scripts/e2e/test_forge_server_launch_watchdog.py
+          scripts/e2e/test_forge_server_contract_v21.py
+          scripts/e2e/test_forge_server_slitherite_evidence_v21.py
+          scripts/e2e/test_macos_guarded_java.py
+          scripts/baseline/tests/test_macos_memory_guard.py
       - name: Validate support catalog
         run: |
           python -B -m unittest scripts/release/test_validate_support_catalog.py

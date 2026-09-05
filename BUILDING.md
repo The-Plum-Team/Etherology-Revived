@@ -46,10 +46,12 @@ nine gear inputs are now shared. The cumulative entry point is
 six textures, and the crafting/recycling resources. Native armor, repair, movement, trimming, and
 image E2E remain unverified for this slice.
 
-The last fully green CI checkpoint before the tablet and armor changes is
-[`61b6cb75`](https://github.com/The-Plum-Team/Etherology-Revived/actions/runs/33985498669):
-607 Java tests (238 Common, 175 Fabric, 194 Forge), builds, datagen, harness isolation, and the
-cumulative gates through Primoshards and Ebony tools. This checkpoint does not verify the newer slices.
+The latest fully green gameplay-code CI checkpoint is
+[`6350bbec`](https://github.com/The-Plum-Team/Etherology-Revived/actions/runs/33987631303):
+630 Java tests (240 Common, 175 Fabric, 215 Forge), builds, datagen, harness isolation, and the
+cumulative static gates through pattern tablets and Ebony armor. All 155 JUnit XML reports have
+zero failures, errors, or skips. The local Python tooling and safety suite also passed all 627
+tests without launching Java. These results do not replace native or visual acceptance.
 
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 and
 dedicated metal-block-registry E2E runs in real macOS clients and integrated

@@ -78,6 +78,12 @@ the four factories, 44 inventory models, six textures, and twelve recipe/advance
 Native equipment, movement, repair, trim application, and visual E2E remain deferred.
 The lane cannot produce or publish a release artifact.
 
+The cumulative implementation through Ebony armor passed
+[CI run 33987631303](https://github.com/The-Plum-Team/Etherology-Revived/actions/runs/33987631303)
+at `6350bbec`: 240 Common, 175 Fabric, and 215 Forge Java tests, zero failures/errors/skips,
+plus builds, Fabric datagen, and E2E artifact isolation. The original development-class access
+failure and the three outdated bootstrap-order expectations are resolved in that checkpoint.
+
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
 `EtherologyBootstrap` attaches the shared block, Ether-item, metal-block, metal-block-item,
 material-item, food-item, tool-item, block-entity, screen-handler, sound-event, game-event,

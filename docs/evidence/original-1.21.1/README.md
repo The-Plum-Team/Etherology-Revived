@@ -4,17 +4,19 @@ This archive preserves native evidence from the separately isolated original
 Etherology runtime. It is the `published-0.1.7` binary reference, not the
 unbound `source-0.1.8` tree.
 
-## `pedestal-v14` — prepared, never run
+## `pedestal-v14` — accepted, permanently consumed
 
-The fresh profile
-`etherology-original-fabric-1.21.1-published-0.1.7-v14` is the sole active
-Pedestal lane. Its v1.4.3 harness retains the authoritative server drop
-assertions, exact client block-state snapshot, all five client
-block-entity/removal predicates, all 74 ordered assertions, and four required
-captures. It records transient client item-entity drop-map equality only as
-diagnostic data, so that observation cannot affect pass/fail readiness. The
-v14 runtime is absent and has never been launched. See
-[`pedestal-v14`](pedestal-v14/) for the fresh contract.
+The profile `etherology-original-fabric-1.21.1-published-0.1.7-v14` consumed
+its sole native launch on 2026-09-04. The published `0.1.7` Fabric 1.21.1
+client and v1.4.3 harness passed all 74 ordered assertions, captured four
+unedited native 1920x1080 framebuffers, and completed the full integrated-world
+restart with exact Pedestal state and inventory persistence. The accepted
+contract retains authoritative server drops, the exact client block-state
+snapshot, and all five client block-entity/removal predicates. Transient client
+item-entity drop-map equality is diagnostic only, not a pass/fail readiness
+condition. The preserved runtime must never be launched again. See
+[`pedestal-v14`](pedestal-v14/) for the immutable accepted record and its
+bounded coverage.
 
 ## `pedestal-v13` — consumed transition-mirror diagnostic
 
@@ -37,8 +39,8 @@ runtime must never be launched again.
 V13 proved the five exact client transition block/block-entity predicates, but
 its capture-readiness predicate also required a transient client item-entity
 drop map to equal the authoritative server drop map. The retained artifacts do
-not record that client map, so the mismatch's cause is unknown. The prepared
-v14 lane makes only this transient equality diagnostic while retaining the
+not record that client map, so the mismatch's cause is unknown. The accepted
+v14 successor made only this transient equality diagnostic while retaining the
 server drops, exact client block/block-entity checks, and all 74 assertions.
 
 ## `pedestal-v12` — consumed failure diagnostic
@@ -60,7 +62,7 @@ owned process group, and returned exit code `2`. There is no clean shutdown or
 controller verification, so v12 is not accepted evidence. Its compact,
 hash-bound record is under [`pedestal-v12`](pedestal-v12/). The preserved
 runtime must never be launched again. V13 later consumed its own separate
-launch and is recorded above; v14 is the fresh, never-launched successor.
+launch and is recorded above; v14 is the accepted, permanently consumed successor.
 
 ## `pedestal-v11` — consumed timeout diagnostic
 

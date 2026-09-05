@@ -128,7 +128,8 @@ client systems have been registered.
 - `validateForgeEtherSourceReloadMilestone` is an accepted predecessor gate. It requires the
   static Ether-source ownership/resource proof, the inherited registry foundation, and the frozen
   v6 native reload evidence. That archive and its v7, v10, v11, v13, and v14 successors are
-  historical now that v16 supplies the current cumulative dedicated-server proof.
+  historical, as is the later v16 Forest Lantern record; accepted Attrahite server v19 supplies
+  the current cumulative dedicated-server proof.
 - `validateForgeEnchantmentRegistryStaticMilestone` is expected to pass. It proves
   `SharedEnchantments` is the sole Common deferred owner of `etherology:peal` and
   `etherology:reflection`, preserves their exact concrete classes and properties, requires
@@ -384,10 +385,11 @@ frequency hook, and direct mutation of vanilla frequency storage.
 `SharedLootConditions` is the sole Common deferred owner of
 `etherology:random_chance_with_fortune`. Both loaders bind that ID to
 `ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer`, with exact ownership
-checked across the Common, transformed Common, Fabric, and Forge production boundaries. The
-canonical Attrahite loot-table resource remains Fabric-only because the items it references have
-not been ported. A probe-owned synthetic table tests the condition without packaging that resource
-for Forge.
+checked across the Common, transformed Common, Fabric, and Forge production boundaries. At the
+v4 checkpoint, the canonical Attrahite loot-table resource was Fabric-only because its referenced
+items had not yet been ported. That probe-owned synthetic table tested the condition without
+packaging the resource for Forge. The later accepted v19 dedicated-server and v17 packaged-client
+archives provide the separate bounded Attrahite gameplay/drop proof.
 
 These static artifact proofs are paired with a fresh repository-owned Loom-userdev server in the
 `etherology-e2e-forge-server-1.20.1-v4` profile. The headless `registry-foundation` scenario ran
@@ -407,7 +409,8 @@ The immutable v2 game-event-only archive remains historical evidence, and v4 sup
 registry-foundation proof. The v6 Ether-source reload and v7 enchantment-registry archives also
 remain historical evidence; v10 is the historical particle predecessor, v11 is the historical
 material-item predecessor, v13 is the historical metal-block predecessor, v14 is the historical
-food-item predecessor, and v16 is the current cumulative Forest Lantern dedicated-server proof.
+food-item predecessor, and v16 is the historical Forest Lantern dedicated-server proof. Accepted
+Attrahite server v19 is the current cumulative proof and re-proves those earlier assertions.
 
 The probe observes `ServerStoppedEvent` and atomically publishes its report before scheduling a
 probe-only terminator. That path joins the actual stopped-event server thread before `System.exit`
@@ -469,8 +472,9 @@ server-log SHA-256
 and archive-manifest SHA-256
 `6d552536f74c018ce56e238fcb5a3aacd8fa363c76293863514adf9d7bafc2e0`.
 This v6 archive remains immutable historical evidence. Its exact Ether-source and inherited
-registry assertions are re-proved by the cumulative v7, v10, v11, v13, v14, and current v16 records below.
-It does not prove furnace or machine consumption, the wider Ether network, the
+registry assertions are re-proved by the historical cumulative v7, v10, v11, v13, v14, and v16
+records and the current accepted v19 Attrahite server record.
+The v6 capture does not prove furnace or machine consumption, the wider Ether network, the
 full authoritative registry, native sound playback, Forge custom sculk
 frequency, Attrahite drops, or release readiness.
 
@@ -712,6 +716,10 @@ manifest SHA-256 is
 The prior v15 identity is consumed but unaccepted because its oracle incorrectly expected
 `opaque=false`; v16 corrected only that oracle.
 
+V16 remains immutable historical evidence. The accepted schema-11,
+310-assertion [Attrahite server v19 archive](../evidence/forge-1.20.1/attrahite-block-registry-server-v19/)
+now supplies the cumulative dedicated-server proof, including all v16 Forest Lantern checks.
+
 The fresh packaged Forge client v13 passed all 69 assertions in 575 ticks and wrote seven
 unedited 1920x1080 framebuffers after 120 stable renders each. The minimum consecutive transition
 ratio was `0.008954`; the production and harness JAR SHA-256 values are
@@ -780,7 +788,7 @@ E2E slice.
   metal-block, and bounded plain-food declarations;
   `ResourceReloaders` and `EtherSourceLoader` own the accepted Common Ether-source data path. The
   other temporary catalogs have not yet converged into the authoritative registry spine.
-- The canonical initializer remains in the 322-file Fabric main source graph. Direct loader imports
+- The canonical initializer remains in the 286-file canonical main source graph. Direct loader imports
   and their transitive ownership closure still require per-slice decisions as classes move to
   Common; the initial audit's raw import counts are no longer treated as a current snapshot.
 - The canonical initializer directly reaches unported loader APIs for dynamic registries, the

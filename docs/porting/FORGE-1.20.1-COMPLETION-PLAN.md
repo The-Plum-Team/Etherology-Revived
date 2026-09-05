@@ -6,6 +6,14 @@ each slice must own a coherent mechanic, preserve the canonical registry identif
 semantics, and finish with deterministic acceptance. Every gameplay behavior must also have native
 runtime evidence before the release gate advances.
 
+The [multi-version testing policy](VERSION-MATRIX.md#testing-policy) retains the original
+published-0.1.7 and 1.20.1 foundational native evidence. Later lanes receive build, static, and
+mechanic tests while porting. After all release branches are materialized, run their batched
+visual E2E matrix on a reliable graphical macOS/self-hosted runner. Local visual reruns are
+reserved for renderer/API boundaries or failures; ordinary headless Linux CI is not
+screenshot acceptance. The source-0.1.8 tree is source/build context only, not the original
+captured runtime identity.
+
 The shared Ether item, bounded Ethereal Storage vertical, bounded Ethereal Channel foundation,
 bounded SharedSounds registry/resource milestone, bounded SharedGameEvents/SharedLootConditions
 registry/server foundation, bounded Common Ether-source reload path, and bounded
@@ -23,7 +31,7 @@ resource inventory, but does not claim native playback. SharedGameEvents closes 
 resonance declaration and both vanilla listening tags. SharedLootConditions closes the sole
 deferred `random_chance_with_fortune` declaration and serializer. One real Forge dedicated-server
 registry-foundation proof covers both registries. A separate real reload proof covers the
-Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v16
+Common-owned Ether-source listener and default data, now re-proved cumulatively by the current v19
 server record. SharedEnchantments closes the two canonical enchantment declarations, concrete
 types, and exact non-treasure tag on both loaders; enchanting applicability and the Peal/reflection
 combat mechanics are not part of that acceptance. SharedParticleTypes closes the exact 22 particle
@@ -53,8 +61,8 @@ milestone. Broad content migration must follow the ownership and dependency orde
 ## Audit snapshot
 
 The initial audit found 353 canonical main Java files and 211 client Java files. After the accepted
-sole-owner moves, the active canonical roots contain 322 main and 211 client files, while Common
-contains 60 main files, Forge contains eight, and the Fabric adapter module contains nine. The
+sole-owner moves, the active canonical roots contain 286 main and 211 client files, while Common
+contains 121 main files, Forge contains 18, and the Fabric adapter module contains 12. The
 initial direct loader/vendor scan found 22 bound main owners and 64 bound client owners. In that
 initial snapshot, removing the full REI, EMI, and Fabric datagen families left 23 directly bound
 required-client owners, and the explicit-import reverse closure from those bound roots reached 367
@@ -168,9 +176,10 @@ Accepted bounded game-event and loot-condition foundation:
   `etherology:random_chance_with_fortune`. Both loaders bind it to
   `ru.feytox.etherology.util.misc.RandomChanceWithFortuneConditionSerializer`, with exact
   ownership checked across the Common and loader artifact boundaries.
-- The canonical Attrahite block/drop graph remains Fabric-only because its full block and item set
-  has not been ported. The probe-owned synthetic table proves the condition and serializer, not
-  Attrahite gameplay or drop parity.
+- At the v4 checkpoint, the canonical Attrahite block/drop graph was Fabric-only because its
+  block and item set had not yet been ported. That probe-owned synthetic table proves the
+  condition and serializer, not Attrahite gameplay or drop parity. The later accepted v19
+  dedicated-server and v17 packaged-client archives provide the separate bounded Attrahite proof.
 - `validateForgeRegistryFoundationMilestone` combines the sound, game-event, and loot-condition
   artifact gates with current probe isolation checks, the 63 runner/verifier safety tests, and the
   immutable `registry-foundation-server-v4` evidence archive.
@@ -230,9 +239,11 @@ Accepted bounded Ether-source reload foundation:
 - The v6 archive remains immutable historical evidence for the Ether-source slice. The cumulative
   v7 enchantment-registry, v10 particle-registry, and v11 material-item archives below are
   historical; v13 is the historical metal-block predecessor, v14 is the historical food-item
-  predecessor, and v16 is the current cumulative Forest Lantern dedicated-server proof.
-- It does not prove furnace or machine consumption, the wider Ether network, the full registry,
-  native sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness.
+  predecessor, and v16 is the historical Forest Lantern dedicated-server proof. The accepted
+  [Attrahite server v19 archive](../evidence/forge-1.20.1/attrahite-block-registry-server-v19/)
+  is the current cumulative proof and re-proves those earlier assertions.
+- The v6 capture does not prove furnace or machine consumption, the wider Ether network, the full
+  registry, native sound playback, Forge custom sculk frequency, Attrahite drops, or release readiness.
 
 Accepted bounded enchantment-registry milestone:
 
@@ -695,8 +706,9 @@ Accepted bounded proof:
   after a real Forge `reload` override/addition, frozen by the historical schema-4, 72-assertion
   v6 record and re-proved cumulatively by the historical schema-5, 95-assertion v7 and schema-6,
   138-assertion v10, schema-7, 163-assertion v11, schema-8, 188-assertion v13, and schema-9,
-  219-assertion v14 records plus the current schema-10, 266-assertion v16 record. Registry
-  and tags remain stable; loot-condition registry and evaluated behavior remain stable while the
+  219-assertion v14 and schema-10, 266-assertion v16 records, plus the current schema-11,
+  310-assertion v19 record. Registry and tags remain stable; loot-condition registry and evaluated
+  behavior remain stable while the
   probe loot-table instance is replaced.
 - Shared Ether storage/pipe contracts, exact `ethereal_channel` block and block-entity IDs, storage
   endpoints, persistent direction and Ether state, and NBT reconstruction.
@@ -1039,16 +1051,18 @@ SharedMaterialItems, SharedMetalBlocks, SharedMetalBlockItems, SharedFoodItems,
 SharedForestLanternBlocks, SharedForestLanternBlockItems, and the SharedToolItems Warp Counter
 static registry/resource gate are currently positive. The v4 registry-foundation, v6 Ether-source,
 v7 enchantment, v10 particle, v11
-material-item, v13 metal-block, and v14 food-item archives remain historical evidence. The current
-v16 proof is a fresh schema-10 Forge 47.4.9 dedicated-server run with 266 of 266 cumulative
-assertions, and the Forge v13 and Fabric v24 packaged clients supply the separate accepted native
+material-item, v13 metal-block, v14 food-item, and v16 Forest Lantern archives remain historical
+evidence. The accepted v16 run passed all 266 schema-10 assertions; the latest accepted cumulative
+proof is Attrahite server v19, a schema-11 Forge 47.4.9 run with 310 of 310 assertions, including
+the four-block Attrahite contract and the earlier Forest Lantern checks. The Forge v13 and
+Fabric v24 packaged clients supply the separate accepted native
 rendering and restart-persistence boundary for Forest Lantern.
 The v12 diagnostic profile was consumed by required unported references in the packaged
 `mineable/pickaxe` and `needs_iron_tool` files; those references are now optional, while
 `needs_stone_tool` is unchanged and outside that Forge resource slice. v12 was never accepted or
-archived. The v16 proof remains narrower than multiplayer, creative-tab interaction, natural
-immature attachment before the peach-log graph, full-catalog placement/save, and combat
-acceptance. Its archive records capture-time userdev
+archived. Both v16 and the current v19 proof remain narrower than multiplayer, creative-tab
+interaction, natural immature attachment before the peach-log graph, full-catalog placement/save, and combat
+acceptance. Each archive records capture-time userdev
 observations and payload integrity; it does not cryptographically bind later sources or rebuilt
 JARs. The broader
 authoritative registry spine is the next fail-closed milestone. Enchanting applicability,

@@ -1406,5 +1406,6 @@ the superseding registry-foundation proof; v6 is the historical Ether-source
 reload proof, v7 is the historical enchantment-registry proof, and v10 is the
 historical particle-registry proof. The v11 material-item archive is the
 older material-item predecessor, v13 is the immediate historical metal-block
-predecessor, v14 is the historical food-item proof, and v16 is the current
-cumulative Forest Lantern proof.
+predecessor, v14 is the historical food-item proof, and v16 is the historical
+Forest Lantern proof. The accepted Attrahite server v19 archive is the current
+cumulative dedicated-server proof and re-proves those earlier assertions.

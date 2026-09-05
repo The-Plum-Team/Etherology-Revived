@@ -40,6 +40,15 @@ Creating a version branch consists of:
 5. Resolving resource-pack and server-data-pack formats directly against that Minecraft version.
 6. Running the catalog validator, compilation, and packaged runtime checks before claiming support.
 
+## Testing policy
+
+Retain the accepted original `published-0.1.7` Fabric 1.21.1 and 1.20.1 foundational native
+evidence. While materializing later release branches, run build, static, and mechanic tests;
+batch their per-version screenshot E2E into a final matrix after all release branches exist,
+using a reliable graphical macOS/self-hosted runner. Local visual reruns during porting are
+reserved for renderer/API boundaries or failures. Ordinary headless Linux CI does not validate
+native screenshots, and a materialized branch is not visual or release acceptance.
+
 ## Pack-format warning
 
 Pack-format values are deliberately absent from the support catalog. The architecture audit found

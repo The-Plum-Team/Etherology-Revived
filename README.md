@@ -9,6 +9,11 @@ modules. The exact branch, Java, loader, and API roadmap is tracked in
 [`release/support-catalog.json`](release/support-catalog.json) and explained in
 [`docs/porting/VERSION-MATRIX.md`](docs/porting/VERSION-MATRIX.md).
 
+The original-client behavior and screenshot baseline is the published Etherology
+`0.1.7` binary on Fabric `1.21.1`. The separately identified `source-0.1.8`
+tree supplies source/build context only; it is not the captured runtime identity.
+See the [baseline provenance](scripts/baseline/README.md#two-provenance-strata).
+
 ## Port status
 
 | Minecraft | Loader | Status |
@@ -233,14 +238,17 @@ The accepted predecessor task is
 
 The v6 Ether-source, v7 enchantment, v10 particle, v11 material-item, and v13
 metal-block and v14 food-item archives remain immutable historical evidence;
-all of their accepted states are re-proved by the cumulative v16 run. The v12 profile was
+all of their accepted states are re-proved by the latest accepted cumulative
+v19 run, which also supersedes the historical v16 Forest Lantern server proof. The v12 profile was
 consumed by a failed diagnostic launch and was never accepted or archived.
 At its checkpoint this bounded proof did not launch a second JVM or prove
 restart persistence, multiplayer, the then-deferred recipe/advancement
 resources, creative-tab interaction, client rendering/gameplay, the full
 authoritative registry, or release readiness. The
-inherited particle, enchantment, sound, sculk-frequency, Attrahite-drop, block
-interaction, and combat caveats also remain.
+inherited particle, enchantment, sound, sculk-frequency, block-interaction, and
+combat caveats remain outside those historical registry proofs. Their then-deferred
+Attrahite-drop boundary is now covered by the separate bounded v19 server and
+v17 packaged-client Attrahite evidence, not retroactively by the earlier runs.
 
 The latest accepted cumulative dedicated-server proof is the consumed
 `etherology-e2e-forge-server-1.20.1-v19` Attrahite profile. Its schema-11 report
@@ -285,9 +293,11 @@ sorted outputs were `[minecraft:gold_ingot, minecraft:stone]` for an empty tool 
 zero, and contained no `ERROR` or `FATAL` marker. This server-only proof creates
 no screenshots.
 
-The canonical Attrahite block/drop graph remains Fabric-only because the full
-block and item set has not been ported. The synthetic table proves the shared condition and
-serializer, not Attrahite gameplay or drop parity. The historical v2
+At the v4 checkpoint, the canonical Attrahite block/drop graph was Fabric-only
+because its block and item set had not yet been ported. That synthetic table
+proves the shared condition and serializer, not Attrahite gameplay or drop
+parity. The later accepted v19 server and v17 packaged-client archives supply
+the separate bounded Attrahite gameplay/drop proof. The historical v2
 game-event archive is retained, but the frozen `registry-foundation-server-v4`
 archive superseded it as the registry-foundation proof and is now retained
 alongside the latest accepted v19 cumulative Attrahite proof, historical v16

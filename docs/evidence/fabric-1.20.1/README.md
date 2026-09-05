@@ -62,10 +62,13 @@ python3 -B scripts/e2e/fabric_slitherite_evidence_v31.py \
 This is a bounded Slitherite-family registration, resource, data, interaction,
 rendering, and persistence proof. It does not establish natural generation or
 release readiness. The v31 profile is permanently consumed and must never be
-provisioned, staged, checked, or launched again. A native Forge counterpart is
-postponed until the real pedestal, alchemy, and lens dependency graphs are
-ported; the five-related-recipe contract must not be weakened to manufacture an
-earlier result.
+provisioned, staged, checked, or launched again. The
+[Forge packaged-client v19 counterpart](../forge-1.20.1/slitherite-block-registry-v19/)
+is now accepted with all 185 assertions, including the complete five-related-recipe
+contract and its real pedestal, alchemy, and lens dependencies. Only the
+[Forge dedicated-server v21 counterpart](../forge-1.20.1/README.md) remains
+prepared and pending; the rejected, consumed v20 server attempt is diagnostic
+history, not acceptance.
 
 ## Current Attrahite block-registry proof (v30)
 

@@ -19,6 +19,15 @@ Fabric lane currently compiles the ported canonical implementation under the roo
 common sources. This is an explicit transition state while loader-neutral code is
 moved into `common` by complete vertical slices.
 
+The latest implementation adds the four canonical Primoshards and the five vanilla Ebony tools
+to Common. `SharedPrimoShardItems` owns the exact Keta/Rella/Clos/Via mapping and tooltip behavior;
+`SharedToolItems` now owns the Warp Counter plus the Ebony axe, pickaxe, hoe, shovel, and sword.
+The moved `EtherToolMaterials` retains both material definitions and lazy, memoized ingot repair.
+`validateForgeEbonyToolsStaticMilestone` includes the Primoshard, alchemy, pedestal, aspect, and
+lens static gates and the earlier accepted foundations. It does not claim new native gameplay
+or visual acceptance. The two Ebony recycling recipes still depend on unported armor and remain
+outside the Forge data slice; the five crafting recipes and five tool tags are included.
+
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 and
 dedicated metal-block-registry E2E runs in real macOS clients and integrated
 worlds. Forge has a native JavaFML entry point,
@@ -87,17 +96,21 @@ synthetic table returned
 `[minecraft:diamond, minecraft:gold_ingot, minecraft:stone]` for Fortune I, including the mixed
 `0.99 + 0.01` condition. The server saved the world, completed normal `stop(false)`, exited zero,
 and logged no `ERROR` or `FATAL` marker. The historical v2 game-event archive remains frozen, but
-v4 superseded it as the registry-foundation proof. The canonical Attrahite block/drop graph
-remains Fabric-only because the full block and item set is not ported; this synthetic result
-proves the condition and serializer, not Attrahite
-gameplay or drop parity. No screenshots or native sound-playback evidence are claimed.
+v4 superseded it as the registry-foundation proof. At that checkpoint the canonical Attrahite
+block/drop graph was Fabric-only; this synthetic result proves the condition and serializer,
+not Attrahite gameplay or drop parity. The later accepted Forge server v19 and client v17 archives
+provide the separate bounded Attrahite proof. No screenshots or native sound-playback evidence
+are claimed by v4.
 
-The current Fabric packaged-client proof is the consumed
+The historical Fabric Forest Lantern packaged-client proof is the consumed
 `etherology-e2e-fabric-1.20.1-v24` Forest Lantern profile. It passed all 68
 assertions and produced seven unedited 1920x1080 captures spanning the empty,
 all-stage, cumulative-facing, and reopened fixtures. The strict archive and
 `:fabric:1.20.1:validateFabricForestLanternV24Milestone` both pass. Any later
-Fabric lifecycle action requires a fresh v25-or-newer identity.
+Fabric lifecycle action requires a fresh identity beyond all consumed profiles. The latest
+accepted Fabric proof is Slitherite v31: 185 assertions, two native captures, and a complete
+save/disconnect/reopen lifecycle. Its frozen archive and
+`validateFabricSlitheriteV31Milestone` are separate from later source and artifact changes.
 
 The historical packaged Fabric artifact after the metal-block rebuild was exercised by the
 dedicated `metal-block-registry` scenario in the fresh repository-owned
@@ -132,7 +145,7 @@ recipes, creative tabs, restart persistence, multiplayer, or release readiness.
 The consumed v23 profile and runtime are immutable. Read-only profile and
 archive validation remain safe. The later v24 identity is also consumed, so any
 next lifecycle action or native launch requires every active literal to advance
-to a fresh unused v25-or-newer profile.
+to a fresh unused identity beyond v31.
 The v22 Phase 0 archive remains the immutable historical packaged-startup proof:
 it passed 42 of 42 assertions, ran for 235 ticks, and captured two native
 1920x1080 screenshots with changed-pixel ratio `0.9796228780864198`, but its
@@ -172,7 +185,7 @@ The immutable v13 archive proves capture-time Loom-userdev observations and
 payload integrity only; it does not compare or cryptographically bind later
 sources or rebuilt JARs. Current static artifact checks are a separate boundary.
 
-The current cumulative Forge server proof is the consumed
+The historical Forge Forest Lantern server proof is the consumed
 `etherology-e2e-forge-server-1.20.1-v16` Forest Lantern run. Its schema-10
 report passed 266 of 266 assertions on Java 17 and Forge 47.4.9 and is frozen in
 `forest-lantern-server-v16`. The separate consumed Forge packaged-client v13
@@ -180,9 +193,11 @@ run passed 69 of 69 assertions in 575 ticks, captured seven unedited 1920x1080
 framebuffers, and persisted the exact twenty-state fixture through a full
 disconnect/reopen. Its archive is `forest-lantern-v13`. The prior Forge server
 v15 oracle and Forge client v12 harness diagnostic are consumed but unaccepted
-and must never be relaunched. Any later Forge client run requires v14 or newer.
+and must never be relaunched. Later accepted proofs are the Attrahite dedicated-server v19
+archive and the Slitherite packaged-client v19 archive. Any new client run must use an identity
+beyond all consumed client profiles; the dedicated-server v21 attempt remains pending.
 
-The current positive gate is
+The bounded Forest Lantern positive gate is
 `:forge:1.20.1:validateForgeForestLanternMilestone`; it combines the current
 static/artifact contract with both accepted Forge Forest Lantern archives.
 The release artifact remains deliberately blocked on the rest of the
@@ -191,7 +206,8 @@ work.
 
 ## Requirements
 
-- A JDK 21 or newer to run Gradle 9.6.1. Gradle compiles the Minecraft modules for Java 17.
+- A JDK 21 or newer for the Gradle build and Stonecutter plugin, plus a Java 17 Minecraft toolchain.
+  Gradle compiles the Minecraft 1.20.1 modules for Java 17. GitHub installs both JDKs explicitly.
 - Network access for the first dependency and toolchain resolution.
 - Parallel Gradle execution disabled. The project property and commands below enforce this because
   Loom/Stonecutter configuration shares generated state between the loader nodes.
@@ -226,10 +242,11 @@ bash ./gradlew --no-daemon --no-parallel \
   validateSupportCatalog
 ```
 
-Compile and test every accepted bounded Forge milestone without claiming a release artifact:
+Compile and test the implemented shared-item foundations without claiming a release artifact:
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
+  :forge:1.20.1:validateForgeEbonyToolsStaticMilestone \
   :forge:1.20.1:validateForgeForestLanternMilestone \
   :forge:1.20.1:validateForgeForestLanternServerEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeForestLanternClientEvidenceArchiveIntegrity \
@@ -242,7 +259,7 @@ The combined positive Forest Lantern task includes the accepted sound,
 game-event, loot-condition, registry-foundation, Ether-source, enchantment,
 particle, material-item, metal-block, and food-item tasks; static
 registry/resource/probe checks; every frozen predecessor archive; and the
-current v16 server plus v13 client Forest Lantern archives. It exercises
+historical v16 server plus v13 client Forest Lantern archives. It exercises
 Common, Fabric, and Forge tests, both transformed Common artifacts, the Fabric
 development and remapped production JARs, and the Forge shadow JAR. It proves
 the inherited exact 14 material-item declarations and the three exact block

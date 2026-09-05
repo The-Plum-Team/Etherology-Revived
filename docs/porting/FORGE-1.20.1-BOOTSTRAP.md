@@ -42,6 +42,14 @@ immature attachment still depends on the deferred peach-log/Golden-Forest graph.
 registration. Forge packages its complete fifteen-frame static visual set, both names, recipe,
 and advancement, while the corruption-driven predicate, sound playback and corruption graph, and
 native E2E remain deferred.
+The latest implemented static slices also share the four Primoshards and five vanilla Ebony
+tools. `SharedPrimoShardItems` preserves the exact seal mapping and lore; `SharedToolItems` now
+includes the Ebony axe, pickaxe, hoe, shovel, and sword, backed by the Common-owned
+`EtherToolMaterials`. Both ingot repair suppliers remain lazy and memoized. Forge includes the
+five crafting recipes, advancements, and tool tags. Unported weapons stay optional in the shared
+pickaxe/sword tags, without changing Fabric membership. Armor-dependent recycling recipes and
+native tool/Primoshard acceptance remain deferred. The cumulative static entry point is
+`validateForgeEbonyToolsStaticMilestone`; it includes `validateForgePrimoShardStaticMilestone`.
 The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
@@ -788,7 +796,7 @@ E2E slice.
   metal-block, and bounded plain-food declarations;
   `ResourceReloaders` and `EtherSourceLoader` own the accepted Common Ether-source data path. The
   other temporary catalogs have not yet converged into the authoritative registry spine.
-- The canonical initializer remains in the 286-file canonical main source graph. Direct loader imports
+- The canonical initializer remains in the 284-file canonical main source graph. Direct loader imports
   and their transitive ownership closure still require per-slice decisions as classes move to
   Common; the initial audit's raw import counts are no longer treated as a current snapshot.
 - The canonical initializer directly reaches unported loader APIs for dynamic registries, the

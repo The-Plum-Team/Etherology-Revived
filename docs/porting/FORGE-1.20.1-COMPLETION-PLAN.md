@@ -61,8 +61,9 @@ milestone. Broad content migration must follow the ownership and dependency orde
 ## Audit snapshot
 
 The initial audit found 353 canonical main Java files and 211 client Java files. After the accepted
-sole-owner moves, the active canonical roots contain 286 main and 211 client files, while Common
-contains 121 main files, Forge contains 18, and the Fabric adapter module contains 12. The
+sole-owner moves, including the Primoshard and tool-material implementation moves, the active
+canonical roots contain 284 main and 211 client files, while Common contains 124 main files,
+Forge contains 18, and the Fabric adapter module contains 12. The
 initial direct loader/vendor scan found 22 bound main owners and 64 bound client owners. In that
 initial snapshot, removing the full REI, EMI, and Fabric datagen families left 23 directly bound
 required-client owners, and the explicit-import reverse closure from those bound roots reached 367

@@ -5929,11 +5929,11 @@ val primoShardRegistryTest =
                     "etherology.json",
             ),
         ).withPropertyName("canonicalPrimoShardSourcesAndResources")
-        inputs.file(
-            rootProject.file(
-                "src/main/java/ru/feytox/etherology/item/PrimoShard.java",
-            ),
-        ).withPropertyName("forbiddenLegacyPrimoShardSource").optional()
+        inputs.files(
+            rootProject.fileTree("src/main/java/ru/feytox/etherology/item") {
+                include("PrimoShard.java")
+            },
+        ).withPropertyName("forbiddenLegacyPrimoShardSource")
         doFirst {
             systemProperty(
                 "etherology.primoShards.commonJar",
@@ -8824,11 +8824,11 @@ val validateForgePrimoShardStaticMilestone =
                     "etherology.json",
             ),
         ).withPropertyName("canonicalPrimoShardSourcesAndResources")
-        inputs.file(
-            rootProject.file(
-                "src/main/java/ru/feytox/etherology/item/PrimoShard.java",
-            ),
-        ).withPropertyName("forbiddenLegacyPrimoShardSource").optional()
+        inputs.files(
+            rootProject.fileTree("src/main/java/ru/feytox/etherology/item") {
+                include("PrimoShard.java")
+            },
+        ).withPropertyName("forbiddenLegacyPrimoShardSource")
     }
 
 val validateForgeEbonyToolsStaticMilestone =

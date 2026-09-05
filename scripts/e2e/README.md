@@ -456,14 +456,17 @@ The Forge lane is a separate repository-owned profile described by
 `forge-1.20.1-profile.json`. It uses Java 17, Minecraft 1.20.1, Forge 47.4.9,
 Architectury Forge 9.2.14, and GeckoLib Forge 4.7.4. Its installer and both
 runtime dependency JARs are size- and SHA-256-pinned. It never reads or changes
-an external launcher profile. The tracked launch contract is the fresh
-`etherology-e2e-forge-1.20.1-v19` profile. Its active manifest and immutable
-v19 snapshot are byte-identical at 3,737 bytes with SHA-256
+an external launcher profile. The tracked packaged-client contract is the
+consumed and accepted `etherology-e2e-forge-1.20.1-v19` Slitherite profile. Its
+active manifest and immutable v19 snapshot are byte-identical at 3,737 bytes
+with SHA-256
 `bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c`.
 Its exact ordered scenarios are `ethereal-storage`, `ethereal-channel`,
 `forest-lantern`, `attrahite-block-registry`, and
-`slitherite-block-registry`; selection defaults to storage. v19 has not been
-provisioned or launched, and it has no native result or accepted archive.
+`slitherite-block-registry`; selection defaults to storage. v19 consumed its
+one native `slitherite-block-registry` attempt and must never be provisioned,
+staged, checked, or launched again. Its stopped-live verification, archive seal,
+and archive-only verification all passed.
 
 The consumed v17 profile passed the native Attrahite capture with 91 of 91
 assertions, two unedited 1920x1080 framebuffers, strict stopped-live
@@ -483,12 +486,13 @@ cutout render type. No v12 archive was accepted, and its snapshot and
 repository-owned runtime remain immutable history. The v11 profile and Channel
 archive also remain immutable.
 
-The prepared Slitherite harness retains the same standard 185-assertion
+The accepted Slitherite harness exercised the same standard 185-assertion
 contract used by Fabric, including all five related recipes and their real
 pedestal, alchemy, and lens dependencies. No placeholder registration or
-reduced recipe inventory is accepted as a substitute. v19 is the next and only
-fresh Forge packaged-client identity for that native contract; preparation is
-not a provision, launch, pass, or evidence claim.
+reduced recipe inventory was accepted as a substitute. Any later Forge
+packaged-client attempt must roll the complete contract to a fresh v20-or-newer
+client identity; the existing v20 identity described below is the separate
+dedicated-server contract.
 
 The preceding v18 provisioning attempt failed before the Forge installer Java
 process was spawned because Homebrew framework Python transitioned from its
@@ -535,8 +539,8 @@ Repository Gradle invocations are independently constrained by
 two workers. Native commands must retain `--no-daemon --no-parallel
 --max-workers=2`; no E2E lifecycle uses an external launcher or game profile.
 
-The following is the prepared one-shot v19 workflow. It targets only the fresh
-v19 runtime and does not describe a completed capture. No command may be
+The following records the completed one-shot v19 preparation and launch
+workflow as historical provenance. None of these commands may be rerun or
 retargeted to v18 or another consumed identity:
 
 ```bash
@@ -546,21 +550,18 @@ python3 -B scripts/e2e/forge_client.py provision
   --no-daemon --no-parallel --max-workers=2 --console=plain
 python3 -B scripts/e2e/forge_client.py stage
 python3 -B scripts/e2e/forge_client.py check --scenario slitherite-block-registry
-```
-
-Only `start` launches Minecraft. The lifecycle commands manage processes only
-after matching the Forge version id, isolated game directory, scenario property,
-and BootstrapLauncher command:
-
-```bash
 python3 -B scripts/e2e/forge_client.py start --scenario slitherite-block-registry
 python3 -B scripts/e2e/forge_client.py status
 ```
 
+Only `start` launched Minecraft. The lifecycle commands managed processes only
+after matching the Forge version id, isolated game directory, scenario property,
+and BootstrapLauncher command.
+
 After read-only preflight succeeds, `start` durably reserves one profile-specific
 attempt marker before creating the client log or process. It is never removed
 and blocks another provision, stage, check, or start for v19, including after an
-early launch failure. All consumed v11-v18 identities must never be reused.
+early launch failure. All consumed v11-v19 identities must never be reused.
 `status` remains available; `stop` and `stop-all-owned`
 are abort-only recovery commands, not part of successful capture publication.
 
@@ -605,6 +606,58 @@ python3 -B scripts/e2e/forge_channel_evidence.py --scenario ethereal-channel
 python3 -B scripts/e2e/forge_forest_lantern_evidence.py --live
 python3 -B scripts/e2e/forge_attrahite_evidence_v17.py --live
 ```
+
+## Accepted Forge Slitherite evidence (v19)
+
+The packaged v19 scenario and strict verifier passed the native capture with
+185 of 185 ordered assertions and two unedited 1920x1080 composed Minecraft
+framebuffers. It proves the exact 17 block/item pairs and their 1,262 states,
+79 visual resources, 11 tags, 17 loot tables, 29 owned recipes and their 29
+advancements, and five related recipes. The related set includes the real
+`etherology:pedestal` crafting recipe and the real
+`etherology:unadjusted_lens` alchemy recipe. It also proves real `BlockItem`
+placement for every block, button and pressure-plate behavior, and exact
+fixture and loaded-data persistence after force-save, disconnect, and reopen.
+The reopened material changed-pixel ratio is `0.034870`.
+
+The stopped live runtime passed verification before its report, completion
+marker, and two PNGs were copied with preserved timestamps. Archive creation
+then bound those exact bytes to the v19 profile and staged artifact lock, and
+the archive-only verifier passed. The client memory monitor recorded a peak
+physical footprint of `4,601,877,520` bytes (about `4.286 GiB`) and peak RSS of
+`4,064,100,352` bytes (about `3.785 GiB`); it performed no enforcement.
+
+These are the exact completed publication commands. They are retained only as
+historical provenance and must not be rerun against the consumed v19 identity:
+
+```bash
+python3 -B scripts/e2e/forge_slitherite_evidence_v19.py --live
+/bin/mkdir docs/evidence/forge-1.20.1/slitherite-block-registry-v19
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v19/evidence/slitherite-block-registry/. \
+  docs/evidence/forge-1.20.1/slitherite-block-registry-v19/
+python3 -B scripts/e2e/forge_slitherite_evidence_v19.py \
+  --create-archive-manifest docs/evidence/forge-1.20.1/slitherite-block-registry-v19 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v19 \
+  --profile-manifest scripts/e2e/forge-1.20.1-profile.json
+python3 -B scripts/e2e/forge_slitherite_evidence_v19.py \
+  --archive docs/evidence/forge-1.20.1/slitherite-block-registry-v19
+```
+
+The production-JAR SHA-256 is
+`cd04317e1eca88a3009d0c64147028905af253a82e7f6122ec6523508542df56`,
+the harness-JAR SHA-256 is
+`11f6304acf46aae7b20306f537cfc8c7c3650432a33a0e26a9f828e1efbecf96`,
+the report SHA-256 is
+`57731c4f72c6b6a2c840bfccebd416ff2a174d049e0cd8f54924e177f55dad9b`,
+and the archive-manifest SHA-256 is
+`05e6441d89f4333b503277be59f7385303954ae2586d4d5759ea84ca01209e2e`.
+The initial and reopened screenshot SHA-256 values are
+`53dddd5f21cd56620c3605a6615c36c3414b9849177f6f732699f43bd98063d5`
+and
+`f6baa52571c57609d2b753e4bd70c1179bd798f1e355970ee86afb37a5db9699`.
+The v19 attempt is permanently consumed and must never be provisioned, staged,
+checked, or launched again.
 
 The accepted v17 publication validated the stopped live capture, copied only
 the report, completion marker, and two PNGs while preserving modification
@@ -1183,8 +1236,9 @@ is the historical material-item predecessor, v13 is the historical
 metal-block-registry proof, v14 is the historical food-item proof, and v16 is
 the historical Forest Lantern dedicated-server proof. The v19 Attrahite archive
 is the latest accepted cumulative dedicated-server proof; the active v20
-contract remains blocked and has no runtime or evidence. Forge client v13 is
-the separately accepted packaged-client Forest Lantern proof.
+contract remains blocked and has no runtime or evidence. Forge client v19 is
+the latest accepted packaged-client proof, while v13 remains the accepted
+historical packaged-client Forest Lantern proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:
@@ -1204,5 +1258,6 @@ python3 -B -m unittest scripts/e2e/test_forge_client.py \
   scripts/e2e/test_forge_server_material_item_evidence_v11.py \
   scripts/e2e/test_forge_server_metal_block_evidence_v12.py \
   scripts/e2e/test_forge_server_metal_block_evidence_v13.py \
-  scripts/e2e/test_forge_server_attrahite_evidence_v19.py
+  scripts/e2e/test_forge_server_attrahite_evidence_v19.py \
+  scripts/e2e/test_forge_slitherite_evidence_v19.py
 ```

@@ -738,6 +738,11 @@ val forgeSlitheriteRunContractV18 =
     rootProject.file("scripts/e2e/forge_slitherite_run_contract_v18.py")
 val forgeSlitheriteProfileSnapshotV18 =
     rootProject.file("scripts/e2e/forge-1.20.1-profile-v18.json")
+val forgeSlitheriteClientEvidenceArchive =
+    forgeChannelEvidenceRoot.resolve("slitherite-block-registry-v19")
+val forgeSlitheriteArchiveManifestSize = 2500L
+val forgeSlitheriteArchiveManifestSha256 =
+    "05e6441d89f4333b503277be59f7385303954ae2586d4d5759ea84ca01209e2e"
 val forgeSlitheriteEvidenceVerifier =
     rootProject.file("scripts/e2e/forge_slitherite_evidence_v19.py")
 val forgeSlitheriteEvidenceTest =
@@ -4140,6 +4145,68 @@ fun missingForgeAttrahiteBlockRegistryClientEvidenceMilestone(): List<String> {
     return missingConditions
 }
 
+fun missingForgeSlitheriteBlockRegistryClientEvidenceMilestone(): List<String> {
+    val missingConditions = mutableListOf<String>()
+    if (!forgeSlitheriteEvidenceVerifier.isFile
+        || Files.isSymbolicLink(forgeSlitheriteEvidenceVerifier.toPath())
+    ) {
+        missingConditions.add(
+            "strict Forge Slitherite block-registry client evidence verifier is missing",
+        )
+        return missingConditions
+    }
+
+    val archiveDirectories = forgeChannelEvidenceRoot.listFiles()
+        ?.filter { candidate ->
+            candidate.isDirectory
+                && !Files.isSymbolicLink(candidate.toPath())
+                && Regex("slitherite-block-registry-v[1-9][0-9]*")
+                    .matches(candidate.name)
+        }
+        .orEmpty()
+    if (archiveDirectories != listOf(forgeSlitheriteClientEvidenceArchive)) {
+        missingConditions.add(
+            "the exact frozen Forge Slitherite block-registry client-v19 evidence " +
+                "archive is required",
+        )
+        return missingConditions
+    }
+
+    val command = listOf(
+        "python3",
+        "-B",
+        forgeSlitheriteEvidenceVerifier.absolutePath,
+        "--archive",
+        forgeSlitheriteClientEvidenceArchive.absolutePath,
+    )
+    try {
+        val process = ProcessBuilder(command)
+            .directory(rootProject.projectDir)
+            .redirectErrorStream(true)
+            .start()
+        process.outputStream.close()
+        val output = process.inputStream.bufferedReader(StandardCharsets.UTF_8)
+            .use { reader -> reader.readText() }
+        val exitCode = process.waitFor()
+        if (exitCode != 0) {
+            val detail = output.trim().ifEmpty { "verifier exited without diagnostics" }
+            missingConditions.add(
+                "strict Forge Slitherite block-registry client evidence verification " +
+                    "failed: ${detail.take(4_000)}",
+            )
+        }
+    } catch (exception: Exception) {
+        if (exception is InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
+        missingConditions.add(
+            "strict Forge Slitherite block-registry client evidence verifier could not run: " +
+                "${exception.javaClass.simpleName}: ${exception.message}",
+        )
+    }
+    return missingConditions
+}
+
 fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
     "the shared block and item catalogs do not cover every canonical runtime ID",
     "entity, recipe, screen, effect, loot, tree, and " +
@@ -4153,6 +4220,10 @@ fun missingForgeAuthoritativeRegistrySpineMilestone(): List<String> = listOf(
 fun missingForgeAttrahiteNativeEvidenceMilestone(): List<String> =
     missingForgeAttrahiteBlockRegistryServerEvidenceMilestone() +
         missingForgeAttrahiteBlockRegistryClientEvidenceMilestone()
+
+fun missingForgeSlitheriteNativeEvidenceMilestone(): List<String> =
+    missingForgeSlitheriteBlockRegistryServerEvidenceMilestone() +
+        missingForgeSlitheriteBlockRegistryClientEvidenceMilestone()
 
 fun missingForgeReleaseReadinessMilestone(): List<String> = listOf(
     "the complete authoritative Forge gameplay registry and lifecycle graph is not accepted",
@@ -4304,11 +4375,10 @@ fun firstIncompleteForgeMilestone(
         return "Attrahite native acceptance" to missingAttrahiteNativeAcceptance
     }
 
-    val missingSlitheriteServerEvidence =
-        missingForgeSlitheriteBlockRegistryServerEvidenceMilestone()
-    if (missingSlitheriteServerEvidence.isNotEmpty()) {
-        return "Slitherite block-registry dedicated-server evidence" to
-            missingSlitheriteServerEvidence
+    val missingSlitheriteNativeAcceptance =
+        missingForgeSlitheriteNativeEvidenceMilestone()
+    if (missingSlitheriteNativeAcceptance.isNotEmpty()) {
+        return "Slitherite native acceptance" to missingSlitheriteNativeAcceptance
     }
 
     val missingRegistrySpine = missingForgeAuthoritativeRegistrySpineMilestone()
@@ -7293,6 +7363,61 @@ val validateForgeAttrahiteBlockRegistryClientEvidenceArchiveIntegrity =
         }
     }
 
+val validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity =
+    tasks.register<Exec>(
+        "validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity",
+    ) {
+        group = "verification"
+        description =
+            "Validates the immutable Forge Slitherite block-registry packaged-client v19 archive."
+        workingDir(rootProject.projectDir)
+        commandLine(
+            "python3",
+            "-B",
+            forgeSlitheriteEvidenceVerifier.absolutePath,
+            "--archive",
+            forgeSlitheriteClientEvidenceArchive.absolutePath,
+        )
+        inputs.files(
+            forgeSlitheriteEvidenceVerifier,
+            forgeSlitheriteRunContractV19,
+            forgeSlitheriteProfileSnapshotV19,
+            forgeE2eProfileManifest,
+            slitheriteClientEvidenceContract,
+            originalSlitheriteEvidenceVerifier,
+            rootProject.file("scripts/e2e/forge_client.py"),
+            rootProject.file("scripts/e2e/forge_evidence.py"),
+        )
+        inputs.dir(forgeSlitheriteClientEvidenceArchive)
+            .withPropertyName("forgeSlitheriteClientEvidenceArchive")
+
+        doFirst {
+            val archiveManifest =
+                forgeSlitheriteClientEvidenceArchive.resolve("archive-manifest.json")
+            val archiveManifestPath = archiveManifest.toPath()
+            check(
+                Files.isRegularFile(archiveManifestPath, LinkOption.NOFOLLOW_LINKS) &&
+                    !Files.isSymbolicLink(archiveManifestPath),
+            ) {
+                "Forge Slitherite client-v19 archive manifest is missing or linked"
+            }
+            val archiveManifestBytes = Files.readAllBytes(archiveManifestPath)
+            val archiveManifestDigest = MessageDigest.getInstance("SHA-256")
+                .digest(archiveManifestBytes)
+                .joinToString("") { byte ->
+                    "%02x".format(byte.toInt() and 0xff)
+                }
+            check(archiveManifestBytes.size.toLong() == forgeSlitheriteArchiveManifestSize) {
+                "Forge Slitherite client-v19 archive manifest size changed: " +
+                    archiveManifestBytes.size
+            }
+            check(archiveManifestDigest == forgeSlitheriteArchiveManifestSha256) {
+                "Forge Slitherite client-v19 archive manifest SHA-256 changed: " +
+                    archiveManifestDigest
+            }
+        }
+    }
+
 val validateForgeGameEventMilestone = tasks.register("validateForgeGameEventMilestone") {
     group = "verification"
     description = "Accepts the shared game event and exact cross-loader tags."
@@ -8050,16 +8175,16 @@ val validateForgeSlitheriteMilestone =
         group = "verification"
         description =
             "Blocks the Slitherite slice until static checks and native Forge " +
-                "dedicated-server proof are accepted."
+                "dedicated-server and packaged-client proof are accepted."
         dependsOn(
             validateForgeSlitheriteStaticMilestone,
             validateForgeSlitheriteBlockRegistryServerEvidenceArchiveIntegrity,
+            validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity,
         )
         doLast {
-            val missingConditions =
-                missingForgeSlitheriteBlockRegistryServerEvidenceMilestone()
+            val missingConditions = missingForgeSlitheriteNativeEvidenceMilestone()
             check(missingConditions.isEmpty()) {
-                "Forge $minecraftVersion Slitherite native server acceptance is " +
+                "Forge $minecraftVersion Slitherite native acceptance is " +
                     "incomplete:\n${
                         missingConditions.joinToString("\n") { condition ->
                             " - $condition"
@@ -8555,8 +8680,16 @@ tasks.register("verifyForgePortGateClosed") {
         forgeRegistryFoundationServerRunner,
         forgeRegistryFoundationServerRunnerTest,
         forgeRegistryFoundationServerRunnerTestV20,
+        forgeSlitheriteEvidenceVerifier,
+        forgeSlitheriteEvidenceTest,
+        forgeSlitheriteRunContractV19,
+        forgeSlitheriteProfileSnapshotV19,
+        forgeE2eProfileManifest,
         slitheriteClientEvidenceContract,
+        slitheriteClientEvidenceTestSupport,
         originalSlitheriteEvidenceVerifier,
+        rootProject.file("scripts/e2e/forge_client.py"),
+        rootProject.file("scripts/e2e/forge_evidence.py"),
         forgeForestLanternEvidenceVerifier,
         forgeForestLanternProfileSnapshotV12,
         forgeForestLanternProfileSnapshotV13,
@@ -8632,6 +8765,8 @@ tasks.register("verifyForgePortGateClosed") {
         inputs.dir(forgeAttrahiteClientEvidenceArchive)
             .withPropertyName("forgeAttrahiteClientEvidenceArchive")
     }
+    inputs.dir(forgeSlitheriteClientEvidenceArchive)
+        .withPropertyName("forgeSlitheriteClientEvidenceArchive")
     inputs.files(commonTransformProductionFabric)
         .withPropertyName("fabricTransformedCommonJar")
     inputs.files(commonTransformProductionForge)
@@ -10844,6 +10979,10 @@ if (minecraftVersion == "1.20.1") {
 
     validateForgeSlitheriteStaticMilestone.configure {
         dependsOn(e2eHarnessTestTask, forgeSlitheriteEvidenceVerifierTest)
+    }
+
+    validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity.configure {
+        dependsOn(forgeSlitheriteEvidenceVerifierTest)
     }
 
     val expandedE2eHarnessMetadata = mapOf(

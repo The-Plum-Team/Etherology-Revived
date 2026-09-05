@@ -1,0 +1,72 @@
+{
+  "schema": 1,
+  "kind": "etherology-forge-e2e-evidence",
+  "verification_scope": "archive-integrity-only-current-sources-and-built-artifacts-not-compared",
+  "scenario": "slitherite-block-registry",
+  "profile": {
+    "id": "etherology-e2e-forge-1.20.1-v19",
+    "manifest_path": "scripts/e2e/forge-1.20.1-profile.json",
+    "manifest_size": 3737,
+    "manifest_sha256": "bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c"
+  },
+  "runtime": {
+    "artifact_node": "forge-1.20.1",
+    "minecraft": "1.20.1",
+    "loader": "forge",
+    "loader_version": "47.4.9",
+    "java": 17,
+    "capture_kind": "composed-minecraft-framebuffer",
+    "framebuffer_width": 1920,
+    "framebuffer_height": 1080
+  },
+  "publication": {
+    "completion_marker": "reports/done.marker",
+    "verified_last_in_capture_runtime": true,
+    "archive_payloads_match_capture_runtime": true,
+    "capture_mtime_ns": {
+      "reports/report.json": 1788606732523127329,
+      "reports/done.marker": 1788606732523960506,
+      "screenshots/slitherite-block-registry-initial.png": 1788606724294220148,
+      "screenshots/slitherite-block-registry-reopened.png": 1788606732485473931
+    }
+  },
+  "capture_metadata": {
+    "path": "forge-artifact-lock.json",
+    "size": 1241,
+    "sha256": "136d8877080e3413226e2d8c1a4c1206e37f0829d9a70c0f7b74821f9b8fcfc4"
+  },
+  "assertion_count": 185,
+  "screenshot_count": 2,
+  "artifacts": {
+    "production": {
+      "mod_id": "etherology",
+      "file_name": "etherology-forge-under-test.jar",
+      "size": 1481320,
+      "sha256": "cd04317e1eca88a3009d0c64147028905af253a82e7f6122ec6523508542df56"
+    },
+    "harness": {
+      "mod_id": "etherology_e2e_harness",
+      "file_name": "etherology-forge-e2e-harness.jar",
+      "size": 350530,
+      "sha256": "11f6304acf46aae7b20306f537cfc8c7c3650432a33a0e26a9f828e1efbecf96"
+    }
+  },
+  "files": {
+    "reports/report.json": {
+      "size": 109318,
+      "sha256": "57731c4f72c6b6a2c840bfccebd416ff2a174d049e0cd8f54924e177f55dad9b"
+    },
+    "reports/done.marker": {
+      "size": 9,
+      "sha256": "37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1"
+    },
+    "screenshots/slitherite-block-registry-initial.png": {
+      "size": 569067,
+      "sha256": "53dddd5f21cd56620c3605a6615c36c3414b9849177f6f732699f43bd98063d5"
+    },
+    "screenshots/slitherite-block-registry-reopened.png": {
+      "size": 433547,
+      "sha256": "f6baa52571c57609d2b753e4bd70c1179bd798f1e355970ee86afb37a5db9699"
+    }
+  }
+}

@@ -5,14 +5,14 @@ clients and a dedicated server on the baseline Mac. Every run used a new
 repository-owned profile under `scripts/e2e/.state/`; none read, modified, or
 derived data from an external launcher profile.
 
-The active mutable packaged-client contract is the fresh,
-never-provisioned `etherology-e2e-forge-1.20.1-v19` Slitherite profile. Its
-tracked manifest and v19 snapshot are byte-identical at 3,737 bytes with
-SHA-256
+The latest tracked packaged-client contract is the consumed and accepted
+`etherology-e2e-forge-1.20.1-v19` Slitherite profile. Its tracked manifest and
+v19 snapshot are byte-identical at 3,737 bytes with SHA-256
 `bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c`.
-It has no final runtime, launch-attempt marker, report, screenshots, or archive,
-and no native v19 success is claimed. The prior v18 client identity is
-quarantined and permanently consumed after its
+Its one native attempt passed stopped-live verification, archive sealing, and
+archive-only verification. It is permanently consumed and must never be
+provisioned, staged, checked, or launched again. The prior v18 client identity
+is quarantined and permanently consumed after its
 [pre-Java provisioning failure](provisioning-v18-pre-java-failure/); it must
 never be provisioned or launched again. Its exact retained installer interlock
 was safely released only after authenticated identity, byte, inode, mode, and
@@ -24,7 +24,79 @@ marker, or archive in this directory. The immutable
 [`attrahite-block-registry-server-v19`](attrahite-block-registry-server-v19)
 archive remains the latest accepted cumulative dedicated-server evidence.
 
-## Latest accepted Attrahite packaged client (v17)
+## Latest accepted Slitherite packaged client (v19)
+
+The one-shot `etherology-e2e-forge-1.20.1-v19` profile ran the packaged
+`slitherite-block-registry` scenario in a fresh integrated world. Its stopped
+live runtime and frozen archive both passed the strict verifier with all 185
+ordered assertions, and the run published two unedited native 1920x1080
+composed Minecraft framebuffers. Provisioning and launch consulted no external
+game profile.
+
+![Forge 1.20.1 Slitherite gallery](slitherite-block-registry-v19/screenshots/slitherite-block-registry-initial.png)
+
+- Profile manifest: `3,737` bytes, SHA-256
+  `bd1de9eea5ff186a8391e29abfe9be3b4c79669718b52f42ff944eb75ab5670c`
+- Minecraft: `1.20.1`; Forge: `47.4.9`; runtime Java: `17`
+- Production JAR: `1,481,320` bytes, SHA-256
+  `cd04317e1eca88a3009d0c64147028905af253a82e7f6122ec6523508542df56`
+- Harness JAR: `350,530` bytes, SHA-256
+  `11f6304acf46aae7b20306f537cfc8c7c3650432a33a0e26a9f828e1efbecf96`
+- Report status: `passed`; assertions: `185` passed, `0` failed
+- Client ticks: `374`
+- Reopened material changed-pixel ratio: `0.034870`
+- Peak physical footprint: `4,601,877,520` bytes (about `4.286 GiB`)
+- Peak RSS: `4,064,100,352` bytes (about `3.785 GiB`)
+- Memory enforcement: none
+
+The verifier proves the exact 17 block/item pairs and all 1,262 states, 79
+visual resources, 11 tags, 17 loot tables, 29 owned recipes and their 29
+advancements, and five related recipes. Those related recipes include the real
+`etherology:pedestal` crafting result and real
+`etherology:unadjusted_lens` alchemy result. It also checks native
+`BlockItem` placement for all 17 blocks, button and pressure-plate behavior,
+exact client/server mirrors, fixed-camera rendering after 120 consecutive
+stable frames per capture, and exact fixture and loaded-data persistence after
+force-save, disconnect, and reopen.
+
+The stopped-live verifier passed before the four payloads were copied with
+preserved timestamps. The seal then bound those exact bytes to the v19 profile
+and staged artifact lock, and archive-only verification passed. The following
+are the exact completed commands. They are retained only as historical
+provenance and must not be rerun against v19:
+
+```bash
+python3 -B scripts/e2e/forge_slitherite_evidence_v19.py --live
+/bin/mkdir docs/evidence/forge-1.20.1/slitherite-block-registry-v19
+/bin/cp -pR \
+  scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v19/evidence/slitherite-block-registry/. \
+  docs/evidence/forge-1.20.1/slitherite-block-registry-v19/
+python3 -B scripts/e2e/forge_slitherite_evidence_v19.py \
+  --create-archive-manifest docs/evidence/forge-1.20.1/slitherite-block-registry-v19 \
+  --capture-runtime scripts/e2e/.state/runtimes/etherology-e2e-forge-1.20.1-v19 \
+  --profile-manifest scripts/e2e/forge-1.20.1-profile.json
+python3 -B scripts/e2e/forge_slitherite_evidence_v19.py \
+  --archive docs/evidence/forge-1.20.1/slitherite-block-registry-v19
+```
+
+Frozen file digests:
+
+- `slitherite-block-registry-v19/archive-manifest.json`:
+  `05e6441d89f4333b503277be59f7385303954ae2586d4d5759ea84ca01209e2e`
+- `slitherite-block-registry-v19/reports/report.json`:
+  `57731c4f72c6b6a2c840bfccebd416ff2a174d049e0cd8f54924e177f55dad9b`
+- `slitherite-block-registry-v19/reports/done.marker`:
+  `37a40f08d8548dba289b9b0bb35bcf63b359f6d37ee86044ebc6b6da080b9ec1`
+- `slitherite-block-registry-v19/screenshots/slitherite-block-registry-initial.png`:
+  `53dddd5f21cd56620c3605a6615c36c3414b9849177f6f732699f43bd98063d5`
+- `slitherite-block-registry-v19/screenshots/slitherite-block-registry-reopened.png`:
+  `f6baa52571c57609d2b753e4bd70c1179bd798f1e355970ee86afb37a5db9699`
+
+The v19 identity and its evidence are immutable. Any later Forge
+packaged-client run requires a new v20-or-newer client identity; the existing
+v20 identity is reserved for the separate blocked dedicated-server contract.
+
+## Historical accepted Attrahite packaged client (v17)
 
 The one-shot `etherology-e2e-forge-1.20.1-v17` profile ran the packaged
 `attrahite-block-registry` scenario in a fresh integrated world. The report
@@ -89,8 +161,8 @@ python3 -B scripts/e2e/forge_attrahite_evidence_v17.py \
 This is a bounded block-family, loot, recipe, rendering, and persistence proof;
 it does not establish natural Attrahite generation. The v17 identity is
 permanently consumed and must not be provisioned, staged, checked, or launched
-again. It remains the latest accepted Forge packaged-client archive while the
-fresh v19 contract has no native evidence.
+again. It remains the accepted historical Forge packaged-client Attrahite
+archive; the v19 Slitherite archive above is the latest packaged-client proof.
 
 ## Forest Lantern dedicated server (v16)
 
@@ -1108,11 +1180,12 @@ capture-time observations and payload integrity, not identity with later builds.
 At the time of this historical v4 capture, the canonical Attrahite resource and
 items were still Fabric-only. Its synthetic table proves only the shared
 condition and serializer; the latest accepted Forge server-v19 and
-packaged-client-v17 archives now provide bounded Attrahite gameplay and drop
-parity. Native
-sound playback, Forge's unsupported custom sculk frequency, the full
-authoritative registry spine, and the broader gameplay/native E2E matrix remain
-deferred. The Fabric `v21` Phase 0 archive
+historical packaged-client-v17 archives provide bounded Attrahite gameplay and
+drop parity, while packaged-client v19 adds the accepted Slitherite registry,
+recipe, mechanics, rendering, and persistence boundary. Native sound playback,
+Forge's unsupported custom sculk frequency, the full authoritative registry
+spine, and the broader gameplay/native E2E matrix remain deferred. The Fabric
+`v21` Phase 0 archive
 exercises the packaged client artifact at the shared material-item checkpoint,
 but its 42 baseline assertions do not directly test the 14 material IDs or
 their gameplay consumers. It predates the metal-block rebuild and is not

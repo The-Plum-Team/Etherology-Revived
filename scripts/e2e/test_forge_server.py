@@ -787,11 +787,6 @@ class ConsumedV18HistoryTests(unittest.TestCase):
 
 class RuntimeIsolationTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.native_run_guard = mock.patch.object(
-            forge_server,
-            "require_native_run_ready",
-        )
-        self.native_run_guard.start()
         self.repository_context = temporary_repository()
         self.repository_root, self.manifest_path = self.repository_context.__enter__()
         self.configuration = load_temporary_configuration(
@@ -803,7 +798,6 @@ class RuntimeIsolationTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.state_context.cleanup()
         self.repository_context.__exit__(None, None, None)
-        self.native_run_guard.stop()
 
     def test_provision_creates_only_the_new_repository_owned_runtime(self) -> None:
         self.assertIsNone(
@@ -1926,8 +1920,7 @@ class LifecycleEvidenceTests(unittest.TestCase):
             configuration = load_temporary_configuration(root, manifest_path)
             with tempfile.TemporaryDirectory() as temporary_directory:
                 state_root = Path(temporary_directory) / ".state"
-                with mock.patch.object(forge_server, "require_native_run_ready"):
-                    forge_server.provision_profile(configuration, state_root)
+                forge_server.provision_profile(configuration, state_root)
                 runtime = forge_server.runtime_root(configuration, state_root)
                 level_data = (
                     forge_server.game_directory(configuration, runtime)
@@ -2570,11 +2563,6 @@ class ServerLaunchCleanupTests(unittest.TestCase):
 
 class ExecutionTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.native_run_guard = mock.patch.object(
-            forge_server,
-            "require_native_run_ready",
-        )
-        self.native_run_guard.start()
         self.repository_context = temporary_repository()
         self.repository_root, self.manifest_path = self.repository_context.__enter__()
         self.configuration = load_temporary_configuration(
@@ -2615,7 +2603,6 @@ class ExecutionTests(unittest.TestCase):
             patcher.stop()
         self.state_context.cleanup()
         self.repository_context.__exit__(None, None, None)
-        self.native_run_guard.stop()
 
     def publish_probe_outputs(self, output_handle: object) -> None:
         runtime = forge_server.runtime_root(self.configuration, self.state_root)

@@ -670,9 +670,6 @@ val forgeSlitheriteBlockRegistryServerEvidenceVerifierV20 =
     rootProject.file("scripts/e2e/forge_server_slitherite_evidence_v20.py")
 val forgeSlitheriteBlockRegistryServerEvidenceTestV20 =
     rootProject.file("scripts/e2e/test_forge_server_slitherite_evidence_v20.py")
-val forgeServerNativeRunPostponedReason =
-    "Forge dedicated-server Slitherite v20 is postponed until all five related " +
-        "recipes are present with their real pedestal, alchemy, and lens dependencies"
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
@@ -8201,7 +8198,7 @@ val validateForgeWarpCounterStaticMilestone =
             "Validates the shared Warp Counter registration and exact static resources; " +
                 "its corruption-driven model predicate remains deferred."
         dependsOn(
-            validateForgeSlitheriteMilestone,
+            validateForgeSlitheriteStaticMilestone,
             validateForgeAcceptedDataSet,
             commonJar,
             commonTest,
@@ -10510,7 +10507,8 @@ if (minecraftVersion == "1.20.1") {
             description =
                 "Builds and validates the prepared Forge 1.20.1 Slitherite server probe."
             dependsOn(
-                validateForgeSlitheriteStaticMilestone,
+                validateForgeAlchemyRecipeFoundationStaticMilestone,
+                validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity,
                 forgeSlitheriteBlockRegistryServerSafetyTest,
                 serverProbeTestTask,
                 validateServerProbeProfile,
@@ -10547,9 +10545,6 @@ if (minecraftVersion == "1.20.1") {
             check(failure == null) {
                 failure?.message.orEmpty()
             }
-        }
-        doFirst("blockPostponedSlitheriteV20NativeRun") {
-            throw GradleException(forgeServerNativeRunPostponedReason)
         }
     }
 

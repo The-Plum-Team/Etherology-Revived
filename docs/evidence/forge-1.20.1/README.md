@@ -18,9 +18,15 @@ never be provisioned or launched again. Its exact retained installer interlock
 was safely released only after authenticated identity, byte, inode, mode, and
 process-absence checks while preserving the quarantined staging runtime.
 
-The active mutable dedicated-server contract is the blocked,
-never-provisioned v20 Slitherite profile. It has no runtime, launch-attempt
-marker, or archive in this directory. The immutable
+The active mutable dedicated-server contract is the fresh, prepared,
+never-provisioned v20 Slitherite profile. Accepted packaged-client v19 proved
+all five real related recipes and their pedestal, alchemy, and lens
+dependencies, clearing the former server dependency block and authorizing v20
+for exactly one native attempt. This authorization is not server acceptance:
+v20 still has no runtime, launch-attempt marker, report, or archive in this
+directory, and it must not be retried or reused after its one-shot run. The
+planned order is `forge_server.py validate`, `provision`, `check`, then `run`,
+stopping on the first failure. The immutable
 [`attrahite-block-registry-server-v19`](attrahite-block-registry-server-v19)
 archive remains the latest accepted cumulative dedicated-server evidence.
 
@@ -94,7 +100,8 @@ Frozen file digests:
 
 The v19 identity and its evidence are immutable. Any later Forge
 packaged-client run requires a new v20-or-newer client identity; the existing
-v20 identity is reserved for the separate blocked dedicated-server contract.
+v20 identity is reserved for the separate fresh, prepared dedicated-server
+contract now authorized for one native attempt.
 
 ## Historical accepted Attrahite packaged client (v17)
 
@@ -1197,9 +1204,10 @@ immutable historical archive.
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
 registry-foundation proof. The v19 Attrahite archive is the latest accepted
-cumulative dedicated-server proof; the active v20 contract remains blocked and
-has no evidence. No current acceptance task or verifier treats v2 as the active
-archive.
+cumulative dedicated-server proof. The active v20 Slitherite contract is fresh,
+prepared, and authorized for one native attempt from an absent runtime; it has
+no launch-attempt marker, report, or archive yet. No current acceptance task or
+verifier treats v2 as the active archive.
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v2`
 - Runtime directory:

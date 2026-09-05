@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
-import tempfile
 import unittest
 from unittest import mock
 
@@ -223,44 +222,75 @@ class ForgeServerContractV20Tests(unittest.TestCase):
             contract_v20._sha256_file(contract_path),
         )
 
-    def test_native_actions_are_postponed_before_state_or_process_creation(self) -> None:
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            state_root = Path(temporary_directory).resolve() / ".state"
-            process = mock.Mock()
-            actions = (
-                forge_server.provision_profile,
-                forge_server.verify_environment,
-                forge_server.execute_probe,
-            )
-            with mock.patch.object(forge_server.subprocess, "Popen", process):
-                for action in actions:
-                    with (
-                        self.subTest(action=action.__name__),
-                        self.assertRaisesRegex(
-                            forge_server.E2EError,
-                            "postponed until all five related recipes",
-                        ),
-                    ):
-                        action(self.configuration, state_root)
+    def test_native_actions_are_enabled_by_the_v20_contract(self) -> None:
+        self.assertFalse(contract_v20.NATIVE_RUN_POSTPONED)
+        self.assertEqual("", contract_v20.NATIVE_RUN_POSTPONED_REASON)
+        self.assertFalse(forge_server.NATIVE_RUN_POSTPONED)
+        self.assertEqual("", forge_server.NATIVE_RUN_POSTPONED_REASON)
+        self.assertIsNone(forge_server.require_native_run_ready())
 
-            self.assertFalse(state_root.exists())
-            process.assert_not_called()
+    def test_gradle_native_run_dependencies_are_required(self) -> None:
+        dependencies = (
+            "validateForgeAlchemyRecipeFoundationStaticMilestone",
+            "validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity",
+        )
+        for dependency in dependencies:
+            with self.subTest(dependency=dependency), temporary_repository() as (
+                root,
+                manifest_path,
+            ):
+                build_path = root / "forge/build.gradle.kts"
+                content = build_path.read_text(encoding="utf-8")
+                build_path.write_text(
+                    content.replace(
+                        f"                {dependency},\n",
+                        f"                removed{dependency},\n",
+                    ),
+                    encoding="utf-8",
+                )
+                configuration = load_temporary_configuration(root, manifest_path)
 
-    def test_gradle_native_run_postponement_guard_is_required(self) -> None:
+                with self.assertRaisesRegex(forge_server.E2EError, "incomplete"):
+                    forge_server.verify_gradle_probe_definition(configuration)
+
+    def test_warp_counter_must_depend_on_the_static_slitherite_gate(self) -> None:
         with temporary_repository() as (root, manifest_path):
             build_path = root / "forge/build.gradle.kts"
             content = build_path.read_text(encoding="utf-8")
             build_path.write_text(
                 content.replace(
-                    "blockPostponedSlitheriteV20NativeRun",
-                    "removedPostponementGuard",
+                    "            validateForgeSlitheriteStaticMilestone,\n"
+                    "            validateForgeAcceptedDataSet,\n",
+                    "            validateForgeSlitheriteMilestone,\n"
+                    "            validateForgeAcceptedDataSet,\n",
                 ),
                 encoding="utf-8",
             )
             configuration = load_temporary_configuration(root, manifest_path)
 
-            with self.assertRaisesRegex(forge_server.E2EError, "incomplete"):
+            with self.assertRaisesRegex(forge_server.E2EError, "stale"):
                 forge_server.verify_gradle_probe_definition(configuration)
+
+    def test_gradle_native_run_postponement_guard_is_rejected(self) -> None:
+        stale_fragments = (
+            "blockPostponedSlitheriteV20NativeRun",
+            "forgeServerNativeRunPostponedReason",
+        )
+        for stale_fragment in stale_fragments:
+            with self.subTest(stale_fragment=stale_fragment), temporary_repository() as (
+                root,
+                manifest_path,
+            ):
+                build_path = root / "forge/build.gradle.kts"
+                content = build_path.read_text(encoding="utf-8")
+                build_path.write_text(
+                    f"{content}\n// {stale_fragment}\n",
+                    encoding="utf-8",
+                )
+                configuration = load_temporary_configuration(root, manifest_path)
+
+                with self.assertRaisesRegex(forge_server.E2EError, "stale"):
+                    forge_server.verify_gradle_probe_definition(configuration)
 
 
 if __name__ == "__main__":

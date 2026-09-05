@@ -228,7 +228,7 @@ final class AttrahiteBlockRegistryResourcesTest {
     }
 
     @Test
-    void forgeKeepsWorldgenAndAspectDataOutsideTheBoundedAttrahiteSlice()
+    void forgeKeepsWorldgenDataOutsideTheBoundedAttrahiteSlice()
             throws IOException {
         for (Artifact artifact : artifacts()) {
             if (!artifact.forgeApplication()) {
@@ -239,11 +239,6 @@ final class AttrahiteBlockRegistryResourcesTest {
                 assertFalse(
                         entries.stream().anyMatch(entry ->
                                 entry.startsWith("data/etherology/worldgen/")),
-                        artifact.description()
-                );
-                assertFalse(
-                        entries.stream().anyMatch(entry ->
-                                entry.startsWith("data/etherology/etherology/aspects/")),
                         artifact.description()
                 );
             }

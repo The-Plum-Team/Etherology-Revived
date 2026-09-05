@@ -33,11 +33,8 @@ SLITHERITE_CONTRACT_SIZE = 54314
 SLITHERITE_CONTRACT_SHA256 = (
     "4437912482c6276927758f43b0872c01421a482429225bed3f2dc2e838624773"
 )
-NATIVE_RUN_POSTPONED = True
-NATIVE_RUN_POSTPONED_REASON = (
-    "Forge dedicated-server Slitherite v20 is postponed until all five related "
-    "recipes are present with their real pedestal, alchemy, and lens dependencies"
-)
+NATIVE_RUN_POSTPONED = False
+NATIVE_RUN_POSTPONED_REASON = ""
 
 
 def _sha256_file(path: Path) -> str:

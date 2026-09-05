@@ -1220,8 +1220,17 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
         "languageVersion.set(JavaLanguageVersion.of(serverProbeJavaVersion))",
         "serverProbeRunTask.configure",
         "dependsOn(verifyRegistryFoundationServerProbe)",
-        "blockPostponedSlitheriteV20NativeRun",
-        "forgeServerNativeRunPostponedReason",
+        (
+            "        dependsOn(\n"
+            "            validateForgeSlitheriteStaticMilestone,\n"
+            "            validateForgeAcceptedDataSet,\n"
+        ),
+        (
+            "            dependsOn(\n"
+            "                validateForgeAlchemyRecipeFoundationStaticMilestone,\n"
+            "                validateForgeSlitheriteBlockRegistryClientEvidenceArchiveIntegrity,\n"
+            "                forgeSlitheriteBlockRegistryServerSafetyTest,\n"
+        ),
         RUN_TOKEN_ENVIRONMENT_VARIABLE,
         "serverProbeSealedArchive",
         "serverProbeRunLock",
@@ -1233,8 +1242,17 @@ def verify_gradle_probe_definition(configuration: ResolvedConfiguration) -> None
         SCENARIO_ID,
     )
     missing = [fragment for fragment in required_fragments if fragment not in content]
-    if missing:
-        raise E2EError(f"The named Forge server probe task is incomplete: {missing}")
+    stale_fragments = (
+        "blockPostponedSlitheriteV20NativeRun",
+        "forgeServerNativeRunPostponedReason",
+        "            validateForgeSlitheriteMilestone,\n",
+    )
+    stale = [fragment for fragment in stale_fragments if fragment in content]
+    if missing or stale:
+        raise E2EError(
+            "The named Forge server probe task is incomplete: "
+            f"missing={missing}, stale={stale}"
+        )
     verify_probe_source_lifecycle(configuration)
     verify_memory_handoff_source(configuration)
 

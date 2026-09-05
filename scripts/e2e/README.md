@@ -772,11 +772,12 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Prepared Forge 1.20.1 dedicated-server Slitherite contract (v20; blocked)
+## Prepared Forge 1.20.1 dedicated-server Slitherite contract (v20; fresh one-shot authorized)
 
 The active `forge-server-1.20.1-profile.json` and its immutable
-`forge-server-1.20.1-profile-v20.json` snapshot now describe the never-provisioned
-`etherology-e2e-forge-server-1.20.1-v20` identity. The two profile files are
+`forge-server-1.20.1-profile-v20.json` snapshot describe the fresh,
+never-provisioned `etherology-e2e-forge-server-1.20.1-v20` identity. The two
+profile files are
 byte-identical at 1,206 bytes with SHA-256
 `1a38dd4e88ee8960df96bcd9d4d074adc8f967c03534bee837b013badc7771be`.
 The prepared schema-12 contract requires exactly 525 ordered assertions for all
@@ -785,14 +786,33 @@ server-side `BlockItem` placement, button reset timing, living-only pressure
 plate behavior, loot/recipe/advancement data, force-save, and registry,
 placement, and fresh loaded-data stability through a real `/reload`.
 
-This is a contract, not native evidence. Provision, check, and run fail before
-runtime or evidence mutation until the complete five-related-recipe inventory
-can load with its real pedestal, alchemy, and lens dependencies. No v20 runtime,
-launch-attempt marker, report, or archive exists, and no native v20 success is
-claimed. Force-save followed by `/reload` remains one server lifecycle; it does
+The former dependency block is cleared: the pedestal and alchemy dependencies
+are ported, and the accepted packaged-client v19 Slitherite run proved the
+complete inventory of all five related recipes with their real pedestal,
+alchemy, and lens dependencies. That accepted client proof authorizes this
+fresh v20 dedicated-server identity for exactly one native attempt; it does not
+pre-accept the server contract. No v20 runtime, launch-attempt marker, report,
+or archive exists, and no native v20 success is claimed. Provision must target
+the absent repository-owned runtime exactly once, and the eventual `run` must
+consume the identity even if it fails. v20 must never be retried, cleaned for
+reuse, or replaced in place.
+
+The planned one-shot workflow is:
+
+```bash
+python3 -B scripts/e2e/forge_server.py validate
+python3 -B scripts/e2e/forge_server.py provision
+python3 -B scripts/e2e/forge_server.py check
+python3 -B scripts/e2e/forge_server.py run
+```
+
+The workflow must stop on the first failure rather than skip a gate or reuse
+v20. Acceptance still requires the stopped native runtime to satisfy all 525
+ordered server assertions and the strict evidence publication and verification
+gates. Force-save followed by `/reload` remains one server lifecycle; it does
 not prove restart persistence or deserialize the saved fixture in a second JVM.
-The v19 section below remains the latest accepted immutable dedicated-server
-history.
+Until that one-shot workflow passes and an immutable archive is sealed, the v19
+section below remains the latest accepted dedicated-server history.
 
 ## Accepted Forge 1.20.1 dedicated-server Attrahite block-registry probe (v19)
 
@@ -1005,7 +1025,7 @@ It used the fresh repository-owned
 accepted v19 run re-proves all of its assertions cumulatively. Its five-file
 archive remains frozen at
 `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not be
-recaptured with the active, blocked v20 controller.
+recaptured with the active, prepared v20 one-shot controller.
 
 Validate only the completed historical runtime or immutable archive with the
 pinned verifier:
@@ -1072,14 +1092,14 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to the blocked v20 Slitherite contract, so v6 must be inspected only
-through its immutable snapshot and verifier. It must never be provisioned,
+advanced to the fresh, prepared v20 Slitherite contract, so v6 must be inspected
+only through its immutable snapshot and verifier. It must never be provisioned,
 reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
 runner lifecycle shown above. Those mutable controller commands now target the
-blocked, never-provisioned v20 contract and must not be used as instructions to
-recapture v6.
+never-provisioned, one-shot-authorized v20 contract and must not be used as
+instructions to recapture v6.
 
 The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
 dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
@@ -1145,9 +1165,9 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to the blocked, never-provisioned v20 contract. They cannot recapture
-v4, and v4 must not be provisioned, reused, cleaned, or replaced. Only its
-immutable archive verifier remains an active instruction:
+advanced to the fresh, prepared, never-provisioned v20 contract. They cannot
+recapture v4, and v4 must not be provisioned, reused, cleaned, or replaced. Only
+its immutable archive verifier remains an active instruction:
 
 ```bash
 python3 -B scripts/e2e/forge_server_evidence.py \
@@ -1235,9 +1255,12 @@ historical evidence; v10 is the historical particle-registry predecessor, v11
 is the historical material-item predecessor, v13 is the historical
 metal-block-registry proof, v14 is the historical food-item proof, and v16 is
 the historical Forest Lantern dedicated-server proof. The v19 Attrahite archive
-is the latest accepted cumulative dedicated-server proof; the active v20
-contract remains blocked and has no runtime or evidence. Forge client v19 is
-the latest accepted packaged-client proof, while v13 remains the accepted
+is the latest accepted cumulative dedicated-server proof. The active v20
+Slitherite contract is fresh, prepared, and authorized for exactly one native
+attempt because accepted Forge client v19 proved all five real related recipes
+and their pedestal, alchemy, and lens dependencies; no v20 runtime,
+launch-attempt marker, report, or archive exists yet. Forge client v19 is the
+latest accepted packaged-client proof, while v13 remains the accepted
 historical packaged-client Forest Lantern proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not

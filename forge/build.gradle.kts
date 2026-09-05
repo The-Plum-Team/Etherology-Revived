@@ -276,6 +276,20 @@ val canonicalEbonyToolResourceFiles = rootProject.files(
         rootProject.file("src/main/generated/data/$entry")
     },
 )
+val canonicalEbonyArmorIds = listOf(
+    "ebony_helmet", "ebony_chestplate", "ebony_leggings", "ebony_boots",
+)
+val canonicalEbonyArmorDataEntries = canonicalEbonyArmorIds.flatMap { id ->
+    listOf(
+        "etherology/recipes/$id.json",
+        "etherology/advancements/recipes/combat/$id.json",
+    )
+}.toSet() + setOf("smelting", "blasting").flatMap { process ->
+    listOf(
+        "etherology/recipes/ebony_nugget_from_$process.json",
+        "etherology/advancements/recipes/misc/ebony_nugget_from_$process.json",
+    )
+}
 val canonicalAlchemyRecipeDataEntries = setOf(
     "etherology/recipes/binder.json",
     "etherology/recipes/ebony_ingot.json",
@@ -291,7 +305,7 @@ val acceptedForgeDirectDataEntries = setOf(
     "etherology/loot_tables/blocks/ethereal_storage.json",
 ) + canonicalMetalBlockDataEntries + canonicalForestLanternDataEntries +
     canonicalAttrahiteBlockDataEntries + canonicalSlitheriteDataEntries +
-    canonicalWarpCounterDataEntries + canonicalEbonyToolDataEntries +
+    canonicalWarpCounterDataEntries + canonicalEbonyToolDataEntries + canonicalEbonyArmorDataEntries +
     canonicalPedestalDataEntries +
     canonicalAlchemyRecipeDataEntries +
     (canonicalGameEventTagEntries + canonicalEnchantmentTagEntry)
@@ -1119,6 +1133,9 @@ sourceSets {
                 include("data/$entry")
             }
             canonicalEbonyToolDataEntries.forEach { entry ->
+                include("data/$entry")
+            }
+            canonicalEbonyArmorDataEntries.forEach { entry ->
                 include("data/$entry")
             }
             canonicalPedestalDataEntries.forEach { entry ->
@@ -4700,6 +4717,7 @@ tasks.named<Test>("test").configure {
     exclude("**/UnadjustedLensRegistryResourcesTest.class")
     exclude("**/PrimoShardRegistryResourcesTest.class")
     exclude("**/PatternTabletCrossArtifactTest.class")
+    exclude("**/EbonyArmorCrossArtifactTest.class")
     exclude("**/AspectFoundationCrossArtifactTest.class")
     exclude("**/PedestalCrossArtifactTest.class")
     exclude("**/AlchemyRecipeFoundationCrossArtifactTest.class")
@@ -5970,6 +5988,7 @@ val patternTabletCrossArtifactTest = tasks.register<Test>("patternTabletCrossArt
         rootProject.file("common/src/main/resources/etherology.common.mixins.json"),
         rootProject.file("src/main/resources/fabric.mod.json"),
         rootProject.file("src/main/resources/etherology.mixins.json"),
+        rootProject.file("forge/src/main/resources/META-INF/accesstransformer.cfg"),
         rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
             include("*_pattern_tablet.json")
         },
@@ -5980,6 +5999,35 @@ val patternTabletCrossArtifactTest = tasks.register<Test>("patternTabletCrossArt
         rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
         rootProject.file("common/src/main/resources/data/etherology/etherology/aspects/etherology.json"),
     ).withPropertyName("canonicalPatternTabletSourcesAndResources")
+}
+
+val ebonyArmorCrossArtifactTest = tasks.register<Test>("ebonyArmorCrossArtifactTest") {
+    group = "verification"
+    description = "Checks shared Ebony armor, slot modifiers, models, and closed crafting/recycling resources."
+    configureSharedItemArtifacts("etherology.ebonyArmor")
+    filter {
+        includeTestsMatching("ru.feytox.etherology.forge.EbonyArmorCrossArtifactTest")
+    }
+    inputs.files(
+        rootProject.fileTree("common/src/main/java") {
+            include("**/EbonyArmorItem.java", "**/EbonyArmorMaterial.java", "**/SharedArmorItems.java")
+            include("**/EtherologyBootstrap.java")
+        },
+        rootProject.fileTree("src/main/java") {
+            include("**/EbonyArmorItem.java", "**/EbonyArmorMaterial.java", "**/SharedArmorItems.java")
+            include("**/ArmorItems.java", "**/Etherology.java")
+        },
+        rootProject.fileTree("src/main/generated/assets/etherology/models/item") {
+            canonicalEbonyArmorIds.forEach { id -> include("$id.json", "${id}_*_trim.json") }
+        },
+        rootProject.fileTree("src/client/resources/assets/etherology/textures") {
+            canonicalEbonyArmorIds.forEach { id -> include("item/$id.png") }
+            include("models/armor/ebony_layer_*.png")
+        },
+        canonicalEbonyArmorDataEntries.map { entry -> rootProject.file("src/main/generated/data/$entry") },
+        englishLanguageFile,
+        rootProject.file("src/main/generated/assets/etherology/lang/ru_ru.json"),
+    ).withPropertyName("canonicalEbonyArmorSourcesAndResources")
 }
 
 val aspectFoundationCrossArtifactTest =
@@ -8862,12 +8910,18 @@ val validateForgePatternTabletStaticMilestone = tasks.register("validateForgePat
     dependsOn(validateForgeEbonyToolsStaticMilestone, patternTabletCrossArtifactTest)
 }
 
+val validateForgeEbonyArmorStaticMilestone = tasks.register("validateForgeEbonyArmorStaticMilestone") {
+    group = "verification"
+    description = "Validates all four shared Ebony armor pieces and the now-complete gear recycling inputs."
+    dependsOn(validateForgePatternTabletStaticMilestone, ebonyArmorCrossArtifactTest, validateForgeAcceptedDataSet)
+}
+
 val validateForgeAuthoritativeRegistrySpineMilestone =
     tasks.register("validateForgeAuthoritativeRegistrySpineMilestone") {
         group = "verification"
         description =
             "Blocks broad gameplay until every canonical runtime registry has one shared owner."
-        dependsOn(validateForgePatternTabletStaticMilestone)
+        dependsOn(validateForgeEbonyArmorStaticMilestone)
         doLast {
             val missingConditions = missingForgeAuthoritativeRegistrySpineMilestone()
             check(missingConditions.isEmpty()) {
@@ -8926,6 +8980,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
         validateForgePrimoShardStaticMilestone,
         validateForgeEbonyToolsStaticMilestone,
         validateForgePatternTabletStaticMilestone,
+        validateForgeEbonyArmorStaticMilestone,
         validateForgeAuthoritativeRegistrySpineMilestone,
         validateForgeReleaseReadinessMilestone,
     )
@@ -8934,7 +8989,7 @@ val validateForgePortInputs = tasks.register("validateForgePortInputs") {
 tasks.register("verifyForgePortGateClosed") {
     group = "verification"
     description = "Reports the first incomplete forward milestone without serving as a release gate."
-    dependsOn(validateForgePatternTabletStaticMilestone)
+    dependsOn(validateForgeEbonyArmorStaticMilestone)
     inputs.file(commonJar.flatMap { it.archiveFile })
     inputs.dir(forgeMainClasses)
     inputs.files(etherealChannelResources + englishLanguageFile)

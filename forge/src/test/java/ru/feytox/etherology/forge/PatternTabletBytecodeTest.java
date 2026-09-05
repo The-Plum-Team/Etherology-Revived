@@ -5,7 +5,6 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.IntInsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
@@ -23,6 +22,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static ru.feytox.etherology.forge.PedestalBytecodeAssertions.*;
+import static ru.feytox.etherology.forge.SharedItemCatalogAssertions.*;
 
 final class PatternTabletBytecodeTest {
 
@@ -36,7 +36,6 @@ final class PatternTabletBytecodeTest {
     static final List<String> STYLE_NAMES = List.of(
             "ARISTOCRAT", "ASTRONOMY", "HEAVENLY", "OCULAR", "RITUAL", "ROYAL", "TRADITIONAL"
     );
-    private static final String DEFERRED_REGISTER = PREFIX + "registry/SharedDeferredRegister";
     private static final String SUPPLIER = "dev/architectury/registry/registries/RegistrySupplier";
 
     @Test
@@ -45,62 +44,17 @@ final class PatternTabletBytecodeTest {
     }
 
     static void assertCatalog(ClassNode catalog) {
-        assertEquals(8, catalog.fields.size());
-        assertEquals("ITEMS", catalog.fields.get(0).name);
-        List<String> expectedFields = STYLE_NAMES.stream()
-                .map(style -> style + "_PATTERN_TABLET").toList();
-        assertEquals(expectedFields, catalog.fields.subList(1, 8).stream()
-                .map(field -> field.name).toList());
-        for (var field : catalog.fields.subList(1, 8)) {
-            assertEquals(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
-                    field.access);
-            assertEquals("L" + SUPPLIER + "<L" + TABLET + ";>;", field.signature);
-        }
-
-        MethodNode initializer = requireMethod(catalog, "<clinit>", "()V");
-        Map<String, String> ids = new LinkedHashMap<>();
-        Map<String, Handle> factories = new LinkedHashMap<>();
-        String pendingId = null;
-        Handle pendingFactory = null;
-        int registrations = 0;
-        for (AbstractInsnNode instruction : initializer.instructions) {
-            if (instruction instanceof LdcInsnNode constant
-                    && constant.cst instanceof String id) {
-                pendingId = id;
-            } else if (instruction instanceof InvokeDynamicInsnNode dynamic) {
-                pendingFactory = factoryHandle(dynamic);
-            } else if (instruction instanceof MethodInsnNode call
-                    && call.owner.equals(DEFERRED_REGISTER) && call.name.equals("register")) {
-                assertNotNull(pendingId);
-                assertNotNull(pendingFactory);
-                registrations++;
-            } else if (instruction instanceof FieldInsnNode field
-                    && field.getOpcode() == Opcodes.PUTSTATIC && field.owner.equals(CATALOG)
-                    && !field.name.equals("ITEMS")) {
-                assertNull(ids.put(field.name, pendingId));
-                assertNull(factories.put(field.name, pendingFactory));
-                pendingId = null;
-                pendingFactory = null;
-            }
-        }
-        assertEquals(7, registrations);
-        assertEquals(expectedFields, new ArrayList<>(ids.keySet()));
+        Map<String, String> expectedIds = new LinkedHashMap<>();
+        STYLE_NAMES.forEach(style -> expectedIds.put(style + "_PATTERN_TABLET",
+                style.toLowerCase(Locale.ROOT) + "_pattern_tablet"));
+        Map<String, MethodNode> factories = SharedItemCatalogAssertions.assertFactories(
+                catalog, TABLET, expectedIds);
         for (String style : STYLE_NAMES) {
-            String field = style + "_PATTERN_TABLET";
-            assertEquals(field.toLowerCase(Locale.ROOT), ids.get(field));
-            Handle factory = factories.get(field);
-            assertNotNull(factory, field);
-            assertEquals(CATALOG, factory.getOwner());
-            MethodNode body = requireMethod(catalog, factory.getName(), factory.getDesc());
+            MethodNode body = factories.get(style + "_PATTERN_TABLET");
             assertEquals(List.of(style), fieldsFrom(body, Set.of(STYLES)));
             assertEquals(List.of(TABLET + "#<init>(L" + STYLES + ";)V"), calls(body));
             assertEquals(1, countOpcodes(body, Opcodes.NEW));
         }
-        for (MethodNode method : catalog.methods) {
-            assertFalse(calls(method).stream().anyMatch(call -> call.startsWith(SUPPLIER + "#get")));
-        }
-        assertEquals(List.of(DEFERRED_REGISTER + "#attach()V"),
-                calls(requireMethod(catalog, "register", "()V")));
     }
 
     @Test
@@ -199,21 +153,6 @@ final class PatternTabletBytecodeTest {
         assertEquals(1, countFieldAccesses(registration, owner.name, "registered", Opcodes.GETSTATIC));
         assertEquals(1, countFieldAccesses(registration, owner.name, "registered", Opcodes.PUTSTATIC));
         assertEquals(1, countCalls(registration, api, operation));
-    }
-
-    static MethodNode singleMethod(ClassNode owner, String name) {
-        List<MethodNode> methods = owner.methods.stream()
-                .filter(method -> method.name.equals(name)).toList();
-        assertEquals(1, methods.size(), owner.name + "#" + name);
-        return methods.get(0);
-    }
-
-    static List<String> fieldsFrom(MethodNode method, Set<String> owners) {
-        return Arrays.stream(method.instructions.toArray())
-                .filter(FieldInsnNode.class::isInstance)
-                .map(FieldInsnNode.class::cast)
-                .filter(field -> owners.contains(field.owner))
-                .map(field -> field.name).toList();
     }
 
     private static List<String> methodNamesFrom(MethodNode method, String owner) {

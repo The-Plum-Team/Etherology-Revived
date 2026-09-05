@@ -9,6 +9,7 @@ import ru.feytox.etherology.registry.block.SharedMetalBlocks;
 import ru.feytox.etherology.registry.block.SharedPedestalBlockEntities;
 import ru.feytox.etherology.registry.block.SharedPedestalBlocks;
 import ru.feytox.etherology.registry.block.SharedSlitheriteBlocks;
+import ru.feytox.etherology.registry.item.SharedArmorItems;
 import ru.feytox.etherology.registry.item.SharedAttrahiteBlockItems;
 import ru.feytox.etherology.registry.item.SharedFoodItems;
 import ru.feytox.etherology.registry.item.SharedForestLanternBlockItems;
@@ -72,6 +73,7 @@ public final class EtherologyBootstrap {
         SharedPrimoShardItems.register();
         SharedAlchemyRecipes.register();
         SharedPatternTabletItems.register();
+        SharedArmorItems.register();
         SharedBlockEntities.register();
         SharedPedestalBlockEntities.register();
         SharedScreenHandlers.register();

@@ -47,8 +47,7 @@ tools. `SharedPrimoShardItems` preserves the exact seal mapping and lore; `Share
 includes the Ebony axe, pickaxe, hoe, shovel, and sword, backed by the Common-owned
 `EtherToolMaterials`. Both ingot repair suppliers remain lazy and memoized. Forge includes the
 five crafting recipes, advancements, and tool tags. Unported weapons stay optional in the shared
-pickaxe/sword tags, without changing Fabric membership. Armor-dependent recycling recipes and
-native tool/Primoshard acceptance remain deferred.
+pickaxe/sword tags, without changing Fabric membership. Native tool/Primoshard acceptance remains deferred.
 
 The seven pattern tablets also have one Common declaration owner, `SharedPatternTabletItems`.
 Their item class, `StaffStyles`, smithing-tooltip accessor, loot additions, and trade additions
@@ -61,9 +60,22 @@ and entry weight 1 are unchanged. Apprentice toolsmiths retain the 12-emerald, o
 with eight uses and two experience. Hook attachment is idempotent on both loaders.
 Both artifacts consume `etherology.common.mixins.json`; the four static vanilla accessors use
 Loom's direct annotation remapping and are no longer duplicated in Fabric's own Mixin config.
-The cumulative static entry point is `validateForgePatternTabletStaticMilestone`, which includes
-the Ebony and Primoshard milestones. Its checks do not accept native chest generation, tooltip
+The original vanilla sell factory is made public by the Fabric/Common access widener and Forge's
+`META-INF/accesstransformer.cfg` (`VillagerTrades$ItemsForEmeralds` in Mojang names). The offer
+still uses that vanilla factory rather than a reimplementation. `validateForgePatternTabletStaticMilestone`
+includes the Ebony tool and Primoshard milestones. Its checks do not accept native chest generation, tooltip
 rendering, villager trading, or the unported Forge staff/Inventor Table pattern-application path.
+
+`SharedArmorItems` now owns the four Ebony armor pieces. `EbonyArmorItem` and `EbonyArmorMaterial`
+are Common-owned with the same FQNs; Fabric's old public fields are supplier aliases. The material
+retains iron durability, protection, equip sound, toughness, and knockback resistance, enchantability
+16, the `etherology:ebony` texture name, and lazy memoized Ebony-ingot repair. Each piece retains its
+own UUID and a `0.075` movement-speed `MULTIPLY_TOTAL` modifier, exposed only in the matching slot
+and added to the vanilla armor modifiers. Forge includes the four crafting recipes and both
+smelting/blasting nugget recipes; all nine recycling inputs are now registered. The cumulative
+static entry point is `validateForgeEbonyArmorStaticMilestone`, adding cross-artifact checks for
+the four factories, 44 inventory models, six textures, and twelve recipe/advancement resources.
+Native equipment, movement, repair, trim application, and visual E2E remain deferred.
 The lane cannot produce or publish a release artifact.
 
 The JavaFML entry point first exposes its mod event bus through Architectury's `EventBuses`, then
@@ -810,7 +822,7 @@ E2E slice.
   metal-block, and bounded plain-food declarations;
   `ResourceReloaders` and `EtherSourceLoader` own the accepted Common Ether-source data path. The
   other temporary catalogs have not yet converged into the authoritative registry spine.
-- The canonical initializer remains in the 279-file canonical main source graph. Direct loader imports
+- The canonical initializer remains in the 277-file canonical main source graph. Direct loader imports
   and their transitive ownership closure still require per-slice decisions as classes move to
   Common; the initial audit's raw import counts are no longer treated as a current snapshot.
 - The canonical initializer directly reaches unported loader APIs for dynamic registries, the

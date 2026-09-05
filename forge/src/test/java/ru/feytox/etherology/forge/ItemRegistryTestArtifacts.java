@@ -1,6 +1,13 @@
 package ru.feytox.etherology.forge;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
+
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -33,6 +40,25 @@ final class ItemRegistryTestArtifacts {
         return new Artifact(
                 requireRegularFile(Path.of(value)), suffix, includesAssets, fabricApplication
         );
+    }
+
+    static byte[] bytes(JarFile jar, String entryName) throws IOException {
+        var entry = jar.getJarEntry(entryName);
+        assertNotNull(entry, jar.getName() + ":" + entryName);
+        try (var input = jar.getInputStream(entry)) {
+            return input.readAllBytes();
+        }
+    }
+
+    static JsonObject json(JarFile jar, String entryName) throws IOException {
+        return JsonParser.parseString(new String(bytes(jar, entryName), StandardCharsets.UTF_8))
+                .getAsJsonObject();
+    }
+
+    static ClassNode readClass(JarFile jar, String owner) throws IOException {
+        ClassNode result = new ClassNode(Opcodes.ASM9);
+        new ClassReader(bytes(jar, owner + ".class")).accept(result, ClassReader.SKIP_DEBUG);
+        return result;
     }
 
     record Artifact(

@@ -268,6 +268,7 @@ final class SharedSoundsBytecodeTest {
                                 + "#register()V",
                         "ru/feytox/etherology/registry/item/SharedPatternTabletItems"
                                 + "#register()V",
+                        "ru/feytox/etherology/registry/item/SharedArmorItems#register()V",
                         "ru/feytox/etherology/registry/block/SharedBlockEntities#register()V",
                         "ru/feytox/etherology/registry/block/SharedPedestalBlockEntities"
                                 + "#register()V",

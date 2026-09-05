@@ -20,13 +20,12 @@ common sources. This is an explicit transition state while loader-neutral code i
 moved into `common` by complete vertical slices.
 
 The shared-item implementation includes the four canonical Primoshards and the five vanilla Ebony tools
-to Common. `SharedPrimoShardItems` owns the exact Keta/Rella/Clos/Via mapping and tooltip behavior;
+in Common. `SharedPrimoShardItems` owns the exact Keta/Rella/Clos/Via mapping and tooltip behavior;
 `SharedToolItems` now owns the Warp Counter plus the Ebony axe, pickaxe, hoe, shovel, and sword.
 The moved `EtherToolMaterials` retains both material definitions and lazy, memoized ingot repair.
 `validateForgeEbonyToolsStaticMilestone` includes the Primoshard, alchemy, pedestal, aspect, and
 lens static gates and the earlier accepted foundations. It does not claim new native gameplay
-or visual acceptance. The two Ebony recycling recipes still depend on unported armor and remain
-outside the Forge data slice; the five crafting recipes and five tool tags are included.
+or visual acceptance. The five crafting recipes and five tool tags are included.
 
 The seven pattern tablets now have one `SharedPatternTabletItems` declaration owner, with the
 canonical `PatternTabletItem`, `StaffStyles`, and vanilla smithing-tooltip accessor in Common.
@@ -38,6 +37,19 @@ Fabric's loader-specific config. Loom remaps its annotations directly, without a
 ownership, aliases, acquisition wiring, remapping, and exact packaged resources. Applying a
 tablet at the Inventor Table still depends on the unported Forge staff/table graph. No new
 native tooltip, chest-generation, trade, or visual acceptance is claimed by this static slice.
+
+The four Ebony armor pieces now use `SharedArmorItems`, with the original armor class and material
+in Common. Their slot-specific speed modifiers, UUIDs, iron-based statistics, and lazy ingot repair
+are unchanged. Forge includes the four crafting recipes and both nugget recycling recipes, whose
+nine gear inputs are now shared. The cumulative entry point is
+`validateForgeEbonyArmorStaticMilestone`; it checks all six build artifacts, 44 inventory models,
+six textures, and the crafting/recycling resources. Native armor, repair, movement, trimming, and
+image E2E remain unverified for this slice.
+
+The last fully green CI checkpoint before the tablet and armor changes is
+[`61b6cb75`](https://github.com/The-Plum-Team/Etherology-Revived/actions/runs/33985498669):
+607 Java tests (238 Common, 175 Fabric, 194 Forge), builds, datagen, harness isolation, and the
+cumulative gates through Primoshards and Ebony tools. This checkpoint does not verify the newer slices.
 
 Fabric 1.20.1 builds, generates data, and has passed its packaged Phase 0 and
 dedicated metal-block-registry E2E runs in real macOS clients and integrated
@@ -257,7 +269,7 @@ Compile and test the implemented shared-item foundations without claiming a rele
 
 ```shell
 bash ./gradlew --no-daemon --no-parallel \
-  :forge:1.20.1:validateForgePatternTabletStaticMilestone \
+  :forge:1.20.1:validateForgeEbonyArmorStaticMilestone \
   :forge:1.20.1:validateForgeForestLanternMilestone \
   :forge:1.20.1:validateForgeForestLanternServerEvidenceArchiveIntegrity \
   :forge:1.20.1:validateForgeForestLanternClientEvidenceArchiveIntegrity \

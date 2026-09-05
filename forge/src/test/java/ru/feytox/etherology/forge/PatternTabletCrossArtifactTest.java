@@ -5,13 +5,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
-import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import ru.feytox.etherology.forge.ItemRegistryTestArtifacts.Artifact;
@@ -22,18 +19,18 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarFile;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static ru.feytox.etherology.forge.ItemRegistryTestArtifacts.*;
 import static ru.feytox.etherology.forge.PatternTabletBytecodeTest.*;
 import static ru.feytox.etherology.forge.PedestalBytecodeAssertions.*;
+import static ru.feytox.etherology.forge.SharedItemCatalogAssertions.singleMethod;
 
 final class PatternTabletCrossArtifactTest {
 
@@ -92,7 +89,8 @@ final class PatternTabletCrossArtifactTest {
                     }
                 }
                 if (artifact.fabricApplication()) {
-                    assertFabricAliases(readClass(jar, LEGACY_ITEMS));
+                    SharedItemCatalogAssertions.assertAliases(readClass(jar, LEGACY_ITEMS), CATALOG,
+                            STYLE_NAMES.stream().map(style -> style + "_PATTERN_TABLET").toList());
                 } else {
                     assertNull(jar.getEntry(LEGACY_ITEMS + ".class"));
                 }
@@ -154,6 +152,10 @@ final class PatternTabletCrossArtifactTest {
                     assertNotNull(mixins);
                     assertEquals(1, Arrays.stream(mixins.split(","))
                             .map(String::trim).filter(CONFIG::equals).count());
+                    String accessTransformer = "META-INF/accesstransformer.cfg";
+                    assertArrayEquals(Files.readAllBytes(root.resolve(
+                                    "forge/src/main/resources/" + accessTransformer)),
+                            bytes(jar, accessTransformer));
                 }
                 boolean remapped = artifact.description().equals("fabricProductionJar");
                 ClassNode accessor = readClass(jar, ACCESSOR);
@@ -232,50 +234,5 @@ final class PatternTabletCrossArtifactTest {
                 }
             }
         }
-    }
-
-    private static void assertFabricAliases(ClassNode legacy) {
-        String pendingField = null;
-        int supplierGets = 0;
-        List<String> aliases = new ArrayList<>();
-        for (AbstractInsnNode instruction : requireMethod(legacy, "<clinit>", "()V").instructions) {
-            if (instruction instanceof FieldInsnNode field && field.owner.equals(CATALOG)
-                    && field.getOpcode() == Opcodes.GETSTATIC) {
-                assertNull(pendingField);
-                pendingField = field.name;
-                supplierGets = 0;
-            } else if (instruction instanceof MethodInsnNode call && pendingField != null
-                    && call.owner.equals("dev/architectury/registry/registries/RegistrySupplier")
-                    && call.name.equals("get")) {
-                supplierGets++;
-            } else if (instruction instanceof FieldInsnNode field && field.owner.equals(LEGACY_ITEMS)
-                    && field.getOpcode() == Opcodes.PUTSTATIC && field.name.endsWith("_PATTERN_TABLET")) {
-                assertEquals(field.name, pendingField);
-                assertEquals(1, supplierGets);
-                aliases.add(field.name);
-                pendingField = null;
-            }
-        }
-        assertNull(pendingField);
-        assertEquals(STYLE_NAMES.stream().map(style -> style + "_PATTERN_TABLET").toList(), aliases);
-    }
-
-    private static byte[] bytes(JarFile jar, String entryName) throws IOException {
-        var entry = jar.getJarEntry(entryName);
-        assertNotNull(entry, jar.getName() + ":" + entryName);
-        try (var input = jar.getInputStream(entry)) {
-            return input.readAllBytes();
-        }
-    }
-
-    private static JsonObject json(JarFile jar, String entryName) throws IOException {
-        return JsonParser.parseString(new String(bytes(jar, entryName), StandardCharsets.UTF_8))
-                .getAsJsonObject();
-    }
-
-    private static ClassNode readClass(JarFile jar, String owner) throws IOException {
-        ClassNode result = new ClassNode(Opcodes.ASM9);
-        new ClassReader(bytes(jar, owner + ".class")).accept(result, ClassReader.SKIP_DEBUG);
-        return result;
     }
 }

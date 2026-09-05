@@ -6,7 +6,7 @@ import net.minecraft.item.ArmorMaterial;
 import net.minecraft.item.ArmorMaterials;
 import net.minecraft.recipe.Ingredient;
 import net.minecraft.sound.SoundEvent;
-import ru.feytox.etherology.util.misc.EIdentifier;
+import ru.feytox.etherology.bootstrap.EtherologyBootstrap;
 
 import java.util.function.Supplier;
 
@@ -47,7 +47,7 @@ public final class EbonyArmorMaterial implements ArmorMaterial {
 
     @Override
     public String getName() {
-        return EIdentifier.strId("ebony");
+        return EtherologyBootstrap.MOD_ID + ":ebony";
     }
 
     @Override

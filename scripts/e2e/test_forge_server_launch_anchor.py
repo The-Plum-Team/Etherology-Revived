@@ -676,9 +676,10 @@ class ReplacementAndArtifactTests(LaunchAnchorTestCase):
         self.addCleanup(self.force_close, handle)
         readiness = self.runtime / anchor.READINESS_FILE_NAME
         content = readiness.read_bytes()
-        readiness.unlink()
-        readiness.write_bytes(content)
-        readiness.chmod(0o600)
+        replacement = self.runtime / f"{anchor.READINESS_FILE_NAME}.replacement"
+        replacement.write_bytes(content)
+        replacement.chmod(0o600)
+        os.replace(replacement, readiness)
 
         with self.assertRaisesRegex(anchor.LaunchAnchorError, "was replaced"):
             handle.start_child()
@@ -744,9 +745,10 @@ class ReplacementAndArtifactTests(LaunchAnchorTestCase):
         child = handle.poll_child_started()
         self.assertIsNotNone(child)
         original = path.read_bytes()
-        path.unlink()
-        path.write_bytes(original)
-        path.chmod(0o600)
+        replacement = path.with_name(f"{path.name}.replacement")
+        replacement.write_bytes(original)
+        replacement.chmod(0o600)
+        os.replace(replacement, path)
 
         with self.assertRaisesRegex(anchor.LaunchAnchorError, "was replaced"):
             handle.poll_child_started()

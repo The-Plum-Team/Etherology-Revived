@@ -24,6 +24,36 @@ import forge_server
 import macos_memory_guard
 
 
+_TEST_SHARED_GRADLE_CACHE_CONTEXT = None
+_TEST_SHARED_GRADLE_CACHE_PATCHER = None
+
+
+def setUpModule() -> None:
+    """Provides an owner-only cache fixture without consulting the host home."""
+
+    global _TEST_SHARED_GRADLE_CACHE_CONTEXT
+    global _TEST_SHARED_GRADLE_CACHE_PATCHER
+    _TEST_SHARED_GRADLE_CACHE_CONTEXT = tempfile.TemporaryDirectory()
+    shared_home = Path(_TEST_SHARED_GRADLE_CACHE_CONTEXT.name).resolve()
+    for name in forge_server.GRADLE_CACHE_BRIDGE_NAMES:
+        (shared_home / name).mkdir(mode=0o700)
+    _TEST_SHARED_GRADLE_CACHE_PATCHER = mock.patch.object(
+        forge_server,
+        "SHARED_GRADLE_CACHE_HOME",
+        shared_home,
+    )
+    _TEST_SHARED_GRADLE_CACHE_PATCHER.start()
+
+
+def tearDownModule() -> None:
+    """Restores the production cache path and removes the isolated fixture."""
+
+    assert _TEST_SHARED_GRADLE_CACHE_PATCHER is not None
+    assert _TEST_SHARED_GRADLE_CACHE_CONTEXT is not None
+    _TEST_SHARED_GRADLE_CACHE_PATCHER.stop()
+    _TEST_SHARED_GRADLE_CACHE_CONTEXT.cleanup()
+
+
 @contextmanager
 def temporary_repository():
     with tempfile.TemporaryDirectory() as temporary_directory:

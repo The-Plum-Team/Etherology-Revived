@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from functools import partial
 import base64
 import copy
 import json
@@ -4551,6 +4552,23 @@ class DetachedJavaActiveCleanupTests(unittest.TestCase):
 
 
 class GradleTopologyPreflightTests(unittest.TestCase):
+    def setUp(self) -> None:
+        fixture = tempfile.TemporaryDirectory()
+        self.addCleanup(fixture.cleanup)
+        caffeinate = Path(fixture.name).resolve() / "caffeinate"
+        caffeinate.write_bytes(b"not executed")
+        caffeinate.chmod(0o700)
+        command_builder = mock.patch.object(
+            forge_server,
+            "build_gradle_command",
+            side_effect=partial(
+                forge_server.build_gradle_command,
+                caffeinate_path=caffeinate,
+            ),
+        )
+        command_builder.start()
+        self.addCleanup(command_builder.stop)
+
     def test_setup_failure_preserves_the_exact_completed_runtime(self) -> None:
         with temporary_repository() as (root, manifest_path):
             configuration = load_temporary_configuration(root, manifest_path)

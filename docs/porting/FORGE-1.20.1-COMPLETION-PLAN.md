@@ -143,6 +143,41 @@ Source owners:
   applicability/projectile mixins remain part of later gameplay work.
 - Eager helpers: `RegistrableBlock` and `EBlock`.
 
+#### Next equipment slice: battle pickaxes (not implemented)
+
+The seven `ToolItems` declarations must move together with `BattlePickaxe` and its gameplay
+consumers, not as plain registry entries. Preserve declaration order (wooden, stone, iron,
+golden, Ebony, diamond, netherite), attack speed `-2.6f`, attack damage argument `2` except
+Ebony's `1`, and fireproof settings only for netherite. `getDamagePercent()` remains
+`(attackDamage + 1) / 7`, where the stored damage includes the material contribution.
+
+The source trace identifies the following coupled work:
+
+- Extract only the two battle-pickaxe injections from `LivingEntityMixin`; leave the Iron
+  Shield logic in place. Preserve the armor-damage expression's original `Math.min` cap
+  and the enchanted-protection multiplier and rounding.
+- Extract only `damageArmorByPick` from `PlayerEntityMixin`; preserve
+  `Math.round(amount * (1.5 + pick.getDamagePercent()))`. The shield, broadsword, Peal,
+  and jump hooks are separate consumers and must not be moved incidentally.
+- Share enchantment applicability through both `EnchantmentMixin` and
+  `EnchantmentHelperMixin`. `EtherEnchantments` currently allows weapon enchantments
+  for `instanceof BattlePickaxe` but applies Fortune/Silk Touch exclusions to the exact
+  runtime class through its ban map. Preserve that distinction, including other weapons'
+  existing bans and the Peal/Reflection tag checks, when splitting the shared policy from
+  the unported reflection/projectile code.
+- Preserve the wooden pick's 200-tick fuel registration in `EItems.registerItems`, where
+  it currently shares a call with Thuja oil. Forge needs a registration-safe shared hook.
+- Package six shaped recipes, the netherite smithing upgrade, their advancements, seven
+  handheld models/textures, translations, and existing pickaxe/sword tag memberships.
+- Common's combat injections need the already-pinned MixinExtras API; Forge also needs
+  its runtime dependency. Use the official Architectury Loom `implementation` plus
+  `include` setup and verify the remapped E2E-under-test JAR contains the nested dependency;
+  successful compilation of the development shadow JAR alone does not prove packaging.
+
+This is a source audit, not combat acceptance. Do not change the frozen Slitherite v21
+server candidate or reuse its profile for this slice. Batch native/image acceptance remains
+deferred until the version matrix is implemented, as requested.
+
 Accepted bounded sound foundation:
 
 - `SharedSounds` is the single Common declaration owner for the exact 14 canonical sound-event

@@ -103,3 +103,12 @@ jobs:
           :forge:1.20.1:verifyE2eHarnessArtifact
           :forge:1.20.1:verifyE2eUnderTestIsolation
           :forge:1.20.1:verifyForgePortGateClosed
+      - name: Upload Java test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: java-test-reports
+          retention-days: 14
+          path: |
+            **/build/reports/tests/**
+            **/build/test-results/**

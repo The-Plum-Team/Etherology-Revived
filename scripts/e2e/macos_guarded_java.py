@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
+import re
 import signal
 import subprocess
 import sys
@@ -37,6 +38,20 @@ from macos_memory_guard import (  # noqa: E402
 
 EXPECTED_MAXIMUM_MEMORY_MB = 4096
 MEBIBYTE_BYTES = 1024 * 1024
+GIBIBYTE_BYTES = 1024 * MEBIBYTE_BYTES
+STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME = "strict-2g-v1"
+STRICT_TWO_GIB_MAXIMUM_MEMORY_MB = 2048
+STRICT_TWO_GIB_MEMORY_POLICY_V1 = replace(
+    FOUR_GIB_CLIENT_MEMORY_POLICY,
+    heap_limit_bytes=STRICT_TWO_GIB_MAXIMUM_MEMORY_MB * MEBIBYTE_BYTES,
+    warning_phys_footprint_bytes=3 * GIBIBYTE_BYTES,
+    hard_phys_footprint_bytes=4 * GIBIBYTE_BYTES,
+    emergency_phys_footprint_bytes=5 * GIBIBYTE_BYTES,
+    hard_window_sample_count=15,
+    hard_required_high_sample_count=10,
+    hard_final_high_sample_count=5,
+    emergency_final_high_sample_count=1,
+)
 JAVA_OPTION_ENVIRONMENT_VARIABLES = (
     "JAVA_TOOL_OPTIONS",
     "JDK_JAVA_OPTIONS",
@@ -53,6 +68,34 @@ MAXIMUM_TELEMETRY_AGE_NANOSECONDS = 3_000_000_000
 MAXIMUM_READINESS_SIZE_BYTES = 16 * 1024
 MAXIMUM_ERROR_DETAIL_BYTES = 512
 MONITOR_ACTION = "monitor"
+MEMORY_POLICY_COMMAND_OPTION = "--memory-policy"
+MEMORY_POLICY_READINESS_FIELD = "memory_policy_name"
+MEMORY_POLICY_STATE_FIELD = "memory_guard_policy_name"
+CURRENT_TELEMETRY_STATE_FIELDS = frozenset(
+    {
+        "enforcement_disarmed",
+        "stop_callback_invoked",
+        "sample_count",
+        "retained_record_count",
+        "dropped_record_count",
+        "last_stop_outcome",
+    }
+)
+CURRENT_TELEMETRY_RECORD_FIELDS = frozenset(
+    {
+        "observed_at_monotonic_ns",
+        "source",
+        "status",
+        "identity_matches_target",
+        "current_phys_footprint_bytes",
+        "resident_size_bytes",
+        "virtual_size_bytes",
+        "lifetime_max_phys_footprint_bytes",
+        "detail",
+        "decision",
+        "stop_outcome",
+    }
+)
 
 
 class GuardedJavaError(RuntimeError):
@@ -92,6 +135,7 @@ class GuardedJavaMonitor:
     telemetry_path: Path
     readiness_path: Path
     group_anchor: OwnedJavaProcess | None = None
+    policy_name: str | None = None
 
 
 def verify_java_launch_contract(
@@ -151,11 +195,25 @@ def verify_exact_java_heap_arguments(
         )
 
 
-def memory_policy_for_maximum_heap(maximum_memory_mb: int) -> MemoryPolicy:
+def memory_policy_for_maximum_heap(
+    maximum_memory_mb: int,
+    policy_name: str | None = None,
+) -> MemoryPolicy:
     """Returns the shared physical-footprint policy for one exact heap limit."""
 
     if type(maximum_memory_mb) is not int or maximum_memory_mb <= 0:
         raise GuardedJavaError("The Java maximum-memory value must be positive MiB")
+    if policy_name is not None:
+        if policy_name != STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME:
+            raise GuardedJavaError(
+                f"The Java memory policy is unknown: {policy_name!r}"
+            )
+        if maximum_memory_mb != STRICT_TWO_GIB_MAXIMUM_MEMORY_MB:
+            raise GuardedJavaError(
+                f"The {STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME} memory policy requires "
+                f"exactly {STRICT_TWO_GIB_MAXIMUM_MEMORY_MB} MiB"
+            )
+        return STRICT_TWO_GIB_MEMORY_POLICY_V1
     heap_limit_bytes = maximum_memory_mb * MEBIBYTE_BYTES
     if heap_limit_bytes >= FOUR_GIB_CLIENT_MEMORY_POLICY.warning_phys_footprint_bytes:
         raise GuardedJavaError(
@@ -167,10 +225,13 @@ def memory_policy_for_maximum_heap(maximum_memory_mb: int) -> MemoryPolicy:
     )
 
 
-def memory_policy_payload(maximum_memory_mb: int) -> dict[str, int]:
+def memory_policy_payload(
+    maximum_memory_mb: int,
+    policy_name: str | None = None,
+) -> dict[str, int]:
     """Returns the exact serialized policy expected from the monitor."""
 
-    policy = memory_policy_for_maximum_heap(maximum_memory_mb)
+    policy = memory_policy_for_maximum_heap(maximum_memory_mb, policy_name)
     return {
         "heap_limit_bytes": policy.heap_limit_bytes,
         "warning_phys_footprint_bytes": policy.warning_phys_footprint_bytes,
@@ -276,6 +337,34 @@ def memory_guard_group_anchor_from_state(
     return anchor
 
 
+def _memory_policy_selection_from_state(
+    state: Mapping[str, object],
+) -> tuple[int | None, str | None]:
+    maximum_memory_mb = state.get("memory_guard_maximum_memory_mb")
+    raw_policy_name = state.get(MEMORY_POLICY_STATE_FIELD)
+    if raw_policy_name is None:
+        policy_name = None
+    elif raw_policy_name == STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME:
+        policy_name = STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+    else:
+        raise GuardedJavaError(
+            f"The E2E process state has an unknown Java memory policy: "
+            f"{raw_policy_name!r}"
+        )
+    if maximum_memory_mb is None:
+        if policy_name is not None:
+            raise GuardedJavaError(
+                "A named Java memory policy requires an exact maximum-memory value"
+            )
+        return None, None
+    if type(maximum_memory_mb) is not int:
+        raise GuardedJavaError(
+            "The E2E process state has an invalid Java maximum-memory value"
+        )
+    memory_policy_for_maximum_heap(maximum_memory_mb, policy_name)
+    return maximum_memory_mb, policy_name
+
+
 def verify_guard_state_paths(
     state: Mapping[str, object], runtime_directory: Path
 ) -> tuple[Path, Path]:
@@ -309,6 +398,7 @@ def verify_guard_state_paths(
             "The memory guard telemetry does not match controller state"
         )
     readiness = _load_readiness(expected_readiness)
+    _maximum_memory_mb, policy_name = _memory_policy_selection_from_state(state)
     expected_readiness_payload: dict[str, object] = {
         "schema": 1,
         "status": "ready",
@@ -316,6 +406,8 @@ def verify_guard_state_paths(
         "target": _target_payload(target),
         "telemetry": str(expected_telemetry),
     }
+    if policy_name is not None:
+        expected_readiness_payload[MEMORY_POLICY_READINESS_FIELD] = policy_name
     group_anchor = memory_guard_group_anchor_from_state(state)
     if group_anchor is not None:
         expected_readiness_payload["group_anchor"] = _target_payload(group_anchor)
@@ -337,6 +429,10 @@ def memory_guard_process_matches(state: Mapping[str, object]) -> bool:
         or type(target_pid) is not int
         or int(target_pid) <= 0
     ):
+        return False
+    try:
+        maximum_memory_mb, policy_name = _memory_policy_selection_from_state(state)
+    except GuardedJavaError:
         return False
     try:
         completed = subprocess.run(
@@ -363,14 +459,16 @@ def memory_guard_process_matches(state: Mapping[str, object]) -> bool:
     )
     if not base_matches:
         return False
-    maximum_memory_mb = state.get("memory_guard_maximum_memory_mb")
     if (
         maximum_memory_mb is not None
-        and (
-            type(maximum_memory_mb) is not int
-            or f"--maximum-memory-mb {maximum_memory_mb}" not in command
+        and not _command_has_exact_option_value(
+            command,
+            "--maximum-memory-mb",
+            str(maximum_memory_mb),
         )
     ):
+        return False
+    if not _command_matches_memory_policy(command, policy_name):
         return False
     try:
         group_anchor = memory_guard_group_anchor_from_state(state)
@@ -420,12 +518,18 @@ def memory_guard_is_enforcing(state: Mapping[str, object]) -> bool:
         or payload.get("target") != _target_payload(target)
     ):
         return False
-    expected_maximum_memory_mb = state.get("memory_guard_maximum_memory_mb")
+    try:
+        expected_maximum_memory_mb, policy_name = (
+            _memory_policy_selection_from_state(state)
+        )
+    except GuardedJavaError:
+        return False
     if expected_maximum_memory_mb is not None:
-        if type(expected_maximum_memory_mb) is not int:
-            return False
         try:
-            expected_policy = memory_policy_payload(expected_maximum_memory_mb)
+            expected_policy = memory_policy_payload(
+                expected_maximum_memory_mb,
+                policy_name,
+            )
         except GuardedJavaError:
             return False
         if payload.get("policy") != expected_policy:
@@ -441,6 +545,66 @@ def memory_guard_is_enforcing(state: Mapping[str, object]) -> bool:
     ):
         return False
     latest = records[-1]
+    if policy_name == STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME:
+        sample_count = guard_state.get("sample_count")
+        retained_record_count = guard_state.get("retained_record_count")
+        dropped_record_count = guard_state.get("dropped_record_count")
+        current_phys_footprint_bytes = latest.get(
+            "current_phys_footprint_bytes"
+        )
+        resident_size_bytes = latest.get("resident_size_bytes")
+        lifetime_max_phys_footprint_bytes = latest.get(
+            "lifetime_max_phys_footprint_bytes"
+        )
+        detail = latest.get("detail")
+        if (
+            set(guard_state) != CURRENT_TELEMETRY_STATE_FIELDS
+            or set(latest) != CURRENT_TELEMETRY_RECORD_FIELDS
+            or guard_state.get("enforcement_disarmed") is not False
+            or guard_state.get("stop_callback_invoked") is not False
+            or guard_state.get("last_stop_outcome") != "not-required"
+            or type(sample_count) is not int
+            or type(retained_record_count) is not int
+            or type(dropped_record_count) is not int
+            or retained_record_count != len(records)
+            or dropped_record_count < 0
+            or sample_count != retained_record_count + dropped_record_count
+            or latest.get("decision") not in {"normal", "warning"}
+            or latest.get("stop_outcome") != "not-required"
+            or type(current_phys_footprint_bytes) is not int
+            or current_phys_footprint_bytes < 0
+            or current_phys_footprint_bytes
+            > expected_policy["emergency_phys_footprint_bytes"]
+            or type(resident_size_bytes) is not int
+            or resident_size_bytes < 0
+            or latest.get("virtual_size_bytes") is not None
+            or type(lifetime_max_phys_footprint_bytes) is not int
+            or lifetime_max_phys_footprint_bytes < current_phys_footprint_bytes
+            or not isinstance(detail, str)
+            or len(detail.encode("utf-8")) > 512
+        ):
+            return False
+    else:
+        if (
+            "stop_callback_invoked" in guard_state
+            and guard_state.get("stop_callback_invoked") is not False
+        ):
+            return False
+        if (
+            "last_stop_outcome" in guard_state
+            and guard_state.get("last_stop_outcome") != "not-required"
+        ):
+            return False
+        if (
+            "decision" in latest
+            and latest.get("decision") not in {"normal", "warning"}
+        ):
+            return False
+        if (
+            "stop_outcome" in latest
+            and latest.get("stop_outcome") != "not-required"
+        ):
+            return False
     observed_at = latest.get("observed_at_monotonic_ns")
     if type(observed_at) is not int:
         return False
@@ -451,6 +615,30 @@ def memory_guard_is_enforcing(state: Mapping[str, object]) -> bool:
         and latest.get("status") == "available"
         and latest.get("identity_matches_target") is True
     )
+
+
+def _command_matches_memory_policy(
+    command: str,
+    policy_name: str | None,
+) -> bool:
+    option_pattern = rf"(?:^|\s){re.escape(MEMORY_POLICY_COMMAND_OPTION)}(?:=|\s|$)"
+    option_is_present = re.search(option_pattern, command) is not None
+    if policy_name is None:
+        return not option_is_present
+    return _command_has_exact_option_value(
+        command,
+        MEMORY_POLICY_COMMAND_OPTION,
+        policy_name,
+    )
+
+
+def _command_has_exact_option_value(
+    command: str,
+    option: str,
+    expected_value: str,
+) -> bool:
+    value_pattern = rf"(?:^|\s){re.escape(option)}(?:=|\s+)([^\s]+)"
+    return re.findall(value_pattern, command) == [expected_value]
 
 
 def start_guarded_java(
@@ -554,11 +742,12 @@ def start_guarded_java_monitor(
     log_handle: BinaryIO,
     *,
     group_anchor: OwnedJavaProcess | None = None,
+    policy_name: str | None = None,
     process_started: Callable[[subprocess.Popen[bytes]], None] | None = None,
 ) -> GuardedJavaMonitor:
     """Starts an authoritative monitor for one already-bound Java target."""
 
-    memory_policy_for_maximum_heap(maximum_memory_mb)
+    memory_policy_for_maximum_heap(maximum_memory_mb, policy_name)
     telemetry_path, readiness_path = guard_runtime_paths(runtime_directory)
     for path in (telemetry_path, readiness_path):
         if path.exists() or path.is_symlink():
@@ -595,6 +784,7 @@ def start_guarded_java_monitor(
                 telemetry_path,
                 readiness_path,
                 group_anchor,
+                policy_name,
             ),
             cwd=runtime_directory,
             stdin=subprocess.DEVNULL,
@@ -611,6 +801,7 @@ def start_guarded_java_monitor(
             telemetry_path,
             readiness_path,
             group_anchor,
+            policy_name,
         )
         if monitor_process.poll() is not None:
             raise GuardedJavaError(
@@ -622,6 +813,7 @@ def start_guarded_java_monitor(
             telemetry_path=telemetry_path,
             readiness_path=readiness_path,
             group_anchor=group_anchor,
+            policy_name=policy_name,
         )
     except BaseException:
         _terminate_spawned_auxiliary(monitor_process)
@@ -788,9 +980,11 @@ def monitor_owned_java(
     readiness_path: Path,
     maximum_memory_mb: int = EXPECTED_MAXIMUM_MEMORY_MB,
     group_anchor: OwnedJavaProcess | None = None,
+    policy_name: str | None = None,
 ) -> int:
     """Monitors the exact Java identity until it exits or identity safety is lost."""
 
+    policy = memory_policy_for_maximum_heap(maximum_memory_mb, policy_name)
     _validate_monitor_artifact_paths(telemetry_path, readiness_path)
     sampler = MacOsProcessMemorySampler.native()
     if sampler.revalidate(target) != target:
@@ -819,7 +1013,7 @@ def monitor_owned_java(
             target.process_group_id,
             group_anchor,
         ),
-        policy=memory_policy_for_maximum_heap(maximum_memory_mb),
+        policy=policy,
     )
     initial_result = guard.poll()
     _write_telemetry(telemetry_path, guard.telemetry_json_bytes())
@@ -834,6 +1028,8 @@ def monitor_owned_java(
         "target": _target_payload(target),
         "telemetry": str(telemetry_path),
     }
+    if policy_name is not None:
+        readiness_payload[MEMORY_POLICY_READINESS_FIELD] = policy_name
     if group_anchor is not None:
         readiness_payload["group_anchor"] = _target_payload(group_anchor)
     _write_json_exclusive(readiness_path, readiness_payload)
@@ -842,7 +1038,7 @@ def monitor_owned_java(
     previous_decision = initial_result.decision
     previous_status = initial_result.sample_status
     if initial_result.decision is not MemoryDecision.NORMAL:
-        _print_decision_transition(initial_result.decision)
+        _print_decision_transition(initial_result.decision, policy)
     while True:
         result = guard.poll()
         if result.sampled:
@@ -858,7 +1054,7 @@ def monitor_owned_java(
                 _write_telemetry(telemetry_path, guard.telemetry_json_bytes())
                 last_persisted_at = now
             if decision_changed:
-                _print_decision_transition(result.decision)
+                _print_decision_transition(result.decision, policy)
                 previous_decision = result.decision
             if status_changed:
                 _print_sample_status_transition(result.sample_status)
@@ -907,7 +1103,9 @@ def _monitor_command(
     telemetry_path: Path,
     readiness_path: Path,
     group_anchor: OwnedJavaProcess | None = None,
+    policy_name: str | None = None,
 ) -> list[str]:
+    memory_policy_for_maximum_heap(maximum_memory_mb, policy_name)
     command = [
         sys.executable,
         "-B",
@@ -928,6 +1126,8 @@ def _monitor_command(
         "--readiness",
         str(readiness_path),
     ]
+    if policy_name is not None:
+        command.extend([MEMORY_POLICY_COMMAND_OPTION, policy_name])
     if group_anchor is not None:
         command.extend(
             [
@@ -950,7 +1150,13 @@ def _wait_for_monitor_readiness(
     telemetry_path: Path,
     readiness_path: Path,
     group_anchor: OwnedJavaProcess | None = None,
+    policy_name: str | None = None,
 ) -> None:
+    if (
+        policy_name is not None
+        and policy_name != STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+    ):
+        raise GuardedJavaError(f"The Java memory policy is unknown: {policy_name!r}")
     deadline = time.monotonic() + READINESS_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
         if readiness_path.exists() or readiness_path.is_symlink():
@@ -962,6 +1168,8 @@ def _wait_for_monitor_readiness(
                 "target": _target_payload(target),
                 "telemetry": str(telemetry_path),
             }
+            if policy_name is not None:
+                expected[MEMORY_POLICY_READINESS_FIELD] = policy_name
             if group_anchor is not None:
                 expected["group_anchor"] = _target_payload(group_anchor)
             if payload != expected:
@@ -1172,19 +1380,52 @@ def _stop_anchored_java_process(
     )
 
 
-def _print_decision_transition(decision: MemoryDecision) -> None:
+def _print_decision_transition(
+    decision: MemoryDecision,
+    policy: MemoryPolicy = FOUR_GIB_CLIENT_MEMORY_POLICY,
+) -> None:
+    thresholds = {
+        MemoryDecision.WARNING: policy.warning_phys_footprint_bytes,
+        MemoryDecision.HARD: policy.hard_phys_footprint_bytes,
+        MemoryDecision.EMERGENCY: policy.emergency_phys_footprint_bytes,
+    }
+    threshold_bytes = thresholds.get(decision)
+    if threshold_bytes is None:
+        return
+    threshold = _format_memory_threshold(threshold_bytes)
     if decision is MemoryDecision.WARNING:
         print(
             "Etherology memory guard warning: current physical footprint exceeded "
-            "8 GiB",
+            f"{threshold}",
             flush=True,
         )
     elif decision in (MemoryDecision.HARD, MemoryDecision.EMERGENCY):
+        if _uses_legacy_decision_wording(policy):
+            decision_threshold = f"{decision.value} threshold"
+        else:
+            decision_threshold = f"{decision.value} {threshold} threshold"
         print(
             "Etherology memory guard stopped the owned Java process after a "
-            f"{decision.value} threshold",
+            f"{decision_threshold}",
             flush=True,
         )
+
+
+def _format_memory_threshold(threshold_bytes: int) -> str:
+    if threshold_bytes % GIBIBYTE_BYTES == 0:
+        return f"{threshold_bytes // GIBIBYTE_BYTES} GiB"
+    return f"{threshold_bytes} bytes"
+
+
+def _uses_legacy_decision_wording(policy: MemoryPolicy) -> bool:
+    return (
+        policy.warning_phys_footprint_bytes
+        == FOUR_GIB_CLIENT_MEMORY_POLICY.warning_phys_footprint_bytes
+        and policy.hard_phys_footprint_bytes
+        == FOUR_GIB_CLIENT_MEMORY_POLICY.hard_phys_footprint_bytes
+        and policy.emergency_phys_footprint_bytes
+        == FOUR_GIB_CLIENT_MEMORY_POLICY.emergency_phys_footprint_bytes
+    )
 
 
 def _print_sample_status_transition(status: SampleStatus | None) -> None:
@@ -1287,6 +1528,10 @@ def _parse_arguments() -> argparse.Namespace:
         default=EXPECTED_MAXIMUM_MEMORY_MB,
         type=int,
     )
+    parser.add_argument(
+        MEMORY_POLICY_COMMAND_OPTION,
+        choices=(STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME,),
+    )
     parser.add_argument("--telemetry", required=True, type=Path)
     parser.add_argument("--readiness", required=True, type=Path)
     parser.add_argument("--group-anchor-pid", type=int)
@@ -1337,6 +1582,7 @@ def main() -> int:
             arguments.readiness,
             arguments.maximum_memory_mb,
             group_anchor,
+            arguments.memory_policy,
         )
     except (
         GuardedJavaError,

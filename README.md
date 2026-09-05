@@ -34,10 +34,61 @@ and
 `0dc45779791d6f3eb48af93830b57f510953184780df857289dc3843d0ee957f`,
 and the archive-manifest SHA-256 is
 `12c12e1d2772ae2a449a2c140e6af77e32f1f8eefb35aec06718eead1a4140c5`.
-The v31 identity must never be rerun. The equivalent Forge dedicated-server
-contract is prepared as the never-provisioned v20 profile, but its native run
-remains blocked until the real pedestal, alchemy, and lens dependencies satisfy
-the standard five-related-recipe contract. No v20 runtime or evidence exists.
+The v31 identity must never be rerun. The accepted Forge packaged-client v19
+Slitherite proof satisfies the real pedestal, alchemy, lens, and complete
+five-related-recipe dependency gate for the equivalent dedicated-server
+contract. Dedicated-server v20 was consumed by a fail-closed Gradle process-group
+handoff rejection before the controller acknowledged the Java 17 server; its
+exact failed bytes are retained in
+[`slitherite-block-registry-server-v20-pgid-handoff-failure`](docs/evidence/forge-1.20.1/slitherite-block-registry-server-v20-pgid-handoff-failure)
+and v20 must never be rerun. The active replacement is the fresh,
+never-provisioned and never-launched v21 profile. Its two byte-identical
+4,478-byte manifests have SHA-256
+`8df3f9c15f03c1ea9d5b6adea71ee352e9a2735ecdd22e26d03033d62f49f764`;
+no v21 runtime result or acceptance is claimed yet.
+
+The implemented v21 launch controller acquires and pins one repository-global
+native-run lock before any Java version probe or loader-free topology check,
+rejects retained active topology or wrapper-guard transients, and creates a
+bounded JDK 21 source-file broker as the stable launch session and process-group
+leader. The broker starts
+no Gradle JVM until the controller has authenticated the anchor, sampled its
+physical footprint, and proved that the detached watchdog is ready. It then
+releases one exact direct Gradle 9.6.1 wrapper child with a 2-GiB heap cap,
+offline arguments, and an allowlisted environment, and remains alive until the
+entire launch is quiescent. While awaiting START, the broker requires its exact
+controller to remain its live parent and limits that wait to 30 seconds. An
+accepted START commits the release; subsequent failures retain the process
+group for the watchdog. The controller requires a zero-Java baseline. The
+watchdog binds Java processes inside the owned group and session, permits at
+most three concurrently, retains at most 16 identities over the launch, and
+rejects Java outside that group. Normal cleanup requires exact process/group
+absence and terminal watchdog proof of global Java absence; failure cleanup
+additionally requires 15 continuous seconds of global absence. Successful
+topology and wrapper-guard transients
+are atomically renamed to owner-pinned completed diagnostic directories rather
+than deleted by pathname. The repository-owned Gradle home imports no user init
+or property files, validates the shared cache root and bridges as owner-only,
+and pins the extracted Gradle distribution's non-executable `init.d` inventory.
+The profile pins the 63,659-byte broker controller source at SHA-256
+`8cb41e0ce36d1fa91fd2472b73e54e7e9b44974e5c13c27b692f35ce404699a5`
+and the 41,275-byte Java source at SHA-256
+`baca2862e9df7dd6c3da1f41583cbc4b013c45423ec77914883961dcfd202d2b`.
+The wrapper JAR and wrapper properties complete the four pinned repository
+inputs. The Java source, JAR, and properties are staged as three `0400` files
+inside the isolated runtime and preserved alongside the five anchor records
+when a successful run is archived. The
+[v21 sealing workflow](scripts/e2e/README.md#sealing-the-successful-v21-dedicated-server-run)
+validates the stopped runtime, copies the exact payload inventory, creates its
+manifest once, and verifies the resulting archive without launching Java.
+Persistent `strict-2g-v1` monitors protect both the wrapper and Java 17 server,
+while the independent watchdog covers the anchor, wrapper, and server as one
+owned group. The monitors warn above 3 GiB, stop a sustained breach
+above 4 GiB after at least 10 of 15 high samples including all final five, and
+emergency-stop after one sample above 5 GiB. Synchronous authenticated checks
+also reject any individual Java identity above 5 GiB or the deduplicated Java
+set above 6 GiB of current physical footprint. These are prepared safety
+controls, not evidence that v21 has run.
 
 Forge artifacts are intentionally blocked until the remaining gameplay,
 client, native-loader, and E2E parity gates pass. See
@@ -197,9 +248,10 @@ passed 310 of 310 assertions on Java 17 and Forge 47.4.9, including the exact
 four-block Attrahite contract and all earlier registry, reload, and Forest
 Lantern checks. Its immutable archive is
 [`attrahite-block-registry-server-v19`](docs/evidence/forge-1.20.1/attrahite-block-registry-server-v19).
-The active v20 Slitherite contract is blocked before provisioning or launch and
-does not supersede that evidence. The historical v16 Forest Lantern archive
-remains immutable.
+The consumed v20 Slitherite attempt was rejected at its process-group ownership
+handoff and does not supersede that evidence. Fresh v21 has not been
+provisioned or launched, so it also carries no acceptance. The historical v16
+Forest Lantern archive remains immutable.
 
 The consumed Forge packaged-client v13 profile separately passed 69 of 69
 assertions in 575 ticks and wrote seven unedited 1920x1080 native framebuffers.

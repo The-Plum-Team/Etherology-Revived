@@ -55,6 +55,7 @@ def write_guard_artifacts(
     runtime: Path,
     target: macos_guarded_java.OwnedJavaProcess = TARGET,
     monitor_pid: int = 42000,
+    policy_name: str | None = None,
 ) -> tuple[Path, Path]:
     telemetry_path, readiness_path = macos_guarded_java.guard_runtime_paths(runtime)
     target_payload = {
@@ -67,16 +68,19 @@ def write_guard_artifacts(
         json.dumps({"schema": 1, "target": target_payload}),
         encoding="utf-8",
     )
+    readiness_payload = {
+        "schema": 1,
+        "status": "ready",
+        "monitor_pid": monitor_pid,
+        "target": target_payload,
+        "telemetry": str(telemetry_path),
+    }
+    if policy_name is not None:
+        readiness_payload[
+            macos_guarded_java.MEMORY_POLICY_READINESS_FIELD
+        ] = policy_name
     readiness_path.write_text(
-        json.dumps(
-            {
-                "schema": 1,
-                "status": "ready",
-                "monitor_pid": monitor_pid,
-                "target": target_payload,
-                "telemetry": str(telemetry_path),
-            }
-        ),
+        json.dumps(readiness_payload),
         encoding="utf-8",
     )
     return telemetry_path, readiness_path
@@ -191,6 +195,107 @@ class LaunchContractTests(unittest.TestCase):
             policy.emergency_phys_footprint_bytes,
         )
 
+    def test_legacy_policy_payload_remains_exactly_historical(self) -> None:
+        self.assertEqual(
+            {
+                "heap_limit_bytes": 2 * 1024**3,
+                "warning_phys_footprint_bytes": 8 * 1024**3,
+                "hard_phys_footprint_bytes": 12 * 1024**3,
+                "emergency_phys_footprint_bytes": 16 * 1024**3,
+                "sample_interval_nanoseconds": 1_000_000_000,
+                "maximum_sample_gap_nanoseconds": 2_000_000_000,
+                "hard_window_sample_count": 60,
+                "hard_required_high_sample_count": 45,
+                "hard_final_high_sample_count": 10,
+                "emergency_final_high_sample_count": 10,
+            },
+            macos_guarded_java.memory_policy_payload(2048),
+        )
+
+    def test_strict_two_gib_policy_payload_is_exact(self) -> None:
+        self.assertEqual(
+            {
+                "heap_limit_bytes": 2 * 1024**3,
+                "warning_phys_footprint_bytes": 3 * 1024**3,
+                "hard_phys_footprint_bytes": 4 * 1024**3,
+                "emergency_phys_footprint_bytes": 5 * 1024**3,
+                "sample_interval_nanoseconds": 1_000_000_000,
+                "maximum_sample_gap_nanoseconds": 2_000_000_000,
+                "hard_window_sample_count": 15,
+                "hard_required_high_sample_count": 10,
+                "hard_final_high_sample_count": 5,
+                "emergency_final_high_sample_count": 1,
+            },
+            macos_guarded_java.memory_policy_payload(
+                2048,
+                macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME,
+            ),
+        )
+
+    def test_named_policy_rejects_unknown_names_and_non_two_gib_heaps(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        for maximum_memory_mb, policy_name in (
+            (2048, ""),
+            (2048, "strict-2g-v2"),
+            (2048, True),
+            (1024, strict_name),
+            (4096, strict_name),
+        ):
+            with self.subTest(
+                maximum_memory_mb=maximum_memory_mb,
+                policy_name=policy_name,
+            ), self.assertRaises(macos_guarded_java.GuardedJavaError):
+                macos_guarded_java.memory_policy_for_maximum_heap(
+                    maximum_memory_mb,
+                    policy_name,
+                )
+
+    def test_decision_messages_name_selected_policy_thresholds(self) -> None:
+        strict_policy = macos_guarded_java.memory_policy_for_maximum_heap(
+            2048,
+            macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME,
+        )
+        for decision, threshold in (
+            (guard_module.MemoryDecision.WARNING, "3 GiB"),
+            (guard_module.MemoryDecision.HARD, "4 GiB"),
+            (guard_module.MemoryDecision.EMERGENCY, "5 GiB"),
+        ):
+            with self.subTest(decision=decision), mock.patch(
+                "builtins.print"
+            ) as print_message:
+                macos_guarded_java._print_decision_transition(
+                    decision,
+                    strict_policy,
+                )
+
+            self.assertIn(threshold, print_message.call_args.args[0])
+
+        with mock.patch("builtins.print") as print_message:
+            macos_guarded_java._print_decision_transition(
+                guard_module.MemoryDecision.WARNING
+            )
+        self.assertIn("8 GiB", print_message.call_args.args[0])
+
+    def test_legacy_hard_and_emergency_messages_remain_exact(self) -> None:
+        legacy_policy = macos_guarded_java.memory_policy_for_maximum_heap(2048)
+        for decision in (
+            guard_module.MemoryDecision.HARD,
+            guard_module.MemoryDecision.EMERGENCY,
+        ):
+            with self.subTest(decision=decision), mock.patch(
+                "builtins.print"
+            ) as print_message:
+                macos_guarded_java._print_decision_transition(
+                    decision,
+                    legacy_policy,
+                )
+
+            print_message.assert_called_once_with(
+                "Etherology memory guard stopped the owned Java process after a "
+                f"{decision.value} threshold",
+                flush=True,
+            )
+
 
 class StateArtifactTests(unittest.TestCase):
     def test_exact_state_and_runtime_artifacts_are_accepted(self) -> None:
@@ -215,6 +320,71 @@ class StateArtifactTests(unittest.TestCase):
                 (telemetry_path, readiness_path),
                 macos_guarded_java.verify_guard_state_paths(state, runtime),
             )
+
+    def test_strict_readiness_policy_must_match_controller_state(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, readiness_path = write_guard_artifacts(
+                runtime,
+                policy_name=strict_name,
+            )
+            state = {
+                "pid": TARGET.pid,
+                "process_group_id": TARGET.process_group_id,
+                "proc_start_abstime": TARGET.proc_start_abstime,
+                "expected_executable": TARGET.expected_executable,
+                "memory_guard_pid": 42000,
+                "memory_guard_telemetry": str(telemetry_path),
+                "memory_guard_readiness": str(readiness_path),
+                "memory_guard_maximum_memory_mb": 2048,
+                macos_guarded_java.MEMORY_POLICY_STATE_FIELD: strict_name,
+            }
+
+            self.assertEqual(
+                (telemetry_path, readiness_path),
+                macos_guarded_java.verify_guard_state_paths(state, runtime),
+            )
+
+            readiness_payload = json.loads(readiness_path.read_text(encoding="utf-8"))
+            readiness_payload.pop(
+                macos_guarded_java.MEMORY_POLICY_READINESS_FIELD
+            )
+            readiness_path.write_text(
+                json.dumps(readiness_payload),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "readiness record does not match",
+            ):
+                macos_guarded_java.verify_guard_state_paths(state, runtime)
+
+    def test_named_policy_state_requires_its_exact_heap(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, readiness_path = write_guard_artifacts(
+                runtime,
+                policy_name=strict_name,
+            )
+            state = {
+                "pid": TARGET.pid,
+                "process_group_id": TARGET.process_group_id,
+                "proc_start_abstime": TARGET.proc_start_abstime,
+                "expected_executable": TARGET.expected_executable,
+                "memory_guard_pid": 42000,
+                "memory_guard_telemetry": str(telemetry_path),
+                "memory_guard_readiness": str(readiness_path),
+                "memory_guard_maximum_memory_mb": 4096,
+                macos_guarded_java.MEMORY_POLICY_STATE_FIELD: strict_name,
+            }
+
+            with self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "requires exactly 2048 MiB",
+            ):
+                macos_guarded_java.verify_guard_state_paths(state, runtime)
 
     def test_state_identity_rejects_coerced_integer_fields(self) -> None:
         state: dict[str, object] = {
@@ -359,6 +529,139 @@ class StateArtifactTests(unittest.TestCase):
                     macos_guarded_java.memory_guard_is_enforcing(state)
                 )
 
+    def test_guard_health_rejects_stopped_or_stopping_guard_state(self) -> None:
+        observed_at = 10_000_000_000
+        base_guard_state: dict[str, object] = {
+            "enforcement_disarmed": False,
+            "stop_callback_invoked": False,
+            "last_stop_outcome": "not-required",
+        }
+        base_record: dict[str, object] = {
+            "observed_at_monotonic_ns": observed_at,
+            "source": "proc-pid-rusage-v4",
+            "status": "available",
+            "identity_matches_target": True,
+            "decision": "normal",
+            "stop_outcome": "not-required",
+        }
+        mutations = (
+            lambda guard_state, _record: guard_state.__setitem__(
+                "stop_callback_invoked", True
+            ),
+            lambda guard_state, _record: guard_state.__setitem__(
+                "last_stop_outcome", "requested"
+            ),
+            lambda _guard_state, record: record.__setitem__("decision", "hard"),
+            lambda _guard_state, record: record.__setitem__(
+                "decision", "emergency"
+            ),
+            lambda _guard_state, record: record.__setitem__(
+                "stop_outcome", "requested"
+            ),
+        )
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index), tempfile.TemporaryDirectory() as temporary:
+                runtime = Path(temporary).resolve()
+                telemetry_path, _readiness_path = write_guard_artifacts(runtime)
+                guard_state = dict(base_guard_state)
+                record = dict(base_record)
+                mutation(guard_state, record)
+                telemetry_path.write_text(
+                    json.dumps(
+                        {
+                            "schema": 1,
+                            "target": {
+                                "pid": TARGET.pid,
+                                "process_group_id": TARGET.process_group_id,
+                                "proc_start_abstime": TARGET.proc_start_abstime,
+                                "expected_executable": TARGET.expected_executable,
+                            },
+                            "policy": macos_guarded_java.memory_policy_payload(2048),
+                            "state": guard_state,
+                            "records": [record],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                state = {
+                    "pid": TARGET.pid,
+                    "process_group_id": TARGET.process_group_id,
+                    "proc_start_abstime": TARGET.proc_start_abstime,
+                    "expected_executable": TARGET.expected_executable,
+                    "memory_guard_telemetry": str(telemetry_path),
+                    "memory_guard_maximum_memory_mb": 2048,
+                }
+                with mock.patch.object(
+                    macos_guarded_java.time,
+                    "monotonic_ns",
+                    return_value=observed_at + 1_000_000_000,
+                ):
+                    self.assertFalse(
+                        macos_guarded_java.memory_guard_is_enforcing(state)
+                    )
+
+    def test_guard_health_accepts_legacy_optional_and_minimal_stop_state(
+        self,
+    ) -> None:
+        observed_at = 10_000_000_000
+        for legacy in (False, True):
+            with self.subTest(legacy=legacy), tempfile.TemporaryDirectory() as temporary:
+                runtime = Path(temporary).resolve()
+                telemetry_path, _readiness_path = write_guard_artifacts(runtime)
+                guard_state: dict[str, object] = {"enforcement_disarmed": False}
+                record: dict[str, object] = {
+                    "observed_at_monotonic_ns": observed_at,
+                    "source": "proc-pid-rusage-v4",
+                    "status": "available",
+                    "identity_matches_target": True,
+                }
+                if not legacy:
+                    guard_state.update(
+                        {
+                            "stop_callback_invoked": False,
+                            "last_stop_outcome": "not-required",
+                        }
+                    )
+                    record.update(
+                        {
+                            "decision": "warning",
+                            "stop_outcome": "not-required",
+                        }
+                    )
+                telemetry_path.write_text(
+                    json.dumps(
+                        {
+                            "schema": 1,
+                            "target": {
+                                "pid": TARGET.pid,
+                                "process_group_id": TARGET.process_group_id,
+                                "proc_start_abstime": TARGET.proc_start_abstime,
+                                "expected_executable": TARGET.expected_executable,
+                            },
+                            "policy": macos_guarded_java.memory_policy_payload(2048),
+                            "state": guard_state,
+                            "records": [record],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                state = {
+                    "pid": TARGET.pid,
+                    "process_group_id": TARGET.process_group_id,
+                    "proc_start_abstime": TARGET.proc_start_abstime,
+                    "expected_executable": TARGET.expected_executable,
+                    "memory_guard_telemetry": str(telemetry_path),
+                    "memory_guard_maximum_memory_mb": 2048,
+                }
+                with mock.patch.object(
+                    macos_guarded_java.time,
+                    "monotonic_ns",
+                    return_value=observed_at + 1_000_000_000,
+                ):
+                    self.assertTrue(
+                        macos_guarded_java.memory_guard_is_enforcing(state)
+                    )
+
     def test_guard_health_rejects_a_wrong_serialized_heap_policy(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             runtime = Path(temporary_directory).resolve()
@@ -405,6 +708,310 @@ class StateArtifactTests(unittest.TestCase):
                 self.assertFalse(
                     macos_guarded_java.memory_guard_is_enforcing(state)
                 )
+
+    def test_guard_health_authenticates_the_strict_named_policy(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, _readiness_path = write_guard_artifacts(
+                runtime,
+                policy_name=strict_name,
+            )
+            observed_at = 10_000_000_000
+            valid_record = {
+                "observed_at_monotonic_ns": observed_at,
+                "source": "proc-pid-rusage-v4",
+                "status": "available",
+                "identity_matches_target": True,
+                "current_phys_footprint_bytes": 2 * 1024**3,
+                "resident_size_bytes": 2 * 1024**3,
+                "virtual_size_bytes": None,
+                "lifetime_max_phys_footprint_bytes": 2 * 1024**3,
+                "detail": "",
+                "decision": "normal",
+                "stop_outcome": "not-required",
+            }
+            telemetry = {
+                "schema": 1,
+                "target": {
+                    "pid": TARGET.pid,
+                    "process_group_id": TARGET.process_group_id,
+                    "proc_start_abstime": TARGET.proc_start_abstime,
+                    "expected_executable": TARGET.expected_executable,
+                },
+                "policy": macos_guarded_java.memory_policy_payload(
+                    2048,
+                    strict_name,
+                ),
+                "state": {
+                    "enforcement_disarmed": False,
+                    "stop_callback_invoked": False,
+                    "sample_count": 1,
+                    "retained_record_count": 1,
+                    "dropped_record_count": 0,
+                    "last_stop_outcome": "not-required",
+                },
+                "records": [valid_record],
+            }
+            telemetry_path.write_text(json.dumps(telemetry), encoding="utf-8")
+            state = {
+                "pid": TARGET.pid,
+                "process_group_id": TARGET.process_group_id,
+                "proc_start_abstime": TARGET.proc_start_abstime,
+                "expected_executable": TARGET.expected_executable,
+                "memory_guard_telemetry": str(telemetry_path),
+                "memory_guard_maximum_memory_mb": 2048,
+                macos_guarded_java.MEMORY_POLICY_STATE_FIELD: strict_name,
+            }
+
+            with mock.patch.object(
+                macos_guarded_java.time,
+                "monotonic_ns",
+                return_value=observed_at + 1_000_000_000,
+            ):
+                self.assertTrue(
+                    macos_guarded_java.memory_guard_is_enforcing(state)
+                )
+
+                record_mutations = (
+                    {
+                        key: value
+                        for key, value in valid_record.items()
+                        if key != "stop_outcome"
+                    },
+                    {**valid_record, "unexpected": None},
+                    {**valid_record, "virtual_size_bytes": 1},
+                    {**valid_record, "detail": None},
+                    {
+                        **valid_record,
+                        "lifetime_max_phys_footprint_bytes": 1,
+                    },
+                )
+                for changed_record in record_mutations:
+                    telemetry["records"] = [changed_record]
+                    telemetry_path.write_text(
+                        json.dumps(telemetry),
+                        encoding="utf-8",
+                    )
+                    self.assertFalse(
+                        macos_guarded_java.memory_guard_is_enforcing(state)
+                    )
+                telemetry["records"] = [valid_record]
+
+                telemetry["policy"] = macos_guarded_java.memory_policy_payload(2048)
+                telemetry_path.write_text(json.dumps(telemetry), encoding="utf-8")
+                self.assertFalse(
+                    macos_guarded_java.memory_guard_is_enforcing(state)
+                )
+
+                telemetry["policy"] = macos_guarded_java.memory_policy_payload(
+                    2048,
+                    strict_name,
+                )
+                telemetry_path.write_text(json.dumps(telemetry), encoding="utf-8")
+                state["memory_guard_maximum_memory_mb"] = 4096
+                self.assertFalse(
+                    macos_guarded_java.memory_guard_is_enforcing(state)
+                )
+
+    def test_strict_guard_health_requires_the_exact_current_state_inventory(
+        self,
+    ) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        observed_at = 10_000_000_000
+        valid_guard_state: dict[str, object] = {
+            "enforcement_disarmed": False,
+            "stop_callback_invoked": False,
+            "sample_count": 1,
+            "retained_record_count": 1,
+            "dropped_record_count": 0,
+            "last_stop_outcome": "not-required",
+        }
+        mutations = [
+            (
+                f"missing-{field_name}",
+                {
+                    key: value
+                    for key, value in valid_guard_state.items()
+                    if key != field_name
+                },
+            )
+            for field_name in valid_guard_state
+        ]
+        mutations.append(("unexpected", {**valid_guard_state, "unexpected": False}))
+        mutations.extend(
+            (
+                (
+                    "enforcement-disarmed",
+                    {**valid_guard_state, "enforcement_disarmed": True},
+                ),
+                ("boolean-sample-count", {**valid_guard_state, "sample_count": True}),
+                (
+                    "wrong-retained-count",
+                    {**valid_guard_state, "retained_record_count": 2},
+                ),
+                (
+                    "negative-dropped-count",
+                    {**valid_guard_state, "dropped_record_count": -1},
+                ),
+                (
+                    "inconsistent-sample-count",
+                    {**valid_guard_state, "sample_count": 2},
+                ),
+            )
+        )
+        for label, changed_guard_state in mutations:
+            with (
+                self.subTest(label=label),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                runtime = Path(temporary).resolve()
+                telemetry_path, _readiness_path = write_guard_artifacts(
+                    runtime,
+                    policy_name=strict_name,
+                )
+                telemetry_path.write_text(
+                    json.dumps(
+                        {
+                            "schema": 1,
+                            "target": {
+                                "pid": TARGET.pid,
+                                "process_group_id": TARGET.process_group_id,
+                                "proc_start_abstime": TARGET.proc_start_abstime,
+                                "expected_executable": TARGET.expected_executable,
+                            },
+                            "policy": macos_guarded_java.memory_policy_payload(
+                                2048,
+                                strict_name,
+                            ),
+                            "state": changed_guard_state,
+                            "records": [
+                                {
+                                    "observed_at_monotonic_ns": observed_at,
+                                    "source": "proc-pid-rusage-v4",
+                                    "status": "available",
+                                    "identity_matches_target": True,
+                                    "current_phys_footprint_bytes": 1,
+                                    "resident_size_bytes": 1,
+                                    "virtual_size_bytes": None,
+                                    "lifetime_max_phys_footprint_bytes": 1,
+                                    "detail": "",
+                                    "decision": "normal",
+                                    "stop_outcome": "not-required",
+                                }
+                            ],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                state = {
+                    "pid": TARGET.pid,
+                    "process_group_id": TARGET.process_group_id,
+                    "proc_start_abstime": TARGET.proc_start_abstime,
+                    "expected_executable": TARGET.expected_executable,
+                    "memory_guard_telemetry": str(telemetry_path),
+                    "memory_guard_maximum_memory_mb": 2048,
+                    macos_guarded_java.MEMORY_POLICY_STATE_FIELD: strict_name,
+                }
+                with mock.patch.object(
+                    macos_guarded_java.time,
+                    "monotonic_ns",
+                    return_value=observed_at + 1_000_000_000,
+                ):
+                    self.assertFalse(
+                        macos_guarded_java.memory_guard_is_enforcing(state)
+                    )
+
+    def test_strict_guard_health_requires_benign_latest_stop_fields(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        observed_at = 10_000_000_000
+        base_record: dict[str, object] = {
+            "observed_at_monotonic_ns": observed_at,
+            "source": "proc-pid-rusage-v4",
+            "status": "available",
+            "identity_matches_target": True,
+            "current_phys_footprint_bytes": 3 * 1024**3 + 1,
+            "resident_size_bytes": 3 * 1024**3 + 1,
+            "virtual_size_bytes": None,
+            "lifetime_max_phys_footprint_bytes": 3 * 1024**3 + 1,
+            "detail": "",
+            "decision": "warning",
+            "stop_outcome": "not-required",
+        }
+        mutations = (
+            (
+                "missing-decision",
+                {
+                    key: value
+                    for key, value in base_record.items()
+                    if key != "decision"
+                },
+            ),
+            ("hard-decision", {**base_record, "decision": "hard"}),
+            (
+                "missing-stop-outcome",
+                {
+                    key: value
+                    for key, value in base_record.items()
+                    if key != "stop_outcome"
+                },
+            ),
+            ("requested-stop", {**base_record, "stop_outcome": "requested"}),
+        )
+        for label, changed_record in mutations:
+            with (
+                self.subTest(label=label),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                runtime = Path(temporary).resolve()
+                telemetry_path, _readiness_path = write_guard_artifacts(
+                    runtime,
+                    policy_name=strict_name,
+                )
+                telemetry_path.write_text(
+                    json.dumps(
+                        {
+                            "schema": 1,
+                            "target": {
+                                "pid": TARGET.pid,
+                                "process_group_id": TARGET.process_group_id,
+                                "proc_start_abstime": TARGET.proc_start_abstime,
+                                "expected_executable": TARGET.expected_executable,
+                            },
+                            "policy": macos_guarded_java.memory_policy_payload(
+                                2048,
+                                strict_name,
+                            ),
+                            "state": {
+                                "enforcement_disarmed": False,
+                                "stop_callback_invoked": False,
+                                "sample_count": 1,
+                                "retained_record_count": 1,
+                                "dropped_record_count": 0,
+                                "last_stop_outcome": "not-required",
+                            },
+                            "records": [changed_record],
+                        }
+                    ),
+                    encoding="utf-8",
+                )
+                state = {
+                    "pid": TARGET.pid,
+                    "process_group_id": TARGET.process_group_id,
+                    "proc_start_abstime": TARGET.proc_start_abstime,
+                    "expected_executable": TARGET.expected_executable,
+                    "memory_guard_telemetry": str(telemetry_path),
+                    "memory_guard_maximum_memory_mb": 2048,
+                    macos_guarded_java.MEMORY_POLICY_STATE_FIELD: strict_name,
+                }
+                with mock.patch.object(
+                    macos_guarded_java.time,
+                    "monotonic_ns",
+                    return_value=observed_at + 1_000_000_000,
+                ):
+                    self.assertFalse(
+                        macos_guarded_java.memory_guard_is_enforcing(state)
+                    )
 
     def test_guard_health_rejects_error_drift_fallback_and_stale_samples(self) -> None:
         for source, status, identity_matches, age in (
@@ -459,6 +1066,294 @@ class StateArtifactTests(unittest.TestCase):
                                 }
                             )
                         )
+
+
+class MonitorPolicyAuthenticationTests(unittest.TestCase):
+    def _state(self, telemetry_path: Path, readiness_path: Path) -> dict[str, object]:
+        return {
+            "pid": TARGET.pid,
+            "process_group_id": TARGET.process_group_id,
+            "proc_start_abstime": TARGET.proc_start_abstime,
+            "expected_executable": TARGET.expected_executable,
+            "memory_guard_pid": 42000,
+            "memory_guard_telemetry": str(telemetry_path),
+            "memory_guard_readiness": str(readiness_path),
+            "memory_guard_maximum_memory_mb": 2048,
+        }
+
+    def test_legacy_command_shape_is_unchanged_and_has_no_policy_selector(
+        self,
+    ) -> None:
+        telemetry_path = Path("/tmp/memory-guard-telemetry.json")
+        readiness_path = Path("/tmp/.memory-guard-ready.json")
+
+        self.assertEqual(
+            [
+                sys.executable,
+                "-B",
+                str(Path(macos_guarded_java.__file__).resolve()),
+                macos_guarded_java.MONITOR_ACTION,
+                "--pid",
+                str(TARGET.pid),
+                "--process-group-id",
+                str(TARGET.process_group_id),
+                "--proc-start-abstime",
+                str(TARGET.proc_start_abstime),
+                "--expected-executable",
+                TARGET.expected_executable,
+                "--maximum-memory-mb",
+                "2048",
+                "--telemetry",
+                str(telemetry_path),
+                "--readiness",
+                str(readiness_path),
+            ],
+            macos_guarded_java._monitor_command(
+                TARGET,
+                2048,
+                telemetry_path,
+                readiness_path,
+            ),
+        )
+
+    def test_strict_command_carries_one_exact_policy_selector(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        command = macos_guarded_java._monitor_command(
+            TARGET,
+            2048,
+            Path("/tmp/memory-guard-telemetry.json"),
+            Path("/tmp/.memory-guard-ready.json"),
+            policy_name=strict_name,
+        )
+
+        policy_index = command.index(
+            macos_guarded_java.MEMORY_POLICY_COMMAND_OPTION
+        )
+        self.assertEqual(strict_name, command[policy_index + 1])
+        self.assertEqual(
+            1,
+            command.count(macos_guarded_java.MEMORY_POLICY_COMMAND_OPTION),
+        )
+
+    def test_process_match_authenticates_named_and_legacy_commands(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        telemetry_path = Path("/tmp/memory-guard-telemetry.json")
+        readiness_path = Path("/tmp/.memory-guard-ready.json")
+        strict_command = " ".join(
+            macos_guarded_java._monitor_command(
+                TARGET,
+                2048,
+                telemetry_path,
+                readiness_path,
+                policy_name=strict_name,
+            )
+        )
+        legacy_command = " ".join(
+            macos_guarded_java._monitor_command(
+                TARGET,
+                2048,
+                telemetry_path,
+                readiness_path,
+            )
+        )
+        strict_state = self._state(telemetry_path, readiness_path)
+        strict_state[macos_guarded_java.MEMORY_POLICY_STATE_FIELD] = strict_name
+        legacy_state = self._state(telemetry_path, readiness_path)
+
+        for state, command, expected in (
+            (strict_state, strict_command, True),
+            (strict_state, legacy_command, False),
+            (
+                strict_state,
+                strict_command.replace(strict_name, f"{strict_name}-tampered"),
+                False,
+            ),
+            (
+                strict_state,
+                strict_command.replace(
+                    "--maximum-memory-mb 2048",
+                    "--maximum-memory-mb 20480",
+                ),
+                False,
+            ),
+            (legacy_state, legacy_command, True),
+            (legacy_state, strict_command, False),
+        ):
+            with self.subTest(expected=expected, command=command), mock.patch.object(
+                macos_guarded_java.subprocess,
+                "run",
+                return_value=subprocess.CompletedProcess(
+                    [],
+                    0,
+                    stdout=command,
+                ),
+            ):
+                self.assertEqual(
+                    expected,
+                    macos_guarded_java.memory_guard_process_matches(state),
+                )
+
+    def test_process_match_rejects_invalid_named_policy_state_before_ps(self) -> None:
+        state = self._state(
+            Path("/tmp/memory-guard-telemetry.json"),
+            Path("/tmp/.memory-guard-ready.json"),
+        )
+        state[macos_guarded_java.MEMORY_POLICY_STATE_FIELD] = (
+            macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        )
+        state["memory_guard_maximum_memory_mb"] = 4096
+
+        with mock.patch.object(macos_guarded_java.subprocess, "run") as run_process:
+            self.assertFalse(macos_guarded_java.memory_guard_process_matches(state))
+
+        run_process.assert_not_called()
+
+    def test_readiness_wait_authenticates_the_named_policy(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, readiness_path = write_guard_artifacts(
+                runtime,
+                policy_name=strict_name,
+            )
+            monitor_process = FakeProcess(42000)
+
+            macos_guarded_java._wait_for_monitor_readiness(
+                monitor_process,
+                TARGET,
+                telemetry_path,
+                readiness_path,
+                policy_name=strict_name,
+            )
+
+            with self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "memory policy is unknown",
+            ):
+                macos_guarded_java._wait_for_monitor_readiness(
+                    monitor_process,
+                    TARGET,
+                    telemetry_path,
+                    readiness_path,
+                    policy_name="strict-2g-v2",
+                )
+
+            with self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "readiness record does not match",
+            ):
+                macos_guarded_java._wait_for_monitor_readiness(
+                    monitor_process,
+                    TARGET,
+                    telemetry_path,
+                    readiness_path,
+                )
+
+            readiness_payload = json.loads(readiness_path.read_text(encoding="utf-8"))
+            readiness_payload.pop(
+                macos_guarded_java.MEMORY_POLICY_READINESS_FIELD
+            )
+            readiness_path.write_text(
+                json.dumps(readiness_payload),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                macos_guarded_java.GuardedJavaError,
+                "readiness record does not match",
+            ):
+                macos_guarded_java._wait_for_monitor_readiness(
+                    monitor_process,
+                    TARGET,
+                    telemetry_path,
+                    readiness_path,
+                    policy_name=strict_name,
+                )
+
+    def test_monitor_cli_parses_the_exact_named_policy(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        arguments = [
+            "macos_guarded_java.py",
+            "monitor",
+            "--pid",
+            str(TARGET.pid),
+            "--process-group-id",
+            str(TARGET.process_group_id),
+            "--proc-start-abstime",
+            str(TARGET.proc_start_abstime),
+            "--expected-executable",
+            TARGET.expected_executable,
+            "--maximum-memory-mb",
+            "2048",
+            "--telemetry",
+            "/tmp/memory-guard-telemetry.json",
+            "--readiness",
+            "/tmp/.memory-guard-ready.json",
+            macos_guarded_java.MEMORY_POLICY_COMMAND_OPTION,
+            strict_name,
+        ]
+
+        with mock.patch.object(sys, "argv", arguments):
+            parsed = macos_guarded_java._parse_arguments()
+
+        self.assertEqual(strict_name, parsed.memory_policy)
+
+    def test_monitor_runtime_publishes_and_uses_the_named_policy(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        initial_result = mock.Mock(
+            sample_status=guard_module.SampleStatus.AVAILABLE,
+            decision=guard_module.MemoryDecision.NORMAL,
+        )
+        missing_result = mock.Mock(
+            sampled=True,
+            sample_status=guard_module.SampleStatus.MISSING,
+            decision=guard_module.MemoryDecision.NORMAL,
+        )
+        guard = mock.Mock()
+        guard.poll.side_effect = (initial_result, missing_result)
+        guard.telemetry_json_bytes.return_value = b"{}"
+        sampler = mock.Mock()
+        sampler.revalidate.return_value = TARGET
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, readiness_path = (
+                macos_guarded_java.guard_runtime_paths(runtime)
+            )
+            with (
+                mock.patch.object(
+                    macos_guarded_java.MacOsProcessMemorySampler,
+                    "native",
+                    return_value=sampler,
+                ),
+                mock.patch.object(
+                    macos_guarded_java,
+                    "OwnedJavaMemoryGuard",
+                    return_value=guard,
+                ) as guard_class,
+                mock.patch.object(macos_guarded_java.os, "getpid", return_value=42000),
+                mock.patch.object(
+                    macos_guarded_java,
+                    "_print_sample_status_transition",
+                ),
+            ):
+                result = macos_guarded_java.monitor_owned_java(
+                    TARGET,
+                    telemetry_path,
+                    readiness_path,
+                    2048,
+                    policy_name=strict_name,
+                )
+
+            self.assertEqual(0, result)
+            self.assertEqual(
+                strict_name,
+                json.loads(readiness_path.read_text(encoding="utf-8"))[
+                    macos_guarded_java.MEMORY_POLICY_READINESS_FIELD
+                ],
+            )
+            self.assertEqual(
+                macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1,
+                guard_class.call_args.kwargs["policy"],
+            )
 
 
 class LaunchOrchestrationTests(unittest.TestCase):
@@ -587,6 +1482,49 @@ class LaunchOrchestrationTests(unittest.TestCase):
             process_group_index = command.index("--process-group-id")
             self.assertEqual("41000", command[process_group_index + 1])
             self.assertTrue(popen.call_args.kwargs["start_new_session"])
+
+    def test_bound_monitor_threads_the_named_policy_through_handoff(self) -> None:
+        strict_name = macos_guarded_java.STRICT_TWO_GIB_MEMORY_POLICY_V1_NAME
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            runtime = Path(temporary_directory).resolve()
+            telemetry_path, readiness_path = (
+                macos_guarded_java.guard_runtime_paths(runtime)
+            )
+            monitor_process = FakeProcess(42000)
+            with (
+                mock.patch.object(
+                    macos_guarded_java.subprocess,
+                    "Popen",
+                    return_value=monitor_process,
+                ) as popen,
+                mock.patch.object(
+                    macos_guarded_java,
+                    "_wait_for_monitor_readiness",
+                ) as wait_for_readiness,
+                mock.patch.object(macos_guarded_java.os, "getpgrp", return_value=1),
+            ):
+                monitor = macos_guarded_java.start_guarded_java_monitor(
+                    TARGET,
+                    2048,
+                    runtime,
+                    mock.Mock(),
+                    policy_name=strict_name,
+                )
+
+            self.assertEqual(strict_name, monitor.policy_name)
+            command = popen.call_args.args[0]
+            policy_index = command.index(
+                macos_guarded_java.MEMORY_POLICY_COMMAND_OPTION
+            )
+            self.assertEqual(strict_name, command[policy_index + 1])
+            wait_for_readiness.assert_called_once_with(
+                monitor_process,
+                TARGET,
+                telemetry_path,
+                readiness_path,
+                None,
+                strict_name,
+            )
 
     def test_monitor_refuses_a_target_in_the_controller_group_before_spawn(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:

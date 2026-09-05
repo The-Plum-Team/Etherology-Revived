@@ -491,8 +491,8 @@ contract used by Fabric, including all five related recipes and their real
 pedestal, alchemy, and lens dependencies. No placeholder registration or
 reduced recipe inventory was accepted as a substitute. Any later Forge
 packaged-client attempt must roll the complete contract to a fresh v20-or-newer
-client identity; the existing v20 identity described below is the separate
-dedicated-server contract.
+client identity. Dedicated-server v20, described below, is a separate consumed
+failure identity and does not reserve or authorize a packaged-client identity.
 
 The preceding v18 provisioning attempt failed before the Forge installer Java
 process was spawned because Homebrew framework Python transitioned from its
@@ -772,14 +772,14 @@ whole JAR after the Channel capture. That result is neither an archive failure
 nor a Channel regression, and it does not claim current equality. Establishing
 current equality requires another fresh isolated profile and native run.
 
-## Prepared Forge 1.20.1 dedicated-server Slitherite contract (v20; fresh one-shot authorized)
+## Prepared Forge 1.20.1 dedicated-server Slitherite contract (v21; fresh one-shot authorized)
 
 The active `forge-server-1.20.1-profile.json` and its immutable
-`forge-server-1.20.1-profile-v20.json` snapshot describe the fresh,
-never-provisioned `etherology-e2e-forge-server-1.20.1-v20` identity. The two
-profile files are
-byte-identical at 1,206 bytes with SHA-256
-`1a38dd4e88ee8960df96bcd9d4d074adc8f967c03534bee837b013badc7771be`.
+`forge-server-1.20.1-profile-v21.json` snapshot describe the fresh,
+never-provisioned and never-launched
+`etherology-e2e-forge-server-1.20.1-v21` identity. The two profile files are
+byte-identical at 4,478 bytes with SHA-256
+`8df3f9c15f03c1ea9d5b6adea71ee352e9a2735ecdd22e26d03033d62f49f764`.
 The prepared schema-12 contract requires exactly 525 ordered assertions for all
 17 Slitherite blocks and their 1,262 unique state IDs. It covers exact
 server-side `BlockItem` placement, button reset timing, living-only pressure
@@ -789,30 +789,255 @@ placement, and fresh loaded-data stability through a real `/reload`.
 The former dependency block is cleared: the pedestal and alchemy dependencies
 are ported, and the accepted packaged-client v19 Slitherite run proved the
 complete inventory of all five related recipes with their real pedestal,
-alchemy, and lens dependencies. That accepted client proof authorizes this
-fresh v20 dedicated-server identity for exactly one native attempt; it does not
-pre-accept the server contract. No v20 runtime, launch-attempt marker, report,
-or archive exists, and no native v20 success is claimed. Provision must target
-the absent repository-owned runtime exactly once, and the eventual `run` must
-consume the identity even if it fails. v20 must never be retried, cleaned for
-reuse, or replaced in place.
+alchemy, and lens dependencies. That accepted client proof authorizes fresh
+dedicated-server v21 for exactly one native attempt; it does not pre-accept the
+server contract. No v21 runtime, launch-attempt marker, report, or archive
+exists, and no native v21 success is claimed. Provision must target the absent
+repository-owned runtime exactly once, and the eventual `run` must consume the
+identity even if it fails.
+
+The preceding v20 identity was provisioned and launched once, then consumed by
+a fail-closed ownership check. Gradle 9.6.1 created a single-use daemon in a
+different process group from the wrapper; the authenticated Java 17 server was
+a child of that daemon, so the controller rejected it before publishing its
+acknowledgement. v20 created no scenario report, completion marker, world, or
+accepted archive. Its exact attempt marker, profile marker, handoff, and logs
+are retained in
+`docs/evidence/forge-1.20.1/slitherite-block-registry-server-v20-pgid-handoff-failure`.
+v20 must never be provisioned, checked, launched, cleaned for reuse, or rerun.
+
+The v21 controller pins Gradle 9.6.1 and requires an exact JDK 21 Gradle host;
+a newer JDK is rejected. Its source-file broker starts as the process-group and
+session leader with this exact bounded JVM shape:
+
+```text
+java -Xms16m -Xmx64m -XX:MaxDirectMemorySize=64m
+     -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=64m
+     -XX:ActiveProcessorCount=2 ForgeServerLaunchAnchor.java ...
+```
+
+Only after the controller binds and samples the anchor and authenticates the
+detached watchdog does the broker release this exact direct child prefix:
+
+```text
+java -Xmx2G -Xms64m -Dorg.gradle.appname=gradlew
+     -classpath <isolated-launch-runtime>/gradle-wrapper.jar
+     org.gradle.wrapper.GradleWrapperMain
+     --no-daemon --no-parallel --max-workers=2 --console=plain --offline ...
+```
+
+The 63,659-byte broker controller source has SHA-256
+`8cb41e0ce36d1fa91fd2472b73e54e7e9b44974e5c13c27b692f35ce404699a5`;
+the 41,275-byte Java source has SHA-256
+`baca2862e9df7dd6c3da1f41583cbc4b013c45423ec77914883961dcfd202d2b`;
+and the 59,821-byte wrapper JAR has SHA-256
+`575098db54a998ff1c6770b352c3b16766c09848bee7555dab09afc34e8cf590`.
+The 339-byte wrapper properties file has SHA-256
+`ef9f8775fd21a165a249ded98afc533818d3f6ac050f0f2f437d5285576b2257`.
+These four repository inputs are pinned before use. The Java source, wrapper
+JAR, and wrapper properties are copied into the isolated launch runtime as
+three owner-read-only (`0400`) files; the Python broker controller is not a
+staged payload. The direct child reads the staged JAR and its adjacent staged
+properties file. Matching the wrapper and requested Gradle heap
+settings keeps Gradle in that wrapper JVM
+instead of spawning a single-use daemon. Every Gradle invocation is
+offline and receives only the controller's fixed allowlist of `GRADLE_OPTS`,
+`GRADLE_USER_HOME`, `HOME`, `JAVA_HOME`, `JAVA_OPTS`, `LANG`, `LC_ALL`, `PATH`,
+and `TMPDIR`. The repository-owned
+`scripts/e2e/.state/gradle-user-home` reuses only pinned symlink bridges to the
+existing `~/.gradle` `caches`, `jdks`, `native`, and `wrapper` directories; it
+does not copy the approximately 18-GiB cache or import global init scripts or
+`gradle.properties`. Java option injection, unexpected entries, and changed
+bridge identities fail closed. The shared home and cache roots must remain
+owner-controlled, and the extracted Gradle 9.6.1 distribution has a pinned,
+non-executable `init.d` inventory.
+
+Before JDK discovery may execute even its bounded version probe, the controller
+exclusively creates and pins the repository-global native-run lock, including
+its descriptor, inode, bytes, mode, owner, and parent-directory identity. The
+version probe accepts only a root-owned protected executable and uses explicit
+heap, direct-memory, metaspace, code-cache, and processor caps in a fixed
+environment. Both `check` and `run` acquire that lock before probing Java and
+require a zero-Java inventory before and after the version probes. A retained
+active topology or wrapper-guard transient blocks another launch. During `run`,
+the lock remains held across
+the topology preflight and native attempt, and cleanup uncertainty retains it
+and the relevant transient or process log instead of permitting reuse.
+Completed topology, launch-anchor, and wrapper-guard runtimes are atomically
+renamed through their pinned parent descriptors and preserved as diagnostics;
+cleanup never recursively deletes a transient by pathname.
+
+While awaiting START, the broker verifies that the recorded controller PID is
+still its live parent and limits the authorization wait to 30 seconds. Parent
+loss, expiry, or another failure before an authenticated START exits the broker
+with code 70. A valid START commits the release before any later failure can
+drop process-group ownership. After that transition, the broker retains the
+group for the independent watchdog, including when child launch fails or the
+controller disappears. Readiness records the controller PID and the 30-second
+lease; live and archived evidence cross-link that PID to watchdog readiness.
+
+Before a real profile attempt can be consumed, a loader-free JavaExec topology
+preflight starts Java 17 with exactly `-Xmx2048m`, authenticates it as the
+wrapper's direct child in the broker-owned process group and session, and
+requires the controller's token acknowledgement. The same broker remains alive
+after the wrapper exits until terminal quiescence is proved and an authenticated
+finish record is published. This preflight loads neither Forge nor Minecraft.
+A real run of the earlier topology probe on the baseline Mac passed; external
+sampling observed about 619 MiB peak aggregate RSS, and it consumed no game
+profile or native launch attempt. The new broker-backed v21 path itself has not
+been launched.
+
+The wrapper and server JVMs each retain their independent 2-GiB heap cap, while
+the anchor uses its separate small caps, but v21 does not mistake heap limits
+for a process-tree memory limit. Before the broker may release its child, the
+controller requires zero untracked Java processes, binds the anchor within two
+seconds, starts and authenticates the watchdog, and limits the child identity
+acknowledgement to 15 seconds. The watchdog samples every 250 milliseconds, and
+the pre-acknowledgement child heap ceiling is exactly 2,147,483,648 bytes.
+Before the server acknowledgement, the
+controller binds exact wrapper and Java 17 server identities and starts an
+authenticated persistent `strict-2g-v1` monitor for each. That policy warns
+above 3 GiB of current physical footprint, treats a
+4-GiB breach as sustained only when at least 10 of the latest 15 samples are
+high and all final five are high, and treats one sample above 5 GiB as an
+emergency. Independent synchronous checks reject any exact Java identity above
+the 5-GiB ceiling and reject the deduplicated set of observed Java identities
+above the 6-GiB aggregate ceiling. A native launch starts only from a global
+zero-Java inventory. The watchdog dynamically binds Java identities inside the
+owned group and session, including Gradle workers, and rejects Java outside
+that group. The three-process concurrent limit includes the anchor and
+wrapper, leaving room for one worker or server at a time. Cleanup proves the
+exact identities and launch groups absent, and normal cleanup requires
+terminal watchdog proof of global Java absence. Failure and incomplete-binding
+cleanup additionally require at least 15 continuous seconds with no Java
+process anywhere on the host. The monitors and synchronous envelope remain checked throughout the
+owned process lifecycle and can stop only the revalidated owned launch group.
+
+The profile additionally pins a controller-independent persistent launch
+watchdog contract. Its exact 102,143-byte source has SHA-256
+`a0d69fd1a3477fe13e7379d9088273c331e461ece2c6a8e6ebb868309e9c02e5`.
+The controller starts that detached Python watchdog immediately after binding
+the stable anchor and before permitting any Gradle child, then maintains a
+10-second heartbeat lease. The watchdog independently inventories at most
+three concurrent Java identities and retains up to 16 historical identities
+for terminal absence proof. It enforces the 5-GiB per-process and 6-GiB aggregate
+current-physical-footprint ceilings, and keeps supervising if the controller
+crashes or its heartbeat becomes silent. Its owner-only readiness and telemetry
+files are
+`.forge-server-launch-watchdog-ready.json` and
+`forge-server-launch-watchdog-telemetry.json`. Cleanup accepts the watchdog only
+after it is reaped and its terminal telemetry proves the owned group, every
+tracked exact identity, and the global Java inventory absent. A failed startup
+may lack an active readiness record, but it still requires that complete
+terminal absence proof; a normal exit always requires active readiness.
+The broker separately publishes five owner-only, token-bound artifacts in fixed
+order: `.forge-server-launch-anchor-ready.json`,
+`.forge-server-launch-anchor-start.json`,
+`forge-server-launch-anchor-child-started.json`,
+`forge-server-launch-anchor-child-result.json`, and
+`.forge-server-launch-anchor-finish.json`. It remains the live group leader
+until the direct child has completed and the controller has proved terminal
+launch quiescence. `forgeSlitheriteBlockRegistryServerSafetyTest` treats both
+broker sources, the broker tests, the watchdog source, and its adversarial tests
+as named inputs and runs them together with the controller, strict-monitor,
+baseline sampler, v21 contract, and evidence tests. That safety task is static
+control-plane validation and does not launch Java or Minecraft. The v21 runtime
+is still absent: it has not been provisioned, checked, or launched.
 
 The planned one-shot workflow is:
 
 ```bash
-python3 -B scripts/e2e/forge_server.py validate
-python3 -B scripts/e2e/forge_server.py provision
-python3 -B scripts/e2e/forge_server.py check
-python3 -B scripts/e2e/forge_server.py run
+(
+  set -e
+  python3 -B scripts/e2e/forge_server.py validate
+  python3 -B scripts/e2e/forge_server.py provision
+  python3 -B scripts/e2e/forge_server.py check
+  python3 -B scripts/e2e/forge_server.py run
+)
 ```
 
 The workflow must stop on the first failure rather than skip a gate or reuse
-v20. Acceptance still requires the stopped native runtime to satisfy all 525
+v21. Acceptance still requires the stopped native runtime to satisfy all 525
 ordered server assertions and the strict evidence publication and verification
 gates. Force-save followed by `/reload` remains one server lifecycle; it does
 not prove restart persistence or deserialize the saved fixture in a second JVM.
-Until that one-shot workflow passes and an immutable archive is sealed, the v19
-section below remains the latest accepted dedicated-server history.
+The v21 profile has not yet been provisioned or launched. Until its one-shot
+workflow passes and an immutable archive is sealed, the v19 section below
+remains the latest accepted dedicated-server history.
+
+### Sealing the successful v21 dedicated-server run
+
+Run the following from the repository root only after the one-shot `run`
+succeeds and all owned Java processes have stopped. The subshell stops on the
+first error and refuses an existing archive destination. A partial archive is
+not accepted evidence; retain it for inspection instead of overwriting it or
+relaunching the consumed profile.
+
+The archive contains exactly 18 payload files plus `archive-manifest.json`:
+four scenario files in `reports/` and `logs/`, four `memory-guard/` files, two
+`launch-watchdog/` files, and eight `launch-anchor/` files. The last directory
+contains the five lifecycle records plus the staged Java source, wrapper JAR,
+and wrapper properties. It contains no world, profile marker, transient Gradle
+log, or Python controller copy.
+
+```bash
+(
+  set -e
+  etherology_server_runtime='scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v21'
+  etherology_server_archive='docs/evidence/forge-1.20.1/slitherite-block-registry-server-v21'
+
+  python3 -B scripts/e2e/forge_server_slitherite_evidence_v21.py \
+    --runtime "$etherology_server_runtime"
+  test ! -e "$etherology_server_archive"
+  test ! -L "$etherology_server_archive"
+  /bin/mkdir "$etherology_server_archive"
+  /bin/cp -pR \
+    "$etherology_server_runtime/evidence/slitherite-block-registry/reports" \
+    "$etherology_server_runtime/evidence/slitherite-block-registry/logs" \
+    "$etherology_server_archive/"
+  /bin/mkdir \
+    "$etherology_server_archive/memory-guard" \
+    "$etherology_server_archive/launch-watchdog" \
+    "$etherology_server_archive/launch-anchor"
+  /bin/cp -p \
+    "$etherology_server_runtime/.forge-server-java-memory-handoff.json" \
+    "$etherology_server_runtime/.forge-server-java-memory-ready" \
+    "$etherology_server_runtime/.memory-guard-ready.json" \
+    "$etherology_server_runtime/memory-guard-telemetry.json" \
+    "$etherology_server_archive/memory-guard/"
+  /bin/cp -p \
+    "$etherology_server_runtime/.forge-server-launch-watchdog-ready.json" \
+    "$etherology_server_runtime/forge-server-launch-watchdog-telemetry.json" \
+    "$etherology_server_archive/launch-watchdog/"
+  /bin/cp -p \
+    "$etherology_server_runtime/.forge-server-launch-anchor-ready.json" \
+    "$etherology_server_runtime/.forge-server-launch-anchor-start.json" \
+    "$etherology_server_runtime/forge-server-launch-anchor-child-started.json" \
+    "$etherology_server_runtime/forge-server-launch-anchor-child-result.json" \
+    "$etherology_server_runtime/.forge-server-launch-anchor-finish.json" \
+    "$etherology_server_runtime/ForgeServerLaunchAnchor.java" \
+    "$etherology_server_runtime/gradle-wrapper.jar" \
+    "$etherology_server_runtime/gradle-wrapper.properties" \
+    "$etherology_server_archive/launch-anchor/"
+  /bin/chmod 0400 \
+    "$etherology_server_archive/launch-anchor/ForgeServerLaunchAnchor.java" \
+    "$etherology_server_archive/launch-anchor/gradle-wrapper.jar" \
+    "$etherology_server_archive/launch-anchor/gradle-wrapper.properties"
+  python3 -B scripts/e2e/forge_server_slitherite_evidence_v21.py \
+    --create-archive-manifest "$etherology_server_archive" \
+    --capture-runtime "$etherology_server_runtime"
+  python3 -B scripts/e2e/forge_server_slitherite_evidence_v21.py \
+    --archive "$etherology_server_archive"
+)
+```
+
+The live verifier requires `0400` on the three staged inputs. The copy preserves
+that mode in the captured archive. Git does not preserve owner-only permission
+bits, so archive-only verification checks their pinned bytes and single-link
+identity without requiring `0400` after checkout. Manifest creation revalidates
+the stopped live runtime and every copied byte; archive-only verification
+requires no live runtime and launches no Java, Gradle, or Minecraft process.
+It proves capture integrity, not equality with current rebuilt mod artifacts.
 
 ## Accepted Forge 1.20.1 dedicated-server Attrahite block-registry probe (v19)
 
@@ -911,19 +1136,20 @@ python3 -B scripts/e2e/forge_server.py check
 python3 -B scripts/e2e/forge_server.py run
 ```
 
-The runner uses a JDK 21-or-newer Gradle host and starts Gradle directly in a
-dedicated process group. The Java 17 server publishes an authenticated PID and
-executable handoff, proves one exact `-Xmx2048m` argument and a 2-GiB runtime
-maximum, then blocks until the controller binds its macOS process start time
-and starts authoritative physical-footprint monitoring. Only then does the
-controller acknowledge the probe and attach PID-scoped `caffeinate`. It bounds
-the process log, server log, handoff, and telemetry independently; a hard or
-emergency decision stops only the revalidated owned launch group. Cleanup
-uncertainty retains the run lock and process log. The runner also rejects crash,
-forbidden client-startup, and unexpected client-class markers, requires a saved
-world and normal shutdown, and publishes `done.marker` only after the report,
-copied server log, and launcher result pass. External game profiles consulted:
-zero.
+The current, still-unrun v21 controller uses the exact-JDK-21, offline,
+allowlisted Gradle environment, pre-topology run lock, stale-transient blocker,
+and strict wrapper/server memory contract documented above. The Java 17 server
+publishes an authenticated PID and executable handoff, proves one exact
+`-Xmx2048m` argument and a 2-GiB runtime maximum, then blocks until the
+controller binds its macOS process start time and starts the persistent
+`strict-2g-v1` monitor. Only then does the controller acknowledge the probe and
+attach PID-scoped `caffeinate`. It bounds the process log, server log, handoff,
+and telemetry independently; a hard or emergency decision stops only the
+revalidated owned launch group. Cleanup uncertainty retains the run lock and
+process log. The runner also rejects crash, forbidden client-startup, and
+unexpected client-class markers, requires a saved world and normal shutdown,
+and publishes `done.marker` only after the report, copied server log, and
+launcher result pass. External game profiles consulted: zero.
 
 The accepted fresh v13 run emitted a schema-8 report and passed all 188 ordered
 assertions. `SharedMetalBlocks` and `SharedMetalBlockItems` supplied these exact
@@ -1025,7 +1251,7 @@ It used the fresh repository-owned
 accepted v19 run re-proves all of its assertions cumulatively. Its five-file
 archive remains frozen at
 `docs/evidence/forge-1.20.1/particle-registry-server-v10` and must not be
-recaptured with the active, prepared v20 one-shot controller.
+recaptured with the active, prepared v21 one-shot controller.
 
 Validate only the completed historical runtime or immutable archive with the
 pinned verifier:
@@ -1092,21 +1318,24 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v6/
 The frozen v6 profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to the fresh, prepared v20 Slitherite contract, so v6 must be inspected
+advanced to the fresh, prepared v21 Slitherite contract, so v6 must be inspected
 only through its immutable snapshot and verifier. It must never be provisioned,
 reused, cleaned, or replaced.
 
 At capture time, the v6 profile used the same named build verification and
 runner lifecycle shown above. Those mutable controller commands now target the
-never-provisioned, one-shot-authorized v20 contract and must not be used as
+never-provisioned, one-shot-authorized v21 contract and must not be used as
 instructions to recapture v6.
 
-The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
-dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
-and server logs independently, contains the process group, rejects crash and
-client markers, requires a saved world and normal shutdown, and publishes
-`done.marker` only after the report, copied server log, and launcher result
-pass. External game profiles consulted: zero.
+The current, still-unrun v21 controller uses the exact-JDK-21, offline,
+allowlisted Gradle environment, pre-topology run lock, stale-transient blocker,
+and strict wrapper/server plus 6-GiB deduplicated aggregate memory contract
+documented above. It attaches macOS `caffeinate` only after authenticating the
+owned Java 17 server identity. It bounds the process and server logs
+independently, contains the process group, rejects crash and client markers,
+requires a saved world and normal shutdown, and publishes `done.marker` only
+after the report, copied server log, and launcher result pass. External game
+profiles consulted: zero.
 
 `EtherSourceLoader` and the default `ether_sources` resources have one Common
 implementation/resource owner. The accepted fresh v6 run issued the real
@@ -1165,7 +1394,7 @@ scripts/e2e/.state/runtimes/etherology-e2e-forge-server-1.20.1-v4/
 The frozen profile pins Minecraft 1.20.1, Forge 47.4.9, Java 17, the exact
 `:forge:1.20.1:runRegistryFoundationServerProbe` task, and the complete required
 and forbidden mod-ID inventories. The mutable controller and profile have
-advanced to the fresh, prepared, never-provisioned v20 contract. They cannot
+advanced to the fresh, prepared, never-provisioned v21 contract. They cannot
 recapture v4, and v4 must not be provisioned, reused, cleaned, or replaced. Only
 its immutable archive verifier remains an active instruction:
 
@@ -1174,12 +1403,15 @@ python3 -B scripts/e2e/forge_server_evidence.py \
   --archive docs/evidence/forge-1.20.1/registry-foundation-server-v4
 ```
 
-The runner uses a JDK 21-or-newer Gradle host, selects Java 17 for the real
-dedicated server, and wraps Gradle in macOS `caffeinate`. It bounds the process
-and server logs independently, contains the process group, rejects crash and
-client markers, requires a saved world and normal shutdown, and publishes
-`done.marker` only after the report, copied server log, and launcher result pass.
-External game profiles consulted: zero.
+The current, still-unrun v21 controller uses the exact-JDK-21, offline,
+allowlisted Gradle environment, pre-topology run lock, stale-transient blocker,
+and strict wrapper/server plus 6-GiB deduplicated aggregate memory contract
+documented above. It attaches macOS `caffeinate` only after authenticating the
+owned Java 17 server identity. It bounds the process and server logs
+independently, contains the process group, rejects crash and client markers,
+requires a saved world and normal shutdown, and publishes `done.marker` only
+after the report, copied server log, and launcher result pass. External game
+profiles consulted: zero.
 
 The `registry-foundation` probe checks exactly one Etherology game event:
 `etherology:etherology_resonance`, internal ID `etherology_resonance`, range 16.
@@ -1255,13 +1487,15 @@ historical evidence; v10 is the historical particle-registry predecessor, v11
 is the historical material-item predecessor, v13 is the historical
 metal-block-registry proof, v14 is the historical food-item proof, and v16 is
 the historical Forest Lantern dedicated-server proof. The v19 Attrahite archive
-is the latest accepted cumulative dedicated-server proof. The active v20
-Slitherite contract is fresh, prepared, and authorized for exactly one native
-attempt because accepted Forge client v19 proved all five real related recipes
-and their pedestal, alchemy, and lens dependencies; no v20 runtime,
-launch-attempt marker, report, or archive exists yet. Forge client v19 is the
-latest accepted packaged-client proof, while v13 remains the accepted
-historical packaged-client Forest Lantern proof.
+is the latest accepted cumulative dedicated-server proof. Dedicated-server v20
+is a consumed, retained process-group-handoff failure and must never be rerun.
+The active v21 Slitherite contract is fresh, prepared, and authorized for
+exactly one native attempt because accepted Forge client v19 proved all five
+real related recipes and their pedestal, alchemy, and lens dependencies. v21
+has not been provisioned or launched and has no launch-attempt marker, report,
+or archive. Forge client v19 is the latest accepted packaged-client proof,
+while v13 remains the accepted historical packaged-client Forest Lantern
+proof.
 
 The Forge safety tests use temporary directories and mocks only. They do not
 download, provision, build, or launch Minecraft:

@@ -548,6 +548,49 @@ class MacOsProcessMemorySamplerTests(unittest.TestCase):
 
         self.assertIsNone(sampler.revalidate(TARGET))
 
+    def test_intrinsic_revalidation_allows_process_group_migration(self) -> None:
+        sampler = self.make_sampler(
+            process_group_id=TARGET.process_group_id + 1,
+        )
+
+        self.assertEqual(
+            TARGET,
+            sampler.revalidate_intrinsic_identity(TARGET),
+        )
+
+    def test_intrinsic_revalidation_rejects_start_or_executable_drift(self) -> None:
+        self.assertIsNone(
+            self.make_sampler(
+                rusage=make_rusage(
+                    WARNING_FOOTPRINT,
+                    start_abstime=TARGET.proc_start_abstime + 1,
+                ),
+            ).revalidate_intrinsic_identity(TARGET)
+        )
+
+    def test_intrinsic_revalidation_rejects_pid_reuse_between_observations(self) -> None:
+        rusages = iter(
+            (
+                make_rusage(WARNING_FOOTPRINT),
+                make_rusage(
+                    WARNING_FOOTPRINT,
+                    start_abstime=TARGET.proc_start_abstime + 1,
+                ),
+            )
+        )
+        sampler = guard_module.MacOsProcessMemorySampler(
+            lambda _pid: next(rusages),
+            lambda _pid: TARGET.expected_executable,
+            lambda _pid: TARGET.process_group_id,
+        )
+
+        self.assertIsNone(sampler.revalidate_intrinsic_identity(TARGET))
+        self.assertIsNone(
+            self.make_sampler(
+                executable="/Library/Java/Other/Contents/Home/bin/java",
+            ).revalidate_intrinsic_identity(TARGET)
+        )
+
     def test_bind_captures_start_time_only_for_expected_group_and_executable(self) -> None:
         sampler = self.make_sampler()
 
@@ -565,6 +608,75 @@ class MacOsProcessMemorySamplerTests(unittest.TestCase):
                 TARGET.expected_executable,
             )
         )
+
+    def test_bind_observed_pins_the_kernel_executable_and_expected_group(self) -> None:
+        sampler = self.make_sampler(executable="/kernel/java")
+
+        bound = sampler.bind_observed(TARGET.pid, TARGET.process_group_id)
+
+        self.assertEqual(
+            guard_module.OwnedJavaProcess(
+                pid=TARGET.pid,
+                process_group_id=TARGET.process_group_id,
+                proc_start_abstime=TARGET.proc_start_abstime,
+                expected_executable="/kernel/java",
+            ),
+            bound,
+        )
+        self.assertIsNone(
+            sampler.bind_observed(TARGET.pid, TARGET.process_group_id + 1)
+        )
+
+    def test_bind_observed_rejects_an_invalid_kernel_executable(self) -> None:
+        sampler = self.make_sampler(executable="relative/java")
+
+        with self.assertRaisesRegex(
+            guard_module.MemorySamplingError,
+            "cannot bind observed process identity",
+        ):
+            sampler.bind_observed(TARGET.pid, TARGET.process_group_id)
+
+    def test_bind_observed_rejects_identity_drift_between_observations(self) -> None:
+        rusages = iter(
+            (
+                make_rusage(WARNING_FOOTPRINT),
+                make_rusage(
+                    WARNING_FOOTPRINT,
+                    start_abstime=TARGET.proc_start_abstime + 1,
+                ),
+            )
+        )
+        sampler = guard_module.MacOsProcessMemorySampler(
+            lambda _pid: next(rusages),
+            lambda _pid: TARGET.expected_executable,
+            lambda _pid: TARGET.process_group_id,
+        )
+
+        self.assertIsNone(
+            sampler.bind_observed(TARGET.pid, TARGET.process_group_id)
+        )
+
+    def test_bind_observed_rejects_group_or_executable_observation_drift(self) -> None:
+        for process_groups, executables in (
+            (
+                iter((TARGET.process_group_id, TARGET.process_group_id + 1)),
+                iter((TARGET.expected_executable, TARGET.expected_executable)),
+            ),
+            (
+                iter((TARGET.process_group_id, TARGET.process_group_id)),
+                iter((TARGET.expected_executable, "/kernel/other-java")),
+            ),
+        ):
+            with self.subTest():
+                sampler = guard_module.MacOsProcessMemorySampler(
+                    lambda _pid: make_rusage(WARNING_FOOTPRINT),
+                    lambda _pid: next(executables),
+                    lambda _pid: next(process_groups),
+                )
+
+                self.assertIsNone(
+                    sampler.bind_observed(TARGET.pid, TARGET.process_group_id)
+                )
 
     def test_bind_current_process_uses_kernel_observed_executable(self) -> None:
         sampler = self.make_sampler(executable="/kernel/python-app")

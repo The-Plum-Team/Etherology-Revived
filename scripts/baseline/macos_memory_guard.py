@@ -700,6 +700,55 @@ class MacOsProcessMemorySampler:
             expected_executable=expected_executable,
         )
 
+    def bind_observed(
+        self,
+        pid: int,
+        expected_process_group_id: int,
+    ) -> OwnedJavaProcess | None:
+        """Pins a process using only identity facts observed from the kernel."""
+
+        _require_positive_integer(pid, "pid")
+        _require_positive_integer(
+            expected_process_group_id,
+            "expected_process_group_id",
+        )
+        try:
+            first_rusage = self._rusage_reader(pid)
+            process_group_id = self._process_group_reader(pid)
+            executable = self._executable_reader(pid)
+            second_rusage = self._rusage_reader(pid)
+            second_process_group_id = self._process_group_reader(pid)
+            second_executable = self._executable_reader(pid)
+        except (MemorySamplingError, OSError):
+            return None
+        if not isinstance(first_rusage, MacOsRusage) or not isinstance(
+            second_rusage,
+            MacOsRusage,
+        ):
+            raise TypeError("rusage_reader must return MacOsRusage")
+        if (
+            type(process_group_id) is not int
+            or type(second_process_group_id) is not int
+            or not isinstance(executable, str)
+            or not isinstance(second_executable, str)
+            or process_group_id != expected_process_group_id
+            or second_process_group_id != process_group_id
+            or second_executable != executable
+            or second_rusage.proc_start_abstime != first_rusage.proc_start_abstime
+        ):
+            return None
+        try:
+            return OwnedJavaProcess(
+                pid=pid,
+                process_group_id=process_group_id,
+                proc_start_abstime=first_rusage.proc_start_abstime,
+                expected_executable=executable,
+            )
+        except ValueError as exception:
+            raise MemorySamplingError(
+                f"cannot bind observed process identity: {exception}"
+            ) from exception
+
     def bind_current_process(self) -> OwnedJavaProcess:
         """Binds this process to the executable identity reported by the kernel."""
 
@@ -744,6 +793,32 @@ class MacOsProcessMemorySampler:
             and process_group_id == target.process_group_id
             and rusage.proc_start_abstime == target.proc_start_abstime
             and executable == target.expected_executable
+        ):
+            return target
+        return None
+
+    def revalidate_intrinsic_identity(
+        self,
+        target: OwnedJavaProcess,
+    ) -> OwnedJavaProcess | None:
+        """Revalidates immutable process identity while allowing group migration."""
+
+        try:
+            first_rusage = self._rusage_reader(target.pid)
+            first_executable = self._executable_reader(target.pid)
+            second_rusage = self._rusage_reader(target.pid)
+            second_executable = self._executable_reader(target.pid)
+        except (MemorySamplingError, OSError):
+            return None
+        if (
+            isinstance(first_rusage, MacOsRusage)
+            and isinstance(second_rusage, MacOsRusage)
+            and isinstance(first_executable, str)
+            and isinstance(second_executable, str)
+            and first_rusage.proc_start_abstime == target.proc_start_abstime
+            and second_rusage.proc_start_abstime == target.proc_start_abstime
+            and first_executable == target.expected_executable
+            and second_executable == target.expected_executable
         ):
             return target
         return None

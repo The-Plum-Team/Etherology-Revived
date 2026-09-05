@@ -670,11 +670,38 @@ val forgeSlitheriteBlockRegistryServerEvidenceVerifierV20 =
     rootProject.file("scripts/e2e/forge_server_slitherite_evidence_v20.py")
 val forgeSlitheriteBlockRegistryServerEvidenceTestV20 =
     rootProject.file("scripts/e2e/test_forge_server_slitherite_evidence_v20.py")
+val forgeServerContractV21 = rootProject.file("scripts/e2e/forge_server_contract_v21.py")
+val forgeServerProfileSnapshotV21 =
+    rootProject.file("scripts/e2e/forge-server-1.20.1-profile-v21.json")
+val forgeSlitheriteBlockRegistryServerEvidenceArchiveV21 =
+    forgeRegistryFoundationServerEvidenceRoot.resolve(
+        "slitherite-block-registry-server-v21",
+    )
+val forgeSlitheriteBlockRegistryServerEvidenceVerifierV21 =
+    rootProject.file("scripts/e2e/forge_server_slitherite_evidence_v21.py")
+val forgeSlitheriteBlockRegistryServerEvidenceTestV21 =
+    rootProject.file("scripts/e2e/test_forge_server_slitherite_evidence_v21.py")
 val forgeRegistryFoundationServerRunner = rootProject.file("scripts/e2e/forge_server.py")
 val forgeRegistryFoundationServerRunnerTest =
     rootProject.file("scripts/e2e/test_forge_server.py")
+val forgeRegistryFoundationServerLaunchWatchdog =
+    rootProject.file("scripts/e2e/forge_server_launch_watchdog.py")
+val forgeRegistryFoundationServerLaunchWatchdogTest =
+    rootProject.file("scripts/e2e/test_forge_server_launch_watchdog.py")
+val forgeRegistryFoundationServerLaunchAnchor =
+    rootProject.file("scripts/e2e/forge_server_launch_anchor.py")
+val forgeRegistryFoundationServerLaunchAnchorTest =
+    rootProject.file("scripts/e2e/test_forge_server_launch_anchor.py")
+val forgeRegistryFoundationServerLaunchAnchorJavaSource =
+    rootProject.file(
+        "e2e-harness/launch-anchor/1.20.1/src/ForgeServerLaunchAnchor.java",
+    )
+val forgeRegistryFoundationServerGradleWrapperJar =
+    rootProject.file("gradle/wrapper/gradle-wrapper.jar")
 val forgeRegistryFoundationServerRunnerTestV20 =
     rootProject.file("scripts/e2e/test_forge_server_contract_v20.py")
+val forgeRegistryFoundationServerRunnerTestV21 =
+    rootProject.file("scripts/e2e/test_forge_server_contract_v21.py")
 val forgeRegistryFoundationServerProfileManifest =
     rootProject.file("scripts/e2e/forge-server-1.20.1-profile.json")
 val forgeRegistryFoundationServerProbeSource = rootProject.file(
@@ -867,9 +894,11 @@ fun serverProbeSafetyInterlockFailure(
             "The dedicated-server probe runner safety-interlock lock is invalid",
         )
     }
-    if (runLockLines.size != 2
-        || !Regex("pid=[1-9][0-9]*").matches(runLockLines[0])
-        || runLockLines[1] != "token=$runToken"
+    if (runLockLines.size != 4
+        || runLockLines[0] != "profile_id=${spec.profileId}"
+        || runLockLines[1] != "scenario=${spec.scenarioId}"
+        || !Regex("pid=[1-9][0-9]*").matches(runLockLines[2])
+        || runLockLines[3] != "token=$runToken"
     ) {
         return ServerProbeSafetyInterlockFailure(
             ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
@@ -896,7 +925,7 @@ fun serverProbeSafetyInterlockFailure(
     if (runAttemptLines != listOf(
             "profile_id=${spec.profileId}",
             "scenario=${spec.scenarioId}",
-            runLockLines[0],
+            runLockLines[2],
         )
     ) {
         return ServerProbeSafetyInterlockFailure(
@@ -3958,9 +3987,9 @@ fun missingForgeAttrahiteBlockRegistryServerEvidenceMilestone(): List<String> {
 
 fun missingForgeSlitheriteBlockRegistryServerEvidenceMilestone(): List<String> {
     val missingConditions = mutableListOf<String>()
-    if (!forgeSlitheriteBlockRegistryServerEvidenceVerifierV20.isFile
+    if (!forgeSlitheriteBlockRegistryServerEvidenceVerifierV21.isFile
         || Files.isSymbolicLink(
-            forgeSlitheriteBlockRegistryServerEvidenceVerifierV20.toPath(),
+            forgeSlitheriteBlockRegistryServerEvidenceVerifierV21.toPath(),
         )
     ) {
         missingConditions.add(
@@ -3977,9 +4006,9 @@ fun missingForgeSlitheriteBlockRegistryServerEvidenceMilestone(): List<String> {
                     .matches(candidate.name)
         }
         .orEmpty()
-    if (archiveDirectories != listOf(forgeSlitheriteBlockRegistryServerEvidenceArchiveV20)) {
+    if (archiveDirectories != listOf(forgeSlitheriteBlockRegistryServerEvidenceArchiveV21)) {
         missingConditions.add(
-            "the exact frozen Forge Slitherite block-registry server-v20 evidence archive " +
+            "the exact frozen Forge Slitherite block-registry server-v21 evidence archive " +
                 "is required",
         )
         return missingConditions
@@ -3988,9 +4017,9 @@ fun missingForgeSlitheriteBlockRegistryServerEvidenceMilestone(): List<String> {
     val command = listOf(
         "python3",
         "-B",
-        forgeSlitheriteBlockRegistryServerEvidenceVerifierV20.absolutePath,
+        forgeSlitheriteBlockRegistryServerEvidenceVerifierV21.absolutePath,
         "--archive",
-        forgeSlitheriteBlockRegistryServerEvidenceArchiveV20.absolutePath,
+        forgeSlitheriteBlockRegistryServerEvidenceArchiveV21.absolutePath,
     )
     try {
         val process = ProcessBuilder(command)
@@ -6545,7 +6574,10 @@ val serverProbeSafetyInterlockTest =
                 Files.createDirectories(fixtureRoot)
                 val runLock = fixtureRoot.resolve("run.lock").toFile()
                 runLock.writeText(
-                    "pid=12345\ntoken=$validToken\n",
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n" +
+                        "token=$validToken\n",
                     StandardCharsets.UTF_8,
                 )
                 val runAttempt = fixtureRoot.resolve("run.attempted").toFile()
@@ -6629,7 +6661,10 @@ val serverProbeSafetyInterlockTest =
                 val linkedLockTarget = fixtureRoot.resolve("linked-lock-target")
                 Files.writeString(
                     linkedLockTarget,
-                    "pid=12345\ntoken=$validToken\n",
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n" +
+                        "token=$validToken\n",
                     StandardCharsets.UTF_8,
                 )
                 Files.createSymbolicLink(spec.runLock.toPath(), linkedLockTarget)
@@ -6641,11 +6676,42 @@ val serverProbeSafetyInterlockTest =
 
                 spec = validFixture()
                 spec.runLock.writeText(
-                    "pid=0\ntoken=$validToken\n",
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=0\n" +
+                        "token=$validToken\n",
                     StandardCharsets.UTF_8,
                 )
                 requireFailure(
                     "malformed lock",
+                    ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.runLock.writeText(
+                    "profile_id=another-profile\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n" +
+                        "token=$validToken\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "mismatched lock profile",
+                    ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
+                    spec,
+                )
+
+                spec = validFixture()
+                spec.runLock.writeText(
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=another-scenario\n" +
+                        "pid=12345\n" +
+                        "token=$validToken\n",
+                    StandardCharsets.UTF_8,
+                )
+                requireFailure(
+                    "mismatched lock scenario",
                     ServerProbeSafetyInterlockFailureKind.RUN_LOCK_INVALID,
                     spec,
                 )
@@ -6728,7 +6794,10 @@ val serverProbeSafetyInterlockTest =
 
                 spec = validFixture()
                 spec.runLock.writeText(
-                    "pid=12345\ntoken=$mismatchedToken\n",
+                    "profile_id=$expectedProfileId\n" +
+                        "scenario=$expectedScenarioId\n" +
+                        "pid=12345\n" +
+                        "token=$mismatchedToken\n",
                     StandardCharsets.UTF_8,
                 )
                 requireFailure(
@@ -6991,7 +7060,7 @@ val forgeSlitheriteBlockRegistryServerSafetyTest =
     tasks.register<Exec>("forgeSlitheriteBlockRegistryServerSafetyTest") {
         group = "verification"
         description =
-            "Runs the prepared Forge Slitherite block-registry v20 contract and " +
+            "Runs the prepared Forge Slitherite block-registry v21 contract and " +
                 "sealed-evidence tests."
         dependsOn(
             forgeAttrahiteBlockRegistryServerV19SafetyTest,
@@ -7004,22 +7073,40 @@ val forgeSlitheriteBlockRegistryServerSafetyTest =
             "-m",
             "unittest",
             "scripts/e2e/test_forge_server.py",
-            "scripts/e2e/test_forge_server_contract_v20.py",
-            "scripts/e2e/test_forge_server_slitherite_evidence_v20.py",
+            "scripts/e2e/test_forge_server_anchor_integration.py",
+            "scripts/e2e/test_forge_server_launch_anchor.py",
+            "scripts/e2e/test_forge_server_launch_watchdog.py",
+            "scripts/e2e/test_forge_server_contract_v21.py",
+            "scripts/e2e/test_forge_server_slitherite_evidence_v21.py",
             "scripts/e2e/test_macos_guarded_java.py",
+            "scripts/baseline/tests/test_macos_memory_guard.py",
         )
         inputs.files(
             forgeServerContractV19,
             forgeServerContractV20,
+            forgeServerContractV21,
             forgeServerProfileSnapshotV19,
             forgeServerProfileSnapshotV20,
+            forgeServerProfileSnapshotV21,
             forgeAttrahiteBlockRegistryServerEvidenceVerifierV19,
             forgeAttrahiteBlockRegistryServerEvidenceTestV19,
             forgeRegistryFoundationServerRunner,
             forgeRegistryFoundationServerRunnerTest,
+            rootProject.file(
+                "scripts/e2e/test_forge_server_anchor_integration.py",
+            ),
+            forgeRegistryFoundationServerLaunchAnchor,
+            forgeRegistryFoundationServerLaunchAnchorTest,
+            forgeRegistryFoundationServerLaunchAnchorJavaSource,
+            forgeRegistryFoundationServerGradleWrapperJar,
+            forgeRegistryFoundationServerLaunchWatchdog,
+            forgeRegistryFoundationServerLaunchWatchdogTest,
             forgeRegistryFoundationServerRunnerTestV20,
+            forgeRegistryFoundationServerRunnerTestV21,
             forgeSlitheriteBlockRegistryServerEvidenceVerifierV20,
             forgeSlitheriteBlockRegistryServerEvidenceTestV20,
+            forgeSlitheriteBlockRegistryServerEvidenceVerifierV21,
+            forgeSlitheriteBlockRegistryServerEvidenceTestV21,
             forgeRegistryFoundationServerProfileManifest,
             forgeRegistryFoundationServerProbeSource,
             forgeRegistryFoundationServerMemoryHandoffSource,
@@ -7040,6 +7127,15 @@ val forgeSlitheriteBlockRegistryServerSafetyTest =
         inputs.dir(
             rootProject.file("e2e-harness/forge-server/1.20.1/src/test/java"),
         ).withPropertyName("forgeSlitheriteBlockRegistryServerProbeTests")
+        inputs.dir(
+            rootProject.file("e2e-harness/gradle-topology/1.20.1/src/main/java"),
+        ).withPropertyName("forgeServerGradleTopologyProbeSources")
+        inputs.dir(
+            rootProject.file(
+                "docs/evidence/forge-1.20.1/" +
+                    "slitherite-block-registry-server-v20-pgid-handoff-failure",
+            ),
+        ).withPropertyName("forgeServerV20PgidHandoffFailureEvidence")
     }
 
 val validateForgeRegistryFoundationServerEvidenceArchiveIntegrity =
@@ -7272,16 +7368,16 @@ val validateForgeSlitheriteBlockRegistryServerEvidenceArchiveIntegrity =
     tasks.register("validateForgeSlitheriteBlockRegistryServerEvidenceArchiveIntegrity") {
         group = "verification"
         description =
-            "Validates the immutable Forge Slitherite block-registry server-v20 archive."
+            "Validates the immutable Forge Slitherite block-registry server-v21 archive."
         dependsOn(forgeSlitheriteBlockRegistryServerSafetyTest)
         inputs.files(
-            forgeServerContractV20,
-            forgeServerProfileSnapshotV20,
-            forgeSlitheriteBlockRegistryServerEvidenceVerifierV20,
+            forgeServerContractV21,
+            forgeServerProfileSnapshotV21,
+            forgeSlitheriteBlockRegistryServerEvidenceVerifierV21,
         )
-        if (forgeSlitheriteBlockRegistryServerEvidenceArchiveV20.exists()) {
-            inputs.dir(forgeSlitheriteBlockRegistryServerEvidenceArchiveV20)
-                .withPropertyName("forgeSlitheriteBlockRegistryServerEvidenceArchiveV20")
+        if (forgeSlitheriteBlockRegistryServerEvidenceArchiveV21.exists()) {
+            inputs.dir(forgeSlitheriteBlockRegistryServerEvidenceArchiveV21)
+                .withPropertyName("forgeSlitheriteBlockRegistryServerEvidenceArchiveV21")
         }
         doLast {
             val missingConditions =
@@ -8674,9 +8770,14 @@ tasks.register("verifyForgePortGateClosed") {
         forgeServerProfileSnapshotV20,
         forgeSlitheriteBlockRegistryServerEvidenceVerifierV20,
         forgeSlitheriteBlockRegistryServerEvidenceTestV20,
+        forgeServerContractV21,
+        forgeServerProfileSnapshotV21,
+        forgeSlitheriteBlockRegistryServerEvidenceVerifierV21,
+        forgeSlitheriteBlockRegistryServerEvidenceTestV21,
         forgeRegistryFoundationServerRunner,
         forgeRegistryFoundationServerRunnerTest,
         forgeRegistryFoundationServerRunnerTestV20,
+        forgeRegistryFoundationServerRunnerTestV21,
         forgeSlitheriteEvidenceVerifier,
         forgeSlitheriteEvidenceTest,
         forgeSlitheriteRunContractV19,
@@ -8753,6 +8854,10 @@ tasks.register("verifyForgePortGateClosed") {
     if (forgeSlitheriteBlockRegistryServerEvidenceArchiveV20.exists()) {
         inputs.dir(forgeSlitheriteBlockRegistryServerEvidenceArchiveV20)
             .withPropertyName("forgeSlitheriteBlockRegistryServerEvidenceArchiveV20")
+    }
+    if (forgeSlitheriteBlockRegistryServerEvidenceArchiveV21.exists()) {
+        inputs.dir(forgeSlitheriteBlockRegistryServerEvidenceArchiveV21)
+            .withPropertyName("forgeSlitheriteBlockRegistryServerEvidenceArchiveV21")
     }
     if (forgeForestLanternClientEvidenceArchive.exists()) {
         inputs.dir(forgeForestLanternClientEvidenceArchive)
@@ -8854,7 +8959,7 @@ if (minecraftVersion == "1.20.1") {
         ".etherology-forge-server-e2e-profile.json",
     )
     val serverProbeRunLock = rootProject.file(
-        "scripts/e2e/.state/$serverProbeProfileId-run.lock",
+        "scripts/e2e/.state/etherology-e2e-forge-server-native.lock",
     )
     val serverProbeRunAttempt = rootProject.file(
         "scripts/e2e/.state/$serverProbeProfileId-run.attempted",
@@ -8868,6 +8973,36 @@ if (minecraftVersion == "1.20.1") {
             serverProbeEvidence.getValue("scenario_directory"),
     )
     val serverProbeJavaVersion = javaVersion
+
+    val serverProbeGradleTopology = sourceSets.create("serverProbeGradleTopology") {
+        java.setSrcDirs(
+            listOf(
+                rootProject.file(
+                    "e2e-harness/gradle-topology/1.20.1/src/main/java",
+                ),
+            ),
+        )
+        resources.setSrcDirs(emptyList<String>())
+    }
+
+    val serverProbeGradleTopologyTask =
+        tasks.register<JavaExec>("runServerProbeGradleTopologyPreflight") {
+            group = "verification"
+            description =
+                "Proves the Forge server JavaExec stays in the owned Gradle PGID."
+            dependsOn(serverProbeGradleTopology.classesTaskName)
+            classpath = serverProbeGradleTopology.runtimeClasspath
+            mainClass.set(
+                "dev.theplumteam.etherology.e2e.topology." +
+                    "GradleJavaExecTopologyProbe",
+            )
+            javaLauncher.set(
+                javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(serverProbeJavaVersion))
+                },
+            )
+            jvmArgs("-Xmx2048m")
+        }
 
     val serverProbe = sourceSets.create("serverProbe") {
         java.setSrcDirs(
@@ -8973,7 +9108,13 @@ if (minecraftVersion == "1.20.1") {
     val validateServerProbeProfile = tasks.register("validateServerProbeProfile") {
         group = "verification"
         description = "Validates the exact isolated Forge 1.20.1 server-probe profile."
-        inputs.file(serverProbeProfileFile)
+        inputs.files(
+            serverProbeProfileFile,
+            forgeRegistryFoundationServerLaunchAnchor,
+            forgeRegistryFoundationServerLaunchAnchorJavaSource,
+            forgeRegistryFoundationServerGradleWrapperJar,
+            forgeRegistryFoundationServerLaunchWatchdog,
+        )
 
         doLast {
             check(serverProbeProfile.keys == setOf(
@@ -8992,8 +9133,8 @@ if (minecraftVersion == "1.20.1") {
                 "The dedicated-server probe profile schema changed"
             }
             check(serverProbeProfileIdentity == mapOf(
-                "id" to "etherology-e2e-forge-server-1.20.1-v20",
-                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v20",
+                "id" to "etherology-e2e-forge-server-1.20.1-v21",
+                "runtime_directory" to "etherology-e2e-forge-server-1.20.1-v21",
                 "game_directory" to "game",
             )) {
                 "The dedicated-server probe identity changed"
@@ -9015,14 +9156,150 @@ if (minecraftVersion == "1.20.1") {
                 "task_path" to ":forge:1.20.1:runRegistryFoundationServerProbe",
                 "scenario" to "slitherite-block-registry",
                 "maximum_memory_mb" to 2048,
+                "persistent_watchdog" to mapOf(
+                    "schema" to "etherology-forge-server-launch-watchdog-v1",
+                    "source" to mapOf(
+                        "relative_path" to
+                            "scripts/e2e/forge_server_launch_watchdog.py",
+                        "size" to 102143,
+                        "sha256" to
+                            "a0d69fd1a3477fe13e7379d9088273c331e461ece2c6a8e6ebb868309e9c02e5",
+                    ),
+                    "readiness_file" to
+                        ".forge-server-launch-watchdog-ready.json",
+                    "telemetry_file" to
+                        "forge-server-launch-watchdog-telemetry.json",
+                    "heartbeat_timeout_seconds" to 10,
+                    "maximum_java_process_count" to 3,
+                    "per_process_current_phys_footprint_bytes" to 5368709120L,
+                    "aggregate_current_phys_footprint_bytes" to 6442450944L,
+                    "terminal_global_java_absence_required" to true,
+                ),
+                "launch_anchor" to mapOf(
+                    "schema" to "etherology-forge-server-launch-anchor-v1",
+                    "process_kind" to "jdk-source-file-broker",
+                    "controller_source" to mapOf(
+                        "relative_path" to
+                            "scripts/e2e/forge_server_launch_anchor.py",
+                        "size" to 63659,
+                        "sha256" to
+                            "8cb41e0ce36d1fa91fd2472b73e54e7e9b44974e5c13c27b692f35ce404699a5",
+                    ),
+                    "java_source" to mapOf(
+                        "relative_path" to
+                            "e2e-harness/launch-anchor/1.20.1/src/" +
+                            "ForgeServerLaunchAnchor.java",
+                        "size" to 41275,
+                        "sha256" to
+                            "baca2862e9df7dd6c3da1f41583cbc4b013c45423ec77914883961dcfd202d2b",
+                    ),
+                    "java_feature" to 21,
+                    "jvm_arguments" to listOf(
+                        "-Xms16m",
+                        "-Xmx64m",
+                        "-XX:MaxDirectMemorySize=64m",
+                        "-XX:MaxMetaspaceSize=128m",
+                        "-XX:ReservedCodeCacheSize=64m",
+                        "-XX:ActiveProcessorCount=2",
+                    ),
+                    "gradle_wrapper_child" to mapOf(
+                        "jar" to mapOf(
+                            "relative_path" to "gradle/wrapper/gradle-wrapper.jar",
+                            "size" to 59821,
+                            "sha256" to
+                                "575098db54a998ff1c6770b352c3b16766c09848bee7555dab09afc34e8cf590",
+                        ),
+                        "properties" to mapOf(
+                            "relative_path" to
+                                "gradle/wrapper/gradle-wrapper.properties",
+                            "size" to 339,
+                            "sha256" to
+                                "ef9f8775fd21a165a249ded98afc533818d3f6ac050f0f2f437d5285576b2257",
+                        ),
+                        "jvm_arguments" to listOf("-Xmx2G", "-Xms64m"),
+                        "application_argument" to "-Dorg.gradle.appname=gradlew",
+                        "main_class" to "org.gradle.wrapper.GradleWrapperMain",
+                        "required_argument_prefix" to listOf(
+                            "--no-daemon",
+                            "--no-parallel",
+                            "--max-workers=2",
+                            "--console=plain",
+                            "--offline",
+                        ),
+                    ),
+                    "artifact_file_names" to listOf(
+                        ".forge-server-launch-anchor-ready.json",
+                        ".forge-server-launch-anchor-start.json",
+                        "forge-server-launch-anchor-child-started.json",
+                        "forge-server-launch-anchor-child-result.json",
+                        ".forge-server-launch-anchor-finish.json",
+                    ),
+                    "owns_process_group_and_session" to true,
+                    "watchdog_ready_before_child_release" to true,
+                    "controller_parent_required_while_awaiting_start" to true,
+                    "pre_start_timeout_seconds" to 30,
+                    "pre_start_failure_exits" to true,
+                    "post_start_failure_retains_process_group" to true,
+                    "retained_until_terminal_launch_quiescence" to true,
+                ),
+                "pre_acknowledgement" to mapOf(
+                    "maximum_untracked_java_process_count" to 0,
+                    "child_maximum_heap_bytes" to 2147483648L,
+                    "child_acknowledgement_timeout_seconds" to 15,
+                    "controller_bind_timeout_seconds" to 2,
+                    "watchdog_poll_interval_milliseconds" to 250,
+                ),
             )) {
                 "The dedicated-server probe launch contract changed"
             }
+            fun requirePinnedLaunchInput(
+                file: File,
+                expectedSize: Int,
+                expectedSha256: String,
+                description: String,
+            ) {
+                check(file.isFile && !Files.isSymbolicLink(file.toPath())) {
+                    "$description is missing or linked"
+                }
+                val bytes = file.readBytes()
+                val sha256 = MessageDigest.getInstance("SHA-256")
+                    .digest(bytes)
+                    .joinToString("") { byte ->
+                        (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+                    }
+                check(bytes.size == expectedSize && sha256 == expectedSha256) {
+                    "$description bytes changed"
+                }
+            }
+            requirePinnedLaunchInput(
+                forgeRegistryFoundationServerLaunchWatchdog,
+                102143,
+                "a0d69fd1a3477fe13e7379d9088273c331e461ece2c6a8e6ebb868309e9c02e5",
+                "The persistent server launch watchdog source",
+            )
+            requirePinnedLaunchInput(
+                forgeRegistryFoundationServerLaunchAnchor,
+                63659,
+                "8cb41e0ce36d1fa91fd2472b73e54e7e9b44974e5c13c27b692f35ce404699a5",
+                "The server launch-anchor controller source",
+            )
+            requirePinnedLaunchInput(
+                forgeRegistryFoundationServerLaunchAnchorJavaSource,
+                41275,
+                "baca2862e9df7dd6c3da1f41583cbc4b013c45423ec77914883961dcfd202d2b",
+                "The server launch-anchor Java source",
+            )
+            requirePinnedLaunchInput(
+                forgeRegistryFoundationServerGradleWrapperJar,
+                59821,
+                "575098db54a998ff1c6770b352c3b16766c09848bee7555dab09afc34e8cf590",
+                "The direct Gradle wrapper JAR",
+            )
             check(
                 serverProbeSealedArchive ==
-                    forgeSlitheriteBlockRegistryServerEvidenceArchiveV20,
+                    forgeSlitheriteBlockRegistryServerEvidenceArchiveV21,
             ) {
-                "The dedicated-server probe sealed archive is not the exact v20 target"
+                "The dedicated-server probe sealed archive is not the exact v21 target"
             }
             check(serverProbeEvidence == mapOf(
                 "directory" to "evidence",
@@ -9069,7 +9346,11 @@ if (minecraftVersion == "1.20.1") {
             group = "verification"
             description =
                 "Validates the server-only Loom run without launching Minecraft."
-            dependsOn(tasks.named("classes"), serverProbe.classesTaskName)
+            dependsOn(
+                tasks.named("classes"),
+                serverProbe.classesTaskName,
+                serverProbeGradleTopology.classesTaskName,
+            )
 
             doLast {
                 val loomExtension = project.extensions.getByType<LoomGradleExtensionAPI>()
@@ -9108,9 +9389,14 @@ if (minecraftVersion == "1.20.1") {
                 ) {
                     "The dedicated-server probe system-property contract changed"
                 }
+                val serverProbeMaximumHeapArguments =
+                    runConfiguration.jvmArguments.get().filter { argument ->
+                        argument.startsWith("-Xmx")
+                    }
                 check(
-                    "-Xmx${serverProbeLaunch.getValue("maximum_memory_mb")}m" in
-                        runConfiguration.jvmArguments.get(),
+                    serverProbeMaximumHeapArguments == listOf(
+                        "-Xmx${serverProbeLaunch.getValue("maximum_memory_mb")}m",
+                    ),
                 ) {
                     "The dedicated-server probe memory boundary changed"
                 }
@@ -9119,6 +9405,19 @@ if (minecraftVersion == "1.20.1") {
                         .metadata.languageVersion.asInt() == serverProbeJavaVersion,
                 ) {
                     "The dedicated-server probe Java launcher is not Java $serverProbeJavaVersion"
+                }
+                val topologyTask = serverProbeGradleTopologyTask.get()
+                check(
+                    topologyTask.javaLauncher.get().metadata.languageVersion.asInt() ==
+                        serverProbeJavaVersion
+                        && topologyTask.mainClass.get() ==
+                        "dev.theplumteam.etherology.e2e.topology." +
+                        "GradleJavaExecTopologyProbe"
+                        && topologyTask.jvmArgs == listOf("-Xmx2048m")
+                        && topologyTask.classpath.files ==
+                        serverProbeGradleTopology.output.files
+                ) {
+                    "The loader-free Gradle topology JavaExec contract changed"
                 }
                 val bootstrapClasspath = serverProbeRunTask.get().classpath.files
                 val missingProductionOutputs = sourceSets.main.get().output.files
@@ -10474,6 +10773,10 @@ if (minecraftVersion == "1.20.1") {
                 }
             }
         }
+    }
+
+    serverProbeGradleTopologyTask.configure {
+        dependsOn(validateServerProbeRunConfiguration)
     }
 
     val verifyServerProbeIsolation = tasks.register("verifyServerProbeIsolation") {

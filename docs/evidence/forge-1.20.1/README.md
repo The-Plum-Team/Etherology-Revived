@@ -18,17 +18,129 @@ never be provisioned or launched again. Its exact retained installer interlock
 was safely released only after authenticated identity, byte, inode, mode, and
 process-absence checks while preserving the quarantined staging runtime.
 
-The active mutable dedicated-server contract is the fresh, prepared,
-never-provisioned v20 Slitherite profile. Accepted packaged-client v19 proved
-all five real related recipes and their pedestal, alchemy, and lens
-dependencies, clearing the former server dependency block and authorizing v20
-for exactly one native attempt. This authorization is not server acceptance:
-v20 still has no runtime, launch-attempt marker, report, or archive in this
-directory, and it must not be retried or reused after its one-shot run. The
-planned order is `forge_server.py validate`, `provision`, `check`, then `run`,
-stopping on the first failure. The immutable
+Accepted packaged-client v19 proved all five real related recipes and their
+pedestal, alchemy, and lens dependencies, clearing the former server dependency
+block. The authorized dedicated-server v20 attempt was then consumed by a
+fail-closed process-group ownership rejection before the controller
+acknowledged the authenticated Java 17 server. The exact attempt marker,
+profile marker, handoff, and logs are retained in
+[`slitherite-block-registry-server-v20-pgid-handoff-failure`](slitherite-block-registry-server-v20-pgid-handoff-failure).
+It produced no scenario report, completion marker, world, or accepted archive,
+and v20 must never be provisioned, checked, launched, cleaned for reuse, or
+rerun.
+
+The active mutable dedicated-server contract is now the fresh, prepared,
+never-provisioned and never-launched
+`etherology-e2e-forge-server-1.20.1-v21` Slitherite profile. Its active manifest
+and immutable v21 snapshot are byte-identical at 4,478 bytes with SHA-256
+`8df3f9c15f03c1ea9d5b6adea71ee352e9a2735ecdd22e26d03033d62f49f764`.
+Accepted client v19 authorizes exactly one v21 native attempt but does not
+pre-accept its server result. The planned order remains `forge_server.py
+validate`, `provision`, `check`, then `run`, stopping on the first failure. The
+replacement controller pins Gradle 9.6.1 on exact JDK 21 and keeps Gradle in
+one heap-bounded direct wrapper JVM without a daemon. A small JDK 21 source-file
+broker remains the stable process-group and session leader throughout the
+wrapper and server lifecycle. Every Gradle invocation is
+offline and uses a fixed allowlisted environment. Its repository-owned Gradle
+home reuses only pinned symlink bridges to the existing `~/.gradle` `caches`,
+`jdks`, `native`, and `wrapper` directories, avoiding an approximately 18-GiB
+cache copy without importing global init scripts or `gradle.properties`.
+The shared home and cache roots must remain owner-controlled, and the extracted
+Gradle 9.6.1 distribution has a pinned, non-executable `init.d` inventory.
+
+Both `check` and `run` acquire and pin one repository-global native-run lock
+before any Java version probe or loader-free topology check. The version
+probes require a protected root-owned Java executable, explicit memory and
+processor caps, a fixed environment, and zero Java processes before and after
+probing. Any retained active topology, launch-anchor, or wrapper-guard
+transient blocks launch, and cleanup uncertainty retains the lock and relevant
+transient or log.
+Completed transient directories are atomically renamed through pinned parent
+descriptors and retained as diagnostics instead of being recursively deleted.
+The controller then starts the exact-JDK-21 broker with `-Xms16m`, `-Xmx64m`,
+a 64-MiB direct-memory cap, a 128-MiB metaspace cap, a 64-MiB code-cache cap,
+and two active processors. It authenticates and samples that stable anchor and
+starts the detached watchdog before releasing the direct Gradle wrapper child.
+While awaiting START, the broker requires its recorded controller to remain
+its live parent and limits that wait to 30 seconds. A pre-START failure exits
+with code 70. An authenticated START commits the release; later failures retain
+the process group for the watchdog instead of abandoning its ownership.
+Readiness records the parent PID and lease, and the evidence verifier
+cross-links that controller identity to the watchdog.
+The pre-acknowledgement contract permits zero untracked Java processes, gives
+the controller two seconds to bind each child identity, bounds child
+acknowledgement at 15 seconds and 2,147,483,648 heap bytes, and polls the
+watchdog every 250 milliseconds.
+The loader-free topology handshake then starts Java 17 with exactly
+`-Xmx2048m` as the wrapper's direct child inside the broker-owned group and
+session. The earlier non-broker topology probe passed on the baseline Mac with
+about 619 MiB peak aggregate RSS observed externally; it loaded no game and
+consumed no profile or launch attempt. The broker-backed v21 path itself has
+not been launched.
+
+For a native v21 attempt, persistent authenticated `strict-2g-v1` monitors
+protect both the Gradle wrapper and Java 17 server before server
+acknowledgement. Each warns above 3 GiB of current physical footprint, stops a
+sustained breach above 4 GiB only after at least 10 of the latest 15 samples are
+high including all final five, and emergency-stops after one sample above
+5 GiB. Synchronous authenticated checks also reject any individual Java
+identity above 5 GiB and the deduplicated set above 6 GiB aggregate. These are
+implemented controls. The controller also requires a zero-Java baseline,
+binds Java processes inside the owned group and session, and rejects Java outside
+that group. Normal cleanup requires exact process/group absence and terminal
+watchdog proof of global Java absence. Failure and incomplete-binding cleanup
+additionally require 15 continuous seconds of global Java absence. These
+are not v21 runtime evidence: v21 has not been provisioned or launched. The
+preflight is control-plane validation, not v21 gameplay evidence.
+
+The v21 launch object cryptographically pins the 63,659-byte broker controller
+source at SHA-256
+`8cb41e0ce36d1fa91fd2472b73e54e7e9b44974e5c13c27b692f35ce404699a5`,
+the 41,275-byte Java source at SHA-256
+`baca2862e9df7dd6c3da1f41583cbc4b013c45423ec77914883961dcfd202d2b`,
+and the 59,821-byte Gradle wrapper JAR at SHA-256
+`575098db54a998ff1c6770b352c3b16766c09848bee7555dab09afc34e8cf590`.
+The fourth pinned repository input is the 339-byte wrapper properties file at
+SHA-256
+`ef9f8775fd21a165a249ded98afc533818d3f6ac050f0f2f437d5285576b2257`.
+The Java source, wrapper JAR, and wrapper properties are the three inputs
+staged as `0400` files in the isolated runtime and copied with that mode into
+the captured archive. The Python controller is pinned but is not staged.
+It also pins the detached persistent
+watchdog source at 102,143 bytes with SHA-256
+`a0d69fd1a3477fe13e7379d9088273c331e461ece2c6a8e6ebb868309e9c02e5`.
+That independent process is ready before the anchor may release Gradle,
+receives a 10-second controller heartbeat, permits at most three concurrent
+Java identities in the owned group, retains up to 16 historical identities
+for terminal proof, and enforces exact 5-GiB
+per-process and 6-GiB aggregate current-physical-footprint ceilings. It
+publishes owner-only
+`.forge-server-launch-watchdog-ready.json` and
+`forge-server-launch-watchdog-telemetry.json` artifacts and can accept cleanup
+only after terminal telemetry proves the owned group, all tracked exact
+identities, and the global Java inventory absent. A failed pre-readiness startup
+still requires that full absence proof. The broker's owner-only readiness,
+start, child-started, child-result, and finish artifacts bind its lifecycle to
+one controller token. It retains leadership until the controller has proved
+terminal launch quiescence and publishes the authenticated finish record.
+These controls are statically prepared; the v21 safety task runs the anchor,
+watchdog, and sampler unit tests without Java or Minecraft. No v21 anchor or
+watchdog artifact exists, and v21 remains unprovisioned and unlaunched.
+
+The immutable
 [`attrahite-block-registry-server-v19`](attrahite-block-registry-server-v19)
 archive remains the latest accepted cumulative dedicated-server evidence.
+
+After a successful v21 native run, follow the exact
+[v21 sealing commands](../../../scripts/e2e/README.md#sealing-the-successful-v21-dedicated-server-run)
+from the repository root. They validate the stopped runtime before creating the
+absent `slitherite-block-registry-server-v21` archive, copy its 18 payloads,
+write `archive-manifest.json` once, and verify all 19 files. The archive has
+`reports/`, `logs/`, `memory-guard/`, `launch-watchdog/`, and `launch-anchor/`
+directories. `launch-anchor/` contains the five lifecycle records and the three
+staged inputs. Their captured copies retain `0400`; archive-only validation
+checks pinned bytes without requiring that mode after Git checkout. Sealing
+and verification launch no Java or game and never authorize another v21 run.
 
 ## Latest accepted Slitherite packaged client (v19)
 
@@ -100,8 +212,9 @@ Frozen file digests:
 
 The v19 identity and its evidence are immutable. Any later Forge
 packaged-client run requires a new v20-or-newer client identity; the existing
-v20 identity is reserved for the separate fresh, prepared dedicated-server
-contract now authorized for one native attempt.
+dedicated-server v20 identity is a separate consumed failure and must never be
+reused. The fresh dedicated-server replacement is v21; it has not been
+provisioned or launched.
 
 ## Historical accepted Attrahite packaged client (v17)
 
@@ -1204,10 +1317,12 @@ immutable historical archive.
 This immutable game-event-only archive records the earlier accepted checkpoint.
 It remains historical evidence, and v4 superseded it as the
 registry-foundation proof. The v19 Attrahite archive is the latest accepted
-cumulative dedicated-server proof. The active v20 Slitherite contract is fresh,
-prepared, and authorized for one native attempt from an absent runtime; it has
-no launch-attempt marker, report, or archive yet. No current acceptance task or
-verifier treats v2 as the active archive.
+cumulative dedicated-server proof. The v20 Slitherite attempt is consumed and
+retained as a process-group-handoff failure, and must never be rerun. The active
+v21 replacement is fresh, prepared, and authorized for one native attempt from
+an absent runtime, but has not been provisioned or launched and has no report
+or archive. No current acceptance task or verifier treats v2 as the active
+archive.
 
 - Profile: `etherology-e2e-forge-server-1.20.1-v2`
 - Runtime directory:

@@ -836,7 +836,9 @@ final class WarpCounterRegistryResourcesTest {
                     ) {
                         instructionIndex[0]++;
                         if (owner.equals(REGISTRY_SUPPLIER_OWNER)
-                                && name.equals("get")) {
+                                && name.equals("get")
+                                && sharedReadIndex[0] >= 0
+                                && assignmentIndex[0] < 0) {
                             supplierGets[0]++;
                             supplierGetIndex[0] = instructionIndex[0];
                         }

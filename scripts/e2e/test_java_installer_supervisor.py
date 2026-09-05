@@ -11,6 +11,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -316,6 +317,9 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
             "bad digest": lambda frame: frame.update({"installer_sha256": "A" * 64}),
             "foreign controller": lambda frame: frame.update({"controller_pid": 999}),
             "foreign supervisor": lambda frame: frame.update({"supervisor_pid": 999}),
+            "foreign supervisor executable": lambda frame: frame.update(
+                {"supervisor_executable": "/foreign/python"}
+            ),
         }
         for name, mutate in mutations.items():
             with self.subTest(name=name):
@@ -359,8 +363,8 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
 
     def test_supervisor_identity_requires_pid_pgid_sid_and_native_binding(self) -> None:
         sampler = mock.Mock()
-        target = self.target(pid=123, executable=str(Path(sys.executable).resolve()))
-        sampler.bind.return_value = target
+        target = self.target(pid=123, executable="/kernel/python-app")
+        sampler.bind_current_process.return_value = target
         with (
             mock.patch.object(supervisor.os, "getpid", return_value=123),
             mock.patch.object(supervisor.os, "getpgrp", return_value=123),
@@ -370,6 +374,7 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
 
         self.assertEqual(target, actual)
         self.assertEqual(123, session_id)
+        sampler.bind_current_process.assert_called_once_with()
         with (
             mock.patch.object(supervisor.os, "getpid", return_value=123),
             mock.patch.object(supervisor.os, "getpgrp", return_value=124),
@@ -464,6 +469,12 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
                 activation.java_path,
                 sampler,
             )
+            bind.assert_any_call(
+                monitor_process,
+                monitor_process.pid,
+                Path(supervisor_target.expected_executable),
+                sampler,
+            )
             set_signal.assert_called_once_with(
                 signal.SIGTERM,
                 supervisor.retain_anchor_during_group_term,
@@ -473,6 +484,79 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
             self.assertEqual(supervisor_target, monitor_call.kwargs["group_anchor"])
             self.assertTrue(callable(monitor_call.kwargs["process_started"]))
             self.assertIs(monitor, launch.monitor)
+
+    @unittest.skipUnless(sys.platform == "darwin", "requires macOS libproc")
+    def test_native_supervisor_binds_final_python_image_before_validation(self) -> None:
+        parent_socket, child_socket = socket.socketpair(
+            socket.AF_UNIX,
+            socket.SOCK_STREAM,
+        )
+        process = subprocess.Popen(
+            [
+                sys.executable,
+                "-B",
+                str(Path(supervisor.__file__).resolve()),
+                "--control-fd",
+                str(child_socket.fileno()),
+            ],
+            cwd=SCRIPT_DIRECTORY.parent.parent,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            start_new_session=True,
+            close_fds=True,
+            pass_fds=(child_socket.fileno(),),
+        )
+        child_socket.close()
+        control = supervisor.FramedControl(parent_socket)
+        run_id = "c" * 64
+        frame: dict[str, object] | None = None
+        rescue_kill_used = False
+        stdout = b""
+        stderr = b""
+        try:
+            control.send(
+                {
+                    "schema": supervisor.SCHEMA,
+                    "action": "ACTIVATE",
+                    "run_id": run_id,
+                }
+            )
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                control.poll()
+                if control.frames:
+                    frame = control.frames.popleft()
+                    break
+                if process.poll() is not None and control.eof:
+                    break
+                time.sleep(0.05)
+            try:
+                stdout, stderr = process.communicate(timeout=5.0)
+            except subprocess.TimeoutExpired:
+                rescue_kill_used = True
+                process.kill()
+                stdout, stderr = process.communicate(timeout=5.0)
+        finally:
+            parent_socket.close()
+            if process.poll() is None:
+                rescue_kill_used = True
+                process.kill()
+                stdout, stderr = process.communicate(timeout=5.0)
+            returncode = process.returncode
+
+        self.assertEqual(b"", stdout)
+        self.assertEqual(b"", stderr)
+        self.assertFalse(rescue_kill_used)
+        self.assertEqual(-signal.SIGKILL, returncode)
+        with self.assertRaises(ProcessLookupError):
+            os.killpg(process.pid, 0)
+        self.assertIsNotNone(frame)
+        selected_frame = frame if frame is not None else {}
+        self.assertEqual("ERROR", selected_frame["action"])
+        self.assertEqual(run_id, selected_frame["run_id"])
+        self.assertEqual("control-invalid", selected_frame["code"])
+        self.assertIs(selected_frame["out_of_group_cleanup_complete"], True)
 
     def test_injected_java_options_fail_before_run_directory_or_spawn(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -568,6 +652,97 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
 
             self.assertIs(java_process, ownership.java_process)
             self.assertIs(monitor, ownership.monitor)
+
+    def test_monitor_bind_failure_retains_and_cleans_owned_processes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            root = Path(temporary_directory).resolve()
+            _frame, activation = self.activation_fixture(root)
+            supervisor_target = self.target(pid=123, executable="/test/python3")
+            java_target = self.target(pid=456, executable=str(activation.java_path))
+            java_process = mock.Mock(pid=java_target.pid)
+            java_process.poll.return_value = None
+            monitor_process = mock.Mock(pid=789)
+            monitor_process.poll.return_value = None
+            monitor = macos_guarded_java.GuardedJavaMonitor(
+                process=monitor_process,
+                target=java_target,
+                telemetry_path=root / "memory-guard-telemetry.json",
+                readiness_path=root / ".memory-guard-ready.json",
+                group_anchor=supervisor_target,
+            )
+            pipe_logs = (
+                (mock.Mock(spec=supervisor.BoundedLog), mock.Mock()),
+                (mock.Mock(spec=supervisor.BoundedLog), mock.Mock()),
+            )
+            binding_failure = supervisor.SupervisorError(
+                "memory-guard-failed",
+                "monitor executable did not stabilize",
+            )
+            ownership = supervisor.PartialInstallerOwnership()
+            with (
+                mock.patch.dict(supervisor.os.environ, {}, clear=True),
+                mock.patch.object(
+                    supervisor,
+                    "create_pipe_log",
+                    side_effect=pipe_logs,
+                ),
+                mock.patch.object(
+                    supervisor.subprocess,
+                    "Popen",
+                    return_value=java_process,
+                ),
+                mock.patch.object(
+                    supervisor,
+                    "bind_process",
+                    side_effect=(java_target, binding_failure),
+                ),
+                mock.patch.object(supervisor.os, "getsid", return_value=123),
+                mock.patch.object(supervisor.signal, "signal"),
+                mock.patch.object(
+                    supervisor,
+                    "start_guarded_java_monitor",
+                    return_value=monitor,
+                ),
+                self.assertRaises(supervisor.SupervisorError) as raised,
+            ):
+                supervisor.start_installer(
+                    activation,
+                    supervisor_target,
+                    123,
+                    mock.Mock(),
+                    ownership,
+                )
+
+            self.assertIs(binding_failure, raised.exception)
+            self.assertIs(java_process, ownership.java_process)
+            self.assertIs(monitor, ownership.monitor)
+            control = mock.Mock()
+            with (
+                mock.patch.object(supervisor.os, "getpgrp", return_value=123),
+                mock.patch.object(supervisor.os, "killpg") as terminate_group,
+                mock.patch.object(
+                    supervisor,
+                    "stop_guarded_java_monitor",
+                ) as stop_monitor,
+                mock.patch.object(supervisor, "close_partial_ownership"),
+                mock.patch.object(
+                    supervisor,
+                    "kill_anchor_group",
+                    side_effect=AnchorKilled,
+                ),
+                self.assertRaises(AnchorKilled),
+            ):
+                supervisor.abort_anchor(
+                    control,
+                    activation.run_id,
+                    raised.exception,
+                    ownership,
+                )
+
+            terminate_group.assert_called_once_with(123, signal.SIGTERM)
+            java_process.wait.assert_called_once_with(timeout=2.0)
+            stop_monitor.assert_called_once_with(monitor)
+            self.assertEqual("ERROR", control.send.call_args.args[0]["action"])
 
     def test_handoff_and_armed_are_bound_to_exact_identity_and_digest(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -911,19 +1086,28 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
             launch = self.launch_fixture(root, activation)
             supervisor_target = launch.supervisor_target
             control = mock.Mock()
-            control.receive.return_value = activation_frame
             events: list[str] = []
+            control.receive.side_effect = lambda *args: (
+                events.append("activation"),
+                activation_frame,
+            )[1]
             with (
                 mock.patch.object(supervisor, "FramedControl", return_value=control),
                 mock.patch.object(
                     supervisor.MacOsProcessMemorySampler,
                     "native",
-                    return_value=launch.sampler,
+                    side_effect=lambda: (
+                        events.append("sampler"),
+                        launch.sampler,
+                    )[1],
                 ),
                 mock.patch.object(
                     supervisor,
                     "bind_supervisor_identity",
-                    return_value=(supervisor_target, 123),
+                    side_effect=lambda _sampler: (
+                        events.append("bind"),
+                        (supervisor_target, 123),
+                    )[1],
                 ),
                 mock.patch.object(
                     supervisor,
@@ -978,11 +1162,56 @@ class JavaInstallerSupervisorTests(unittest.TestCase):
                 supervisor.supervise(mock.Mock(spec=socket.socket))
 
         self.assertEqual(
-            ["armed", "reaped", "terminal", "freeze", "ack", "close"],
+            [
+                "activation",
+                "sampler",
+                "bind",
+                "armed",
+                "reaped",
+                "terminal",
+                "freeze",
+                "ack",
+                "close",
+            ],
             events,
         )
         sent_actions = [call.args[0]["action"] for call in control.send.call_args_list]
         self.assertEqual(["HANDOFF", "JAVA_EXITED", "COMPLETION"], sent_actions)
+
+    def test_binding_failure_is_authenticated_to_received_run_id(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            activation_frame, _activation = self.activation_fixture(
+                Path(temporary_directory).resolve()
+            )
+            control = mock.Mock()
+            control.receive.return_value = activation_frame
+            binding_failure = supervisor.SupervisorError(
+                "supervisor-identity-invalid",
+                "kernel identity mismatch",
+            )
+            with (
+                mock.patch.object(supervisor, "FramedControl", return_value=control),
+                mock.patch.object(
+                    supervisor.MacOsProcessMemorySampler,
+                    "native",
+                    return_value=mock.Mock(),
+                ),
+                mock.patch.object(
+                    supervisor,
+                    "bind_supervisor_identity",
+                    side_effect=binding_failure,
+                ),
+                mock.patch.object(
+                    supervisor,
+                    "abort_anchor",
+                    side_effect=AnchorKilled,
+                ) as abort,
+                self.assertRaises(AnchorKilled),
+            ):
+                supervisor.supervise(mock.Mock(spec=socket.socket))
+
+        self.assertEqual(activation_frame["run_id"], abort.call_args.args[1])
+        self.assertIs(binding_failure, abort.call_args.args[2])
 
     def test_cli_accepts_only_one_control_fd(self) -> None:
         self.assertEqual(7, supervisor.parse_arguments(["--control-fd", "7"]).control_fd)

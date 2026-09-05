@@ -1,0 +1,40 @@
+{
+  "dependencies": [
+    {
+      "file_name": "architectury-forge-9.2.14.jar",
+      "mod_id": "architectury",
+      "sha256": "47d5eca3d83aae1ac1d4a70116727715bd7ef4c077d228fee873065cbca94687",
+      "size": 599211,
+      "url": "https://maven.architectury.dev/dev/architectury/architectury-forge/9.2.14/architectury-forge-9.2.14.jar",
+      "version_property": "architectury_api_version_1_20_1"
+    },
+    {
+      "file_name": "geckolib-forge-1.20.1-4.7.4.jar",
+      "mod_id": "geckolib",
+      "sha256": "6ccdc4001520a098f0af16cebcabc2edde655a64ca39f7acd1e4c90e31bc5164",
+      "size": 1013210,
+      "url": "https://dl.cloudsmith.io/public/geckolib3/geckolib/maven/software/bernie/geckolib/geckolib-forge-1.20.1/4.7.4/geckolib-forge-1.20.1-4.7.4.jar",
+      "version_property": "geckolib_forge_version_1_20_1"
+    }
+  ],
+  "isolation": {
+    "scope": "repository-owned-ignored-state",
+    "source_profiles": []
+  },
+  "managed_by": "scripts/e2e/forge_client.py",
+  "profile_id": "etherology-e2e-forge-1.20.1-v18",
+  "profile_manifest": {
+    "path": "scripts/e2e/forge-1.20.1-profile.json",
+    "sha256": "16473184a6f11c74c9a18013b3473b48ea50752c47f4908b7927a297381edb3f",
+    "size": 3737
+  },
+  "release": {
+    "artifact_node": "forge-1.20.1",
+    "installer_sha256": "58fc5db6e3dc47745475375be6fa275e68320563c05d29b4203e0d2ca57a50c4",
+    "java": 17,
+    "loader": "forge",
+    "loader_version": "1.20.1-47.4.9",
+    "minecraft_version": "1.20.1"
+  },
+  "schema": 1
+}

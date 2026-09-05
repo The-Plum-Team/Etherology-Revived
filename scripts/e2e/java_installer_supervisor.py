@@ -24,6 +24,7 @@ from macos_guarded_java import (
     GuardedJavaMonitor,
     MAXIMUM_TELEMETRY_SIZE_BYTES,
     MacOsProcessMemorySampler,
+    MemorySamplingError,
     OwnedJavaProcess,
     memory_guard_is_enforcing,
     memory_guard_process_matches,
@@ -987,9 +988,14 @@ def bind_supervisor_identity(
             "supervisor-identity-invalid",
             "Supervisor must be the leader of its dedicated process group and session",
         )
-    executable = Path(sys.executable).resolve(strict=True)
-    target = sampler.bind(pid, process_group_id, str(executable))
-    if target is None:
+    try:
+        target = sampler.bind_current_process()
+    except (MemorySamplingError, TypeError, ValueError) as exception:
+        raise SupervisorError(
+            "supervisor-identity-invalid",
+            f"Supervisor identity could not be bound: {exception}",
+        ) from exception
+    if target.pid != pid or target.process_group_id != process_group_id:
         raise SupervisorError(
             "supervisor-identity-invalid",
             "Supervisor identity could not be bound",
@@ -1074,7 +1080,7 @@ def start_installer(
         monitor_process_target = bind_process(
             monitor.process,
             monitor.process.pid,
-            Path(sys.executable).resolve(strict=True),
+            Path(supervisor_target.expected_executable),
             sampler,
         )
         ownership.monitor_process_target = monitor_process_target
@@ -1628,8 +1634,6 @@ def supervise(control_socket: socket.socket) -> NoReturn:
     launch: InstallerLaunch | None = None
     ownership = PartialInstallerOwnership()
     try:
-        sampler = MacOsProcessMemorySampler.native()
-        supervisor_target, supervisor_session_id = bind_supervisor_identity(sampler)
         activation_frame = control.receive(
             time.monotonic() + ACTIVATION_TIMEOUT_SECONDS,
             lambda: None,
@@ -1640,6 +1644,8 @@ def supervise(control_socket: socket.socket) -> NoReturn:
             and RUN_ID_PATTERN.fullmatch(candidate_run_id) is not None
         ):
             run_id = candidate_run_id
+        sampler = MacOsProcessMemorySampler.native()
+        supervisor_target, supervisor_session_id = bind_supervisor_identity(sampler)
         activation = parse_activation(
             activation_frame,
             supervisor_target,

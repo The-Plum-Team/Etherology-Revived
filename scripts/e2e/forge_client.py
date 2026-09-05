@@ -2037,7 +2037,14 @@ def bind_installer_supervisor(
     process: subprocess.Popen[bytes],
     sampler: MacOsProcessMemorySampler,
 ) -> tuple[OwnedJavaProcess, int]:
-    expected_executable = str(Path(sys.executable).resolve(strict=True))
+    try:
+        expected_executable = (
+            sampler.bind_current_process().expected_executable
+        )
+    except (macos_guarded_java.MemorySamplingError, TypeError, ValueError) as exception:
+        raise E2EError(
+            f"Controller Python identity could not be bound: {exception}"
+        ) from exception
     deadline = time.monotonic() + SUPERVISOR_BIND_TIMEOUT_SECONDS
     while time.monotonic() < deadline:
         if process.poll() is not None:
@@ -2307,7 +2314,7 @@ def validate_supervisor_handoff(
         or monitor_target.pid != monitor_target.process_group_id
         or frame["monitor_session_id"] != monitor_target.pid
         or monitor_target.expected_executable
-        != str(Path(sys.executable).resolve(strict=True))
+        != controller.target.expected_executable
         or frame["monitor_target"]
         != installer_supervisor.identity_payload(java_target)
         or frame["monitor_group_anchor"]

@@ -1073,6 +1073,148 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
             self.assertEqual((17,), popen.call_args.kwargs["pass_fds"])
             child_socket.close.assert_called_once()
 
+    def test_supervisor_binding_waits_for_kernel_observed_python_image(self) -> None:
+        process = mock.Mock(pid=500)
+        process.poll.return_value = None
+        controller_identity = macos_guarded_java.OwnedJavaProcess(
+            pid=321,
+            process_group_id=320,
+            proc_start_abstime=999,
+            expected_executable="/kernel/Python.app/Contents/MacOS/Python",
+        )
+        supervisor_identity = macos_guarded_java.OwnedJavaProcess(
+            pid=500,
+            process_group_id=500,
+            proc_start_abstime=1000,
+            expected_executable=controller_identity.expected_executable,
+        )
+        sampler = mock.Mock()
+        sampler.bind_current_process.return_value = controller_identity
+        sampler.bind.side_effect = (None, supervisor_identity)
+        with (
+            mock.patch.object(forge_client.os, "getpgid", return_value=500),
+            mock.patch.object(forge_client.os, "getsid", return_value=500),
+        ):
+            target, session_id = forge_client.bind_installer_supervisor(
+                process,
+                sampler,
+            )
+
+        self.assertEqual(supervisor_identity, target)
+        self.assertEqual(500, session_id)
+        sampler.bind_current_process.assert_called_once_with()
+        self.assertEqual(
+            [
+                mock.call(
+                    500,
+                    500,
+                    controller_identity.expected_executable,
+                ),
+                mock.call(
+                    500,
+                    500,
+                    controller_identity.expected_executable,
+                ),
+            ],
+            sampler.bind.call_args_list,
+        )
+
+    def test_supervisor_binding_rejects_parent_identity_sampling_failure(self) -> None:
+        process = mock.Mock(pid=500)
+        sampler = mock.Mock()
+        sampler.bind_current_process.side_effect = (
+            macos_guarded_java.MemorySamplingError("libproc unavailable")
+        )
+
+        with self.assertRaisesRegex(
+            forge_client.E2EError,
+            "Controller Python identity could not be bound",
+        ):
+            forge_client.bind_installer_supervisor(process, sampler)
+
+        sampler.bind.assert_not_called()
+
+    def test_supervisor_binding_rejects_exit_or_identity_timeout(self) -> None:
+        controller_identity = macos_guarded_java.OwnedJavaProcess(
+            pid=321,
+            process_group_id=320,
+            proc_start_abstime=999,
+            expected_executable="/kernel/Python.app/Contents/MacOS/Python",
+        )
+        cases = (
+            ("child exit", 7, 500, 500),
+            ("wrong process group", None, 501, 500),
+            ("wrong session", None, 500, 501),
+        )
+        for name, returncode, process_group_id, session_id in cases:
+            with self.subTest(name=name):
+                process = mock.Mock(pid=500)
+                process.poll.return_value = returncode
+                sampler = mock.Mock()
+                sampler.bind_current_process.return_value = controller_identity
+                sampler.bind.return_value = None
+                with (
+                    mock.patch.object(
+                        forge_client.os,
+                        "getpgid",
+                        return_value=process_group_id,
+                    ),
+                    mock.patch.object(
+                        forge_client.os,
+                        "getsid",
+                        return_value=session_id,
+                    ),
+                    mock.patch.object(
+                        forge_client.time,
+                        "monotonic",
+                        side_effect=(0.0, 0.0, 3.0),
+                    ),
+                    mock.patch.object(forge_client.time, "sleep"),
+                    self.assertRaisesRegex(
+                        forge_client.E2EError,
+                        "identity could not be bound",
+                    ),
+                ):
+                    forge_client.bind_installer_supervisor(process, sampler)
+
+                if returncode is not None or process_group_id != 500 or session_id != 500:
+                    sampler.bind.assert_not_called()
+
+    def test_supervisor_binding_rejects_permanent_executable_mismatch(self) -> None:
+        process = mock.Mock(pid=500)
+        process.poll.return_value = None
+        sampler = mock.Mock()
+        sampler.bind_current_process.return_value = (
+            macos_guarded_java.OwnedJavaProcess(
+                pid=321,
+                process_group_id=320,
+                proc_start_abstime=999,
+                expected_executable="/kernel/Python.app/Contents/MacOS/Python",
+            )
+        )
+        sampler.bind.return_value = None
+        with (
+            mock.patch.object(forge_client.os, "getpgid", return_value=500),
+            mock.patch.object(forge_client.os, "getsid", return_value=500),
+            mock.patch.object(
+                forge_client.time,
+                "monotonic",
+                side_effect=(0.0, 0.0, 3.0),
+            ),
+            mock.patch.object(forge_client.time, "sleep"),
+            self.assertRaisesRegex(
+                forge_client.E2EError,
+                "identity could not be bound",
+            ),
+        ):
+            forge_client.bind_installer_supervisor(process, sampler)
+
+        sampler.bind.assert_called_once_with(
+            500,
+            500,
+            "/kernel/Python.app/Contents/MacOS/Python",
+        )
+
     def test_post_spawn_socket_close_failure_still_proves_group_exit(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_directory:
             runtime = Path(temporary_directory).resolve() / "supervisor-runtime"
@@ -1173,6 +1315,29 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
         self.assertEqual(2, poll_count)
         controller.control.send.assert_not_called()
         wait_for_exit.assert_called_once_with(controller)
+
+    def test_supervisor_error_requires_the_exact_operation_run_id(self) -> None:
+        controller = self.supervisor_controller(activated=True)
+        frame = {
+            "schema": forge_client.installer_supervisor.SCHEMA,
+            "action": "ERROR",
+            "run_id": controller.operation.run_id,
+            "code": "supervisor-identity-invalid",
+            "detail": "kernel identity mismatch",
+            "out_of_group_cleanup_complete": True,
+            "anchor_group_kill_pending": True,
+        }
+
+        self.assertIn(
+            "kernel identity mismatch",
+            forge_client.validate_supervisor_error(controller, frame),
+        )
+        for run_id in ("0" * 64, "b" * 64):
+            with self.subTest(run_id=run_id):
+                changed = dict(frame)
+                changed["run_id"] = run_id
+                with self.assertRaisesRegex(forge_client.E2EError, "run ID"):
+                    forge_client.validate_supervisor_error(controller, changed)
 
     def test_group_absence_allows_one_observed_signal_zero_race(self) -> None:
         with (
@@ -1410,6 +1575,17 @@ class ForgeInstallerSupervisorControllerTests(unittest.TestCase):
             self.assertEqual(monitor_target, controller.monitor_target)
             changed = dict(frame)
             changed["java_process_group_id"] = 999
+            with self.assertRaisesRegex(forge_client.E2EError, "identities"):
+                forge_client.validate_supervisor_handoff(
+                    controller,
+                    changed,
+                    java_path,
+                    installer_path,
+                    launcher_root,
+                )
+
+            changed = dict(frame)
+            changed["monitor_executable"] = "/foreign/python"
             with self.assertRaisesRegex(forge_client.E2EError, "identities"):
                 forge_client.validate_supervisor_handoff(
                     controller,

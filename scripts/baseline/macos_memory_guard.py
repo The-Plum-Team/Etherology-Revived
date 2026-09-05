@@ -700,6 +700,34 @@ class MacOsProcessMemorySampler:
             expected_executable=expected_executable,
         )
 
+    def bind_current_process(self) -> OwnedJavaProcess:
+        """Binds this process to the executable identity reported by the kernel."""
+
+        pid = os.getpid()
+        try:
+            rusage = self._rusage_reader(pid)
+            process_group_id = self._process_group_reader(pid)
+            executable = self._executable_reader(pid)
+        except (MemorySamplingError, OSError) as exception:
+            raise MemorySamplingError(
+                f"cannot bind the current process identity: {exception}"
+            ) from exception
+        if not isinstance(rusage, MacOsRusage):
+            raise TypeError("rusage_reader must return MacOsRusage")
+        if type(process_group_id) is not int or not isinstance(executable, str):
+            raise TypeError("identity readers returned an invalid value")
+        try:
+            return OwnedJavaProcess(
+                pid=pid,
+                process_group_id=process_group_id,
+                proc_start_abstime=rusage.proc_start_abstime,
+                expected_executable=executable,
+            )
+        except ValueError as exception:
+            raise MemorySamplingError(
+                f"cannot bind the current process identity: {exception}"
+            ) from exception
+
     def revalidate(self, target: OwnedJavaProcess) -> OwnedJavaProcess | None:
         """Returns the unchanged target only while every pinned identity fact matches."""
 

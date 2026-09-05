@@ -565,6 +565,34 @@ class MacOsProcessMemorySamplerTests(unittest.TestCase):
                 TARGET.expected_executable,
             )
         )
+
+    def test_bind_current_process_uses_kernel_observed_executable(self) -> None:
+        sampler = self.make_sampler(executable="/kernel/python-app")
+
+        with mock.patch.object(guard_module.os, "getpid", return_value=TARGET.pid):
+            bound = sampler.bind_current_process()
+
+        self.assertEqual(
+            guard_module.OwnedJavaProcess(
+                pid=TARGET.pid,
+                process_group_id=TARGET.process_group_id,
+                proc_start_abstime=TARGET.proc_start_abstime,
+                expected_executable="/kernel/python-app",
+            ),
+            bound,
+        )
+
+    def test_bind_current_process_rejects_an_invalid_kernel_identity(self) -> None:
+        sampler = self.make_sampler(executable="relative/python")
+
+        with (
+            mock.patch.object(guard_module.os, "getpid", return_value=TARGET.pid),
+            self.assertRaisesRegex(
+                guard_module.MemorySamplingError,
+                "cannot bind the current process identity",
+            ),
+        ):
+            sampler.bind_current_process()
         self.assertIsNone(
             sampler.bind(
                 TARGET.pid,

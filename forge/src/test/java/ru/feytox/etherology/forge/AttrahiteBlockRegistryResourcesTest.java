@@ -712,14 +712,18 @@ final class AttrahiteBlockRegistryResourcesTest {
         }
         assertEquals(1, entries.size(), artifact.description() + ":" + resource.jarEntry());
         byte[] packaged = jar.getInputStream(entries.get(0)).readAllBytes();
+        byte[] canonical = Files.readAllBytes(repositoryRoot.resolve(resource.repositoryPath()));
         assertArrayEquals(
-                Files.readAllBytes(repositoryRoot.resolve(resource.repositoryPath())),
+                artifact.fabricApplication()
+                        ? canonical
+                        : ForgePackagedTags.expectedForgeBytes(
+                                repositoryRoot, resource.jarEntry(), canonical),
                 packaged,
                 artifact.description() + ":" + resource.jarEntry()
         );
         assertEquals(
                 resource.sha256(),
-                sha256(packaged),
+                sha256(canonical),
                 artifact.description() + ":" + resource.jarEntry()
         );
     }

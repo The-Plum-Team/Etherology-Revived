@@ -1,0 +1,10 @@
+# Etherology registry IDs that the canonical (Fabric datagen) vanilla tags name but that Forge
+# does not register yet. A missing required tag entry makes Minecraft drop the whole tag for every
+# mod, so Forge packages only these entries as optional. Remove an ID once Forge registers it.
+etherology:brewing_cauldron
+etherology:ethereal_fork
+etherology:ethereal_socket
+etherology:ethereal_furnace
+etherology:spinner
+etherology:samovar
+etherology:tuning_fork

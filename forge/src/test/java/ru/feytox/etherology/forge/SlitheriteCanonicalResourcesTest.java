@@ -944,8 +944,12 @@ final class SlitheriteCanonicalResourcesTest {
             return;
         }
         assertEquals(1, entries.size(), artifact.description() + ":" + resource.jarEntry());
+        byte[] canonical = Files.readAllBytes(repositoryRoot.resolve(resource.repositoryPath()));
         assertArrayEquals(
-                Files.readAllBytes(repositoryRoot.resolve(resource.repositoryPath())),
+                artifact.fabricApplication()
+                        ? canonical
+                        : ForgePackagedTags.expectedForgeBytes(
+                                repositoryRoot, resource.jarEntry(), canonical),
                 jar.getInputStream(entries.get(0)).readAllBytes(),
                 artifact.description() + ":" + resource.jarEntry()
         );

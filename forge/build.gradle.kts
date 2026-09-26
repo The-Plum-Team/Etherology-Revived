@@ -1235,10 +1235,45 @@ val expandedForgeMetadata = mapOf(
     "resource_pack_format" to releaseMetadata["pack_format"].toString(),
 )
 
+// The canonical tags come from the complete Fabric datagen, so vanilla tags can name blocks
+// that Forge has not registered yet. A missing required entry makes Minecraft drop the whole
+// tag for every mod (e.g. needs_stone_tool), so Forge packages only the listed unported
+// entries as optional; ported entries stay required.
+val unportedTagEntriesFile = rootProject.file("forge/unported-tag-entries.txt")
+val unportedTagEntries = unportedTagEntriesFile.readLines()
+    .map(String::trim)
+    .filter { line -> line.isNotEmpty() && !line.startsWith("#") }
+    .toSet()
+val unportedTagEntryLine = Regex("""^(\s*)"(etherology:[a-z0-9_./-]+)"(,?)$""")
+
 tasks.named<ProcessResources>("processResources") {
     inputs.properties(expandedForgeMetadata)
+    inputs.file(unportedTagEntriesFile)
     filesMatching(listOf("META-INF/mods.toml", "pack.mcmeta")) {
         expand(expandedForgeMetadata)
+    }
+    // Rewritten after copying instead of with filter(), which re-terminates every line with the
+    // platform separator and would break the byte-exact canonical resources on Windows.
+    doLast {
+        listOf("blocks", "items")
+            .map { kind -> destinationDir.resolve("data/minecraft/tags/$kind") }
+            .filter(File::isDirectory)
+            .flatMap { directory -> directory.walkTopDown().filter { it.isFile && it.extension == "json" }.toList() }
+            .forEach { tagFile ->
+                val original = tagFile.readText(Charsets.UTF_8)
+                val rewritten = original.split("\n").joinToString("\n") { line ->
+                    val match = unportedTagEntryLine.matchEntire(line)
+                    if (match == null || match.groupValues[2] !in unportedTagEntries) {
+                        line
+                    } else {
+                        val (indent, id, comma) = match.destructured
+                        "$indent{ \"id\": \"$id\", \"required\": false }$comma"
+                    }
+                }
+                if (rewritten != original) {
+                    tagFile.writeText(rewritten, Charsets.UTF_8)
+                }
+            }
     }
 }
 
